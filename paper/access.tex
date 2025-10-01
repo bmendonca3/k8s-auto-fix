@@ -1,0 +1,357 @@
+\documentclass{ieeeaccess}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+% \usepackage{caption} % Removed: Conflicts with the ieeeaccess class
+% \usepackage{mathptmx} % Disabled to avoid RSFS font requirement on minimal TeX
+\usepackage[english]{babel}
+\usepackage{microtype}
+
+% Packages added for the comparison table
+\usepackage{booktabs}
+\usepackage[table]{xcolor} % Use [table] option for better compatibility
+\usepackage{tabularx} % For auto-wrapping text in tables
+\usepackage{multirow}
+
+% xurl may not be present in minimal TeX installs; fall back to url
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{\usepackage{url}}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage{bm}
+
+% Fallback mapping for RSFS font to Computer Modern symbols (avoids rsfs10)
+\makeatletter
+\DeclareFontFamily{U}{rsfs}{}
+\DeclareFontShape{U}{rsfs}{m}{n}{<-6> s*[1.05] cmsy5 <6-8> s*[1.05] cmsy7 <8-> s*[1.05] cmsy10}{}
+\DeclareSymbolFont{rsfs}{U}{rsfs}{m}{n}
+\DeclareSymbolFontAlphabet{\mathscr}{rsfs}
+\makeatother
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+%Your document starts from here ___________________________________________________
+\begin{document}
+\history{This document is a draft for a course project. It uses a template for structure.}
+\doi{TBD}
+
+\title{Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations}
+\author{\uppercase{Brian Mendonca}\authorrefmark{1}, and
+\uppercase{Vijay K. Madisetti}\authorrefmark{2}, \IEEEmembership{Fellow, IEEE}}
+
+\address[1]{College of Computing, Georgia Institute of Technology, Atlanta, GA 30332 USA (e-mail: brian.mendonca6@gmail.com)}
+\address[2]{School of Cybersecurity and Privacy, Georgia Institute of Technology, Atlanta, GA 30332 USA (e-mail: vkm@gatech.edu)}
+
+\markboth
+{Mendonca \headeretal: Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations}
+{Mendonca \headeretal: Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations}
+
+\corresp{Corresponding author: Dr. Vijay Madisetti (e-mail: vkm@gatech.edu).}
+
+% \tfootnote{This work was supported in part by [Funding Source, if applicable].}
+
+\begin{abstract}
+Kubernetes manifests are easy to misconfigure in ways that expand blast radius (e.g., \texttt{privileged: true}, \texttt{:latest} tags, missing \texttt{runAsNonRoot}). While industry baselines such as CIS Benchmarks and Kubernetes Pod Security Standards codify hardening guidance, most pipelines stop at detection and lack validated, minimal auto-fixes prioritized by threat impact. We implement a closed-loop prototype---Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler---that currently operates end-to-end in a rules-based mode and is configurable to target OpenAI-compatible LLM endpoints. The implementation (\texttt{k8s-auto-fix} repository) emits evidence artifacts at each stage: JSON detections, guarded JSON patches, verifier outcomes, and priority scores. Verification combines lightweight policy re-checks, optional \texttt{kubectl apply --dry-run=server}, and safety assertions. Scheduling follows a risk-aware heuristic. This report documents the shipped pipeline, unit tests (16 passing), sample manifests, and remaining gaps needed to reach the full threat-guided vision.
+\end{abstract}
+
+\begin{keywords}
+Kubernetes, YAML, Pod Security, JSON Patch, Policy Enforcement, Kyverno, OPA Gatekeeper, Auto-fix, CI/CD, CVE, EPSS, RAG, Risk-based scheduling
+\end{keywords}
+
+\titlepgskip=-21pt
+\maketitle
+
+\section{Importance of the Problem}
+Kubernetes YAML is easy to get wrong: a single \texttt{privileged: true}, a \texttt{:latest} image tag, or a missing \texttt{runAsNonRoot} can expand blast radius and undermine defense-in-depth. Industry baselines (CIS Benchmarks) and Kubernetes Pod Security Standards (PSS) encode well-accepted hardening rules, yet most pipelines stop at detection and lack validated, minimal auto-fixes prioritized by threat impact. This project targets that gap with measured improvements on Auto-fix rate, No-new-violations\%, Time-to-patch, and \emph{risk reduction} (with fairness) on a held-out corpus—directly aligned with course acceptance targets (\cite{cis_benchmark}, \cite{pss}).
+
+%====================
+% Comparison Table (Revised for Brevity)
+%====================
+\begin{table*}[t!]
+\centering
+\caption{Comparison of Automated Kubernetes Configuration Repair Approaches}
+\label{tab:comparison}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Capability} & \textbf{Our Proposal} & \textbf{LLMSecConfig \cite{llmsecconfig}} & \textbf{GenKubeSec \cite{genkubesec}} & \textbf{KubeLLM \cite{kubellm}} \\
+\midrule
+\rowcolor{gray!10}
+\textbf{Primary Goal} & \textcolor{blue}{\textbf{Proactive Hardening}} \& Auto-Patching & Proactive Hardening & Advanced Detection \& Human Explanation & Reactive \textbf{Runtime} Troubleshooting \\
+\midrule
+\textbf{Trigger} & Static Scanner Findings & Static Scanner Finding & RB Tool Finding (for training) & Live System Failure (User Query) \\
+\midrule
+\rowcolor{gray!10}
+\textbf{Output} & \textcolor{blue}{\textbf{Minimal Patch}} (JSONPatch) & Full YAML File Fix & Text Suggestion & Shell/\texttt{kubectl} Commands \\
+\midrule
+\textbf{Verification} & \textcolor{blue}{\textbf{Pre-Deployment Triad}} (Policy Re-check, Schema, Server Dry-run) & SAT Re-scan Only & Manual Expert Review & Runtime Feedback Loop (Self-evaluation) \\
+\midrule
+\rowcolor{gray!10}
+\textbf{Prioritization} & \textcolor{blue}{\textbf{Risk-Bandit}} (Aging + KEV Preemption) & None (FIFO) & None (Future Work) & None (FIFO) \\
+\midrule
+\textbf{Scheduling \& Risk} & \textcolor{blue}{\textbf{Learning-Aware}} (Risk/Time + Bandit) & Not Addressed & Not Addressed & None (FIFO) \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+
+\section{Brief Related Work and Gaps}
+Recent work has explored using Large Language Models (LLMs) for Kubernetes configuration analysis and repair, yet critical gaps remain for creating a production-ready, automated system. While approaches like LLMSecConfig \cite{llmsecconfig} and GenKubeSec \cite{genkubesec} focus on fixing static misconfigurations, they often lack robust, multi-stage verification or operational awareness. For example, LLMSecConfig validates fixes only by re-running a static scanner \cite{llmsecconfig}, which may miss deploy-time errors. GenKubeSec excels at detection and explanation but stops short of producing an automated patch, instead providing suggestions for a human operator \cite{genkubesec}. Other systems like KubeLLM \cite{kubellm} tackle the different problem of reactive, runtime troubleshooting, responding to live system failures rather than proactively hardening configurations before deployment. As summarized in Table~\ref{tab:comparison}, our work is novel in its synthesis of these areas.
+
+\smallskip
+\noindent\textbf{1. Detection-Only Pipelines.} Static analysis tools like \texttt{kube-linter} and policy engines such as Kyverno and OPA Gatekeeper excel at identifying misconfigurations (\cite{kube_linter_docs}, \cite{kyverno_docs}, \cite{opa_gatekeeper}). However, their core function is detection and admission control, not the generation of validated, minimal patches. Our work uses these powerful tools as the \emph{Detector} and \emph{Verifier} components in a broader remediation workflow.
+
+\smallskip
+\noindent\textbf{2. Lack of Closed-Loop Verification.} Few remediation pipelines enforce a rigorous, multi-gate verification process. A key novelty of our approach is the Verifier's triad of checks: a policy re-check to confirm the original violation is gone, schema validation to ensure correctness, and a server-side dry-run (\texttt{kubectl apply --dry-run=server}) to simulate the application of the patch against the Kubernetes API server, ensuring no new violations are introduced (\cite{kubectl_reference}).
+
+\smallskip
+\noindent\textbf{3. Inefficient Prioritization.} Security work queues are often processed in a First-In, First-Out (FIFO) manner. This can leave high-impact vulnerabilities unpatched while the system works on lower-priority issues. We propose and test a \textbf{risk-based, learning-aware scheduler} that integrates CVE/CTI signals (CVSS, EPSS, KEV) and online outcomes (verifier pass/fail) using a contextual bandit with aging and KEV preemption, aiming to maximize risk reduction while preserving fairness.
+
+\section{Proposed Approach}
+We will build a closed-loop \emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Budget-aware Retry} that ingests CTI/CVE risk signals, scans YAML manifests, proposes smallest-safe JSON Patch / YAML diffs, and self-verifies them via policy re-check + schema validation + \texttt{kubectl apply --dry-run=server}, all under strict attempt/token/latency budgets. We evaluate on a labeled corpus (train=60, dev=40, hold-out=50) for the Top-10 policies, report per-policy Detection F1 and end-to-end Auto-fix and No-new-violations rates, and compare a \emph{Risk-Bandit (aging + KEV preemption)} scheduler against baselines (Risk/Time+aging and FIFO/random) on Time-to-patch, throughput, and risk reduction (\cite{kubectl_reference}, \cite{swe_bench_verified}).
+
+\smallskip
+\noindent\textbf{Disagreement and Budgets.} When kube-linter and Kyverno/OPA disagree, we take the \emph{union} of violations at detection time, and require patches to pass \emph{both} engines during verification (the no-new-violations gate). We cap attempts at $\leq 3$ per file, set a per-attempt token cap of 1{,}000, and bound the total corpus budget to $\leq 100{,}000$ tokens. \emph{Brief targets:} F1$\ge$0.85; Auto-fix$\ge$70\%; No-new-violations$\ge$95\%; median JSONPatch ops$\le$3. Formal definitions are in Section~\ref{sec:impl-metrics}.
+
+\subsection{Research Questions}
+Our investigation is guided by the following research questions (RQs):
+\begin{enumerate}
+    \item[\textbf{RQ1}] \textbf{(Robustness):} Does the closed-loop pipeline improve Auto-fix and No-new-violations rates compared to a naïve, single-shot patcher?
+    \item[\textbf{RQ2}] \textbf{(Scheduling Effectiveness):} Does a Risk-Bandit scheduler (with aging and KEV preemption) increase \emph{risk reduction per hour} versus Risk/Time+aging and FIFO/random baselines?
+    \item[\textbf{RQ3}] \textbf{(Fairness):} What is the impact on queue fairness (e.g., P95 wait time, starvation rate), and how does aging mitigate it compared to pure FIFO?
+    \item[\textbf{RQ4}] \textbf{(Patch Quality):} Are the generated patches minimal and idempotent?
+\end{enumerate}
+
+\section{Implementation and Metrics}\label{sec:impl-metrics}
+Our system is designed as a linear pipeline with strict verification gates to ensure the safety and correctness of all proposed patches.
+
+\subsection{The Closed-Loop Pipeline}
+The workflow consists of four stages:
+\begin{itemize}
+    \item \textbf{Detector:} Ingests a Kubernetes manifest and uses both \texttt{kube-linter} and a policy engine (Kyverno/OPA) to identify violations. It takes the union of all findings.
+    \item \textbf{Proposer:} Takes the manifest and violation data and generates a JSON Patch. The shipped implementation defaults to deterministic rules for the policies we currently cover (\texttt{no\_latest\_tag}, \texttt{no\_privileged}) but can call an OpenAI-compatible endpoint when configured via \texttt{configs/run.yaml}.
+    \item \textbf{Verifier:} Applies the patch to a copy of the manifest and subjects it to the verification gates described below, recording evidence in \texttt{data/verified.json}.
+    \item \textbf{Budget-aware Retry:} A configurable retry budget (\texttt{max\_attempts} in \texttt{configs/run.yaml}, default 3) allows the proposer to re-attempt if verification fails, logging the error trace for inspection.
+\end{itemize}
+
+\subsection{Verification Gates}
+To be accepted, a patched manifest must pass a triad of checks:
+\begin{enumerate}
+    \item \textbf{Policy Re-check:} The patched manifest is re-evaluated with the same policy logic that triggered the violation. Today this is implemented as explicit assertions for the two baseline policies (no \texttt{:latest} tags, no \texttt{privileged: true}); the detector hook for re-scanning is stubbed for future expansion.
+    \item \textbf{Schema Validation:} Structural validity is checked by applying the JSON Patch via \texttt{jsonpatch}; malformed paths or operations are rejected and surfaced to the retry loop.
+    \item \textbf{Server-side Dry-run:} When \texttt{kubectl} is available, the system executes \texttt{kubectl apply --dry-run=server} to simulate how the Kubernetes API server would handle the change. Failures mark the patch as not accepted and persist the CLI output for analysis.
+\end{enumerate}
+
+% Simple architecture figure using boxed stages and arrows
+\begin{figure*}[t]
+\centering
+\setlength{\fboxsep}{6pt}%
+\setlength{\fboxrule}{0.6pt}%
+\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Detector}\\\small kube-linter + Kyverno/OPA\end{minipage}}
+\hspace{0.6em}$\Rightarrow$\hspace{0.6em}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Proposer}\\\small LLM + JSON Patch\end{minipage}}
+\hspace{0.6em}$\Rightarrow$\hspace{0.6em}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Verifier}\\\small Policy + Schema + Dry-run\end{minipage}}
+\hspace{0.6em}$\Rightarrow$\hspace{0.6em}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Scheduler}\\\small Risk-Bandit (aging + KEV)\end{minipage}}
+
+\vspace{0.6em}
+\fbox{\begin{minipage}{0.28\textwidth}\centering\textbf{Risk Signals}\\\small CVE/KEV/EPSS + Exposure\end{minipage}}
+\hspace{1em}
+\fbox{\begin{minipage}{0.28\textwidth}\centering\textbf{RAG Store}\\\small PSS/CIS, K8s docs, CVEs\end{minipage}}
+\caption{Closed-loop architecture with risk-aware scheduling and RAG support.}
+\label{fig:architecture}
+\end{figure*}
+
+\section{Implementation Status and Evidence}
+
+Table~\ref{tab:evidence} ties each pipeline stage to the concrete code and artifacts currently in the \texttt{k8s-auto-fix} repository. The implementation operates end-to-end in rules mode without external API dependencies; LLM-backed modes are configurable but not yet exercised in evaluation.
+
+\begin{table*}[t]
+\centering
+\caption{Evidence for each stage of the implemented pipeline (December 2024 snapshot).}
+\label{tab:evidence}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{6pt}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Stage} & \textbf{Implementation}\footnotemark[1] & \textbf{Artifacts Produced}\footnotemark[2] \\
+\midrule
+Detector & \begin{tabular}[t]{@{}l@{}}\texttt{src/detector/detector.py}\\ \texttt{src/detector/cli.py}\end{tabular} & Records in \texttt{data/detections.json} with fields \{\texttt{id}, \texttt{manifest\_path}, \texttt{manifest\_yaml}, \texttt{policy\_id}, \texttt{violation\_text}\}; seeded by \texttt{data/manifests/001.yaml} and \texttt{002.yaml}. \\
+Proposer & \begin{tabular}[t]{@{}l@{}}\texttt{src/proposer/cli.py}\\ \texttt{model\_client.py}, \texttt{guards.py}\end{tabular} & \texttt{data/patches.json} containing guarded JSON Patch arrays. Rules mode emits single-operation fixes; vendor/vLLM modes require OpenAI-compatible endpoints configured in \texttt{configs/run.yaml}. \\
+Verifier & \begin{tabular}[t]{@{}l@{}}\texttt{src/verifier/verifier.py}\\ \texttt{src/verifier/cli.py}\end{tabular} & \texttt{data/verified.json} logging \texttt{accepted}, \texttt{ok\_schema}, \texttt{ok\_policy}, and \texttt{patched\_yaml}. Current policy checks assert the \texttt{no\_latest\_tag} and \texttt{no\_privileged} invariants. \\
+Scheduler & \begin{tabular}[t]{@{}l@{}}\texttt{src/scheduler/schedule.py}\\ \texttt{src/scheduler/cli.py}\end{tabular} & \texttt{data/schedule.json} with per-item scores and components \{\texttt{score}, \texttt{R}, \texttt{p}, \texttt{Et}, \texttt{wait}, \texttt{kev}\}; risk constants presently keyed to policy IDs. \\
+Automation & \texttt{Makefile} & Reproducible commands for each stage: \texttt{make detect}, \texttt{make propose}, \texttt{make verify}, \texttt{make schedule}, \texttt{make e2e}. \\
+Testing & \texttt{tests/} & \texttt{python -m unittest discover -s tests} (16 tests, 2 skipped until patches exist) covering detector contracts, proposer guards, verifier gates, scheduler ordering, patch idempotence. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\footnotetext[1]{All paths are relative to the project root.}
+\footnotetext[2]{Artifacts live under \texttt{data/\*.json} after running the corresponding \texttt{make} targets.}
+
+\subsection{Sample Detection Record}
+When detector binaries are available, running \texttt{make detect} (rules mode) produces records with the following shape (values truncated for brevity):
+
+\begin{verbatim}
+{
+  "id": "001",
+  "manifest_path": "data/manifests/001.yaml",
+  "manifest_yaml": "apiVersion: v1\nkind: Pod\n...",
+  "policy_id": "no_latest_tag",
+  "violation_text": "Image uses :latest which is unstable"
+}
+\end{verbatim}
+
+The \texttt{manifest\_yaml} field embeds the literal YAML to decouple downstream stages from the filesystem.
+
+\subsection{Unit Test Evidence}
+Executing \texttt{python -m unittest discover -s tests} yields \texttt{16 tests in 0.02s, OK (skipped=2)} on macOS (Apple M-series, Python~3.12). The skipped cases correspond to the optional patch minimality suite, which activates after \texttt{data/patches.json} is generated.
+
+\subsection{Dataset and Configuration}
+Two deliberately vulnerable manifests (\texttt{001.yaml} and \texttt{002.yaml}) seed the pipeline and align with the implemented rules. \texttt{configs/run.yaml} stores the single source of truth for proposer mode, retry budget, timeouts, and API endpoints. Switching between rules and vendor/vLLM modes is a matter of editing this file and exporting the named API key environment variables.
+
+\subsection{Threat Intelligence and Risk Scoring (CVE/KEV/EPSS)}
+Future iterations will enrich each queue item with risk signals derived from vulnerability and exposure data:
+\begin{itemize}
+    \item \textbf{CVE Signals:} Join container images to vulnerability scan outputs (e.g., Trivy/Grype) to obtain per-image CVE sets and severities. Use \emph{CVSS} from NVD \cite{nvd} and \emph{EPSS} probabilities \cite{epss}; flag items present in the \emph{CISA KEV} catalog \cite{cisa_kev}.
+    \item \textbf{Policy/Exposure:} Incorporate Pod Security Standards (PSS) level, CIS rule impact, and exposure features (e.g., \texttt{privileged}, \texttt{hostNetwork}, \texttt{hostPath}, dangerous capabilities, \texttt{:latest}, externally exposed \texttt{Service}).
+    \item \textbf{Score:} Compute a normalized risk score $R \in [0,100]$ combining exposure and CVE signals, emphasizing KEV and EPSS. We report absolute risk and per-patch \emph{risk reduction} $\Delta R$.
+\end{itemize}
+
+\subsection{RAG-Driven Feedback Loop}
+Future work will use retrieval-augmented generation to improve patching and retries:
+\begin{itemize}
+    \item \textbf{Corpus:} PSS/CIS guidance, Kyverno/OPA policy docs, Kubernetes API/security-context docs, RFC 6902 (JSON Patch), and top-$K$ CVE records for implicated images.
+    \item \textbf{Indexing:} Chunk with metadata (policy family, resource kind, field path, image\,$\rightarrow$\,CVE) and dense embeddings; maintain a small buffer of recent verifier failures.
+    \item \textbf{Retrieval:} For initial proposals, retrieve top-$K$ policy+K8s+CVE snippets. On failure, re-retrieve using verifier error messages (schema/policy/dry-run) with smaller $K'$ to target the fix; cap at 3 attempts.
+\end{itemize}
+
+\subsection{Risk-Bandit Scheduler with Aging and KEV Preemption}
+The current scheduler implements the heuristic in Eq.~(1) with static priors tied to policy IDs; future work will maximize expected risk reduction per unit time while learning from outcomes:
+\begin{itemize}
+    \item \textbf{Index:} For item $i$, score $S_i = \dfrac{R_i \cdot p_i}{\mathbb{E}[t_i]} + \text{explore}_i + \alpha \cdot \text{wait}_i$, where $R_i$ is risk, $p_i$ is online-estimated success probability (per policy family, attempts, manifest complexity), $\mathbb{E}[t_i]$ is expected verification time, and $\alpha$ is an aging coefficient.
+    \item \textbf{Learning:} Update $p_i$ and $\mathbb{E}[t_i]$ online from verifier pass/fail and observed times; initialize priors from RAG retrieval confidence and historical rates.
+    \item \textbf{Preemption:} If an item is KEV-listed, apply a priority boost; EPSS raises base risk.
+    \item \textbf{Fairness:} Aging term ensures long-waiting items eventually surface; we measure P95 wait and starvation.
+\end{itemize}
+
+\subsection{Baselines and Ablations}
+Planned evaluation will compare against: (A) \textbf{Risk/Time + aging}: $R/\mathbb{E}[t] + \alpha\,\text{wait}$ (strong, simple baseline); (B) \textbf{FIFO/random}; and optionally (C) \textbf{Batch set-cover}: cluster by policy/root cause to amortize verification across similar fixes.
+
+% Pseudocode for the scheduling loop
+\begin{figure*}[t]
+\centering
+\small
+\begin{minipage}{0.92\textwidth}
+\begin{algorithmic}[1]
+\STATE \textbf{Inputs:} queue $Q$, risk $R_i$, KEV flag, wait time $\text{wait}_i$, bandit priors $p_i,\,\mathbb{E}[t_i]$, aging $\alpha$, exploration coefficient $\beta$, KEV boost $\kappa$
+\WHILE{$Q$ not empty}
+  \STATE \textbf{Score all items:} For each $i\in Q$, compute base $= \dfrac{R_i\cdot p_i}{\max(\varepsilon,\,\mathbb{E}[t_i])}$; $\text{kev}=\kappa$ if KEV else $0$; $\text{explore}=\beta\sqrt{\dfrac{\ln(1+n)}{1+n_i}}$; $S_i=\text{base}+\text{explore}+\alpha\,\text{wait}_i+\text{kev}$
+  \STATE Pick $j=\arg\max_i S_i$; generate a JSON Patch for $j$ using LLM+RAG; run Verifier (policy, schema, server dry-run)
+  \IF{Verifier success}
+    \STATE Apply patch; update counts $(n_j, r_j)$ and online estimates $p_j,\,\mathbb{E}[t_j]$; remove $j$ from $Q$
+  \ELSE
+    \STATE Update $p_j,\,\mathbb{E}[t_j]$ with failure; if retries$<3$ then requeue $j$ with feedback; otherwise drop $j$
+  \ENDIF
+  \STATE Age all items: $\text{wait}_i \leftarrow \text{wait}_i + \Delta t$
+\ENDWHILE
+\end{algorithmic}
+\end{minipage}
+\caption{Risk-Bandit scheduling loop (aging + KEV preemption) maximizing expected risk reduction per unit time with exploration and fairness.}
+\label{fig:bandit-pseudocode}
+\end{figure*}
+
+\subsection{Metrics and Measurement}
+We formally define how we measure effectiveness and fairness:
+\begin{itemize}
+    \item \textbf{Auto-fix Rate:} $\frac{\#\,\text{patches that pass the Verifier triad}}{\#\,\text{detected violations}}$.
+    \item \textbf{No-new-violations Rate:} $\frac{\#\,\text{accepted patches with zero new policy/schema violations}}{\#\,\text{accepted patches}}$.
+    \item \textbf{Patch Minimality:} Median number of JSON Patch operations per accepted patch.
+    \item \textbf{Time-to-patch:} Wall-clock time from item enqueue to accepted patch; we report P50/P95 overall and for the top-risk decile.
+    \item \textbf{Risk Reduction:} For item $i$, $\Delta R_i = R^{\text{pre}}_i - R^{\text{post}}_i$. We report sum and rate: $\sum_i \Delta R_i$ and $\frac{\sum_i \Delta R_i}{\text{hour}}$.
+    \item \textbf{Throughput:} Accepted patches per hour.
+    \item \textbf{Fairness:} P95 wait time (enqueue to start), and starvation rate (items exceeding a maximum wait threshold).
+\end{itemize}
+
+\noindent\textbf{Targets (Acceptance Criteria).} Aligned with course requirements, we target: Detection F1 $\ge 0.85$ (hold-out), Auto-fix Rate $\ge 70\%$, No-new-violations Rate $\ge 95\%$, and median JSON Patch operations $\le 3$.
+
+%====================
+% References
+%====================
+\bibliographystyle{IEEEtran}
+% Comment out \bibliography{references} and use inlined thebibliography for portability in the template stage.
+%\bibliography{references}
+
+\begin{thebibliography}{00}
+\bibitem{cis_benchmark}
+CIS Kubernetes Benchmarks. Accessed: 2025. [Online]. Available: \url{https://www.cisecurity.org/benchmark/kubernetes}
+
+\bibitem{pss}
+Kubernetes: Pod Security Standards. Accessed: 2025. [Online]. Available: \url{https://kubernetes.io/docs/concepts/security/pod-security-standards/}
+
+\bibitem{kyverno_docs}
+Kyverno Documentation. Accessed: 2025. [Online]. Available: \url{https://kyverno.io/docs/}
+
+\bibitem{opa_gatekeeper}
+OPA Gatekeeper How-to. Accessed: 2025. [Online]. Available: \url{https://open-policy-agent.github.io/gatekeeper/website/docs/howto/}
+
+\bibitem{kube_linter_docs}
+\textit{kube-linter} Documentation. Accessed: 2025. [Online]. Available: \url{https://docs.kubelinter.io/}
+
+\bibitem{k8s_security_context}
+Kubernetes: Configure a Security Context. Accessed: 2025. [Online]. Available: \url{https://kubernetes.io/docs/tasks/configure-pod-container/security-context/}
+
+\bibitem{rfc6902}
+RFC 6902: JSON Patch, DOI:10.17487/RFC6902. Accessed: 2025. [Online]. Available: \url{https://www.rfc-editor.org/info/rfc6902}
+
+\bibitem{kubectl_reference}
+\texttt{kubectl} Command Reference (dry-run). Accessed: 2025. [Online]. Available: \url{https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands}
+
+\bibitem{k8s_seccomp}
+Kubernetes: Seccomp and Kubernetes. Accessed: 2025. [Online]. Available: \url{https://kubernetes.io/docs/reference/node/seccomp/}
+
+\bibitem{nvd}
+NIST National Vulnerability Database (NVD). Accessed: 2025. [Online]. Available: \url{https://nvd.nist.gov/}
+
+\bibitem{cisa_kev}
+CISA Known Exploited Vulnerabilities Catalog. Accessed: 2025. [Online]. Available: \url{https://www.cisa.gov/known-exploited-vulnerabilities-catalog}
+
+\bibitem{epss}
+FIRST Exploit Prediction Scoring System (EPSS). Accessed: 2025. [Online]. Available: \url{https://www.first.org/epss/}
+
+\bibitem{trivy}
+Trivy: Vulnerability Scanner for Containers and IaC. Accessed: 2025. [Online]. Available: \url{https://aquasecurity.github.io/trivy/}
+
+\bibitem{grype}
+Grype: A Vulnerability Scanner for Container Images and Filesystems. Accessed: 2025. [Online]. Available: \url{https://github.com/anchore/grype}
+
+\bibitem{swe_bench_verified}
+SWE-bench Verified (background on closed-loop code repair evaluation). Accessed: 2025. [Online]. Available: \url{https://openai.com/index/introducing-swe-bench-verified/}
+
+\bibitem{llmsecconfig}
+Z. Ye, T. H. M. Le, and M. A. Babar, "LLMSecConfig: An LLM-Based Approach for Fixing Software Container Misconfigurations," in \emph{2025 IEEE/ACM 22nd International Conference on Mining Software Repositories (MSR)}, 2025.
+
+\bibitem{genkubesec}
+E. Malul, Y. Meidan, D. Mimran, Y. Elovici, and A. Shabtai, "GenKubeSec: LLM-Based Kubernetes Misconfiguration Detection, Localization, Reasoning, and Remediation," \emph{arXiv preprint arXiv:2405.19954}, 2024.
+
+\bibitem{kubellm}
+M. De Jesus, P. Sylvester, W. Clifford, A. Perez, and P. Lama, "LLM-Based Multi-Agent Framework For Troubleshooting Distributed Systems," in \emph{Proc. of the 2025 IEEE Cloud Summit}, 2025 (author's version).
+
+\end{thebibliography}
+
+%====================
+% Author biographies
+%====================
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{brian_mendonca_photo.png}}]{Brian Mendonca}
+is an M.S. student at the Georgia Institute of Technology (2024--2026) focusing on secure DevOps, policy-driven remediation, and human-centered tooling for developer productivity. Prior to graduate study, he worked as an Aerospace Quality Engineer at BAE Systems (2024--2025) and at Tube Specialties Inc.\ (2025--present), where he led Lean/Six Sigma continuous improvement, nonconformance management, and 8D root-cause investigations supporting AS9100 compliance and on-time delivery. He also served as a Biomedical Quality Engineer at BD (2022--2023), contributing to post-market surveillance, CAPA investigations, and risk-based quality systems, and has industry experience with Boeing (Air Force One design co-op), PepsiCo (supply-chain operations), Microchip Technology, and Autism Learning Foundation (web design/development). He received the B.E.\ in Mechanical Engineering (summa cum laude, GPA 3.99) from Arizona State University in 2021. His interests include secure configuration management for cloud-native systems, program analysis for infrastructure-as-code, and data-informed quality engineering.
+\end{IEEEbiography}
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{vijay_madisetti_photo.png}}]{Vijay K. Madisetti}
+holds the position of Professor of Cybersecurity and Privacy (SCP) at Georgia Tech. He earned his PhD in Electrical Engineering and Computer Sciences from the University of California at Berkeley and is recognized as a Fellow of the IEEE. Additionally, he has been honored with the Terman Medal by the American Society of Engineering Education (ASEE). Professor Madisetti has authored several widely referenced textbooks on topics including cloud computing, data analytics, blockchain, and microservices.
+\end{IEEEbiography}
+
+\EOD
+
+\end{document}
