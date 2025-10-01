@@ -62,8 +62,34 @@ class Detector:
     def write_results(self, results: Sequence[DetectionResult], output_path: Path) -> None:
         output_path = output_path.resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        rendered = list(self._render_detection_records(results))
         with output_path.open("w", encoding="utf-8") as handle:
-            json.dump([result.to_dict() for result in results], handle, indent=2)
+            json.dump(rendered, handle, indent=2)
+
+    def _render_detection_records(self, results: Sequence[DetectionResult]):
+        cwd = Path.cwd()
+        for idx, result in enumerate(results, start=1):
+            manifest_path = Path(result.manifest).resolve()
+            try:
+                manifest_text = manifest_path.read_text(encoding="utf-8")
+            except OSError:
+                manifest_text = None
+            try:
+                manifest_rel = manifest_path.relative_to(cwd)
+                manifest_rel_str = manifest_rel.as_posix()
+            except ValueError:
+                manifest_rel_str = str(manifest_path)
+
+            policy_id = result.rule or f"{result.tool}_violation"
+
+            record = {
+                "id": f"{idx:03d}",
+                "manifest_path": manifest_rel_str,
+                "manifest_yaml": manifest_text,
+                "policy_id": policy_id,
+                "violation_text": result.message,
+            }
+            yield record
 
     def _run_kube_linter(self, manifest: Path) -> List[DetectionResult]:
         stdout = self._run_command(
