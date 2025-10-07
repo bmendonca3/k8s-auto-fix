@@ -220,9 +220,18 @@ class Detector:
         except FileNotFoundError as exc:
             raise RuntimeError(f"Required binary not found: {command[0]}") from exc
         except subprocess.CalledProcessError as exc:
+            # Some tools return non-zero when findings exist. If stdout parses as YAML/JSON, return it.
+            stdout = exc.stdout or ""
+            if stdout.strip():
+                try:
+                    docs = list(yaml.safe_load_all(stdout))
+                    if any(isinstance(doc, (dict, list)) for doc in docs):
+                        return stdout
+                except Exception:
+                    pass
             stderr = exc.stderr.strip() if exc.stderr else ""
             raise RuntimeError(
-                f"Command failed ({' '.join(command)}): {stderr or exc.stdout}"
+                f"Command failed ({' '.join(command)}): {stderr or stdout}"
             ) from exc
         return completed.stdout
 

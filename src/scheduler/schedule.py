@@ -16,9 +16,9 @@ class PatchCandidate:
     kev: bool = False
     explore: float = 0.0
 
-    def score(self, alpha: float = 1.0, epsilon: float = EPSILON) -> float:
+    def score(self, alpha: float = 1.0, epsilon: float = EPSILON, kev_weight: float = 1.0) -> float:
         denominator = max(self.expected_time, epsilon)
-        kev_value = 1.0 if self.kev else 0.0
+        kev_value = kev_weight if self.kev else 0.0
         return (self.risk * self.probability) / denominator + self.explore + alpha * self.wait + kev_value
 
     def to_output(self, alpha: float, epsilon: float) -> dict:
@@ -38,6 +38,7 @@ def schedule_patches(
     *,
     alpha: float = 1.0,
     epsilon: float = EPSILON,
+    kev_weight: float = 1.0,
 ) -> List[PatchCandidate]:
     candidates = [
         patch if isinstance(patch, PatchCandidate) else _coerce_patch_candidate(patch)
@@ -45,7 +46,7 @@ def schedule_patches(
     ]
     return sorted(
         candidates,
-        key=lambda candidate: candidate.score(alpha=alpha, epsilon=epsilon),
+        key=lambda candidate: candidate.score(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight),
         reverse=True,
     )
 

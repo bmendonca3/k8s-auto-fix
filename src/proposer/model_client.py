@@ -21,6 +21,8 @@ class ClientOptions:
     retries: int
     organization: Optional[str] = None
     seed: Optional[int] = None
+    auth_header: Optional[str] = "Authorization"
+    auth_scheme: Optional[str] = "Bearer"
 
 
 class ModelClient:
@@ -35,6 +37,8 @@ class ModelClient:
         self.retries = max(0, int(options.retries))
         seed = options.seed
         self._rng = random.Random(seed) if seed is not None else random.Random()
+        self.auth_header = options.auth_header
+        self.auth_scheme = options.auth_scheme
 
     def request_patch(self, prompt: str) -> str:
         payload = {
@@ -75,8 +79,11 @@ class ModelClient:
             api_key = os.getenv(self.api_key_env)
             if not api_key:
                 raise RuntimeError(f"Environment variable {self.api_key_env} not set")
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
+        if api_key and self.auth_header:
+            if self.auth_scheme:
+                headers[self.auth_header] = f"{self.auth_scheme} {api_key}"
+            else:
+                headers[self.auth_header] = api_key
         if self.organization:
             headers["OpenAI-Organization"] = self.organization
         return headers
@@ -123,6 +130,8 @@ class ModelClient:
         retries: int = 0,
         organization: Optional[str] = None,
         seed: Optional[int] = None,
+        auth_header: Optional[str] = "Authorization",
+        auth_scheme: Optional[str] = "Bearer",
     ) -> "ModelClient":
         options = ClientOptions(
             endpoint=endpoint or os.getenv("PROPOSER_MODEL_URL", "http://localhost:8000"),
@@ -132,5 +141,7 @@ class ModelClient:
             retries=retries,
             organization=organization or os.getenv("PROPOSER_ORGANIZATION"),
             seed=seed,
+            auth_header=auth_header,
+            auth_scheme=auth_scheme,
         )
         return cls(options)

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import typer
 
 from .verifier import Verifier
+from pathlib import Path as _Path
 
 app = typer.Typer(help="Verify patches against policies, schema, and safety gates.")
 
@@ -35,10 +36,45 @@ def verify(
         "kubectl",
         help="Kubectl binary used for dry-run validation.",
     ),
+    require_kubectl: bool = typer.Option(
+        True,
+        "--require-kubectl/--no-require-kubectl",
+        help="If disabled, verifier will pass schema gate when kubectl is missing.",
+    ),
+    enable_rescan: bool = typer.Option(
+        False,
+        "--enable-rescan",
+        help="Re-run kube-linter and Kyverno on patched manifests and fail on any violation.",
+    ),
+    kube_linter_cmd: str = typer.Option(
+        "kube-linter",
+        help="Command used to invoke kube-linter for re-scan.",
+    ),
+    kyverno_cmd: str = typer.Option(
+        "kyverno",
+        help="Command used to invoke Kyverno for re-scan.",
+    ),
+    policies_dir: Optional[_Path] = typer.Option(
+        None,
+        "--policies-dir",
+        help="Directory containing Kyverno policies for re-scan.",
+    ),
+    include_errors: bool = typer.Option(
+        False,
+        "--include-errors/--no-include-errors",
+        help="Include verifier error messages in the output JSON.",
+    ),
 ) -> None:
     patch_records = _load_array(patches, "patches")
     detection_map = _load_detections(detections)
-    verifier = Verifier(kubectl_cmd=kubectl_cmd)
+    verifier = Verifier(
+        kubectl_cmd=kubectl_cmd,
+        require_kubectl=require_kubectl,
+        enable_rescan=enable_rescan,
+        kube_linter_cmd=kube_linter_cmd,
+        kyverno_cmd=kyverno_cmd,
+        policies_dir=policies_dir,
+    )
 
     results: List[Dict[str, Any]] = []
     for record in patch_records:
@@ -57,15 +93,16 @@ def verify(
         manifest_yaml = detection["manifest_yaml"]
 
         result = verifier.verify(manifest_yaml, patch_ops, policy_id)
-        results.append(
-            {
-                "id": patch_id,
-                "accepted": result.accepted,
-                "ok_schema": result.ok_schema,
-                "ok_policy": result.ok_policy,
-                "patched_yaml": result.patched_yaml,
-            }
-        )
+        rec = {
+            "id": patch_id,
+            "accepted": result.accepted,
+            "ok_schema": result.ok_schema,
+            "ok_policy": result.ok_policy,
+            "patched_yaml": result.patched_yaml,
+        }
+        if include_errors:
+            rec["errors"] = result.errors
+        results.append(rec)
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(results, indent=2), encoding="utf-8")

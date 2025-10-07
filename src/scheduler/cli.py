@@ -2,11 +2,54 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import typer
 
 from .schedule import EPSILON, PatchCandidate, schedule_patches
+
+
+def _normalise_policy_id(policy: Optional[str]) -> str:
+    key = (policy or "").strip().lower()
+    mapping = {
+        "no_latest_tag": "no_latest_tag",
+        "latest-tag": "no_latest_tag",
+        "privileged-container": "no_privileged",
+        "privilege-escalation-container": "no_privileged",
+        "no_privileged": "no_privileged",
+        "no-read-only-root-fs": "read_only_root_fs",
+        "check-requests-limits": "set_requests_limits",
+        "unset-cpu-requirements": "set_requests_limits",
+        "unset-memory-requirements": "set_requests_limits",
+        "run-as-non-root": "run_as_non_root",
+        "check-runasnonroot": "run_as_non_root",
+        "hostnetwork": "no_host_network",
+        "host-network": "no_host_network",
+        "hostpid": "no_host_pid",
+        "host-pid": "no_host_pid",
+        "hostipc": "no_host_ipc",
+        "host-ipc": "no_host_ipc",
+        "hostpath": "no_host_path",
+        "host-path": "no_host_path",
+        "hostpath-volume": "no_host_path",
+        "disallow-hostpath": "no_host_path",
+        "hostports": "no_host_ports",
+        "host-port": "no_host_ports",
+        "host-ports": "no_host_ports",
+        "disallow-hostports": "no_host_ports",
+        "run-as-user": "run_as_user",
+        "check-runasuser": "run_as_user",
+        "requires-runasuser": "run_as_user",
+        "seccomp": "enforce_seccomp",
+        "seccomp-profile": "enforce_seccomp",
+        "requires-seccomp": "enforce_seccomp",
+        "drop-capabilities": "drop_capabilities",
+        "linux-capabilities": "drop_capabilities",
+        "invalid-capabilities": "drop_capabilities",
+        "cap-sys-admin": "drop_cap_sys_admin",
+        "sys-admin-capability": "drop_cap_sys_admin",
+    }
+    return mapping.get(key, key)
 
 app = typer.Typer(help="Prioritise verified patches using heuristic scoring.")
 
@@ -31,6 +74,11 @@ def schedule(
         "-d",
         help="Detections file for policy lookups.",
     ),
+    risk: Optional[Path] = typer.Option(
+        Path("data/risk.json"),
+        "--risk",
+        help="Optional risk store JSON; if present, overrides default metrics per id.",
+    ),
     alpha: float = typer.Option(
         1.0,
         help="Weight applied to wait time in score.",
@@ -42,6 +90,7 @@ def schedule(
 ) -> None:
     verified_records = _load_array(verified, "verified")
     detection_map = _load_detection_policies(detections)
+    risk_map = _load_risk_map(risk) if risk else {}
 
     candidates: List[PatchCandidate] = []
     for record in verified_records:
@@ -51,7 +100,7 @@ def schedule(
             continue
         patch_id = str(record.get("id"))
         policy_id = detection_map.get(patch_id, {}).get("policy_id")
-        metrics = _compute_metrics(patch_id, policy_id)
+        metrics = _compute_metrics(patch_id, policy_id, risk_map)
         candidates.append(
             PatchCandidate(
                 id=patch_id,
@@ -91,19 +140,71 @@ def _load_detection_policies(path: Path) -> Dict[str, Dict[str, Any]]:
             continue
         detection_id = str(record.get("id"))
         mapping[detection_id] = {
-            "policy_id": record.get("policy_id"),
+            "policy_id": _normalise_policy_id(record.get("policy_id")),
         }
     return mapping
 
 
-def _compute_metrics(patch_id: str, policy_id: Any) -> Dict[str, Any]:
-    policy = (policy_id or "").lower()
+def _load_risk_map(path: Optional[Path]) -> Dict[str, Dict[str, Any]]:
+    if not path:
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            import json
+
+            data = json.load(handle)
+    except FileNotFoundError:
+        return {}
+    except Exception:
+        return {}
+    result: Dict[str, Dict[str, Any]] = {}
+    if isinstance(data, list):
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue
+            _id = str(entry.get("id"))
+            if not _id:
+                continue
+            result[_id] = {
+                "risk": float(entry.get("risk", 0.0)),
+                "probability": float(entry.get("probability", 0.0)),
+                "expected_time": float(entry.get("expected_time", 0.0)),
+                "wait": float(entry.get("wait", 0.0)),
+                "kev": bool(entry.get("kev", False)),
+                "explore": float(entry.get("explore", 0.0)),
+            }
+    elif isinstance(data, dict):
+        for _id, entry in data.items():
+            if not isinstance(entry, dict):
+                continue
+            result[str(_id)] = {
+                "risk": float(entry.get("risk", 0.0)),
+                "probability": float(entry.get("probability", 0.0)),
+                "expected_time": float(entry.get("expected_time", 0.0)),
+                "wait": float(entry.get("wait", 0.0)),
+                "kev": bool(entry.get("kev", False)),
+                "explore": float(entry.get("explore", 0.0)),
+            }
+    return result
+
+
+def _compute_metrics(patch_id: str, policy_id: Any, risk_map: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    if patch_id in risk_map:
+        return risk_map[patch_id]
+    policy = _normalise_policy_id(policy_id)
     risk_lookup = {
-        "no_privileged": 80.0,
+        "no_privileged": 85.0,
         "no_latest_tag": 50.0,
+        "run_as_non_root": 70.0,
+        "no_host_path": 80.0,
+        "no_host_ports": 65.0,
+        "run_as_user": 72.0,
+        "enforce_seccomp": 75.0,
+        "drop_capabilities": 85.0,
+        "drop_cap_sys_admin": 85.0,
     }
     base_risk = risk_lookup.get(policy, 40.0)
-    kev_flag = policy == "no_privileged"
+    kev_flag = policy in {"no_privileged", "drop_capabilities", "drop_cap_sys_admin"}
     return {
         "risk": base_risk,
         "probability": 0.9,
