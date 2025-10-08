@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-node-datastreams
+  namespace: kube-system
+  labels:
+    k8s-app: elastic-agent
+data:
+  agent.yml: "outputs:\n  default:\n    type: elasticsearch\n    hosts:\n      - >-\n\
+    \        ${ES_HOST}\n    username: ${ES_USERNAME}\n    password: ${ES_PASSWORD}\n\
+    agent:\n  monitoring:\n    enabled: true\n    use_output: default\n    logs: true\n\
+    \    metrics: true\nproviders.kubernetes:\n  node: ${NODE_NAME}\n  scope: node\n\
+    inputs:\n  - name: system-logs\n    type: logfile\n    use_output: default\n \
+    \   meta:\n      package:\n        name: system\n        version: 0.10.7\n   \
+    \ data_stream:\n      namespace: default\n    streams:\n      - data_stream:\n\
+    \          dataset: system.auth\n          type: logs\n        paths:\n      \
+    \    - /var/log/auth.log*\n          - /var/log/secure*\n        exclude_files:\n\
+    \          - .gz$\n        multiline:\n          pattern: ^\\s\n          match:\
+    \ after\n        processors:\n          - add_fields:\n              target: ''\n\
+    \              fields:\n                ecs.version: 1.5.0\n      - data_stream:\n\
+    \          dataset: system.syslog\n          type: logs\n        paths:\n    \
+    \      - /var/log/messages*\n          - /var/log/syslog*\n        exclude_files:\n\
+    \          - .gz$\n        multiline:\n          pattern: ^\\s\n          match:\
+    \ after\n        processors:\n          - add_fields:\n              target: ''\n\
+    \              fields:\n                ecs.version: 1.5.0\n  - name: container-log\n\
+    \    type: logfile\n    use_output: default\n    meta:\n      package:\n     \
+    \   name: log\n        version: 0.4.6\n    data_stream:\n      namespace: default\n\
+    \    streams:\n      - data_stream:\n          dataset: generic\n        symlinks:\
+    \ true\n        paths:\n          - /var/log/containers/*${kubernetes.container.id}.log\n\
+    \  - name: system-metrics\n    type: system/metrics\n    use_output: default\n\
+    \    meta:\n      package:\n        name: system\n        version: 0.10.9\n  \
+    \  data_stream:\n      namespace: default\n    streams:\n      - data_stream:\n\
+    \          dataset: system.core\n          type: metrics\n        metricsets:\n\
+    \          - core\n        core.metrics:\n          - percentages\n      - data_stream:\n\
+    \          dataset: system.cpu\n          type: metrics\n        period: 10s\n\
+    \        cpu.metrics:\n          - percentages\n          - normalized_percentages\n\
+    \        metricsets:\n          - cpu\n      - data_stream:\n          dataset:\
+    \ system.diskio\n          type: metrics\n        period: 10s\n        diskio.include_devices:\
+    \ null\n        metricsets:\n          - diskio\n      - data_stream:\n      \
+    \    dataset: system.filesystem\n          type: metrics\n        period: 1m\n\
+    \        metricsets:\n          - filesystem\n        processors:\n          -\
+    \ drop_event.when.regexp:\n              system.filesystem.mount_point: ^/(sys|cgroup|proc|dev|etc|host|lib|snap)($|/)\n\
+    \      - data_stream:\n          dataset: system.fsstat\n          type: metrics\n\
+    \        period: 1m\n        metricsets:\n          - fsstat\n        processors:\n\
+    \          - drop_event.when.regexp:\n              system.fsstat.mount_point:\
+    \ ^/(sys|cgroup|proc|dev|etc|host|lib|snap)($|/)\n      - data_stream:\n     \
+    \     dataset: system.load\n          type: metrics\n        period: 10s\n   \
+    \     metricsets:\n          - load\n      - data_stream:\n          dataset:\
+    \ system.memory\n          type: metrics\n        period: 10s\n        metricsets:\n\
+    \          - memory\n      - data_stream:\n          dataset: system.network\n\
+    \          type: metrics\n        period: 10s\n        network.interfaces: null\n\
+    \        metricsets:\n          - network\n      - data_stream:\n          dataset:\
+    \ system.process\n          type: metrics\n        process.include_top_n.by_memory:\
+    \ 5\n        period: 10s\n        processes:\n          - .*\n        process.include_top_n.by_cpu:\
+    \ 5\n        process.cgroups.enabled: false\n        process.cmdline.cache.enabled:\
+    \ true\n        metricsets:\n          - process\n        process.include_cpu_ticks:\
+    \ false\n        system.hostfs: /hostfs\n      - data_stream:\n          dataset:\
+    \ system.process_summary\n          type: metrics\n        period: 10s\n     \
+    \   metricsets:\n          - process_summary\n        system.hostfs: /hostfs\n\
+    \      - data_stream:\n          dataset: system.socket_summary\n          type:\
+    \ metrics\n        period: 10s\n        metricsets:\n          - socket_summary\n\
+    \        system.hostfs: /hostfs\n  - name: kubernetes-node-metrics\n    type:\
+    \ kubernetes/metrics\n    use_output: default\n    meta:\n      package:\n   \
+    \     name: kubernetes\n        version: 0.2.8\n    data_stream:\n      namespace:\
+    \ default\n    streams:\n      - data_stream:\n          dataset: kubernetes.controllermanager\n\
+    \          type: metrics\n        metricsets:\n          - controllermanager\n\
+    \        hosts:\n          - '${kubernetes.pod.ip}:10252'\n        period: 10s\n\
+    \        condition: ${kubernetes.pod.labels.component} == 'kube-controller-manager'\n\
+    \      - data_stream:\n          dataset: kubernetes.scheduler\n          type:\
+    \ metrics\n        metricsets:\n          - scheduler\n        hosts:\n      \
+    \    - '${kubernetes.pod.ip}:10251'\n        period: 10s\n        condition: ${kubernetes.pod.labels.component}\
+    \ == 'kube-scheduler'\n      - data_stream:\n          dataset: kubernetes.proxy\n\
+    \          type: metrics\n        metricsets:\n          - proxy\n        hosts:\n\
+    \          - 'localhost:10249'\n        period: 10s\n      - data_stream:\n  \
+    \        dataset: kubernetes.container\n          type: metrics\n        metricsets:\n\
+    \          - container\n        add_metadata: true\n        bearer_token_file:\
+    \ /var/run/secrets/kubernetes.io/serviceaccount/token\n        hosts:\n      \
+    \    - 'https://${env.NODE_NAME}:10250'\n        period: 10s\n        ssl.verification_mode:\
+    \ none\n      - data_stream:\n          dataset: kubernetes.node\n          type:\
+    \ metrics\n        metricsets:\n          - node\n        add_metadata: true\n\
+    \        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \        hosts:\n          - 'https://${env.NODE_NAME}:10250'\n        period:\
+    \ 10s\n        ssl.verification_mode: none\n      - data_stream:\n          dataset:\
+    \ kubernetes.pod\n          type: metrics\n        metricsets:\n          - pod\n\
+    \        add_metadata: true\n        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \        hosts:\n          - 'https://${env.NODE_NAME}:10250'\n        period:\
+    \ 10s\n        ssl.verification_mode: none\n      - data_stream:\n          dataset:\
+    \ kubernetes.system\n          type: metrics\n        metricsets:\n          -\
+    \ system\n        add_metadata: true\n        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \        hosts:\n          - 'https://${env.NODE_NAME}:10250'\n        period:\
+    \ 10s\n        ssl.verification_mode: none\n      - data_stream:\n          dataset:\
+    \ kubernetes.volume\n          type: metrics\n        metricsets:\n          -\
+    \ volume\n        add_metadata: true\n        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \        hosts:\n          - 'https://${env.NODE_NAME}:10250'\n        period:\
+    \ 10s\n        ssl.verification_mode: none\n  # Add extra input blocks here, based\
+    \ on conditions\n  # so as to automatically identify targeted Pods and start monitoring\
+    \ them\n  # using a predefined integration. For instance:\n  #- name: redis\n\
+    \  #  type: redis/metrics\n  #  use_output: default\n  #  meta:\n  #    package:\n\
+    \  #      name: redis\n  #      version: 0.3.6\n  #  data_stream:\n  #    namespace:\
+    \ default\n  #  streams:\n  #    - data_stream:\n  #        dataset: redis.info\n\
+    \  #        type: metrics\n  #      metricsets:\n  #        - info\n  #      hosts:\n\
+    \  #        - '${kubernetes.pod.ip}:6379'\n  #      idle_timeout: 20s\n  #   \
+    \   maxconn: 10\n  #      network: tcp\n  #      period: 10s\n  #      condition:\
+    \ ${kubernetes.pod.labels.app} == 'redis'"

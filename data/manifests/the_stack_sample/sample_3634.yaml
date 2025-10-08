@@ -1,0 +1,43 @@
+apiVersion: v1
+data:
+  defaultTrialTemplate.yaml: "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name:\
+    \ {{.Trial}}\n  namespace: {{.NameSpace}}\nspec:\n  template:\n    spec:\n   \
+    \   containers:\n      - name: {{.Trial}}\n        image: docker.io/kubeflowkatib/mxnet-mnist\n\
+    \        command:\n        - \"python3\"\n        - \"/opt/mxnet-mnist/mnist.py\"\
+    \n        - \"--batch-size=64\"\n        {{- with .HyperParameters}}\n       \
+    \ {{- range .}}\n        - \"{{.Name}}={{.Value}}\"\n        {{- end}}\n     \
+    \   {{- end}}\n      restartPolicy: Never"
+  enasCPUTemplate: "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: {{.Trial}}\n\
+    \  namespace: {{.NameSpace}}\nspec:\n  template:\n    spec:\n      containers:\n\
+    \      - name: {{.Trial}}\n        image: docker.io/kubeflowkatib/enas-cnn-cifar10-cpu\n\
+    \        command:\n        - \"python3.5\"\n        - \"-u\"\n        - \"RunTrial.py\"\
+    \n        {{- with .HyperParameters}}\n        {{- range .}}\n        - \"--{{.Name}}=\\\
+    \"{{.Value}}\\\"\"\n        {{- end}}\n        {{- end}}\n        - \"--num_epochs=1\"\
+    \n      restartPolicy: Never"
+  pytorchJobTemplate: "apiVersion: \"kubeflow.org/v1\"\nkind: PyTorchJob\nmetadata:\n\
+    \  name: {{.Trial}}\n  namespace: {{.NameSpace}}\nspec:\n pytorchReplicaSpecs:\n\
+    \  Master:\n    replicas: 1\n    restartPolicy: OnFailure\n    template:\n   \
+    \   spec:\n        containers:\n          - name: pytorch\n            image:\
+    \ gcr.io/kubeflow-ci/pytorch-dist-mnist-test:v1.0\n            imagePullPolicy:\
+    \ IfNotPresent\n            command:\n              - \"python\"\n           \
+    \   - \"/var/mnist.py\"\n              {{- with .HyperParameters}}\n         \
+    \     {{- range .}}\n              - \"{{.Name}}={{.Value}}\"\n              {{-\
+    \ end}}\n              {{- end}}\n  Worker:\n    replicas: 2\n    restartPolicy:\
+    \ OnFailure\n    template:\n      spec:\n        containers:\n          - name:\
+    \ pytorch\n            image: gcr.io/kubeflow-ci/pytorch-dist-mnist-test:v1.0\n\
+    \            imagePullPolicy: IfNotPresent\n            command:\n           \
+    \   - \"python\"\n              - \"/var/mnist.py\"\n              {{- with .HyperParameters}}\n\
+    \              {{- range .}}\n              - \"{{.Name}}={{.Value}}\"\n     \
+    \         {{- end}}\n              {{- end}}"
+kind: ConfigMap
+metadata:
+  labels:
+    app: katib-trial-templates
+    app.kubernetes.io/component: katib
+    app.kubernetes.io/instance: katib-controller-0.8.0
+    app.kubernetes.io/managed-by: kfctl
+    app.kubernetes.io/name: katib-controller
+    app.kubernetes.io/part-of: kubeflow
+    app.kubernetes.io/version: 0.8.0
+  name: trial-template-labeled
+  namespace: kubeflow

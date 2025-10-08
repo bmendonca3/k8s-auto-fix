@@ -1,0 +1,282 @@
+[
+  {
+    "id": "03041",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1263.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"initcontainer1\" has cpu request 0"
+  },
+  {
+    "id": "03042",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1263.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"container1\" has memory limit 0"
+  },
+  {
+    "id": "03043",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1263.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"initcontainer1\" has memory limit 0"
+  },
+  {
+    "id": "03044",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"app\" is using an invalid container image, \"gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03045",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"app\" does not have a read-only root file system"
+  },
+  {
+    "id": "03046",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"mds-wait\" does not have a read-only root file system"
+  },
+  {
+    "id": "03047",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03048",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"mds-wait\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03049",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"app\" has cpu request 0"
+  },
+  {
+    "id": "03050",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"mds-wait\" has cpu request 0"
+  },
+  {
+    "id": "03051",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"app\" has memory limit 0"
+  },
+  {
+    "id": "03052",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1265.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:latest\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"mds-wait\" has memory limit 0"
+  },
+  {
+    "id": "03053",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1270.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox\n    name: schedulepod\n    resources: {}\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"schedulepod\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03054",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1270.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox\n    name: schedulepod\n    resources: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"schedulepod\" does not have a read-only root file system"
+  },
+  {
+    "id": "03055",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1270.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox\n    name: schedulepod\n    resources: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"schedulepod\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03056",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1270.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox\n    name: schedulepod\n    resources: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"schedulepod\" has cpu request 0"
+  },
+  {
+    "id": "03057",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1270.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox\n    name: schedulepod\n    resources: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"schedulepod\" has memory limit 0"
+  },
+  {
+    "id": "03058",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1273.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03059",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1273.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03060",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1273.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03061",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1273.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "03062",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1273.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "03063",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1274.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: wrkflw-tools\n  namespace: argo\n  labels:\n    app: wrkflw-tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: wrkflw-tools\n  template:\n    metadata:\n      labels:\n        app: wrkflw-tools\n    spec:\n      containers:\n      - name: wrkflw-tools\n        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio\n        env:\n        - name: FASTQR1\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz\n        - name: FASTQR2\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz\n        - name: OUTPUTDIR\n          value: /data/output\n        - name: DATATYPE\n          value: tumor-exome\n        - name: SAMPLEID\n          value: mcdb010\n        - name: PLATFORMUNIT\n          value: HJC52BBXX.1\n        - name: PLATFORM\n          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt\n        - name: SEQHOUSE\n          value: Tempus\n        command:\n        - /bin/bash\n        - -c\n        - --\n        args:\n        - while true; do sleep 30; done;\n        imagePullPolicy: Always\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /ref-hg38\n          name: workflow-ref-hg38-dev\n      volumes:\n      - name: workflow-ref-hg38-dev\n        persistentVolumeClaim:\n          claimName: workflow-ref-hg38-dev\n          readOnly: false\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"wrkflw-tools\" does not have a read-only root file system"
+  },
+  {
+    "id": "03064",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1274.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: wrkflw-tools\n  namespace: argo\n  labels:\n    app: wrkflw-tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: wrkflw-tools\n  template:\n    metadata:\n      labels:\n        app: wrkflw-tools\n    spec:\n      containers:\n      - name: wrkflw-tools\n        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio\n        env:\n        - name: FASTQR1\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz\n        - name: FASTQR2\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz\n        - name: OUTPUTDIR\n          value: /data/output\n        - name: DATATYPE\n          value: tumor-exome\n        - name: SAMPLEID\n          value: mcdb010\n        - name: PLATFORMUNIT\n          value: HJC52BBXX.1\n        - name: PLATFORM\n          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt\n        - name: SEQHOUSE\n          value: Tempus\n        command:\n        - /bin/bash\n        - -c\n        - --\n        args:\n        - while true; do sleep 30; done;\n        imagePullPolicy: Always\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /ref-hg38\n          name: workflow-ref-hg38-dev\n      volumes:\n      - name: workflow-ref-hg38-dev\n        persistentVolumeClaim:\n          claimName: workflow-ref-hg38-dev\n          readOnly: false\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"wrkflw-tools\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "03065",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1274.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: wrkflw-tools\n  namespace: argo\n  labels:\n    app: wrkflw-tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: wrkflw-tools\n  template:\n    metadata:\n      labels:\n        app: wrkflw-tools\n    spec:\n      containers:\n      - name: wrkflw-tools\n        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio\n        env:\n        - name: FASTQR1\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz\n        - name: FASTQR2\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz\n        - name: OUTPUTDIR\n          value: /data/output\n        - name: DATATYPE\n          value: tumor-exome\n        - name: SAMPLEID\n          value: mcdb010\n        - name: PLATFORMUNIT\n          value: HJC52BBXX.1\n        - name: PLATFORM\n          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt\n        - name: SEQHOUSE\n          value: Tempus\n        command:\n        - /bin/bash\n        - -c\n        - --\n        args:\n        - while true; do sleep 30; done;\n        imagePullPolicy: Always\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /ref-hg38\n          name: workflow-ref-hg38-dev\n      volumes:\n      - name: workflow-ref-hg38-dev\n        persistentVolumeClaim:\n          claimName: workflow-ref-hg38-dev\n          readOnly: false\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"wrkflw-tools\" is privileged"
+  },
+  {
+    "id": "03066",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1274.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: wrkflw-tools\n  namespace: argo\n  labels:\n    app: wrkflw-tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: wrkflw-tools\n  template:\n    metadata:\n      labels:\n        app: wrkflw-tools\n    spec:\n      containers:\n      - name: wrkflw-tools\n        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio\n        env:\n        - name: FASTQR1\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz\n        - name: FASTQR2\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz\n        - name: OUTPUTDIR\n          value: /data/output\n        - name: DATATYPE\n          value: tumor-exome\n        - name: SAMPLEID\n          value: mcdb010\n        - name: PLATFORMUNIT\n          value: HJC52BBXX.1\n        - name: PLATFORM\n          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt\n        - name: SEQHOUSE\n          value: Tempus\n        command:\n        - /bin/bash\n        - -c\n        - --\n        args:\n        - while true; do sleep 30; done;\n        imagePullPolicy: Always\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /ref-hg38\n          name: workflow-ref-hg38-dev\n      volumes:\n      - name: workflow-ref-hg38-dev\n        persistentVolumeClaim:\n          claimName: workflow-ref-hg38-dev\n          readOnly: false\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"wrkflw-tools\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03067",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1274.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: wrkflw-tools\n  namespace: argo\n  labels:\n    app: wrkflw-tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: wrkflw-tools\n  template:\n    metadata:\n      labels:\n        app: wrkflw-tools\n    spec:\n      containers:\n      - name: wrkflw-tools\n        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio\n        env:\n        - name: FASTQR1\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz\n        - name: FASTQR2\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz\n        - name: OUTPUTDIR\n          value: /data/output\n        - name: DATATYPE\n          value: tumor-exome\n        - name: SAMPLEID\n          value: mcdb010\n        - name: PLATFORMUNIT\n          value: HJC52BBXX.1\n        - name: PLATFORM\n          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt\n        - name: SEQHOUSE\n          value: Tempus\n        command:\n        - /bin/bash\n        - -c\n        - --\n        args:\n        - while true; do sleep 30; done;\n        imagePullPolicy: Always\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /ref-hg38\n          name: workflow-ref-hg38-dev\n      volumes:\n      - name: workflow-ref-hg38-dev\n        persistentVolumeClaim:\n          claimName: workflow-ref-hg38-dev\n          readOnly: false\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"wrkflw-tools\" has cpu request 0"
+  },
+  {
+    "id": "03068",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1274.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: wrkflw-tools\n  namespace: argo\n  labels:\n    app: wrkflw-tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: wrkflw-tools\n  template:\n    metadata:\n      labels:\n        app: wrkflw-tools\n    spec:\n      containers:\n      - name: wrkflw-tools\n        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio\n        env:\n        - name: FASTQR1\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz\n        - name: FASTQR2\n          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz\n        - name: OUTPUTDIR\n          value: /data/output\n        - name: DATATYPE\n          value: tumor-exome\n        - name: SAMPLEID\n          value: mcdb010\n        - name: PLATFORMUNIT\n          value: HJC52BBXX.1\n        - name: PLATFORM\n          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt\n        - name: SEQHOUSE\n          value: Tempus\n        command:\n        - /bin/bash\n        - -c\n        - --\n        args:\n        - while true; do sleep 30; done;\n        imagePullPolicy: Always\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /ref-hg38\n          name: workflow-ref-hg38-dev\n      volumes:\n      - name: workflow-ref-hg38-dev\n        persistentVolumeClaim:\n          claimName: workflow-ref-hg38-dev\n          readOnly: false\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"wrkflw-tools\" has memory limit 0"
+  },
+  {
+    "id": "03069",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1275.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"dynatrace/easytravel-nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03070",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1275.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03071",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1275.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03072",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1275.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "03073",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1275.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "03074",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1279.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: insurance-deployment\n  namespace: insurance\n  labels:\n    deploy: insurance\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: insurance\n  template:\n    metadata:\n      labels:\n        app: insurance\n    spec:\n      containers:\n      - image: registrysiq8419.azurecr.io/insurance:1.0\n        imagePullPolicy: Always\n        name: insurance\n        resources:\n          limits:\n            memory: 2048Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8081\n          name: http\n          protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"insurance\" does not have a read-only root file system"
+  },
+  {
+    "id": "03075",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1279.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: insurance-deployment\n  namespace: insurance\n  labels:\n    deploy: insurance\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: insurance\n  template:\n    metadata:\n      labels:\n        app: insurance\n    spec:\n      containers:\n      - image: registrysiq8419.azurecr.io/insurance:1.0\n        imagePullPolicy: Always\n        name: insurance\n        resources:\n          limits:\n            memory: 2048Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8081\n          name: http\n          protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"insurance\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03076",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1279.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: insurance-deployment\n  namespace: insurance\n  labels:\n    deploy: insurance\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: insurance\n  template:\n    metadata:\n      labels:\n        app: insurance\n    spec:\n      containers:\n      - image: registrysiq8419.azurecr.io/insurance:1.0\n        imagePullPolicy: Always\n        name: insurance\n        resources:\n          limits:\n            memory: 2048Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8081\n          name: http\n          protocol: TCP\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"insurance\" has cpu request 0"
+  },
+  {
+    "id": "03077",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1281.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03078",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1281.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03079",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1281.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03080",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1281.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  }
+]

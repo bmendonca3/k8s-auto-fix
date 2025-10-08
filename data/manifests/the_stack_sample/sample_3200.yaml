@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website-app
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      app: website-app
+  template:
+    metadata:
+      labels:
+        app: website-app
+    spec:
+      serviceAccountName: website-ksa
+      volumes:
+      - name: schema-mapping
+        configMap:
+          name: schema-mapping
+      - name: ai-config
+        configMap:
+          name: ai-config
+      - name: memdb-config
+        configMap:
+          name: memdb-config
+      containers:
+      - name: website
+        image: gcr.io/datcom-ci/datacommons-website:latest
+        imagePullPolicy: Always
+        args: []
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          failureThreshold: 1
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: 3G
+          requests:
+            memory: 3G
+        volumeMounts:
+        - name: ai-config
+          mountPath: /datacommons/ai
+        env:
+        - name: FLASK_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: website-configmap
+              key: flaskEnv
+        - name: SECRET_PROJECT
+          valueFrom:
+            configMapKeyRef:
+              name: website-configmap
+              key: secretProject
+        - name: WEBSITE_HASH
+          valueFrom:
+            configMapKeyRef:
+              name: githash-configmap
+              key: website_hash.txt
+        - name: BIG_QUERY
+          valueFrom:
+            configMapKeyRef:
+              name: store-configmap
+              key: bigquery.version
+        - name: BOUNCE
+          value: dummy
+      - name: mixer
+        image: gcr.io/datcom-ci/datacommons-mixer:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 6G
+          requests:
+            memory: 6G
+        args:
+        - --mixer_project=$(MIXER_PROJECT)
+        - --store_project=$(STORE_PROJECT)
+        - --bq_dataset=$(BIG_QUERY)
+        - --serve_recon_service=true
+        - --schema_path=/datacommons/mapping
+        - --import_group_tables=$(IMPORT_GROUP_TABLES)
+        - --memdb_path=/datacommons/memdb
+        volumeMounts:
+        - name: schema-mapping
+          mountPath: /datacommons/mapping
+        - name: memdb-config
+          mountPath: /datacommons/memdb
+        env:
+        - name: MIXER_PROJECT
+          valueFrom:
+            configMapKeyRef:
+              name: mixer-configmap
+              key: mixerProject
+        - name: STORE_PROJECT
+          valueFrom:
+            configMapKeyRef:
+              name: store-configmap
+              key: store.project
+        - name: BIG_QUERY
+          valueFrom:
+            configMapKeyRef:
+              name: store-configmap
+              key: bigquery.version
+        - name: IMPORT_GROUP_TABLES
+          valueFrom:
+            configMapKeyRef:
+              name: store-configmap
+              key: bigtable_import_groups.version
+        - name: MIXER_HASH
+          valueFrom:
+            configMapKeyRef:
+              name: githash-configmap
+              key: mixer_hash.txt
+        ports:
+        - containerPort: 12345
+        readinessProbe:
+          exec:
+            command:
+            - /bin/grpc_health_probe
+            - -addr=:12345
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - /bin/grpc_health_probe
+            - -addr=:12345
+          periodSeconds: 10
+          initialDelaySeconds: 10
+      - name: esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args:
+        - --service=$(SERVICE_NAME)
+        - --rollout_strategy=managed
+        - --http_port=8081
+        - --backend=grpc://127.0.0.1:12345
+        - --cors_preset=basic
+        - --healthz=healthz
+        env:
+        - name: SERVICE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: mixer-configmap
+              key: serviceName
+        resources:
+          limits:
+            memory: 2G
+          requests:
+            memory: 2G
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          periodSeconds: 5
+          initialDelaySeconds: 5
+        ports:
+        - containerPort: 8081

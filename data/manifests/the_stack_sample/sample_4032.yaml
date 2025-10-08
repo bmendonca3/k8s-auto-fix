@@ -1,0 +1,32 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  labels:
+    app: openfaas
+    component: prometheus-config
+  name: prometheus-config
+  namespace: openfaas
+data:
+  prometheus.yml: "global:\n  scrape_interval:     15s\n  evaluation_interval: 15s\n\
+    \  external_labels:\n      monitor: 'faas-monitor'\nrule_files:\n    - 'alert.rules.yml'\n\
+    scrape_configs:\n  - job_name: 'prometheus'\n    scrape_interval: 5s\n    static_configs:\n\
+    \      - targets: ['localhost:9090']\n  - job_name: 'kubernetes-pods'\n    scrape_interval:\
+    \ 5s\n    honor_labels: false\n    kubernetes_sd_configs:\n      - role: pod\n\
+    \        namespaces:\n          names:\n            - openfaas\n            -\
+    \ openfaas-fn\n    relabel_configs:\n    - action: labelmap\n      regex: __meta_kubernetes_pod_label_(.+)\n\
+    \    - source_labels: [__meta_kubernetes_namespace]\n      action: replace\n \
+    \     target_label: kubernetes_namespace\n    - source_labels: [__meta_kubernetes_pod_name]\n\
+    \      action: replace\n      target_label: kubernetes_pod_name\n    - source_labels:\
+    \ [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n      action: keep\n\
+    \      regex: true\n    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n\
+    \      action: replace\n      regex: ([^:]+)(?::\\d+)?;(\\d+)\n      replacement:\
+    \ $1:$2\n      target_label: __address__\n    - action: replace\n      regex:\
+    \ (.+)\n      source_labels:\n      - __meta_kubernetes_pod_annotation_prometheus_io_path\n\
+    \      target_label: __metrics_path__\nalerting:\n  alertmanagers:\n  - static_configs:\n\
+    \    - targets:\n      - alertmanager:9093\n"
+  alert.rules.yml: "groups:\n  - name: openfaas\n    rules:\n    - alert: service_down\n\
+    \      expr: up == 0\n    - alert: APIHighInvocationRate\n      expr: sum(rate(gateway_function_invocation_total{code=\"\
+    200\"}[10s])) BY (function_name) > 5\n      for: 5s\n      labels:\n        service:\
+    \ gateway\n        severity: major\n      annotations:\n        description: High\
+    \ invocation total on \"{{$labels.function_name}}\"\n        summary: High invocation\
+    \ total on \"{{$labels.function_name}}\""

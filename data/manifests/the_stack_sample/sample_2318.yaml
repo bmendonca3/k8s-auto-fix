@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ksql-demo
+  namespace: default
+spec:
+  containers:
+  - name: ksql-datagen-pageviews
+    image: confluentinc/ksql-examples:5.2.0
+    command:
+    - sh
+    - -c
+    - exec ksql-datagen quickstart=pageviews format=delimited topic=pageviews bootstrap-server=my-confluent-oss-cp-kafka:9092
+  - name: ksql-datagen-users
+    image: confluentinc/ksql-examples:5.2.0
+    command:
+    - sh
+    - -c
+    - ksql-datagen quickstart=users format=json topic=users iterations=1000 bootstrap-server=my-confluent-oss-cp-kafka:9092
+  - name: ksql
+    image: confluentinc/ksql-cli:5.2.0
+    command:
+    - sh
+    - -c
+    - exec tail -f /dev/null

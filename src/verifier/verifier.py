@@ -70,12 +70,15 @@ class Verifier:
         ok_policy, policy_errors = self._check_policy(policy_id, patched_obj)
         errors.extend(policy_errors)
 
-        ok_safety, safety_errors = self._check_safety(patched_obj)
+        ok_safety, safety_errors = self._check_safety(patched_obj, policy_id)
         errors.extend(safety_errors)
 
-        ok_schema = self._kubectl_dry_run(patched_yaml)
+        ok_schema, schema_error = self._kubectl_dry_run(patched_yaml)
         if not ok_schema:
-            errors.append("kubectl dry-run failed")
+            if schema_error:
+                errors.append(f"kubectl dry-run failed: {schema_error}")
+            else:
+                errors.append("kubectl dry-run failed")
 
         ok_rescan = True
         if self.enable_rescan and ok_schema and ok_policy and ok_safety:
@@ -115,7 +118,7 @@ class Verifier:
         except Exception as exc:  # pragma: no cover - unexpected
             raise PatchError(str(exc)) from exc
 
-    def _kubectl_dry_run(self, manifest_yaml: str) -> bool:
+    def _kubectl_dry_run(self, manifest_yaml: str) -> Tuple[bool, Optional[str]]:
         try:
             completed = subprocess.run(
                 [self.kubectl_cmd, "apply", "-f", "-", "--dry-run=server"],
@@ -125,10 +128,21 @@ class Verifier:
                 check=True,
             )
         except FileNotFoundError:
-            return not self.require_kubectl
-        except subprocess.CalledProcessError:
-            return not self.require_kubectl
-        return completed.returncode == 0
+            message = "kubectl executable not found"
+            return (not self.require_kubectl, message if self.require_kubectl else None)
+        except subprocess.CalledProcessError as exc:
+            stderr = (exc.stderr or b"").decode("utf-8", errors="ignore").strip()
+            stdout = (exc.stdout or b"").decode("utf-8", errors="ignore").strip()
+            detail = stderr or stdout or str(exc)
+            if self.require_kubectl:
+                return (False, detail)
+            return (True, None)
+        except Exception as exc:  # pragma: no cover - unexpected
+            detail = str(exc)
+            if self.require_kubectl:
+                return (False, detail)
+            return (True, None)
+        return (completed.returncode == 0, None)
 
     def _check_policy(self, policy_id: str, manifest: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors: List[str] = []
@@ -206,14 +220,160 @@ class Verifier:
                         errors.append(f"capabilities.add still contains {', '.join(remaining)}")
             return (not errors, errors)
 
+        if policy_id == "dangling_service":
+            spec = manifest.get("spec")
+            if not isinstance(spec, dict):
+                errors.append("service spec missing after patch")
+                return (False, errors)
+            if spec.get("type") != "ExternalName":
+                errors.append("service type not ExternalName")
+            if "selector" in spec:
+                errors.append("service still defines a selector")
+            if not isinstance(spec.get("externalName"), str):
+                errors.append("externalName missing")
+            return (not errors, errors)
+
+        if policy_id == "non_existent_service_account":
+            specs = self._collect_pod_specs(manifest)
+            if not specs:
+                errors.append("no pod specs located for service account check")
+                return (False, errors)
+            for spec in specs:
+                sa_name = spec.get("serviceAccountName") or spec.get("serviceAccount")
+                if sa_name not in (None, "default"):
+                    errors.append(f"serviceAccountName still references '{sa_name}'")
+            return (not errors, errors)
+
+        if policy_id == "env_var_secret":
+            for container in containers:
+                env_list = container.get("env")
+                if not isinstance(env_list, list):
+                    continue
+                for env_entry in env_list:
+                    if not isinstance(env_entry, dict):
+                        continue
+                    name = env_entry.get("name")
+                    if not isinstance(name, str):
+                        continue
+                    lowered = name.lower()
+                    if "secret" not in lowered and "password" not in lowered:
+                        continue
+                    value_from = env_entry.get("valueFrom")
+                    if not (
+                        isinstance(value_from, dict)
+                        and isinstance(value_from.get("secretKeyRef"), dict)
+                    ):
+                        errors.append(f"environment variable {name} must use secretKeyRef")
+            return (not errors, errors)
+
+        if policy_id == "pdb_unhealthy_eviction_policy":
+            spec = manifest.get("spec")
+            if not isinstance(spec, dict):
+                errors.append("PDB spec missing after patch")
+                return (False, errors)
+            value = spec.get("unhealthyPodEvictionPolicy")
+            if not isinstance(value, str) or not value.strip():
+                errors.append("unhealthyPodEvictionPolicy not set")
+            return (not errors, errors)
+
+        if policy_id in {"liveness_port", "readiness_port", "startup_port"}:
+            probe_field = {
+                "liveness_port": "livenessProbe",
+                "readiness_port": "readinessProbe",
+                "startup_port": "startupProbe",
+            }[policy_id]
+            for container in containers:
+                probe = container.get(probe_field)
+                if not isinstance(probe, dict):
+                    continue
+                port = None
+                port_name: Optional[str] = None
+                for field in ("httpGet", "tcpSocket", "grpc"):
+                    details = probe.get(field)
+                    if isinstance(details, dict) and details.get("port") is not None:
+                        candidate = details.get("port")
+                        if isinstance(candidate, int):
+                            port = candidate
+                        elif isinstance(candidate, str):
+                            stripped = candidate.strip()
+                            if stripped.isdigit():
+                                port = int(stripped)
+                            else:
+                                port_name = stripped
+                                port = self._lookup_container_port(container, stripped)
+                                if port is None and not self._port_name_exists(container, stripped):
+                                    errors.append(
+                                        f"{probe_field} port must map to a numeric container port: {candidate}"
+                                    )
+                        break
+                if port is None:
+                    continue
+                if not self._container_has_port(container, port, port_name):
+                    label = port_name if port_name else port
+                    errors.append(f"{probe_field} port {label} not exposed in container ports")
+            return (not errors, errors)
+
+        if policy_id == "unsafe_sysctls":
+            specs = self._collect_pod_specs(manifest)
+            for spec in specs:
+                security = spec.get("securityContext") if isinstance(spec, dict) else None
+                if isinstance(security, dict) and security.get("sysctls"):
+                    errors.append("securityContext.sysctls still present")
+            return (not errors, errors)
+
+        if policy_id == "deprecated_service_account_field":
+            specs = self._collect_pod_specs(manifest)
+            for spec in specs:
+                if isinstance(spec, dict) and "serviceAccount" in spec:
+                    errors.append("serviceAccount field still present")
+            return (not errors, errors)
+
+        if policy_id == "no_anti_affinity":
+            specs = self._collect_pod_specs(manifest)
+            for spec in specs:
+                if not isinstance(spec, dict):
+                    continue
+                affinity = spec.get("affinity")
+                pod_aff = affinity.get("podAntiAffinity") if isinstance(affinity, dict) else None
+                preferred = (
+                    pod_aff.get("preferredDuringSchedulingIgnoredDuringExecution")
+                    if isinstance(pod_aff, dict)
+                    else None
+                )
+                if not preferred:
+                    errors.append("podAntiAffinity preferred rules missing")
+            return (not errors, errors)
+
+        if policy_id == "job_ttl_after_finished":
+            spec = manifest.get("spec")
+            if not isinstance(spec, dict):
+                errors.append("job spec missing after patch")
+                return (False, errors)
+            ttl = spec.get("ttlSecondsAfterFinished")
+            if not isinstance(ttl, int) or ttl <= 0:
+                errors.append("ttlSecondsAfterFinished missing or non-positive")
+            return (not errors, errors)
+
         # Default: no additional policy checks
         return (True, errors)
 
-    def _check_safety(self, manifest: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def _check_safety(self, manifest: Dict[str, Any], policy_id: str) -> Tuple[bool, List[str]]:
         errors: List[str] = []
         containers = self._collect_containers(manifest)
         if not containers:
-            errors.append("no containers found in manifest")
+            allowed = {
+                "dangling_service",
+                "non_existent_service_account",
+                "pdb_unhealthy_eviction_policy",
+                "unsafe_sysctls",
+                "deprecated_service_account_field",
+                "no_anti_affinity",
+                "job_ttl_after_finished",
+            }
+            if self._normalise_policy_id(policy_id) not in allowed:
+                errors.append("no containers found in manifest")
+                return (False, errors)
+            return (True, errors)
         for container in containers:
             image = container.get("image")
             if not isinstance(image, str) or not image.strip():
@@ -235,9 +395,52 @@ class Verifier:
             template = spec.get("template")
             if isinstance(template, dict):
                 visit(template.get("spec"))
+            job_template = spec.get("jobTemplate")
+            if isinstance(job_template, dict):
+                job_spec = job_template.get("spec")
+                if isinstance(job_spec, dict):
+                    template_obj = job_spec.get("template")
+                    if isinstance(template_obj, dict):
+                        visit(template_obj.get("spec"))
+                direct_template = job_template.get("template")
+                if isinstance(direct_template, dict):
+                    visit(direct_template.get("spec"))
 
         visit(manifest.get("spec"))
         return containers
+
+    @staticmethod
+    def _lookup_container_port(container: Dict[str, Any], name: str) -> Optional[int]:
+        ports = container.get("ports")
+        if not isinstance(ports, list):
+            return None
+        for entry in ports:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("name") == name and isinstance(entry.get("containerPort"), int):
+                return entry["containerPort"]
+        return None
+
+    @staticmethod
+    def _port_name_exists(container: Dict[str, Any], name: str) -> bool:
+        ports = container.get("ports")
+        if not isinstance(ports, list):
+            return False
+        return any(isinstance(entry, dict) and entry.get("name") == name for entry in ports)
+
+    @staticmethod
+    def _container_has_port(container: Dict[str, Any], target: int, port_name: Optional[str]) -> bool:
+        ports = container.get("ports")
+        if not isinstance(ports, list):
+            return False
+        for entry in ports:
+            if not isinstance(entry, dict):
+                continue
+            if isinstance(entry.get("containerPort"), int) and entry["containerPort"] == target:
+                return True
+            if port_name and entry.get("name") == port_name:
+                return True
+        return False
 
     def _collect_volumes(self, manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
         volumes: List[Dict[str, Any]] = []
@@ -251,9 +454,38 @@ class Verifier:
             template = spec.get("template")
             if isinstance(template, dict):
                 visit(template.get("spec"))
+            job_template = spec.get("jobTemplate")
+            if isinstance(job_template, dict):
+                job_spec = job_template.get("spec")
+                if isinstance(job_spec, dict):
+                    template_obj = job_spec.get("template")
+                    if isinstance(template_obj, dict):
+                        visit(template_obj.get("spec"))
 
         visit(manifest.get("spec"))
         return volumes
+
+    def _collect_pod_specs(self, manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
+        specs: List[Dict[str, Any]] = []
+
+        def visit(spec: Any) -> None:
+            if not isinstance(spec, dict):
+                return
+            if any(isinstance(spec.get(key), list) for key in ("containers", "initContainers", "ephemeralContainers")):
+                specs.append(spec)
+            template = spec.get("template")
+            if isinstance(template, dict):
+                visit(template.get("spec"))
+            job_template = spec.get("jobTemplate")
+            if isinstance(job_template, dict):
+                job_spec = job_template.get("spec")
+                if isinstance(job_spec, dict):
+                    template_obj = job_spec.get("template")
+                    if isinstance(template_obj, dict):
+                        visit(template_obj.get("spec"))
+
+        visit(manifest.get("spec"))
+        return specs
 
     def _rescan_policy_cleared(self, patched_yaml: str, targeted_policy: str) -> bool:
         """Re-run kube-linter and Kyverno; accept if the targeted policy no longer appears.
@@ -283,7 +515,7 @@ class Verifier:
             "no_latest_tag": "no_latest_tag",
             "latest-tag": "no_latest_tag",
             "privileged-container": "no_privileged",
-            "privilege-escalation-container": "no_privileged",
+            "privilege-escalation-container": "drop_capabilities",
             "no_privileged": "no_privileged",
             "no-read-only-root-fs": "read_only_root_fs",
             "check-requests-limits": "set_requests_limits",
@@ -308,8 +540,21 @@ class Verifier:
             "drop-capabilities": "drop_capabilities",
             "linux-capabilities": "drop_capabilities",
             "invalid-capabilities": "drop_capabilities",
+            "drop-net-raw-capability": "drop_capabilities",
             "cap-sys-admin": "drop_cap_sys_admin",
             "sys-admin-capability": "drop_cap_sys_admin",
+            "dangling-service": "dangling_service",
+            "non-existent-service-account": "non_existent_service_account",
+            "pdb-unhealthy-pod-eviction-policy": "pdb_unhealthy_eviction_policy",
+            "job-ttl-seconds-after-finished": "job_ttl_after_finished",
+            "unsafe-sysctls": "unsafe_sysctls",
+            "no-anti-affinity": "no_anti_affinity",
+            "deprecated-service-account-field": "deprecated_service_account_field",
+            "env-var-secret": "env_var_secret",
+            "envvar-secret": "env_var_secret",
+            "liveness-port": "liveness_port",
+            "readiness-port": "readiness_port",
+            "startup-port": "startup_port",
         }
         return mapping.get(key, key)
 

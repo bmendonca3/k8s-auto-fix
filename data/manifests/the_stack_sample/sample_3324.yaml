@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    funktion.fabric8.io/kind: Connector
+  name: scp
+data:
+  deployment.yml: "---\napiVersion: extensions/v1beta1\nkind: Deployment\nmetadata:\n\
+    \  labels:\n    funktion.fabric8.io/kind: Subscription\n    connector: scp\nspec:\n\
+    \  replicas: 1\n  template:\n    metadata:\n      labels:\n        funktion.fabric8.io/kind:\
+    \ Subscription\n        connector: scp\n    spec:\n      containers:\n      -\
+    \ image: funktion/connector-scp:${project.version}\n        name: connector\n"
+  schema.yml: "---\ncomponent:\n  kind: component\n  scheme: scp\n  extendsScheme:\
+    \ ftp\n  syntax: scp:host:port/directoryName\n  title: SCP\n  description: To\
+    \ copy files using the secure copy protocol (SCP).\n  label: file\n  deprecated:\
+    \ false\n  async: false\n  producerOnly: true\n  javaType: org.apache.camel.component.scp.ScpComponent\n\
+    \  groupId: org.apache.camel\n  artifactId: camel-jsch\n  version: 2.18.3\ncomponentProperties:\n\
+    \  verboseLogging:\n    kind: property\n    type: boolean\n    javaType: boolean\n\
+    \    deprecated: false\n    secret: false\n    description: JSCH is verbose logging\
+    \ out of the box. Therefore we turn the logging down to DEBUG logging by default.\
+    \ But setting this option to true turns on the verbose logging again.\n    order:\
+    \ 0\nproperties:\n  host:\n    kind: path\n    group: producer\n    required:\
+    \ true\n    type: string\n    javaType: java.lang.String\n    deprecated: false\n\
+    \    secret: false\n    description: Hostname of the FTP server\n    order: 0\n\
+    \  port:\n    kind: path\n    group: producer\n    type: integer\n    javaType:\
+    \ int\n    deprecated: false\n    secret: false\n    description: Port of the\
+    \ FTP server\n    order: 1\n  directoryName:\n    kind: path\n    group: producer\n\
+    \    type: string\n    javaType: java.lang.String\n    deprecated: false\n   \
+    \ secret: false\n    description: The starting directory\n    order: 2\n  disconnect:\n\
+    \    kind: parameter\n    group: common\n    label: common\n    type: boolean\n\
+    \    javaType: boolean\n    deprecated: false\n    secret: false\n    defaultValue:\
+    \ false\n    description: Whether or not to disconnect from remote FTP server\
+    \ right after use. Disconnect will only disconnect the current connection to the\
+    \ FTP server. If you have a consumer which you want to stop then you need to stop\
+    \ the consumer/route instead.\n    order: 3\n  chmod:\n    kind: parameter\n \
+    \   group: producer\n    type: string\n    javaType: java.lang.String\n    deprecated:\
+    \ false\n    secret: false\n    defaultValue: \"664\"\n    description: Allows\
+    \ you to set chmod on the stored file. For example chmod=664.\n    order: 4\n\
+    \  fileName:\n    kind: parameter\n    group: producer\n    type: string\n   \
+    \ javaType: java.lang.String\n    deprecated: false\n    secret: false\n    description:\
+    \ 'Use Expression such as File Language to dynamically set the filename.\n   \
+    \   For consumers it''s used as a filename filter. For producers it''s used to\
+    \ evaluate\n      the filename to write. If an expression is set it take precedence\
+    \ over the CamelFileName\n      header. (Note: The header itself can also be an\
+    \ Expression). The expression\n      options support both String and Expression\
+    \ types. If the expression is a String\n      type it is always evaluated using\
+    \ the File Language. If the expression is an\n      Expression type the specified\
+    \ Expression type is used - this allows you for\n      instance to use OGNL expressions.\
+    \ For the consumer you can use it to filter\n      filenames so you can for instance\
+    \ consume today''s file using the File Language\n      syntax: mydata-$date:now:yyyyMMdd.txt.\
+    \ The producers support the CamelOverruleFileName\n      header which takes precedence\
+    \ over any existing CamelFileName header; the CamelOverruleFileName\n      is\
+    \ a header that is used only once and makes it easier as this avoids to temporary\n\
+    \      store CamelFileName and have to restore it afterwards.'\n    order: 5\n\
+    \  flatten:\n    kind: parameter\n    group: producer\n    label: producer\n \
+    \   type: boolean\n    javaType: boolean\n    deprecated: false\n    secret: false\n\
+    \    defaultValue: false\n    description: Flatten is used to flatten the file\
+    \ name path to strip any leading paths so it's just the file name. This allows\
+    \ you to consume recursively into sub-directories but when you eg write the files\
+    \ to another directory they will be written in a single directory. Setting this\
+    \ to true on the producer enforces that any file name in CamelFileName header\
+    \ will be stripped for any leading paths.\n    order: 6\n  strictHostKeyChecking:\n\
+    \    kind: parameter\n    group: producer\n    type: string\n    javaType: java.lang.String\n\
+    \    enum:\n    - no\n    - yes\n    deprecated: false\n    secret: false\n  \
+    \  defaultValue: no\n    description: 'Sets whether to use strict host key checking.\
+    \ Possible values are:\n      no yes'\n    order: 7\n  allowNullBody:\n    kind:\
+    \ parameter\n    group: producer (advanced)\n    label: producer,advanced\n  \
+    \  type: boolean\n    javaType: boolean\n    deprecated: false\n    secret: false\n\
+    \    defaultValue: false\n    description: Used to specify if a null body is allowed\
+    \ during file writing. If set to true then an empty file will be created when\
+    \ set to false and attempting to send a null body to the file component a GenericFileWriteException\
+    \ of 'Cannot write null body to file.' will be thrown. If the fileExist option\
+    \ is set to 'Override' then the file will be truncated and if set to append the\
+    \ file will remain unchanged.\n    order: 8\n  disconnectOnBatchComplete:\n  \
+    \  kind: parameter\n    group: producer (advanced)\n    label: producer,advanced\n\
+    \    type: boolean\n    javaType: boolean\n    deprecated: false\n    secret:\
+    \ false\n    defaultValue: false\n    description: Whether or not to disconnect\
+    \ from remote FTP server right after a Batch upload is complete. disconnectOnBatchComplete\
+    \ will only disconnect the current connection to the FTP server.\n    order: 9\n\
+    \  connectTimeout:\n    kind: parameter\n    group: advanced\n    label: advanced\n\
+    \    type: integer\n    javaType: int\n    deprecated: false\n    secret: false\n\
+    \    defaultValue: \"10000\"\n    description: Sets the connect timeout for waiting\
+    \ for a connection to be established Used by both FTPClient and JSCH\n    order:\
+    \ 10\n  soTimeout:\n    kind: parameter\n    group: advanced\n    label: advanced\n\
+    \    type: integer\n    javaType: int\n    deprecated: false\n    secret: false\n\
+    \    defaultValue: \"300000\"\n    description: Sets the so timeout Used only\
+    \ by FTPClient\n    order: 11\n  synchronous:\n    kind: parameter\n    group:\
+    \ advanced\n    label: advanced\n    type: boolean\n    javaType: boolean\n  \
+    \  deprecated: false\n    secret: false\n    defaultValue: false\n    description:\
+    \ Sets whether synchronous processing should be strictly used or Camel is allowed\
+    \ to use asynchronous processing (if supported).\n    order: 12\n  timeout:\n\
+    \    kind: parameter\n    group: advanced\n    label: advanced\n    type: integer\n\
+    \    javaType: int\n    deprecated: false\n    secret: false\n    defaultValue:\
+    \ \"30000\"\n    description: Sets the data timeout for waiting for reply Used\
+    \ only by FTPClient\n    order: 13\n  knownHostsFile:\n    kind: parameter\n \
+    \   group: security\n    label: security\n    type: string\n    javaType: java.lang.String\n\
+    \    deprecated: false\n    secret: true\n    description: Sets the known_hosts\
+    \ file so that the jsch endpoint can do host key verification.\n    order: 14\n\
+    \  password:\n    kind: parameter\n    group: security\n    label: security\n\
+    \    type: string\n    javaType: java.lang.String\n    deprecated: false\n   \
+    \ secret: true\n    description: Password to use for login\n    order: 15\n  privateKeyFile:\n\
+    \    kind: parameter\n    group: security\n    label: security\n    type: string\n\
+    \    javaType: java.lang.String\n    deprecated: false\n    secret: true\n   \
+    \ description: Set the private key file to that the SFTP endpoint can do private\
+    \ key verification.\n    order: 16\n  privateKeyFilePassphrase:\n    kind: parameter\n\
+    \    group: security\n    label: security\n    type: string\n    javaType: java.lang.String\n\
+    \    deprecated: false\n    secret: true\n    description: Set the private key\
+    \ file passphrase to that the SFTP endpoint can do private key verification.\n\
+    \    order: 17\n  username:\n    kind: parameter\n    group: security\n    label:\
+    \ security\n    type: string\n    javaType: java.lang.String\n    deprecated:\
+    \ false\n    secret: true\n    description: Username to use for login\n    order:\
+    \ 18\n  useUserKnownHostsFile:\n    kind: parameter\n    group: security\n   \
+    \ label: security\n    type: boolean\n    javaType: boolean\n    deprecated: false\n\
+    \    secret: false\n    defaultValue: true\n    description: If knownHostFile\
+    \ has not been explicit configured then use the host file from System.getProperty(user.home)\
+    \ /.ssh/known_hosts\n    order: 19\n  ciphers:\n    kind: parameter\n    group:\
+    \ security (advanced)\n    label: security,advanced\n    type: string\n    javaType:\
+    \ java.lang.String\n    deprecated: false\n    secret: false\n    description:\
+    \ 'Set a comma separated list of ciphers that will be used in order\n      of\
+    \ preference. Possible cipher names are defined by JCraft JSCH. Some examples\n\
+    \      include: aes128-ctraes128-cbc3des-ctr3des-cbcblowfish-cbcaes192-cbcaes256-cbc.\n\
+    \      If not specified the default list from JSCH will be used.'\n    order:\
+    \ 20\n"
+  documentation.adoc: "[[Jsch-Jsch]]\nJsch\n~~~~\n\nThe *camel-jsch* component supports\
+    \ the\nhttp://en.wikipedia.org/wiki/Secure_copy[SCP protocol] using the Client\n\
+    API of the http://www.jcraft.com/jsch/[Jsch] project. Jsch is already\nused in\
+    \ camel by the link:ftp.html[FTP] component for the *sftp:*\nprotocol.\n\nMaven\
+    \ users will need to add the following dependency to their `pom.xml`\nfor this\
+    \ component:\n\n[source,xml]\n------------------------------------------------------------\n\
+    <dependency>\n    <groupId>org.apache.camel</groupId>\n    <artifactId>camel-jsch</artifactId>\n\
+    \    <version>x.x.x</version>\n    <!-- use the same version as your Camel core\
+    \ version -->\n</dependency>\n------------------------------------------------------------\n\
+    \n[[Jsch-URIformat]]\nURI format\n^^^^^^^^^^\n\n[source,java]\n---------------------------------------\n\
+    scp://host[:port]/destination[?options]\n---------------------------------------\n\
+    \nYou can append query options to the URI in the following format,\n`?option=value&option=value&...`\n\
+    \nThe file name can be specified either in the <path> part of the URI or\nas a\
+    \ \"CamelFileName\" header on the message (`Exchange.FILE_NAME` if used\nin code).\n\
+    \n[[Jsch-Options]]\nOptions\n^^^^^^^\n\n\n\n\n// component options: START\nThe\
+    \ SCP component supports 1 options which are listed below.\n\n\n\n{% raw %}\n\
+    [width=\"100%\",cols=\"2,1m,7\",options=\"header\"]\n|=======================================================================\n\
+    | Name | Java Type | Description\n| verboseLogging | boolean | JSCH is verbose\
+    \ logging out of the box. Therefore we turn the logging down to DEBUG logging\
+    \ by default. But setting this option to true turns on the verbose logging again.\n\
+    |=======================================================================\n{% endraw\
+    \ %}\n// component options: END\n\n\n\n\n\n\n\n\n\n// endpoint options: START\n\
+    The SCP component supports 21 endpoint options which are listed below:\n\n{% raw\
+    \ %}\n[width=\"100%\",cols=\"2,1,1m,1m,5\",options=\"header\"]\n|=======================================================================\n\
+    | Name | Group | Default | Java Type | Description\n| host | producer |  | String\
+    \ | *Required* Hostname of the FTP server\n| port | producer |  | int | Port of\
+    \ the FTP server\n| directoryName | producer |  | String | The starting directory\n\
+    | disconnect | common | false | boolean | Whether or not to disconnect from remote\
+    \ FTP server right after use. Disconnect will only disconnect the current connection\
+    \ to the FTP server. If you have a consumer which you want to stop then you need\
+    \ to stop the consumer/route instead.\n| chmod | producer | 664 | String | Allows\
+    \ you to set chmod on the stored file. For example chmod=664.\n| fileName | producer\
+    \ |  | String | Use Expression such as File Language to dynamically set the filename.\
+    \ For consumers it's used as a filename filter. For producers it's used to evaluate\
+    \ the filename to write. If an expression is set it take precedence over the CamelFileName\
+    \ header. (Note: The header itself can also be an Expression). The expression\
+    \ options support both String and Expression types. If the expression is a String\
+    \ type it is always evaluated using the File Language. If the expression is an\
+    \ Expression type the specified Expression type is used - this allows you for\
+    \ instance to use OGNL expressions. For the consumer you can use it to filter\
+    \ filenames so you can for instance consume today's file using the File Language\
+    \ syntax: mydata-$date:now:yyyyMMdd.txt. The producers support the CamelOverruleFileName\
+    \ header which takes precedence over any existing CamelFileName header; the CamelOverruleFileName\
+    \ is a header that is used only once and makes it easier as this avoids to temporary\
+    \ store CamelFileName and have to restore it afterwards.\n| flatten | producer\
+    \ | false | boolean | Flatten is used to flatten the file name path to strip any\
+    \ leading paths so it's just the file name. This allows you to consume recursively\
+    \ into sub-directories but when you eg write the files to another directory they\
+    \ will be written in a single directory. Setting this to true on the producer\
+    \ enforces that any file name in CamelFileName header will be stripped for any\
+    \ leading paths.\n| strictHostKeyChecking | producer | no | String | Sets whether\
+    \ to use strict host key checking. Possible values are: no yes\n| allowNullBody\
+    \ | producer (advanced) | false | boolean | Used to specify if a null body is\
+    \ allowed during file writing. If set to true then an empty file will be created\
+    \ when set to false and attempting to send a null body to the file component a\
+    \ GenericFileWriteException of 'Cannot write null body to file.' will be thrown.\
+    \ If the fileExist option is set to 'Override' then the file will be truncated\
+    \ and if set to append the file will remain unchanged.\n| disconnectOnBatchComplete\
+    \ | producer (advanced) | false | boolean | Whether or not to disconnect from\
+    \ remote FTP server right after a Batch upload is complete. disconnectOnBatchComplete\
+    \ will only disconnect the current connection to the FTP server.\n| connectTimeout\
+    \ | advanced | 10000 | int | Sets the connect timeout for waiting for a connection\
+    \ to be established Used by both FTPClient and JSCH\n| soTimeout | advanced |\
+    \ 300000 | int | Sets the so timeout Used only by FTPClient\n| synchronous | advanced\
+    \ | false | boolean | Sets whether synchronous processing should be strictly used\
+    \ or Camel is allowed to use asynchronous processing (if supported).\n| timeout\
+    \ | advanced | 30000 | int | Sets the data timeout for waiting for reply Used\
+    \ only by FTPClient\n| knownHostsFile | security |  | String | Sets the known_hosts\
+    \ file so that the jsch endpoint can do host key verification.\n| password | security\
+    \ |  | String | Password to use for login\n| privateKeyFile | security |  | String\
+    \ | Set the private key file to that the SFTP endpoint can do private key verification.\n\
+    | privateKeyFilePassphrase | security |  | String | Set the private key file passphrase\
+    \ to that the SFTP endpoint can do private key verification.\n| username | security\
+    \ |  | String | Username to use for login\n| useUserKnownHostsFile | security\
+    \ | true | boolean | If knownHostFile has not been explicit configured then use\
+    \ the host file from System.getProperty(user.home) /.ssh/known_hosts\n| ciphers\
+    \ | security (advanced) |  | String | Set a comma separated list of ciphers that\
+    \ will be used in order of preference. Possible cipher names are defined by JCraft\
+    \ JSCH. Some examples include: aes128-ctraes128-cbc3des-ctr3des-cbcblowfish-cbcaes192-cbcaes256-cbc.\
+    \ If not specified the default list from JSCH will be used.\n|=======================================================================\n\
+    {% endraw %}\n// endpoint options: END\n\n\n\n\n\n\n[[Jsch-Limitations]]\nLimitations\n\
+    ^^^^^^^^^^^\n\nCurrently camel-jsch only supports a\nhttp://camel.apache.org/maven/current/camel-core/apidocs/org/apache/camel/Producer.html[Producer]\n\
+    (i.e. copy files to another host).\_\n\n[[Jsch-SeeAlso]]\nSee Also\n^^^^^^^^\n\
+    \n* link:configuring-camel.html[Configuring Camel]\n* link:component.html[Component]\n\
+    * link:endpoint.html[Endpoint]\n* link:getting-started.html[Getting Started]"

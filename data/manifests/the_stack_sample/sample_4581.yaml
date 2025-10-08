@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lighthouse-tekton-controller
+  labels:
+    draft: draft-app
+    chart: lighthouse-0.0.903
+    app: lighthouse-tekton-controller
+    gitops.jenkins-x.io/pipeline: namespaces
+  namespace: jx
+  annotations:
+    wave.pusher.com/update-on-config-change: 'true'
+    jenkins-x.io/hash: 22e7a4b2d073d3cadc8acbb2c6165dbf63eebb763c7ef42faf81db40b39d8799
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      draft: draft-app
+      app: lighthouse-tekton-controller
+  template:
+    metadata:
+      labels:
+        draft: draft-app
+        app: lighthouse-tekton-controller
+      annotations: {}
+    spec:
+      serviceAccountName: lighthouse-tekton-controller
+      containers:
+      - name: lighthouse-tekton-controller
+        image: linarojenkinsx/lighthouse-tekton-controller:arm-v0.0.881
+        imagePullPolicy: IfNotPresent
+        args:
+        - --namespace=jx
+        - --dashboard-url=http://dashboard-jx.jxdemo-0107.jenkins-x3.arm64.linaro.org
+        - --dashboard-template=namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun
+          }}
+        ports:
+        - name: metrics
+          containerPort: 8080
+        env:
+        - name: LOGRUS_FORMAT
+          value: json
+        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT
+          value: tekton-bot
+        - name: DEFAULT_PIPELINE_RUN_TIMEOUT
+          value: 2h0m0s
+        - name: FILE_BROWSER
+          value: git
+        - name: JX_DEFAULT_IMAGE
+          value: gcr.io/jenkinsxio/builder-maven:2.1.142-761
+        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE
+          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 80m
+            memory: 128Mi
+      terminationGracePeriodSeconds: 180
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []

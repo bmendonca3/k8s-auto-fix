@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress
+  namespace: nginx-ingress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-ingress
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress
+      annotations:
+        co.elastic.logs/module: nginx
+        co.elastic.logs/fileset.stdout: access
+        co.elastic.logs/fileset.stderr: error
+        co.elastic.metrics/module: nginx
+        co.elastic.metrics/hosts: ${data.host}:${data.port}
+    spec:
+      serviceAccountName: nginx-ingress
+      containers:
+      - image: wangsiming519/nginx-ingress:opentracing_1.7.0
+        imagePullPolicy: Always
+        name: nginx-ingress
+        ports:
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
+        securityContext:
+          allowPrivilegeEscalation: true
+          runAsUser: 101
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_BIND_SERVICE
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        args:
+        - -nginx-configmaps=$(POD_NAMESPACE)/nginx-config
+        - -default-server-tls-secret=$(POD_NAMESPACE)/default-server-secret
+      - name: jaeger-agent
+        image: jaegertracing/jaeger-agent
+        ports:
+        - containerPort: 5775
+          protocol: UDP
+        - containerPort: 6831
+          protocol: UDP
+        - containerPort: 6832
+          protocol: UDP
+        - containerPort: 5778
+          protocol: TCP
+        args:
+        - --reporter.grpc.host-port=grpc-apm-service.default.svc.cluster.local:14250
+        - --reporter.type=grpc
+        - --reporter.grpc.tls.enabled=true
+        - --reporter.grpc.tls.skip-host-verify=true

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-prow
+  namespace: prow-monitoring
+stringData:
+  alertmanager.yaml: "global:\n  resolve_timeout: 5m\n  smtp_smarthost: 'smtp.gmail.com:587'\n\
+    \  smtp_auth_username: '{{ smtp_app_username }}'\n  smtp_auth_identity: '{{ smtp_app_username\
+    \ }}'\n  smtp_auth_password: '{{ smtp_app_password }}'\n  smtp_from: '{{ smtp_app_username\
+    \ }}'\n  smtp_require_tls: true\n\nroute:\n  group_by: ['alertname', 'job']\n\
+    \  group_wait: 30s\n  group_interval: 10m\n  repeat_interval: 4h\n  receiver:\
+    \ 'no-op-alerts'\n  routes:\n  - receiver: 'email-alerts'\n    group_interval:\
+    \ 5m\n    repeat_interval: 2h\n    match_re:\n      severity: 'critical|high'\n\
+    \nreceivers:\n- name: 'email-alerts'\n  email_configs:\n  - to: 'kn-infra-gcp-org-admins@knative.team'\n\
+    \    text: '{{ template \"custom_email_text\" . }}'\n    headers:\n      subject:\
+    \ '[Knative prow] {{ template \"email.default.subject\" . }}'\n- name: 'no-op-alerts'\n\
+    \ntemplates:\n- '*.tmpl'\n"
+  msg.tmpl: '{{ define "custom_email_text" }}{{ .CommonAnnotations.message }}{{ end
+    }}
+
+    '
+type: Opaque

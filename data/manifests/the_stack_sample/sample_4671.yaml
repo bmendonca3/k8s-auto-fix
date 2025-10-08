@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-network-monitor-dashboard
+  namespace: kube-system
+data:
+  kube-network-monitor-dashboard.json: "{\n  \"__inputs\": [\n    {\n      \"name\"\
+    : \"DS_PROMETHEUS\",\n      \"label\": \"Prometheus\",\n      \"description\"\
+    : \"\",\n      \"type\": \"datasource\",\n      \"pluginId\": \"prometheus\",\n\
+    \      \"pluginName\": \"Prometheus\"\n    }\n  ],\n  \"__requires\": [\n    {\n\
+    \      \"type\": \"grafana\",\n      \"id\": \"grafana\",\n      \"name\": \"\
+    Grafana\",\n      \"version\": \"5.2.1\"\n    },\n    {\n      \"type\": \"datasource\"\
+    ,\n      \"id\": \"prometheus\",\n      \"name\": \"Prometheus\",\n      \"version\"\
+    : \"5.0.0\"\n    }\n  ],\n  \"annotations\": {\n    \"list\": [\n      {\n   \
+    \     \"builtIn\": 1,\n        \"datasource\": \"-- Grafana --\",\n        \"\
+    enable\": true,\n        \"hide\": true,\n        \"iconColor\": \"rgba(0, 211,\
+    \ 255, 1)\",\n        \"name\": \"Annotations & Alerts\",\n        \"target\"\
+    : {\n          \"limit\": 100,\n          \"matchAny\": false,\n          \"tags\"\
+    : [],\n          \"type\": \"dashboard\"\n        },\n        \"type\": \"dashboard\"\
+    \n      }\n    ]\n  },\n  \"id\": null,\n  \"links\": [],\n  \"panels\": [\n \
+    \   {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"\
+    uid\": \"${DS_PROMETHEUS}\"\n      },\n      \"fieldConfig\": {\n        \"defaults\"\
+    : {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n     \
+    \     },\n          \"custom\": {\n            \"axisLabel\": \"\",\n        \
+    \    \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n        \
+    \    \"drawStyle\": \"line\",\n            \"fillOpacity\": 24,\n            \"\
+    gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\"\
+    : false,\n              \"tooltip\": false,\n              \"viz\": false\n  \
+    \          },\n            \"lineInterpolation\": \"linear\",\n            \"\
+    lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\"\
+    : {\n              \"type\": \"linear\"\n            },\n            \"showPoints\"\
+    : \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n\
+    \              \"group\": \"A\",\n              \"mode\": \"none\"\n         \
+    \   },\n            \"thresholdsStyle\": {\n              \"mode\": \"off\"\n\
+    \            }\n          },\n          \"mappings\": [],\n          \"thresholds\"\
+    : {\n            \"mode\": \"absolute\",\n            \"steps\": [\n         \
+    \     {\n                \"color\": \"green\",\n                \"value\": null\n\
+    \              },\n              {\n                \"color\": \"red\",\n    \
+    \            \"value\": 80\n              }\n            ]\n          },\n   \
+    \       \"unit\": \"s\"\n        },\n        \"overrides\": []\n      },\n   \
+    \   \"gridPos\": {\n        \"h\": 17,\n        \"w\": 12,\n        \"x\": 0,\n\
+    \        \"y\": 0\n      },\n      \"id\": 4,\n      \"options\": {\n        \"\
+    legend\": {\n          \"calcs\": [\n            \"lastNotNull\"\n          ],\n\
+    \          \"displayMode\": \"table\",\n          \"placement\": \"right\"\n \
+    \       },\n        \"tooltip\": {\n          \"mode\": \"single\"\n        }\n\
+    \      },\n      \"targets\": [\n        {\n          \"datasource\": {\n    \
+    \        \"type\": \"prometheus\",\n            \"uid\": \"${DS_PROMETHEUS}\"\n\
+    \          },\n          \"exemplar\": true,\n          \"expr\": \"histogram_quantile(0.5,\
+    \ sum(rate(network_monitor_latency_bucket{source=~\\\"$sources\\\",target=~\\\"\
+    $targets\\\"}[5m])) by (le))\",\n          \"interval\": \"\",\n          \"legendFormat\"\
+    : \"50%\",\n          \"refId\": \"A\"\n        },\n        {\n          \"datasource\"\
+    : {\n            \"type\": \"prometheus\",\n            \"uid\": \"${DS_PROMETHEUS}\"\
+    \n          },\n          \"exemplar\": true,\n          \"expr\": \"histogram_quantile(0.75,\
+    \ sum(rate(network_monitor_latency_bucket{source=~\\\"$sources\\\",target=~\\\"\
+    $targets\\\"}[5m])) by (le))\",\n          \"hide\": false,\n          \"interval\"\
+    : \"\",\n          \"legendFormat\": \"75%\",\n          \"refId\": \"B\"\n  \
+    \      },\n        {\n          \"datasource\": {\n            \"type\": \"prometheus\"\
+    ,\n            \"uid\": \"${DS_PROMETHEUS}\"\n          },\n          \"exemplar\"\
+    : true,\n          \"expr\": \"histogram_quantile(0.9, sum(rate(network_monitor_latency_bucket{source=~\\\
+    \"$sources\\\",target=~\\\"$targets\\\"}[5m])) by (le))\",\n          \"hide\"\
+    : false,\n          \"interval\": \"\",\n          \"legendFormat\": \"90%\",\n\
+    \          \"refId\": \"C\"\n        },\n        {\n          \"datasource\":\
+    \ {\n            \"type\": \"prometheus\",\n            \"uid\": \"${DS_PROMETHEUS}\"\
+    \n          },\n          \"exemplar\": true,\n          \"expr\": \"histogram_quantile(0.99,\
+    \ sum(rate(network_monitor_latency_bucket{source=~\\\"$sources\\\",target=~\\\"\
+    $targets\\\"}[5m])) by (le))\",\n          \"hide\": false,\n          \"interval\"\
+    : \"\",\n          \"legendFormat\": \"99%\",\n          \"refId\": \"D\"\n  \
+    \      }\n      ],\n      \"title\": \"Overall Latency\",\n      \"type\": \"\
+    timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\"\
+    ,\n        \"uid\": \"${DS_PROMETHEUS}\"\n      },\n      \"fieldConfig\": {\n\
+    \        \"defaults\": {\n          \"color\": {\n            \"mode\": \"palette-classic\"\
+    \n          },\n          \"custom\": {\n            \"axisGridShow\": true,\n\
+    \            \"axisLabel\": \"\",\n            \"axisPlacement\": \"left\",\n\
+    \            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n    \
+    \        \"fillOpacity\": 0,\n            \"gradientMode\": \"none\",\n      \
+    \      \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\"\
+    : false,\n              \"viz\": false\n            },\n            \"lineInterpolation\"\
+    : \"linear\",\n            \"lineStyle\": {\n              \"fill\": \"solid\"\
+    \n            },\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n\
+    \            \"scaleDistribution\": {\n              \"type\": \"linear\"\n  \
+    \          },\n            \"showPoints\": \"never\",\n            \"spanNulls\"\
+    : false,\n            \"stacking\": {\n              \"group\": \"A\",\n     \
+    \         \"mode\": \"none\"\n            },\n            \"thresholdsStyle\"\
+    : {\n              \"mode\": \"off\"\n            }\n          },\n          \"\
+    mappings\": [],\n          \"thresholds\": {\n            \"mode\": \"absolute\"\
+    ,\n            \"steps\": [\n              {\n                \"color\": \"green\"\
+    ,\n                \"value\": null\n              },\n              {\n      \
+    \          \"color\": \"red\",\n                \"value\": 80\n              }\n\
+    \            ]\n          },\n          \"unit\": \"s\"\n        },\n        \"\
+    overrides\": []\n      },\n      \"gridPos\": {\n        \"h\": 17,\n        \"\
+    w\": 12,\n        \"x\": 12,\n        \"y\": 0\n      },\n      \"id\": 2,\n \
+    \     \"options\": {\n        \"legend\": {\n          \"calcs\": [\n        \
+    \    \"lastNotNull\"\n          ],\n          \"displayMode\": \"table\",\n  \
+    \        \"placement\": \"right\"\n        },\n        \"tooltip\": {\n      \
+    \    \"mode\": \"single\"\n        }\n      },\n      \"targets\": [\n       \
+    \ {\n          \"datasource\": {\n            \"type\": \"prometheus\",\n    \
+    \        \"uid\": \"${DS_PROMETHEUS}\"\n          },\n          \"exemplar\":\
+    \ true,\n          \"expr\": \"histogram_quantile(0.5, sum(rate(network_monitor_latency_bucket{source=~\\\
+    \"$sources\\\",target=~\\\"$targets\\\"}[5m])) by (le, target))\",\n         \
+    \ \"interval\": \"\",\n          \"legendFormat\": \"{{target}}\",\n         \
+    \ \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Node Latency\",\n\
+    \      \"transformations\": [],\n      \"type\": \"timeseries\"\n    }\n  ],\n\
+    \  \"refresh\": \"\",\n  \"schemaVersion\": 34,\n  \"style\": \"dark\",\n  \"\
+    tags\": [],\n  \"templating\": {\n    \"list\": [\n      {\n        \"current\"\
+    : {\n          \"selected\": false,\n          \"text\": \"Prometheus\",\n   \
+    \       \"value\": \"Prometheus\"\n        },\n        \"hide\": 0,\n        \"\
+    includeAll\": false,\n        \"label\": \"Data Source\",\n        \"multi\":\
+    \ false,\n        \"name\": \"DS_PROMETHEUS\",\n        \"options\": [],\n   \
+    \     \"query\": \"prometheus\",\n        \"refresh\": 1,\n        \"regex\":\
+    \ \"\",\n        \"skipUrlSync\": false,\n        \"type\": \"datasource\"\n \
+    \     },\n      {\n        \"current\": {\n          \"selected\": true,\n   \
+    \       \"text\": [\n            \"All\"\n          ],\n          \"value\": [\n\
+    \            \"$__all\"\n          ]\n        },\n        \"datasource\": {\n\
+    \          \"type\": \"prometheus\",\n          \"uid\": \"${DS_PROMETHEUS}\"\n\
+    \        },\n        \"definition\": \"label_values(network_monitor_latency_bucket,\
+    \ source)\",\n        \"hide\": 0,\n        \"includeAll\": true,\n        \"\
+    label\": \"Sources\",\n        \"multi\": true,\n        \"name\": \"sources\"\
+    ,\n        \"options\": [],\n        \"query\": {\n          \"query\": \"label_values(network_monitor_latency_bucket,\
+    \ source)\",\n          \"refId\": \"StandardVariableQuery\"\n        },\n   \
+    \     \"refresh\": 2,\n        \"regex\": \"\",\n        \"skipUrlSync\": false,\n\
+    \        \"sort\": 1,\n        \"type\": \"query\"\n      },\n      {\n      \
+    \  \"current\": {\n          \"selected\": true,\n          \"text\": [\n    \
+    \        \"All\"\n          ],\n          \"value\": [\n            \"$__all\"\
+    \n          ]\n        },\n        \"datasource\": {\n          \"type\": \"prometheus\"\
+    ,\n          \"uid\": \"${DS_PROMETHEUS}\"\n        },\n        \"definition\"\
+    : \"label_values(network_monitor_latency_bucket, source)\",\n        \"hide\"\
+    : 0,\n        \"includeAll\": true,\n        \"label\": \"Targets\",\n       \
+    \ \"multi\": true,\n        \"name\": \"targets\",\n        \"options\": [],\n\
+    \        \"query\": {\n          \"query\": \"label_values(network_monitor_latency_bucket,\
+    \ source)\",\n          \"refId\": \"StandardVariableQuery\"\n        },\n   \
+    \     \"refresh\": 2,\n        \"regex\": \"\",\n        \"skipUrlSync\": false,\n\
+    \        \"sort\": 1,\n        \"type\": \"query\"\n      }\n    ]\n  },\n  \"\
+    time\": {\n    \"from\": \"now-1h\",\n    \"to\": \"now\"\n  },\n  \"title\":\
+    \ \"Network Monitor\",\n  \"uid\": \"10CY6TYnk\"\n}"

@@ -1,0 +1,63 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: olm-operators
+  namespace: openshift-operator-lifecycle-manager
+data:
+  customResourceDefinitions: ''
+  clusterServiceVersions: "- apiVersion: operators.coreos.com/v1alpha1\n  kind: ClusterServiceVersion\n\
+    \  metadata:\n    name: packageserver.v0.10.0\n    namespace: openshift-operator-lifecycle-manager\n\
+    \  spec:\n    displayName: Package Server\n    description: Represents an Operator\
+    \ package that is available from a given CatalogSource which will resolve to a\
+    \ ClusterServiceVersion.\n    minKubeVersion: 1.11.0\n    keywords: ['packagemanifests',\
+    \ 'olm', 'packages']\n    maintainers:\n    - name: Red Hat\n      email: openshift-operators@redhat.com\n\
+    \    provider:\n      name: Red Hat\n    links:\n    - name: Package Server\n\
+    \      url: https://github.com/operator-framework/operator-lifecycle-manager/tree/master/pkg/package-server\n\
+    \    installModes:\n    - type: OwnNamespace\n      supported: true\n    - type:\
+    \ SingleNamespace\n      supported: true\n    - type: MultiNamespace\n      supported:\
+    \ true\n    - type: AllNamespaces\n      supported: true\n    install:\n     \
+    \ strategy: deployment\n      spec:\n        clusterPermissions:\n        - serviceAccountName:\
+    \ packageserver\n          rules:\n          - apiGroups:\n              - authorization.k8s.io\n\
+    \            resources:\n              - subjectaccessreviews\n            verbs:\n\
+    \              - create\n              - get\n          - apiGroups:\n       \
+    \     - \"\"\n            resources:\n            - configmaps\n            verbs:\n\
+    \            - get\n            - list\n            - watch\n          - apiGroups:\n\
+    \            - \"operators.coreos.com\"\n            resources:\n            -\
+    \ catalogsources\n            verbs:\n            - get\n            - list\n\
+    \            - watch\n          - apiGroups:\n            - \"packages.operators.coreos.com\"\
+    \n            resources:\n            - packagemanifests\n            verbs:\n\
+    \            - get\n            - list\n        deployments:\n        - name:\
+    \ packageserver\n          spec:\n            strategy:\n              type: RollingUpdate\n\
+    \            replicas: 2\n            selector:\n              matchLabels:\n\
+    \                app: packageserver\n            template:\n              metadata:\n\
+    \                labels:\n                  app: packageserver\n             \
+    \ spec:\n                serviceAccountName: packageserver\n                priorityClassName:\
+    \ \"system-cluster-critical\"\n                nodeSelector:\n               \
+    \   beta.kubernetes.io/os: linux\n                  node-role.kubernetes.io/master:\
+    \ \"\"\n                  \n                tolerations:\n                - effect:\
+    \ NoSchedule\n                  key: node-role.kubernetes.io/master\n        \
+    \          operator: Exists\n                - effect: NoExecute\n           \
+    \       key: node.kubernetes.io/unreachable\n                  operator: Exists\n\
+    \                  tolerationSeconds: 120\n                - effect: NoExecute\n\
+    \                  key: node.kubernetes.io/not-ready\n                  operator:\
+    \ Exists\n                  tolerationSeconds: 120\n                \n       \
+    \         containers:\n                - name: packageserver\n               \
+    \   command:\n                  - /bin/package-server\n                  - -v=4\n\
+    \                  - --secure-port\n                  - \"5443\"\n           \
+    \       - --global-namespace\n                  - openshift-operator-lifecycle-manager\n\
+    \                  image: quay.io/operator-framework/olm@sha256:93751ae9d398d571c2cb3d11b0ac4ae052117fd1726025364a6f2f3a5caef68e\n\
+    \                  imagePullPolicy: IfNotPresent\n                  ports:\n \
+    \                 - containerPort: 5443\n                  livenessProbe:\n  \
+    \                  httpGet:\n                      scheme: HTTPS\n           \
+    \           path: /healthz\n                      port: 5443\n               \
+    \   readinessProbe:\n                    httpGet:\n                      scheme:\
+    \ HTTPS\n                      path: /healthz\n                      port: 5443\n\
+    \                  terminationMessagePolicy: FallbackToLogsOnError\n    maturity:\
+    \ alpha\n    version: 0.10.0\n    apiservicedefinitions:\n      owned:\n     \
+    \ - group: packages.operators.coreos.com\n        version: v1\n        kind: PackageManifest\n\
+    \        name: packagemanifests\n        displayName: PackageManifest\n      \
+    \  description: A PackageManifest is a resource generated from existing CatalogSources\
+    \ and their ConfigMaps\n        deploymentName: packageserver\n        containerPort:\
+    \ 5443"
+  packages: "- packageName: packageserver\n  channels:\n  - name: alpha\n    currentCSV:\
+    \ packageserver.v0.10.0"

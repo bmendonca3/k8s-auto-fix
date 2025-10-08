@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: skbn
+  name: skbn
+spec:
+  template:
+    metadata:
+      labels:
+        app: skbn
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: skbn
+      containers:
+      - name: skbn
+        image: skbn
+        command:
+        - /skbn
+        args:
+        - cp
+        - --src
+        - k8s://namespace/pod/container/path/to/copy/from
+        - --dst
+        - s3://bucket/path/to/copy/to
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: AWS_REGION
+          value: eu-central-1

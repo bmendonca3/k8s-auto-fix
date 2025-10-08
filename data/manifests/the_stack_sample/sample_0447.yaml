@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dnstest3
+spec:
+  containers:
+  - image: xtoph/dns
+    command:
+    - /bin/sh
+    - -c
+    - --
+    args:
+    - while true; do sleep 5; done;
+    name: dnstest3
+    resources:
+      requests:
+        memory: 1G
+        cpu: 1
+    ports:
+    - containerPort: 80
+      name: http
+      protocol: TCP
+    - containerPort: 443
+      name: https
+  dnsPolicy: None
+  dnsConfig:
+    nameservers:
+    - 10.0.0.10
+    - 8.8.8.8
+    searches:
+    - default.svc.cluster.local
+    - svc.cluster.local
+    - cluster.local
+    options:
+    - name: ndots
+      value: '5'
+  nodeSelector:
+    kubernetes.io/role: agent
+    beta.kubernetes.io/os: linux
+    type: virtual-kubelet
+  tolerations:
+  - key: virtual-kubelet.io/provider
+    operator: Exists
+  - key: azure.com/aci
+    effect: NoSchedule

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: driver
+  template:
+    metadata:
+      labels:
+        app: driver
+    spec:
+      containers:
+      - image: DOCKERHUB/driver.backend.driver:0.0.52
+        name: driver
+        volumeMounts:
+        - name: google-application-credentials
+          mountPath: /etc/GOOGLE_APPLICATION_CREDENTIALS
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/GOOGLE_APPLICATION_CREDENTIALS/gcloud-service-key.json
+        - name: EVENT_STORE_BROKER_TYPE
+          value: PUBSUB
+        - name: EVENT_STORE_BROKER_EVENTS_TOPIC
+          value: events
+        - name: EVENT_STORE_STORE_TYPE
+          value: MONGO
+        - name: EVENT_STORE_STORE_URL
+          value: mongodb://dbevents-0.dbevents:27017,dbevents-1.dbevents:27017,dbevents-2.dbevents:27017/test?replicaSet=rs0
+        - name: EVENT_STORE_STORE_AGGREGATES_DB_NAME
+          value: Aggregates
+        - name: EVENT_STORE_STORE_EVENTSTORE_DB_NAME
+          value: EventStore
+        - name: MONGODB_URL
+          value: mongodb://driv-mongo:27017
+        - name: MONGODB_DB_NAME
+          value: driver
+        - name: JWT_PUBLIC_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: keycloak-jwt-public-key
+              key: jwt_public_key
+        - name: EMI-GATEWAY_REPLIES_TOPIC_SUBSCRIPTION
+          value: emi-gateway-replies-topic-mbe-driver
+        - name: REPLY_TIMEOUT
+          value: '2000'
+        - name: BROKER_TYPE
+          value: PUBSUB
+        - name: LOCKVERSION
+          value: initial_lock
+        - name: KEYCLOAK_BACKEND_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: environment-variables
+              key: keycloak-backend-base-url
+        - name: KEYCLOAK_BACKEND_USER
+          valueFrom:
+            secretKeyRef:
+              name: keycloak
+              key: keycloak_backend_user
+        - name: KEYCLOAK_BACKEND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak
+              key: keycloak_backend_password
+        - name: KEYCLOAK_BACKEND_CLIENT_ID
+          value: admin-cli
+        - name: KEYCLOAK_BACKEND_REALM_NAME
+          value: TPI
+      volumes:
+      - name: google-application-credentials
+        secret:
+          secretName: google-application-credentials

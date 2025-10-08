@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: aws-cloud-controller-manager
+  name: aws-cloud-controller-manager
+  namespace: openshift-cloud-controller-manager
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      k8s-app: aws-cloud-controller-manager
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        k8s-app: aws-cloud-controller-manager
+    spec:
+      priorityClassName: system-cluster-critical
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - "#!/bin/bash\nset -o allexport\nif [[ -f /etc/kubernetes/apiserver-url.env\
+          \ ]]; then\n  source /etc/kubernetes/apiserver-url.env\nfi\nexec /bin/aws-cloud-controller-manager\
+          \ \\\n--cloud-provider=aws \\\n--use-service-account-credentials=true \\\
+          \n--leader-elect=true \\\n--leader-elect-lease-duration=137s \\\n--leader-elect-renew-deadline=107s\
+          \ \\\n--leader-elect-retry-period=26s \\\n--leader-elect-resource-namespace=openshift-cloud-controller-manager\
+          \ \\\n-v=2\n"
+        image: quay.io/openshift/origin-aws-cloud-controller-manager
+        imagePullPolicy: IfNotPresent
+        name: cloud-controller-manager
+        ports:
+        - containerPort: 10258
+          name: https
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 200m
+            memory: 50Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes
+          name: host-etc-kube
+          readOnly: true
+      hostNetwork: true
+      nodeSelector:
+        node-role.kubernetes.io/master: ''
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                k8s-app: aws-cloud-controller-manager
+      serviceAccountName: cloud-controller-manager
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 120
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 120
+      - effect: NoSchedule
+        key: node.cloudprovider.kubernetes.io/uninitialized
+        operator: Exists
+      - effect: NoSchedule
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+      volumes:
+      - name: host-etc-kube
+        hostPath:
+          path: /etc/kubernetes
+          type: Directory

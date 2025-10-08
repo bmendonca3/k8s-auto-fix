@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: boskos-cleaner
+  labels:
+    app: prow
+    component: boskos-cleaner
+  namespace: ci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: boskos-cleaner
+  template:
+    metadata:
+      labels:
+        app: prow
+        component: boskos-cleaner
+    spec:
+      serviceAccountName: boskos
+      terminationGracePeriodSeconds: 300
+      containers:
+      - name: boskos-cleaner
+        image: gcr.io/k8s-prow/boskos/cleaner:v20200504-d9345ee90
+        args:
+        - --boskos-url=http://boskos
+        - --use-v2-implementation=true
+        - --namespace=$(namespace)
+        - --log-level=debug
+        env:
+        - name: namespace
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace

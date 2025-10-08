@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cirros-vm
+  annotations:
+    kubernetes.io/target-runtime: virtlet.cloud
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: extraRuntime
+            operator: In
+            values:
+            - virtlet
+  containers:
+  - name: cirros-vm
+    imagePullPolicy: IfNotPresent
+    image: virtlet.cloud/cirros
+    tty: true
+    stdin: true
+  volumes:
+  - name: raw
+    flexVolume:
+      driver: virtlet/flexvolume_driver
+      options:
+        type: raw
+        path: /dev/loop0

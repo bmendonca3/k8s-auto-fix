@@ -1,0 +1,460 @@
+[
+  {
+    "id": "03041",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03042",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03043",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03044",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03045",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03046",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03047",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03048",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03049",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03050",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03051",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03052",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vizier-query-broker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: vizier-query-broker\n  template:\n    metadata:\n      labels:\n        name: vizier-query-broker\n        plane: control\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: mds-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-metadata\n        - name: SERVICE_PORT\n          value: '50400'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/query_broker_server_image:stable\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_POD_IP_ADDRESS\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        ports:\n        - containerPort: 50300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50300\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: envoy-yaml\n        configMap:\n          name: proxy-envoy-config\n",
+    "errors": []
+  },
+  {
+    "id": "03053",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox:stable\n    name: schedulepod\n    resources: {}\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03054",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox:stable\n    name: schedulepod\n    resources: {}\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03055",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox:stable\n    name: schedulepod\n    resources: {}\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03056",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox:stable\n    name: schedulepod\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03057",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  labels:\n    run: schedulepod\n  name: schedulepod\nspec:\n  containers:\n  - args:\n    - /bin/sleep\n    - '3600'\n    image: busybox:stable\n    name: schedulepod\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03058",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03059",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03060",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03061",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03062",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7152\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03063",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03064",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03065",
+    "policy_id": "no_privileged",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03066",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03067",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03068",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03069",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx:stable\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03070",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx:stable\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03071",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx:stable\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03072",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx:stable\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03073",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-rc\nspec:\n  replicas: 1\n  selector:\n    app: reverse-proxy\n  template:\n    metadata:\n      labels:\n        app: reverse-proxy\n        tier: frontend\n    spec:\n      containers:\n      - name: nginx\n        image: dynatrace/easytravel-nginx:stable\n        ports:\n        - containerPort: 80\n        - containerPort: 443\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03074",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03075",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03076",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03077",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03078",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03079",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03080",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5910\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  }
+]

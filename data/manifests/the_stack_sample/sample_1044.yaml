@@ -1,0 +1,144 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  labels:
+    accelerator: v2-8
+    benchmarkId: tf-r1.15.5-shapemask-conv-v2-8
+    frameworkVersion: tf-r1.15.5
+    mode: conv
+    model: shapemask
+  name: tf-r1.15.5-shapemask-conv-v2-8
+  namespace: automated
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      annotations:
+        ml-testing-accelerators/gcs-subdir: tf-r1.15.5/shapemask/conv/v2-8
+        ml-testing-accelerators/metric-config: "{\n  \"sources\": [\n    {\n     \
+          \ \"literals\": {\n        \"assertions\": {\n          \"duration\": {\n\
+          \            \"inclusive_bounds\": false,\n            \"std_devs_from_mean\"\
+          : {\n              \"comparison\": \"LESS\",\n              \"std_devs\"\
+          : 5\n            },\n            \"wait_for_n_data_points\": 10\n      \
+          \    }\n        }\n      }\n    },\n    {\n      \"tensorboard\": {\n  \
+          \      \"aggregate_assertions\": [\n\n        ],\n        \"exclude_tags\"\
+          : [\n\n        ],\n        \"include_tags\": [\n          {\n          \
+          \  \"strategies\": [\n              \"FINAL\"\n            ],\n        \
+          \    \"tag_pattern\": \"*\"\n          }\n        ],\n        \"merge_runs\"\
+          : true\n      }\n    }\n  ]\n}\n"
+      labels:
+        accelerator: v2-8
+        benchmarkId: tf-r1.15.5-shapemask-conv-v2-8
+        frameworkVersion: tf-r1.15.5
+        mode: conv
+        model: shapemask
+    spec:
+      activeDeadlineSeconds: 36000
+      backoffLimit: 1
+      template:
+        metadata:
+          annotations:
+            reserved.cloud-tpus.google.com: 'false'
+            tf-version.cloud-tpus.google.com: 1.15.5
+        spec:
+          containers:
+          - env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            image: gcr.io/xl-ml-test/health-monitor:stable
+            imagePullPolicy: Always
+            name: monitor
+          - args:
+            - python3
+            - /shapemask/models/official/detection/main.py
+            - --model=shapemask
+            - --use_tpu=True
+            - --eval_after_training=False
+            - --mode=train
+            - "--params_override=\"eval\":\n  \"eval_batch_size\": 8\n  \"eval_file_pattern\"\
+              : \"$(COCO_DIR)/val*\"\n  \"eval_samples\": 5000\n  \"val_json_file\"\
+              : \"$(COCO_DIR)/instances_val2017.json\"\n\"predict\":\n  \"predict_batch_size\"\
+              : 8\n\"shapemask_head\":\n  \"shape_prior_path\": \"$(SHAPEMASK_DIR)/kmeans_class_priors_91x20x32x32.npy\"\
+              \n  \"use_category_for_mask\": true\n\"train\":\n  \"checkpoint\":\n\
+              \    \"path\": \"$(RESNET_PRETRAIN_DIR)/resnet50-checkpoint-2018-02-07\"\
+              \n    \"prefix\": \"resnet50/\"\n  \"iterations_per_loop\": 100\n  \"\
+              total_steps\": 22500\n  \"train_batch_size\": 64\n  \"train_file_pattern\"\
+              : \"$(COCO_DIR)/train*\"\n"
+            - --tpu=$(KUBE_GOOGLE_CLOUD_TPU_ENDPOINTS)
+            - --model_dir=$(MODEL_DIR)
+            - --num_cores=8
+            env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['job-name']
+            - name: MODEL_DIR
+              value: $(OUTPUT_BUCKET)/tf-r1.15.5/shapemask/conv/v2-8/$(JOB_NAME)
+            - name: PYTHONPATH
+              value: /shapemask/models/
+            envFrom:
+            - configMapRef:
+                name: gcs-buckets
+            image: gcr.io/xl-ml-test/tensorflow-tpu-1x:r1.15.5
+            imagePullPolicy: Always
+            name: train
+            resources:
+              limits:
+                cloud-tpus.google.com/v2: 8
+          initContainers:
+          - env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['job-name']
+            - name: MODEL_DIR
+              value: $(OUTPUT_BUCKET)/tf-r1.15.5/shapemask/conv/v2-8/$(JOB_NAME)
+            - name: METRIC_CONFIG
+              value: "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\"\
+                : [\n   \"final\"\n  ],\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\"\
+                : {\n  \"metric_success_conditions\": {\n   \"total_wall_time\": {\n\
+                \    \"comparison\": \"less\",\n    \"success_threshold\": {\n   \
+                \  \"stddevs_from_mean\": 5\n    },\n    \"wait_for_n_points_of_history\"\
+                : 10\n   }\n  }\n },\n \"test_name\": \"tf-r1.15.5-shapemask-conv-v2-8\"\
+                \n}\n"
+            envFrom:
+            - configMapRef:
+                name: gcs-buckets
+            image: gcr.io/xl-ml-test/publisher:stable
+            imagePullPolicy: Always
+            name: publisher
+          nodeSelector:
+            tpu-available: 'true'
+          restartPolicy: Never
+  schedule: 0 8 * * 0
+  successfulJobsHistoryLimit: 1

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: motive-back-end-deployment
+spec:
+  template:
+    metadata:
+      name: motive-back-end-pod
+      labels:
+        app: motive-back-end
+    spec:
+      containers:
+      - name: motive-back-end-container
+        image: $FULL_IMAGE
+        imagePullPolicy: Always
+        env:
+        - name: DATABASE_URL
+          value: $DATABASE_JDBC_URL
+        - name: DATABASE_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: motive-config
+              key: postgres-username
+              optional: false
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: $APP_DATABASE_NAME-postgresql
+              key: postgres-password
+              optional: false
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          initialDelaySeconds: 120
+          httpGet:
+            port: 8080
+            path: /actuator/health
+        livenessProbe:
+          initialDelaySeconds: 120
+          httpGet:
+            port: 8080
+            path: /actuator/health
+  replicas: 2
+  selector:
+    matchLabels:
+      app: motive-back-end

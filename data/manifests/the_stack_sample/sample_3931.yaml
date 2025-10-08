@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: starcoin
+  namespace: starcoin-proxima
+  labels:
+    app: starcoin
+    network: proxima
+spec:
+  selector:
+    matchLabels:
+      app: starcoin
+  serviceName: starcoin-svc
+  replicas: 3
+  template:
+    metadata:
+      name: starcoin
+      labels:
+        app: starcoin
+        network: proxima
+    spec:
+      nodeSelector:
+        starcoin/node-pool: seed-pool
+      containers:
+      - name: starcoin
+        image: starcoin/starcoin:v1.6.0
+        imagePullPolicy: Always
+        command:
+        - bash
+        - -c
+        args:
+        - rm -rf /sc-data/proxima/starcoin.ipc /sc-data/proxima/starcoindb/db/starcoindb/LOCK;
+          id=$(echo -e $POD_NAME|awk -F'-' '{print $2}') && IFS='; ' read -r -a node_keys
+          <<< $NODE_KEYS && node_key=${node_keys[$id]}; if [ ! -z $node_key ]; then
+          node_key_flag="--node-key ${node_key}"; fi; /starcoin/starcoin -n proxima
+          -d /sc-data --discover-local=true $node_key_flag; ret=$?; if [ $ret -ne
+          0 ]; then echo "Node start fail, try to remove config."; rm /sc-data/proxima/config.toml;
+          rm /sc-data/proxima/genesis_config.json; fi; if [ $ret -eq 120 ]; then echo
+          "Start failed with gensis mismatch code 120, clean data..."; rm -rf /sc-data/proxima/
+          &>/dev/null; fi;
+        ports:
+        - containerPort: 9840
+          hostPort: 9840
+        volumeMounts:
+        - name: starcoin-volume
+          mountPath: /sc-data
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NODE_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: node-keys
+              key: node-keys
+  volumeClaimTemplates:
+  - metadata:
+      name: starcoin-volume
+      namespace: starcoin-proxima
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 50Gi

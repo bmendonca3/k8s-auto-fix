@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: howtos-api
+  namespace: howtos-prod
+  labels:
+    app: howtos-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: howtos-api
+  template:
+    metadata:
+      labels:
+        app: howtos-api
+    spec:
+      containers:
+      - image: registry.digitalocean.com/tiveritz/howtos-api:{{version}}
+        name: howtos-api
+        env:
+        - name: VERSION
+          value: '{{version}}'
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: secret-key
+        - name: DEBUG
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: debug
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: allowed-hosts
+        - name: SECURE_SSL_REDIRECT
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: secure-ssl-redirect
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: db-name
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: db-user
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: db-pass
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: db-port
+        - name: AWS_S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: aws-s3-access-key-id
+        - name: AWS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: howtos-api-env
+              key: aws-s3-secret-access-key
+        ports:
+        - containerPort: 8080
+          name: gunicorn

@@ -1,0 +1,853 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tectonic-ocs
+  namespace: tectonic-system
+  labels:
+    tectonic-operators.coreos.com/managed-by: tectonic-x-operator
+data:
+  customResourceDefinitions: "- apiVersion: apiextensions.k8s.io/v1beta1\n  kind:\
+    \ CustomResourceDefinition\n  metadata:\n    name: alertmanagers.monitoring.coreos.com\n\
+    \  spec:\n    group: monitoring.coreos.com\n    version: v1\n    scope: Namespaced\n\
+    \    names:\n      plural: alertmanagers\n      singular: alertmanager\n     \
+    \ kind: Alertmanager\n      listKind: AlertmanagerList\n      shortNames:\n  \
+    \      - alertman\n        - alrtman\n  \n- apiVersion: apiextensions.k8s.io/v1beta1\n\
+    \  kind: CustomResourceDefinition\n  metadata:\n    name: etcdbackups.etcd.database.coreos.com\n\
+    \  spec:\n    group: etcd.database.coreos.com\n    version: v1beta2\n    scope:\
+    \ Namespaced\n    names:\n      kind: EtcdBackup\n      listKind: EtcdBackupList\n\
+    \      plural: etcdbackups\n      singular: etcdbackup\n  \n- apiVersion: apiextensions.k8s.io/v1beta1\n\
+    \  kind: CustomResourceDefinition\n  metadata:\n    name: etcdclusters.etcd.database.coreos.com\n\
+    \  spec:\n    group: etcd.database.coreos.com\n    version: v1beta2\n    scope:\
+    \ Namespaced\n    validation:\n      openAPIv3:\n        type: object\n      \
+    \  description: Represents a single instance of etcd\n        additionalProperties:\
+    \ false\n        required:\n        - version\n        properties:\n         \
+    \ version:\n            type: string\n            description: Version string\n\
+    \            pattern: ^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-(0|[1-9]\\\
+    d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(\\.(0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\\\
+    +[0-9a-zA-Z-]+(\\.[0-9a-zA-Z-]+)*)?$\n            x-descriptors:\n           \
+    \ - urn:alm:descriptor:versioning:semver\n          size:\n            type: number\n\
+    \            description: The size of the etcd cluster\n            min: 1\n \
+    \           max: 9\n            x-descriptors:\n            - urn:alm:descriptor:pod:count\n\
+    \            - urn:alm:descriptor:number:integer\n          template:\n      \
+    \      type: object\n            description: Template for fields of subresources\n\
+    \            labels:\n              type: object\n              description: Labels\
+    \ to apply to associated resources\n    names:\n      plural: etcdclusters\n \
+    \     singular: etcdcluster\n      kind: EtcdCluster\n      listKind: EtcdClusterList\n\
+    \      shortNames:\n        - etcdclus\n        - etcd\n  \n- apiVersion: apiextensions.k8s.io/v1beta1\n\
+    \  kind: CustomResourceDefinition\n  metadata:\n    name: etcdrestores.etcd.database.coreos.com\n\
+    \  spec:\n    group: etcd.database.coreos.com\n    version: v1beta2\n    scope:\
+    \ Namespaced\n    names:\n      kind: EtcdRestore\n      listKind: EtcdRestoreList\n\
+    \      plural: etcdrestores\n      singular: etcdrestore\n  \n- apiVersion: apiextensions.k8s.io/v1beta1\n\
+    \  kind: CustomResourceDefinition\n  metadata:\n    name: prometheuses.monitoring.coreos.com\n\
+    \  spec:\n    group: monitoring.coreos.com\n    version: v1\n    scope: Namespaced\n\
+    \    names:\n      plural: prometheuses\n      singular: prometheus\n      kind:\
+    \ Prometheus\n      listKind: PrometheusList\n      shortNames:\n        - prom\n\
+    \        - prm\n  \n- apiVersion: apiextensions.k8s.io/v1beta1\n  kind: CustomResourceDefinition\n\
+    \  metadata:\n    name: servicemonitors.monitoring.coreos.com\n  spec:\n    group:\
+    \ monitoring.coreos.com\n    version: v1\n    scope: Namespaced\n    names:\n\
+    \      plural: servicemonitors\n      singular: servicemonitor\n      kind: ServiceMonitor\n\
+    \      listKind: ServiceMonitorList\n      shortNames:\n        - servicemon\n\
+    \        - svcmon\n        - svcmonitor\n  \n- apiVersion: apiextensions.k8s.io/v1beta1\n\
+    \  kind: CustomResourceDefinition\n  metadata:\n    name: vaultservices.vault.security.coreos.com\n\
+    \  spec:\n    group: vault.security.coreos.com\n    version: v1alpha1\n    scope:\
+    \ Namespaced\n    validation:\n      openAPIv3:\n        type: object\n      \
+    \  description: Represents a single instance of Vault\n        additionalProperties:\
+    \ false\n        required:\n        - version\n        properties:\n         \
+    \ version:\n            type: string\n            description: Version string\n\
+    \            pattern: ^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-(0|[1-9]\\\
+    d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(\\.(0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\\\
+    +[0-9a-zA-Z-]+(\\.[0-9a-zA-Z-]+)*)?$\n            x-descriptors:\n           \
+    \ - urn:alm:descriptor:versioning:semver\n          nodes:\n            type:\
+    \ number\n            description: The number of nodes in the Vault cluster\n\
+    \            min: 1\n            max: 9\n            x-descriptors:\n        \
+    \    - urn:alm:descriptor:pod:count\n            - urn:alm:descriptor:number:integer\n\
+    \          template:\n            type: object\n            description: Template\
+    \ for fields of subresources\n            labels:\n              type: object\n\
+    \              description: Labels to apply to associated resources\n    names:\n\
+    \      plural: vaultservices\n      singular: vaultservice\n      kind: VaultService\n\
+    \      listKind: VaultServiceList\n      shortNames:\n        - vault\n      \
+    \  - vaultserv\n        - vaultsrv\n  "
+  clusterServiceVersions: "- #! validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n\
+    \  #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    name: etcdoperator.v0.6.1\n\
+    \    namespace: placeholder\n    annotations:\t\t\n      tectonic-visibility:\
+    \ ocs\t\t\n  spec:\n    displayName: etcd\n    description: |\n      etcd is a\
+    \ distributed key value store that provides a reliable way to store data across\
+    \ a cluster of machines. It\u2019s open-source and available on GitHub. etcd gracefully\
+    \ handles leader elections during network partitions and will tolerate machine\
+    \ failure, including the leader. Your applications can read and write data into\
+    \ etcd.\n      A simple use-case is to store database connection details or feature\
+    \ flags within etcd as key value pairs. These values can be watched, allowing\
+    \ your app to reconfigure itself when they change. Advanced uses take advantage\
+    \ of the consistency guarantees to implement database leader elections or do distributed\
+    \ locking across a cluster of workers.\n  \n      _The etcd Open Cloud Service\
+    \ is Public Alpha. The goal before Beta is to fully implement backup features._\n\
+    \  \n      ### Reading and writing to etcd\n  \n      Communicate with etcd though\
+    \ its command line utility `etcdctl` or with the API using the automatically generated\
+    \ Kubernetes Service.\n  \n      [Read the complete guide to using the etcd Open\
+    \ Cloud Service](https://coreos.com/tectonic/docs/latest/alm/etcd-ocs.html)\n\
+    \  \n      ### Supported Features\n      **High availability**\n      Multiple\
+    \ instances of etcd are networked together and secured. Individual failures or\
+    \ networking issues are transparently handled to keep your cluster up and running.\n\
+    \      **Automated updates**\n      Rolling out a new etcd version works like\
+    \ all Kubernetes rolling updates. Simply declare the desired version, and the\
+    \ etcd service starts a safe rolling update to the new version automatically.\n\
+    \      **Backups included**\n      Coming soon, the ability to schedule backups\
+    \ to happen on or off cluster.\n    keywords: ['etcd', 'key value', 'database',\
+    \ 'coreos', 'open source']\n    version: 0.6.1\n    maturity: alpha\n    maintainers:\n\
+    \    - name: CoreOS, Inc\n      email: support@coreos.com\n  \n    provider:\n\
+    \      name: CoreOS, Inc\n    labels:\n      alm-status-descriptors: etcdoperator.v0.6.1\n\
+    \      alm-owner-etcd: etcdoperator\n      operated-by: etcdoperator\n    selector:\n\
+    \      matchLabels:\n        alm-owner-etcd: etcdoperator\n        operated-by:\
+    \ etcdoperator\n    links:\n    - name: Blog\n      url: https://coreos.com/etcd\n\
+    \    - name: Documentation\n      url: https://coreos.com/operators/etcd/docs/latest/\n\
+    \    - name: etcd Operator Source Code\n      url: https://github.com/coreos/etcd-operator\n\
+    \  \n    icon:\n    - base64data: iVBORw0KGgoAAAANSUhEUgAAAOEAAADZCAYAAADWmle6AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAEKlJREFUeNrsndt1GzkShmEev4sTgeiHfRYdgVqbgOgITEVgOgLTEQydwIiKwFQCayoCU6+7DyYjsBiBFyVVz7RkXvqCSxXw/+f04XjGQ6IL+FBVuL769euXgZ7r39f/G9iP0X+u/jWDNZzZdGI/Ftama1jjuV4BwmcNpbAf1Fgu+V/9YRvNAyzT2a59+/GT/3hnn5m16wKWedJrmOCxkYztx9Q+py/+E0GJxtJdReWfz+mxNt+QzS2Mc0AI+HbBBwj9QViKbH5t64DsP2fvmGXUkWU4WgO+Uve2YQzBUGd7r+zH2ZG/tiUQc4QxKwgbwFfVGwwmdLL5wH78aPC/ZBem9jJpCAX3xtcNASSNgJLzUPSQyjB1zQNl8IQJ9MIU4lx2+Jo72ysXYKl1HSzN02BMa/vbZ5xyNJIshJzwf3L0dQhJw4Sih/SFw9Tk8sVeghVPoefaIYCkMZCKbrcP9lnZuk0uPUjGE/KE8JQry7W2tgfuC3vXgvNV+qSQbyFtAtyWk7zWiYevvuUQ9QEQCvJ+5mmu6dTjz1zFHLFj8Eb87MtxaZh/IQFIHom+9vgTWwZxAQjT9X4vtbEVPojwjiV471s00mhAckpwGuCn1HtFtRDaSh6y9zsL+LNBvCG/24ThcxHObdlWc1v+VQJe8LcO0jwtuF8BwnAAUgP9M8JPU2Me+Oh12auPGT6fHuTePE3bLDy+x9pTLnhMn+07TQGh//Bz1iI0c6kvtqInjvPZcYR3KsPVmUsPYt9nFig9SCY8VQNhpPBzn952bbgcsk2EvM89wzh3UEffBbyPqvBUBYQ8ODGPFOLsa7RF096WJ69L+E4EmnpjWu5o4ChlKaRTKT39RMMaVPEQRsz/nIWlDN80chjdJlSd1l0pJCAMVZsniobQVuxceMM9OFoaMd9zqZtjMEYYDW38Drb8Y0DYPLShxn0pvIFuOSxd7YCPet9zk452wsh54FJoeN05hcgSQoG5RR0Qh9Q4E4VvL4wcZq8UACgaRFEQKgSwWrkr5WFnGxiHSutqJGlXjBgIOayhwYBTA0ER0oisIVSUV0AAMT0IASCUO4hRIQSAEECMCCEPwqyQA0JCQBzEGjWNAqHiUVAoXUWbvggOIQCEAOJzxTjoaQ4AIaE64/aZridUsBYUgkhB15oGg1DBIl8IqirYwV6hPSGBSFteMCUBSVXwfYixBmamRubeMyjzMJQBDDowE3OesDD+zwqFoDqiEwXoXJpljB+PvWJGy75BKF1FPxhKygJuqUdYQGlLxNEXkrYyjQ0GbaAwEnUIlLRNvVjQDYUAsJB0HKLE4y0AIpQNgCIhBIhQTgCKhZBBpAN/v6LtQI50JfUgYOnnjmLUFHKhjxbAmdTCaTiBm3ovLPqG2urWAij6im0Nd9aTN9ygLUEt9LgSRnohxUPIKxlGaE+/6Y7znFf0yX+GnkvFFWmarkab2o9PmTeq8sbd2a7DaysXz7i64VeznN4jCQhN9gdDbRiuWrfrsq0mHIrlaq+hlotCtd3Um9u0BYWY8y5D67wccJoZjFca7iUs9VqZcfsZwTd1sbWGG+OcYaTnPAP7rTQVVlM4Sg3oGvB1tmNh0t/HKXZ1jFoIMwCQjtqbhNxUmkGYqgZEDZP11HN/S3gAYRozf0l8C5kKEKUvW0t1IfeWG/5MwgheZTT1E0AEhDkAePQO+Ig2H3DncAkQM4cwUQCD530dU4B5Yvmi2LlDqXfWrxMCcMth51RToRMNUXFnfc2KJ0+Ryl0VNOUwlhh6NoxK5gnViTgQpUG4SqSyt5z3zRJpuKmt3Q1614QaCBPaN6je+2XiFcWAKOXcUfIYKRyL/1lb7pe5VxSxxjQ6hImshqGRt5GWZVKO6q2wHwujfwDtIvaIdexj8Cm8+a68EqMfox6x/voMouZF4dHnEGNeCDMwT6vdNfekH1MafMk4PI06YtqLVGl95aEM9Z5vAeCTOA++YLtoVJRrsqNCaJ6WRmkdYaNec5BT/lcTRMqrhmwfjbpkj55+OKp8IEbU/JLgPJE6Wa3TTe9sHS+ShVD5QIyqIxMEwKh12olC6mHIed5ewEop80CNlfIOADYOT2nd6ZXCop+Ebqchc0JqxKcKASxChycJgUh1rnHA5ow9eTrhqNI7JWiAYYwBGGdpyNLoGw0Pkh96h1BpHihyywtATDM/7Hk2fN9EnH8BgKJCU4ooBkbXFMZJiPbrOyecGl3zgQDQL4hk10IZiOe+5w99Q/gBAEIJgPhJM4QAEEoFREAIAAEiIASAkD8Qt4AQAEIAERAGFlX4CACKAXGVM4ivMwWwCLFAlyeoaa70QePKm5Dlp+/n+ye/5dYgva6YsUaVeMa+tzNFeJtWwc+udbJ0Fg399kLielQJ5Ze61c2+7ytA6EZetiPxZC6tj22yJCv6jUwOyj/zcbqAxOMyAKEbfeHtNa7DtYXptjsk2kJxR+eIeim/tHNofUKYy8DMrQcAKWz6brpvzyIAlpwPhQ49l6b7skJf5Z+YTOYQc4FwLDxvoTDwaygQK+U/kVr+ytSFBG01Q3gnJJR4cNiAhx4HDub8/b5DULXlj6SVZghFiE+LdvE9vo/o8Lp1RmH5hzm0T6wdbZ6n+D6i44zDRc3ln6CpAEJfXiRU45oqLz8gFAThWsh7ughrRibc0QynHgZpNJa/ENJ+loCwu/qOGnFIjYR/n7TfgycULhcQhu6VC+HfF+L3BoAQ4WiZTw1M+FPCnA2gKC6/FAhXgDC+ojQGh3NuWsvfF1L/D5ohlCKtl1j2ldu9a/nPAKFwN56Bst10zCG0CPleXN/zXPgHQZXaZaBgrbzyY5V/mUA+6F0hwtGN9rwu5DVZPuwWqfxdFz1LWbJ2lwKEa+0Qsm4Dl3fp+Pu0lV97PgwIPfSsS+UQhj5Oo+vvFULazRIQyvGEcxPuNLCth2MvFsrKn8UOilAQShkh7TTczYNMoS6OdP47msrPi82lXKGWhCdMZYS0bFy+vcnGAjP1CIfvgbKNA9glecEH9RD6Ol4wRuWyN/G9MHnksS6o/GPf5XcwNSUlHzQhDuAKtWJmkwKElU7lylP5rgIcsquh/FI8YZCDpkJBuE4FQm7Icw8N+SrUGaQKyi8FwiDt1ve5o+Vu7qYHy/psgK8cvh+FTYuO77bhEC7GuaPiys/L1X4IgXDL+e3M5+ovLxBy5VLuIebw1oqcHoPfoaMJUsHays878r8KbDc3xtPx/84gZPBG/JwaufrsY/SRG/OY3//8QMNdsvdZCFtbW6f8pFuf5bflILAlX7O+4fdfugKyFYS8T2zAsXthdG0VurPGKwI06oF5vkBgHWkNp6ry29+lsPZMU3vijnXFNmoclr+6+Ou/FIb8yb30sS8YGjmTqCLyQsi5N/6ZwKs0Yenj68pfPjF6N782Dp2FzV9CTyoSeY8mLK16qGxIkLI8oa1n8tz9juP40DlK0epxYEbojbq+9QfurBeVIlCO9D2396bxiV4lkYQ3hOAFw2pbhqMGISkkQOMcQ9EqhDmGZZdo92JC0YHRNTfoSg+5e0IT+opqCKHoIU+4ztQIgBD1EFNrQAgIpYSil9lDmPHqkROPt+JC6AgPquSuumJmg0YARVCuneDfvPVeJokZ6pIXDkNxQtGzTF9/BQjRG0tQznfb74RwCQghpALBtIQnfK4zhxdyQvVCUeknMIT3hLyY+T5jo0yABqKPQNpUNw/09tGZod5jgCaYFxyYvJcNPkv9eof+I3pnCFEHIETjSM8L9tHZHYCQT9PaZGycU6yg8S4akDnJ+P03L0+t23XGzCLzRgII/Wqa+fv/xlfvmKvMUOcOrlCDdoei1MGdZm6G5VEIfRzzjd4aQs69n699Rx7ewhvCGzr2gmTPs8zNsJOrXt24FbkhhOjCfT4ICA/rPbyhUy94Dks0gJCX1NzCZui9YUd3oei+c257TalFbgg19ILHrlrL2gvWgXAL26EX76gZTNASQnad8Ibwhl284NhgXpB0c+jKhWO3Ms1hP9ihJYB9eMF6qd1BCPk0qA1s+LimFIu7m4nsdQIzPK4VbQ8hYvrnuSH2G9b2ggP78QmWqBdF9Vx8SSY6QYdUW7BTA1schZATyhvY8lHvcRbNUS9YGFy2U+qmzh2YPVc0I7yAOFyHfRpyUwtCSzOdPXMHmz7qDIM0e0V2wZTEk+6Ym6N63eBLp/b5Bts+2cKCSJ/LuoZO3ANSiE5hKAZjnvNSS4931jcw9jpwT0feV/qSJ1pVtCyfHKDkvK8Ejx7pUxGh2xFNSwx8QTi2H9ceC0/nni64MS/5N5dG39pDqvRV+WgGk71c9VFXF9b+xYvOw/d61iv7m3MvEHryhvecwC52jSSx4VIIgwnMNT/UsTxIgpPt3K/ARj15CptwL3Zd/ceDSATj2DGQjbxgWwhdeMMte7zpy5On9vymRm/YxBYljGVjKWF9VJf7I1+sex3wY8w/V1QPTborW/72gkdsRDaZMJBdbdHIC7aCkAu9atlLbtnrzerMnyToDaGwelOnk3/hHSem/ZK7e/t7jeeR20LYBgqa8J80gS8jbwi5F02Uj1u2NYJxap8PLkJfLxA2hIJyvnHX/AfeEPLpBfe0uSFHbnXaea3Qd5d6HcpYZ8L6M7lnFwMQ3MNg+RxUR1+6AshtbsVgfXTEg1sIGax9UND2p7f270wdG3eK9gXVGHdw2k5sOyZv+Nbs39Z308XR9DqWb2J+PwKDhuKHPobfuXf7gnYGHdCs7bhDDadD4entDug7LWNsnRNW4mYqwJ9dk+GGSTPBiA2j0G8RWNM5upZtcG4/3vMfP7KnbK2egx6CCnDPhRn7NgD3cghLIad5WcM2SO38iqHvvMOosyeMpQ5zlVCaaj06GVs9xUbHdiKoqrHWgquFEFMWUEWfXUxJAML23hAHFOctmjZQffKD2pywkhtSGHKNtpitLroscAeE7kCkSsC60vxEl6yMtL9EL5HKGCMszU5bk8gdkklAyEn5FO0yK419rIxBOIqwFMooDE0tHEVYijAUECIshRCGIhxFWIowFJ5QkEYIS5PTJrUwNGlPyN6QQPyKtpuM1E/K5+YJDV/MiA3AaehzqgAm7QnZG9IGYKo8bHnSK7VblLL3hOwNHziPuEGOqE5brrdR6i+atCfckyeWD47HkAkepRGLY/e8A8J0gCwYSNypF08bBm+e6zVz2UL4AshhBUjML/rXLefqC82bcQFhGC9JDwZ1uuu+At0S5gCETYHsV4DUeD9fDN2Zfy5OXaW2zAwQygCzBLJ8cvaW5OXKC1FxfTggFAHmoAJnSiOw2wps9KwRWgJCLaEswaj5NqkLwAYIU4BxqTSXbHXpJdRMPZgAOiAMqABCNGYIEEJutEK5IUAIwYMDQgiCACEEAcJs1Vda7gGqDhCmoiEghAAhBAHCrKXVo2C1DCBMRlp37uMIEECoX7xrX3P5C9QiINSuIcoPAUI0YkAICLNWgfJDh4T9hH7zqYH9+JHAq7zBqWjwhPAicTVCVQJCNF50JghHocahKK0X/ZnQKyEkhSdUpzG8OgQI42qC94EQjsYLRSmH+pbgq73L6bYkeEJ4DYTYmeg1TOBFc/usTTp3V9DdEuXJ2xDCUbXhaXk0/kAYmBvuMB4qkC35E5e5AMKkwSQgyxufyuPy6fMMgAFCSI73LFXU/N8AmEL9X4ABACNSKMHAgb34AAAAAElFTkSuQmCC\n\
+    \      mediatype: image/png\n    install:\n      strategy: deployment\n      spec:\n\
+    \        permissions:\n        - serviceAccountName: etcd-operator\n         \
+    \ rules:\n          - apiGroups:\n            - etcd.database.coreos.com\n   \
+    \         resources:\n            - etcdclusters\n            verbs:\n       \
+    \     - \"*\"\n          - apiGroups:\n            - storage.k8s.io\n        \
+    \    resources:\n            - storageclasses\n            verbs:\n          \
+    \  - \"*\"\n          - apiGroups:\n            - \"\"\n            resources:\n\
+    \            - pods\n            - services\n            - endpoints\n       \
+    \     - persistentvolumeclaims\n            - events\n            verbs:\n   \
+    \         - \"*\"\n          - apiGroups:\n            - apps\n            resources:\n\
+    \            - deployments\n            verbs:\n            - \"*\"\n        \
+    \  - apiGroups:\n            - \"\"\n            resources:\n            - secrets\n\
+    \            verbs:\n            - get\n        deployments:\n        - name:\
+    \ etcd-operator\n          spec:\n            replicas: 1\n            selector:\n\
+    \              matchLabels:\n                name: etcd-operator-alm-owned\n \
+    \           template:\n              metadata:\n                name: etcd-operator-alm-owned\n\
+    \                labels:\n                  name: etcd-operator-alm-owned\n  \
+    \            spec:\n                serviceAccountName: etcd-operator\n      \
+    \          containers:\n                - name: etcd-operator\n              \
+    \    command:\n                  - etcd-operator\n                  - --create-crd=false\n\
+    \                  image: quay.io/coreos/etcd-operator@sha256:bd944a211eaf8f31da5e6d69e8541e7cada8f16a9f7a5a570b22478997819943\n\
+    \                  env:\n                  - name: MY_POD_NAMESPACE\n        \
+    \            valueFrom:\n                      fieldRef:\n                   \
+    \     fieldPath: metadata.namespace\n                  - name: MY_POD_NAME\n \
+    \                   valueFrom:\n                      fieldRef:\n            \
+    \            fieldPath: metadata.name\n    customresourcedefinitions:\n      owned:\n\
+    \      - name: etcdclusters.etcd.database.coreos.com\n        version: v1beta2\n\
+    \        kind: EtcdCluster\n        displayName: etcd Cluster\n        description:\
+    \ Represents a cluster of etcd nodes.\n        resources:\n          - kind: Service\n\
+    \            version: v1\n          - kind: Pod\n            version: v1\n   \
+    \     specDescriptors:\n          - description: The desired number of member\
+    \ Pods for the etcd cluster.\n            displayName: Size\n            path:\
+    \ size\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \        statusDescriptors:\n          - description: The status of each of the\
+    \ member Pods for the etcd cluster.\n            displayName: Member Status\n\
+    \            path: members\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'\n\
+    \          - description: The service at which the running etcd cluster can be\
+    \ accessed.\n            displayName: Service\n            path: service\n   \
+    \         x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes:Service'\n\
+    \          - description: The current size of the etcd cluster.\n            displayName:\
+    \ Cluster Size\n            path: size\n          - description: The current version\
+    \ of the etcd cluster.\n            displayName: Current Version\n           \
+    \ path: currentVersion\n          - description: 'The target version of the etcd\
+    \ cluster, after upgrading.'\n            displayName: Target Version\n      \
+    \      path: targetVersion\n          - description: The current status of the\
+    \ etcd cluster.\n            displayName: Status\n            path: phase\n  \
+    \          x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes.phase'\n\
+    \          - description: Explanation for the current status of the cluster.\n\
+    \            displayName: Status Details\n            path: reason\n         \
+    \   x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n\
+    \  \n- #! validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n\
+    \  #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    name: etcdoperator.v0.9.0\n\
+    \    namespace: placeholder\n    annotations:\n      tectonic-visibility: ocs\n\
+    \      alm-examples: '[{\"apiVersion\":\"etcd.database.coreos.com/v1beta2\",\"\
+    kind\":\"EtcdCluster\",\"metadata\":{\"name\":\"example\",\"namespace\":\"default\"\
+    },\"spec\":{\"size\":3,\"version\":\"3.2.13\"}},{\"apiVersion\":\"etcd.database.coreos.com/v1beta2\"\
+    ,\"kind\":\"EtcdRestore\",\"metadata\":{\"name\":\"example-etcd-cluster\"},\"\
+    spec\":{\"etcdCluster\":{\"name\":\"example-etcd-cluster\"},\"backupStorageType\"\
+    :\"S3\",\"s3\":{\"path\":\"<full-s3-path>\",\"awsSecret\":\"<aws-secret>\"}}},{\"\
+    apiVersion\":\"etcd.database.coreos.com/v1beta2\",\"kind\":\"EtcdBackup\",\"metadata\"\
+    :{\"name\":\"example-etcd-cluster-backup\"},\"spec\":{\"etcdEndpoints\":[\"<etcd-cluster-endpoints>\"\
+    ],\"storageType\":\"S3\",\"s3\":{\"path\":\"<full-s3-path>\",\"awsSecret\":\"\
+    <aws-secret>\"}}}]'\n  spec:\n    displayName: etcd\n    description: |\n    \
+    \  etcd is a distributed key value store that provides a reliable way to store\
+    \ data across a cluster of machines. It\u2019s open-source and available on GitHub.\
+    \ etcd gracefully handles leader elections during network partitions and will\
+    \ tolerate machine failure, including the leader. Your applications can read and\
+    \ write data into etcd.\n      A simple use-case is to store database connection\
+    \ details or feature flags within etcd as key value pairs. These values can be\
+    \ watched, allowing your app to reconfigure itself when they change. Advanced\
+    \ uses take advantage of the consistency guarantees to implement database leader\
+    \ elections or do distributed locking across a cluster of workers.\n  \n     \
+    \ _The etcd Open Cloud Service is Public Alpha. The goal before Beta is to fully\
+    \ implement backup features._\n  \n      ### Reading and writing to etcd\n  \n\
+    \      Communicate with etcd though its command line utility `etcdctl` or with\
+    \ the API using the automatically generated Kubernetes Service.\n  \n      [Read\
+    \ the complete guide to using the etcd Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/etcd-ocs.html)\n\
+    \  \n      ### Supported Features\n  \n  \n      **High availability**\n  \n \
+    \ \n      Multiple instances of etcd are networked together and secured. Individual\
+    \ failures or networking issues are transparently handled to keep your cluster\
+    \ up and running.\n  \n  \n      **Automated updates**\n  \n  \n      Rolling\
+    \ out a new etcd version works like all Kubernetes rolling updates. Simply declare\
+    \ the desired version, and the etcd service starts a safe rolling update to the\
+    \ new version automatically.\n  \n  \n      **Backups included**\n  \n  \n   \
+    \   Coming soon, the ability to schedule backups to happen on or off cluster.\n\
+    \    keywords: ['etcd', 'key value', 'database', 'coreos', 'open source']\n  \
+    \  version: 0.9.0\n    maturity: alpha\n    replaces: etcdoperator.v0.6.1\n  \
+    \  maintainers:\n    - name: CoreOS, Inc\n      email: support@coreos.com\n  \n\
+    \    provider:\n      name: CoreOS, Inc\n    labels:\n      alm-owner-etcd: etcdoperator\n\
+    \      operated-by: etcdoperator\n    selector:\n      matchLabels:\n        alm-owner-etcd:\
+    \ etcdoperator\n        operated-by: etcdoperator\n    links:\n    - name: Blog\n\
+    \      url: https://coreos.com/etcd\n    - name: Documentation\n      url: https://coreos.com/operators/etcd/docs/latest/\n\
+    \    - name: etcd Operator Source Code\n      url: https://github.com/coreos/etcd-operator\n\
+    \  \n    icon:\n    - base64data: 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\n\
+    \      mediatype: image/png\n    install:\n      strategy: deployment\n      spec:\n\
+    \        permissions:\n        - serviceAccountName: etcd-operator\n         \
+    \ rules:\n          - apiGroups:\n            - etcd.database.coreos.com\n   \
+    \         resources:\n            - etcdclusters\n            - etcdbackups\n\
+    \            - etcdrestores\n            verbs:\n            - \"*\"\n       \
+    \   - apiGroups:\n            - \"\"\n            resources:\n            - pods\n\
+    \            - services\n            - endpoints\n            - persistentvolumeclaims\n\
+    \            - events\n            verbs:\n            - \"*\"\n          - apiGroups:\n\
+    \            - apps\n            resources:\n            - deployments\n     \
+    \       verbs:\n            - \"*\"\n          - apiGroups:\n            - \"\"\
+    \n            resources:\n            - secrets\n            verbs:\n        \
+    \    - get\n        deployments:\n        - name: etcd-operator\n          spec:\n\
+    \            replicas: 1\n            selector:\n              matchLabels:\n\
+    \                name: etcd-operator-alm-owned\n            template:\n      \
+    \        metadata:\n                name: etcd-operator-alm-owned\n          \
+    \      labels:\n                  name: etcd-operator-alm-owned\n            \
+    \  spec:\n                serviceAccountName: etcd-operator\n                containers:\n\
+    \                - name: etcd-operator\n                  command:\n         \
+    \         - etcd-operator\n                  - --create-crd=false\n          \
+    \        image: quay.io/coreos/etcd-operator@sha256:db563baa8194fcfe39d1df744ed70024b0f1f9e9b55b5923c2f3a413c44dc6b8\n\
+    \                  env:\n                  - name: MY_POD_NAMESPACE\n        \
+    \            valueFrom:\n                      fieldRef:\n                   \
+    \     fieldPath: metadata.namespace\n                  - name: MY_POD_NAME\n \
+    \                   valueFrom:\n                      fieldRef:\n            \
+    \            fieldPath: metadata.name\n                - name: etcd-backup-operator\n\
+    \                  image: quay.io/coreos/etcd-operator@sha256:db563baa8194fcfe39d1df744ed70024b0f1f9e9b55b5923c2f3a413c44dc6b8\n\
+    \                  command:\n                  - etcd-backup-operator\n      \
+    \            - --create-crd=false\n                  env:\n                  -\
+    \ name: MY_POD_NAMESPACE\n                    valueFrom:\n                   \
+    \   fieldRef:\n                        fieldPath: metadata.namespace\n       \
+    \           - name: MY_POD_NAME\n                    valueFrom:\n            \
+    \          fieldRef:\n                        fieldPath: metadata.name\n     \
+    \           - name: etcd-restore-operator\n                  image: quay.io/coreos/etcd-operator@sha256:db563baa8194fcfe39d1df744ed70024b0f1f9e9b55b5923c2f3a413c44dc6b8\n\
+    \                  command:\n                  - etcd-restore-operator\n     \
+    \             - --create-crd=false\n                  env:\n                 \
+    \ - name: MY_POD_NAMESPACE\n                    valueFrom:\n                 \
+    \     fieldRef:\n                        fieldPath: metadata.namespace\n     \
+    \             - name: MY_POD_NAME\n                    valueFrom:\n          \
+    \            fieldRef:\n                        fieldPath: metadata.name\n   \
+    \ customresourcedefinitions:\n      owned:\n      - name: etcdclusters.etcd.database.coreos.com\n\
+    \        version: v1beta2\n        kind: EtcdCluster\n        displayName: etcd\
+    \ Cluster\n        description: Represents a cluster of etcd nodes.\n        resources:\n\
+    \          - kind: Service\n            version: v1\n          - kind: Pod\n \
+    \           version: v1\n        specDescriptors:\n          - description: The\
+    \ desired number of member Pods for the etcd cluster.\n            displayName:\
+    \ Size\n            path: size\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \          - description: Limits describes the minimum/maximum amount of compute\
+    \ resources required/allowed\n            displayName: Resource Requirements\n\
+    \            path: pod.resources\n            x-descriptors:\n              -\
+    \ 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'\n        statusDescriptors:\n\
+    \          - description: The status of each of the member Pods for the etcd cluster.\n\
+    \            displayName: Member Status\n            path: members\n         \
+    \   x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'\n\
+    \          - description: The service at which the running etcd cluster can be\
+    \ accessed.\n            displayName: Service\n            path: serviceName\n\
+    \            x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes:Service'\n\
+    \          - description: The current size of the etcd cluster.\n            displayName:\
+    \ Cluster Size\n            path: size\n          - description: The current version\
+    \ of the etcd cluster.\n            displayName: Current Version\n           \
+    \ path: currentVersion\n          - description: 'The target version of the etcd\
+    \ cluster, after upgrading.'\n            displayName: Target Version\n      \
+    \      path: targetVersion\n          - description: The current status of the\
+    \ etcd cluster.\n            displayName: Status\n            path: phase\n  \
+    \          x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes.phase'\n\
+    \          - description: Explanation for the current status of the cluster.\n\
+    \            displayName: Status Details\n            path: reason\n         \
+    \   x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n\
+    \      - name: etcdbackups.etcd.database.coreos.com\n        version: v1beta2\n\
+    \        kind: EtcdBackup\n        displayName: etcd Backup\n        description:\
+    \ Represents the intent to backup an etcd cluster.\n        specDescriptors:\n\
+    \          - description: Specifies the endpoints of an etcd cluster.\n      \
+    \      displayName: etcd Endpoint(s)\n            path: etcdEndpoints\n      \
+    \      x-descriptors: \n              - 'urn:alm:descriptor:etcd:endpoint'\n \
+    \         - description: The full AWS S3 path where the backup is saved.\n   \
+    \         displayName: S3 Path\n            path: s3.path\n            x-descriptors:\
+    \ \n              - 'urn:alm:descriptor:aws:s3:path'\n          - description:\
+    \ The name of the secret object that stores the AWS credential and config files.\n\
+    \            displayName: AWS Secret\n            path: s3.awsSecret\n       \
+    \     x-descriptors: \n              - 'urn:alm:descriptor:io.kubernetes:Secret'\n\
+    \        statusDescriptors:\n          - description: Indicates if the backup\
+    \ was successful.\n            displayName: Succeeded\n            path: succeeded\n\
+    \            x-descriptors: \n              - 'urn:alm:descriptor:text'\n    \
+    \      - description: Indicates the reason for any backup related failures.\n\
+    \            displayName: Reason\n            path: reason\n            x-descriptors:\
+    \ \n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n      - name:\
+    \ etcdrestores.etcd.database.coreos.com\n        version: v1beta2\n        kind:\
+    \ EtcdRestore\n        displayName: etcd Restore\n        description: Represents\
+    \ the intent to restore an etcd cluster from a backup.\n        specDescriptors:\n\
+    \          - description: References the EtcdCluster which should be restored,\n\
+    \            displayName: etcd Cluster\n            path: etcdCluster.name\n \
+    \           x-descriptors: \n              - 'urn:alm:descriptor:io.kubernetes:EtcdCluster'\n\
+    \              - 'urn:alm:descriptor:text'\n          - description: The full\
+    \ AWS S3 path where the backup is saved.\n            displayName: S3 Path\n \
+    \           path: s3.path\n            x-descriptors: \n              - 'urn:alm:descriptor:aws:s3:path'\n\
+    \          - description: The name of the secret object that stores the AWS credential\
+    \ and config files.\n            displayName: AWS Secret\n            path: s3.awsSecret\n\
+    \            x-descriptors: \n              - 'urn:alm:descriptor:io.kubernetes:Secret'\n\
+    \        statusDescriptors:\n          - description: Indicates if the restore\
+    \ was successful.\n            displayName: Succeeded\n            path: succeeded\n\
+    \            x-descriptors: \n              - 'urn:alm:descriptor:text'\n    \
+    \      - description: Indicates the reason for any restore related failures.\n\
+    \            displayName: Reason\n            path: reason\n            x-descriptors:\
+    \ \n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n  \n- #!\
+    \ validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n \
+    \ #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    name: etcdoperator.v0.9.2\n\
+    \    namespace: placeholder\n    annotations:\n      tectonic-visibility: ocs\n\
+    \      alm-examples: '[{\"apiVersion\":\"etcd.database.coreos.com/v1beta2\",\"\
+    kind\":\"EtcdCluster\",\"metadata\":{\"name\":\"example\",\"namespace\":\"default\"\
+    },\"spec\":{\"size\":3,\"version\":\"3.2.13\"}},{\"apiVersion\":\"etcd.database.coreos.com/v1beta2\"\
+    ,\"kind\":\"EtcdRestore\",\"metadata\":{\"name\":\"example-etcd-cluster\"},\"\
+    spec\":{\"etcdCluster\":{\"name\":\"example-etcd-cluster\"},\"backupStorageType\"\
+    :\"S3\",\"s3\":{\"path\":\"<full-s3-path>\",\"awsSecret\":\"<aws-secret>\"}}},{\"\
+    apiVersion\":\"etcd.database.coreos.com/v1beta2\",\"kind\":\"EtcdBackup\",\"metadata\"\
+    :{\"name\":\"example-etcd-cluster-backup\"},\"spec\":{\"etcdEndpoints\":[\"<etcd-cluster-endpoints>\"\
+    ],\"storageType\":\"S3\",\"s3\":{\"path\":\"<full-s3-path>\",\"awsSecret\":\"\
+    <aws-secret>\"}}}]'\n  spec:\n    displayName: etcd\n    description: |\n    \
+    \  etcd is a distributed key value store that provides a reliable way to store\
+    \ data across a cluster of machines. It\u2019s open-source and available on GitHub.\
+    \ etcd gracefully handles leader elections during network partitions and will\
+    \ tolerate machine failure, including the leader. Your applications can read and\
+    \ write data into etcd.\n      A simple use-case is to store database connection\
+    \ details or feature flags within etcd as key value pairs. These values can be\
+    \ watched, allowing your app to reconfigure itself when they change. Advanced\
+    \ uses take advantage of the consistency guarantees to implement database leader\
+    \ elections or do distributed locking across a cluster of workers.\n  \n     \
+    \ _The etcd Open Cloud Service is Public Alpha. The goal before Beta is to fully\
+    \ implement backup features._\n  \n      ### Reading and writing to etcd\n  \n\
+    \      Communicate with etcd though its command line utility `etcdctl` or with\
+    \ the API using the automatically generated Kubernetes Service.\n  \n      [Read\
+    \ the complete guide to using the etcd Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/etcd-ocs.html)\n\
+    \  \n      ### Supported Features\n  \n  \n      **High availability**\n  \n \
+    \ \n      Multiple instances of etcd are networked together and secured. Individual\
+    \ failures or networking issues are transparently handled to keep your cluster\
+    \ up and running.\n  \n  \n      **Automated updates**\n  \n  \n      Rolling\
+    \ out a new etcd version works like all Kubernetes rolling updates. Simply declare\
+    \ the desired version, and the etcd service starts a safe rolling update to the\
+    \ new version automatically.\n  \n  \n      **Backups included**\n  \n  \n   \
+    \   Coming soon, the ability to schedule backups to happen on or off cluster.\n\
+    \    keywords: ['etcd', 'key value', 'database', 'coreos', 'open source']\n  \
+    \  version: 0.9.2\n    maturity: alpha\n    replaces: etcdoperator.v0.9.0\n  \
+    \  maintainers:\n    - name: CoreOS, Inc\n      email: support@coreos.com\n  \n\
+    \    provider:\n      name: CoreOS, Inc\n    labels:\n      alm-owner-etcd: etcdoperator\n\
+    \      operated-by: etcdoperator\n    selector:\n      matchLabels:\n        alm-owner-etcd:\
+    \ etcdoperator\n        operated-by: etcdoperator\n    links:\n    - name: Blog\n\
+    \      url: https://coreos.com/etcd\n    - name: Documentation\n      url: https://coreos.com/operators/etcd/docs/latest/\n\
+    \    - name: etcd Operator Source Code\n      url: https://github.com/coreos/etcd-operator\n\
+    \  \n    icon:\n    - base64data: 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\n\
+    \      mediatype: image/png\n    install:\n      strategy: deployment\n      spec:\n\
+    \        permissions:\n        - serviceAccountName: etcd-operator\n         \
+    \ rules:\n          - apiGroups:\n            - etcd.database.coreos.com\n   \
+    \         resources:\n            - etcdclusters\n            - etcdbackups\n\
+    \            - etcdrestores\n            verbs:\n            - \"*\"\n       \
+    \   - apiGroups:\n            - \"\"\n            resources:\n            - pods\n\
+    \            - services\n            - endpoints\n            - persistentvolumeclaims\n\
+    \            - events\n            verbs:\n            - \"*\"\n          - apiGroups:\n\
+    \            - apps\n            resources:\n            - deployments\n     \
+    \       verbs:\n            - \"*\"\n          - apiGroups:\n            - \"\"\
+    \n            resources:\n            - secrets\n            verbs:\n        \
+    \    - get\n        deployments:\n        - name: etcd-operator\n          spec:\n\
+    \            replicas: 1\n            selector:\n              matchLabels:\n\
+    \                name: etcd-operator-alm-owned\n            template:\n      \
+    \        metadata:\n                name: etcd-operator-alm-owned\n          \
+    \      labels:\n                  name: etcd-operator-alm-owned\n            \
+    \  spec:\n                serviceAccountName: etcd-operator\n                containers:\n\
+    \                - name: etcd-operator\n                  command:\n         \
+    \         - etcd-operator\n                  - --create-crd=false\n          \
+    \        image: quay.io/coreos/etcd-operator@sha256:c0301e4686c3ed4206e370b42de5a3bd2229b9fb4906cf85f3f30650424abec2\n\
+    \                  env:\n                  - name: MY_POD_NAMESPACE\n        \
+    \            valueFrom:\n                      fieldRef:\n                   \
+    \     fieldPath: metadata.namespace\n                  - name: MY_POD_NAME\n \
+    \                   valueFrom:\n                      fieldRef:\n            \
+    \            fieldPath: metadata.name\n                - name: etcd-backup-operator\n\
+    \                  image: quay.io/coreos/etcd-operator@sha256:c0301e4686c3ed4206e370b42de5a3bd2229b9fb4906cf85f3f30650424abec2\n\
+    \                  command:\n                  - etcd-backup-operator\n      \
+    \            - --create-crd=false\n                  env:\n                  -\
+    \ name: MY_POD_NAMESPACE\n                    valueFrom:\n                   \
+    \   fieldRef:\n                        fieldPath: metadata.namespace\n       \
+    \           - name: MY_POD_NAME\n                    valueFrom:\n            \
+    \          fieldRef:\n                        fieldPath: metadata.name\n     \
+    \           - name: etcd-restore-operator\n                  image: quay.io/coreos/etcd-operator@sha256:c0301e4686c3ed4206e370b42de5a3bd2229b9fb4906cf85f3f30650424abec2\n\
+    \                  command:\n                  - etcd-restore-operator\n     \
+    \             - --create-crd=false\n                  env:\n                 \
+    \ - name: MY_POD_NAMESPACE\n                    valueFrom:\n                 \
+    \     fieldRef:\n                        fieldPath: metadata.namespace\n     \
+    \             - name: MY_POD_NAME\n                    valueFrom:\n          \
+    \            fieldRef:\n                        fieldPath: metadata.name\n   \
+    \ customresourcedefinitions:\n      owned:\n      - name: etcdclusters.etcd.database.coreos.com\n\
+    \        version: v1beta2\n        kind: EtcdCluster\n        displayName: etcd\
+    \ Cluster\n        description: Represents a cluster of etcd nodes.\n        resources:\n\
+    \          - kind: Service\n            version: v1\n          - kind: Pod\n \
+    \           version: v1\n        specDescriptors:\n          - description: The\
+    \ desired number of member Pods for the etcd cluster.\n            displayName:\
+    \ Size\n            path: size\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \          - description: Limits describes the minimum/maximum amount of compute\
+    \ resources required/allowed\n            displayName: Resource Requirements\n\
+    \            path: pod.resources\n            x-descriptors:\n              -\
+    \ 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'\n        statusDescriptors:\n\
+    \          - description: The status of each of the member Pods for the etcd cluster.\n\
+    \            displayName: Member Status\n            path: members\n         \
+    \   x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'\n\
+    \          - description: The service at which the running etcd cluster can be\
+    \ accessed.\n            displayName: Service\n            path: serviceName\n\
+    \            x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes:Service'\n\
+    \          - description: The current size of the etcd cluster.\n            displayName:\
+    \ Cluster Size\n            path: size\n          - description: The current version\
+    \ of the etcd cluster.\n            displayName: Current Version\n           \
+    \ path: currentVersion\n          - description: 'The target version of the etcd\
+    \ cluster, after upgrading.'\n            displayName: Target Version\n      \
+    \      path: targetVersion\n          - description: The current status of the\
+    \ etcd cluster.\n            displayName: Status\n            path: phase\n  \
+    \          x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes.phase'\n\
+    \          - description: Explanation for the current status of the cluster.\n\
+    \            displayName: Status Details\n            path: reason\n         \
+    \   x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n\
+    \      - name: etcdbackups.etcd.database.coreos.com\n        version: v1beta2\n\
+    \        kind: EtcdBackup\n        displayName: etcd Backup\n        description:\
+    \ Represents the intent to backup an etcd cluster.\n        specDescriptors:\n\
+    \          - description: Specifies the endpoints of an etcd cluster.\n      \
+    \      displayName: etcd Endpoint(s)\n            path: etcdEndpoints\n      \
+    \      x-descriptors: \n              - 'urn:alm:descriptor:etcd:endpoint'\n \
+    \         - description: The full AWS S3 path where the backup is saved.\n   \
+    \         displayName: S3 Path\n            path: s3.path\n            x-descriptors:\
+    \ \n              - 'urn:alm:descriptor:aws:s3:path'\n          - description:\
+    \ The name of the secret object that stores the AWS credential and config files.\n\
+    \            displayName: AWS Secret\n            path: s3.awsSecret\n       \
+    \     x-descriptors: \n              - 'urn:alm:descriptor:io.kubernetes:Secret'\n\
+    \        statusDescriptors:\n          - description: Indicates if the backup\
+    \ was successful.\n            displayName: Succeeded\n            path: succeeded\n\
+    \            x-descriptors: \n              - 'urn:alm:descriptor:text'\n    \
+    \      - description: Indicates the reason for any backup related failures.\n\
+    \            displayName: Reason\n            path: reason\n            x-descriptors:\
+    \ \n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n      - name:\
+    \ etcdrestores.etcd.database.coreos.com\n        version: v1beta2\n        kind:\
+    \ EtcdRestore\n        displayName: etcd Restore\n        description: Represents\
+    \ the intent to restore an etcd cluster from a backup.\n        specDescriptors:\n\
+    \          - description: References the EtcdCluster which should be restored,\n\
+    \            displayName: etcd Cluster\n            path: etcdCluster.name\n \
+    \           x-descriptors: \n              - 'urn:alm:descriptor:io.kubernetes:EtcdCluster'\n\
+    \              - 'urn:alm:descriptor:text'\n          - description: The full\
+    \ AWS S3 path where the backup is saved.\n            displayName: S3 Path\n \
+    \           path: s3.path\n            x-descriptors: \n              - 'urn:alm:descriptor:aws:s3:path'\n\
+    \          - description: The name of the secret object that stores the AWS credential\
+    \ and config files.\n            displayName: AWS Secret\n            path: s3.awsSecret\n\
+    \            x-descriptors: \n              - 'urn:alm:descriptor:io.kubernetes:Secret'\n\
+    \        statusDescriptors:\n          - description: Indicates if the restore\
+    \ was successful.\n            displayName: Succeeded\n            path: succeeded\n\
+    \            x-descriptors: \n              - 'urn:alm:descriptor:text'\n    \
+    \      - description: Indicates the reason for any restore related failures.\n\
+    \            displayName: Reason\n            path: reason\n            x-descriptors:\
+    \ \n              - 'urn:alm:descriptor:io.kubernetes.phase:reason'\n  \n- #!\
+    \ validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n \
+    \ #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    name: prometheusoperator.0.14.0\n\
+    \    namespace: placeholder\n  spec:\n    displayName: Prometheus\n    description:\
+    \ |\n      An open-source monitoring system with a dimensional data model, flexible\
+    \ query language, efficient time series database and modern alerting approach.\n\
+    \  \n      _The Prometheus Open Cloud Service is Public Alpha. The goal before\
+    \ Beta is for additional user testing and minor bug fixes._\n  \n      ### Monitoring\
+    \ applications\n  \n      Prometheus scrapes your application metrics based on\
+    \ targets maintained in a ServiceMonitor object. When alerts need to be sent,\
+    \ they are processsed by an AlertManager.\n  \n      [Read the complete guide\
+    \ to monitoring applications with the Prometheus Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/prometheus-ocs.html)\n\
+    \  \n      ## Supported Features\n  \n      **High availability**\n      Multiple\
+    \ instances are run across failure zones and data is replicated. This keeps your\
+    \ monitoring available during an outage, when you need it most.\n      **Updates\
+    \ via automated operations**\n      New Prometheus versions are deployed using\
+    \ a rolling update with no downtime, making it easy to stay up to date.\n    \
+    \  **Handles the dynamic nature of containers**\n      Alerting rules are attached\
+    \ to groups of containers instead of individual instances, which is ideal for\
+    \ the highly dynamic nature of container deployment.\n  \n    keywords: ['prometheus',\
+    \ 'monitoring', 'tsdb', 'alerting']\n  \n    maintainers:\n    - name: CoreOS,\
+    \ Inc\n      email: support@coreos.com\n  \n    provider:\n      name: CoreOS,\
+    \ Inc\n  \n    links:\n    - name: Prometheus\n      url: https://www.prometheus.io/\n\
+    \    - name: Documentation\n      url: https://coreos.com/operators/prometheus/docs/latest/\n\
+    \    - name: Prometheus Operator Source Code\n      url: https://github.com/coreos/prometheus-operator\n\
+    \  \n    labels:\n      alm-status-descriptors: prometheusoperator.0.14.0\n  \
+    \    alm-owner-prometheus: prometheusoperator\n  \n    selector:\n      matchLabels:\n\
+    \        alm-owner-prometheus: prometheusoperator\n  \n    icon:\n    - base64data:\
+    \ PHN2ZyB3aWR0aD0iMjQ5MCIgaGVpZ2h0PSIyNTAwIiB2aWV3Qm94PSIwIDAgMjU2IDI1NyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCI+PHBhdGggZD0iTTEyOC4wMDEuNjY3QzU3LjMxMS42NjcgMCA1Ny45NzEgMCAxMjguNjY0YzAgNzAuNjkgNTcuMzExIDEyNy45OTggMTI4LjAwMSAxMjcuOTk4UzI1NiAxOTkuMzU0IDI1NiAxMjguNjY0QzI1NiA1Ny45NyAxOTguNjg5LjY2NyAxMjguMDAxLjY2N3ptMCAyMzkuNTZjLTIwLjExMiAwLTM2LjQxOS0xMy40MzUtMzYuNDE5LTMwLjAwNGg3Mi44MzhjMCAxNi41NjYtMTYuMzA2IDMwLjAwNC0zNi40MTkgMzAuMDA0em02MC4xNTMtMzkuOTRINjcuODQyVjE3OC40N2gxMjAuMzE0djIxLjgxNmgtLjAwMnptLS40MzItMzMuMDQ1SDY4LjE4NWMtLjM5OC0uNDU4LS44MDQtLjkxLTEuMTg4LTEuMzc1LTEyLjMxNS0xNC45NTQtMTUuMjE2LTIyLjc2LTE4LjAzMi0zMC43MTYtLjA0OC0uMjYyIDE0LjkzMyAzLjA2IDI1LjU1NiA1LjQ1IDAgMCA1LjQ2NiAxLjI2NSAxMy40NTggMi43MjItNy42NzMtOC45OTQtMTIuMjMtMjAuNDI4LTEyLjIzLTMyLjExNiAwLTI1LjY1OCAxOS42OC00OC4wNzkgMTIuNTgtNjYuMjAxIDYuOTEuNTYyIDE0LjMgMTQuNTgzIDE0LjggMzYuNTA1IDcuMzQ2LTEwLjE1MiAxMC40Mi0yOC42OSAxMC40Mi00MC4wNTYgMC0xMS43NjkgNy43NTUtMjUuNDQgMTUuNTEyLTI1LjkwNy02LjkxNSAxMS4zOTYgMS43OSAyMS4xNjUgOS41MyA0NS40IDIuOTAyIDkuMTAzIDIuNTMyIDI0LjQyMyA0Ljc3MiAzNC4xMzguNzQ0LTIwLjE3OCA0LjIxMy00OS42MiAxNy4wMTQtNTkuNzg0LTUuNjQ3IDEyLjguODM2IDI4LjgxOCA1LjI3IDM2LjUxOCA3LjE1NCAxMi40MjQgMTEuNDkgMjEuODM2IDExLjQ5IDM5LjYzOCAwIDExLjkzNi00LjQwNyAyMy4xNzMtMTEuODQgMzEuOTU4IDguNDUyLTEuNTg2IDE0LjI4OS0zLjAxNiAxNC4yODktMy4wMTZsMjcuNDUtNS4zNTVjLjAwMi0uMDAyLTMuOTg3IDE2LjQwMS0xOS4zMTQgMzIuMTk3eiIgZmlsbD0iI0RBNEUzMSIvPjwvc3ZnPg==\n\
+    \      mediatype: image/svg+xml\n  \n    install:\n      strategy: deployment\n\
+    \      spec:\n        permissions:\n        - serviceAccountName: prometheus-k8s\n\
+    \          rules:\n          - apiGroups: [\"\"]\n            resources:\n   \
+    \         - nodes\n            - services\n            - endpoints\n         \
+    \   - pods\n            verbs: [\"get\", \"list\", \"watch\"]\n          - apiGroups:\
+    \ [\"\"]\n            resources:\n            - configmaps\n            verbs:\
+    \ [\"get\"]\n        - serviceAccountName: prometheus-operator-0-14-0\n      \
+    \    rules:\n          - apiGroups:\n            - apiextensions.k8s.io\n    \
+    \        resources:\n            - customresourcedefinitions\n            verbs:\
+    \ [\"get\", \"list\"]\n          - apiGroups:\n            - monitoring.coreos.com\n\
+    \            resources:\n            - alertmanagers\n            - prometheuses\n\
+    \            - servicemonitors\n            verbs:\n            - \"*\"\n    \
+    \      - apiGroups:\n            - apps\n            resources:\n            -\
+    \ statefulsets\n            verbs: [\"*\"]\n          - apiGroups: [\"\"]\n  \
+    \          resources:\n            - configmaps\n            - secrets\n     \
+    \       verbs: [\"*\"]\n          - apiGroups: [\"\"]\n            resources:\n\
+    \            - pods\n            verbs: [\"list\", \"delete\"]\n          - apiGroups:\
+    \ [\"\"]\n            resources:\n            - services\n            - endpoints\n\
+    \            verbs: [\"get\", \"create\", \"update\"]\n          - apiGroups:\
+    \ [\"\"]\n            resources:\n            - nodes\n            verbs: [\"\
+    list\", \"watch\"]\n          - apiGroups: [\"\"]\n            resources:\n  \
+    \          - namespaces\n            verbs: ['list']\n        deployments:\n \
+    \       - name: prometheus-operator\n          spec:\n            replicas: 1\n\
+    \            selector:\n              matchLabels:\n                k8s-app: prometheus-operator\n\
+    \            template:\n              metadata:\n                labels:\n   \
+    \               k8s-app: prometheus-operator\n              spec:\n          \
+    \      serviceAccount: prometheus-operator-0-14-0\n                containers:\n\
+    \                - name: prometheus-operator\n                  image: quay.io/coreos/prometheus-operator@sha256:5037b4e90dbb03ebdefaa547ddf6a1f748c8eeebeedf6b9d9f0913ad662b5731\n\
+    \                  command:\n                    - sh\n                    - -c\n\
+    \                    - >\n                      /bin/operator --namespace=$K8S_NAMESPACE\
+    \ --crd-apigroup monitoring.coreos.com\n                      --labels alm-status-descriptors=prometheusoperator.0.14.0,alm-owner-prometheus=prometheusoperator\n\
+    \                      --kubelet-service=kube-system/kubelet\n               \
+    \       --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1\n     \
+    \             env:\n                    - name: K8S_NAMESPACE\n              \
+    \        valueFrom:\n                        fieldRef:\n                     \
+    \     fieldPath: metadata.namespace\n                  ports:\n              \
+    \    - containerPort: 8080\n                    name: http\n                 \
+    \ resources:\n                    limits:\n                      cpu: 200m\n \
+    \                     memory: 100Mi\n                    requests:\n         \
+    \             cpu: 100m\n                      memory: 50Mi\n    maturity: alpha\n\
+    \    version: 0.14.0\n    customresourcedefinitions:\n      owned:\n      - name:\
+    \ prometheuses.monitoring.coreos.com\n        version: v1\n        kind: Prometheus\n\
+    \        displayName: Prometheus\n        description: A running Prometheus instance\n\
+    \        resources:\n          - kind: Pod\n            version: v1\n        specDescriptors:\n\
+    \        - description: Desired number of Pods for the cluster\n          displayName:\
+    \ Size\n          path: replicas\n          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \        - description: A selector for the ConfigMaps from which to load rule\
+    \ files\n          displayName: Rule Config Map Selector\n          path: ruleSelector\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:selector:ConfigMap'\n\
+    \        - description: ServiceMonitors to be selected for target discovery\n\
+    \          displayName: Service Monitor Selector\n          path: serviceMonitorSelector\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:selector:ServiceMonitor'\n\
+    \        - description: The ServiceAccount to use to run the Prometheus pods\n\
+    \          displayName: Service Account\n          path: serviceAccountName\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:io.kubernetes:ServiceAccount'\n\
+    \        - description: Define resources requests and limits for single Pods\n\
+    \          displayName: Resource Request\n          path: resources.requests\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'\n\
+    \        statusDescriptors:\n          - description: The current number of Pods\
+    \ for the cluster\n            displayName: Cluster Size\n            path: replicas\n\
+    \          - path: prometheusSelector\n            displayName: Prometheus Service\
+    \ Selector\n            description: Label selector to find the service that routes\
+    \ to this prometheus\n            x-descriptors:\n            - 'urn:alm:descriptor:label:selector'\n\
+    \      - name: servicemonitors.monitoring.coreos.com\n        version: v1\n  \
+    \      kind: ServiceMonitor\n        displayName: Service Monitor\n        description:\
+    \ Configures prometheus to monitor a particular k8s service\n        resources:\n\
+    \          - kind: Pod\n            version: v1\n        specDescriptors:\n  \
+    \      - description: Selector to select which namespaces the Endpoints objects\
+    \ are discovered from\n          displayName: Monitoring Namespaces\n        \
+    \  path: namespaceSelector\n          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:namespaceSelector'\n\
+    \        - description: The label to use to retrieve the job name from\n     \
+    \     displayName: Job Label\n          path: jobLabel\n          x-descriptors:\n\
+    \            - 'urn:alm:descriptor:com.tectonic.ui:label'\n        - description:\
+    \ A list of endpoints allowed as part of this ServiceMonitor\n          displayName:\
+    \ Endpoints\n          path: endpoints\n          x-descriptors:\n           \
+    \ - 'urn:alm:descriptor:com.tectonic.ui:endpointList'\n      - name: alertmanagers.monitoring.coreos.com\n\
+    \        version: v1\n        kind: Alertmanager\n        displayName: Alert Manager\n\
+    \        description: Configures an Alert Manager for the namespace\n        resources:\n\
+    \          - kind: Pod\n            version: v1\n        specDescriptors:\n  \
+    \      - description: Desired number of Pods for the cluster\n          displayName:\
+    \ Size\n          path: replicas\n          x-descriptors:\n          - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \  \n- #! validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n\
+    \  #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    name: prometheusoperator.0.15.0\n\
+    \    namespace: placeholder\n    annotations:\n      tectonic-visibility: ocs\n\
+    \      alm-examples: '[{\"apiVersion\":\"monitoring.coreos.com/v1\",\"kind\":\"\
+    Prometheus\",\"metadata\":{\"name\":\"example\",\"labels\":{\"prometheus\":\"\
+    k8s\"}},\"spec\":{\"replicas\":2,\"version\":\"v1.7.0\",\"serviceAccountName\"\
+    :\"prometheus-k8s\",\"serviceMonitorSelector\":{\"matchExpressions\":[{\"key\"\
+    :\"k8s-app\",\"operator\":\"Exists\"}]},\"ruleSelector\":{\"matchLabels\":{\"\
+    role\":\"prometheus-rulefiles\",\"prometheus\":\"k8s\"}},\"resources\":{\"requests\"\
+    :{\"memory\":\"400Mi\"}},\"alerting\":{\"alertmanagers\":[{\"namespace\":\"monitoring\"\
+    ,\"name\":\"alertmanager-main\",\"port\":\"web\"}]}}},{\"apiVersion\":\"monitoring.coreos.com/v1\"\
+    ,\"kind\":\"ServiceMonitor\",\"metadata\":{\"name\":\"example\",\"labels\":{\"\
+    k8s-app\":\"prometheus\"}},\"spec\":{\"selector\":{\"matchLabels\":{\"k8s-app\"\
+    :\"prometheus\",\"prometheus\":\"k8s\"}},\"namespaceSelector\":{\"matchNames\"\
+    :[\"monitoring\"]},\"endpoints\":[{\"port\":\"web\",\"interval\":\"30s\"}]}},{\"\
+    apiVersion\":\"monitoring.coreos.com/v1\",\"kind\":\"Alertmanager\",\"metadata\"\
+    :{\"name\":\"alertmanager-main\"},\"spec\":{\"replicas\":3}}]'\n  spec:\n    replaces:\
+    \ prometheusoperator.0.14.0\n    displayName: Prometheus\n    description: |\n\
+    \      An open-source monitoring system with a dimensional data model, flexible\
+    \ query language, efficient time series database and modern alerting approach.\n\
+    \  \n      _The Prometheus Open Cloud Service is Public Alpha. The goal before\
+    \ Beta is for additional user testing and minor bug fixes._\n  \n      ### Monitoring\
+    \ applications\n  \n      Prometheus scrapes your application metrics based on\
+    \ targets maintained in a ServiceMonitor object. When alerts need to be sent,\
+    \ they are processsed by an AlertManager.\n  \n      [Read the complete guide\
+    \ to monitoring applications with the Prometheus Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/prometheus-ocs.html)\n\
+    \  \n      ### Supported Features\n  \n  \n      **High availability**\n  \n \
+    \ \n      Multiple instances are run across failure zones and data is replicated.\
+    \ This keeps your monitoring available during an outage, when you need it most.\n\
+    \  \n  \n      **Updates via automated operations**\n  \n  \n      New Prometheus\
+    \ versions are deployed using a rolling update with no downtime, making it easy\
+    \ to stay up to date.\n  \n  \n      **Handles the dynamic nature of containers**\n\
+    \  \n  \n      Alerting rules are attached to groups of containers instead of\
+    \ individual instances, which is ideal for the highly dynamic nature of container\
+    \ deployment.\n  \n    keywords: ['prometheus', 'monitoring', 'tsdb', 'alerting']\n\
+    \  \n    maintainers:\n    - name: CoreOS, Inc\n      email: support@coreos.com\n\
+    \  \n    provider:\n      name: CoreOS, Inc\n  \n    links:\n    - name: Prometheus\n\
+    \      url: https://www.prometheus.io/\n    - name: Documentation\n      url:\
+    \ https://coreos.com/operators/prometheus/docs/latest/\n    - name: Prometheus\
+    \ Operator Source Code\n      url: https://github.com/coreos/prometheus-operator\n\
+    \  \n    labels:\n      alm-status-descriptors: prometheusoperator.0.15.0\n  \
+    \    alm-owner-prometheus: prometheusoperator\n  \n    selector:\n      matchLabels:\n\
+    \        alm-owner-prometheus: prometheusoperator\n  \n    icon:\n    - base64data:\
+    \ PHN2ZyB3aWR0aD0iMjQ5MCIgaGVpZ2h0PSIyNTAwIiB2aWV3Qm94PSIwIDAgMjU2IDI1NyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCI+PHBhdGggZD0iTTEyOC4wMDEuNjY3QzU3LjMxMS42NjcgMCA1Ny45NzEgMCAxMjguNjY0YzAgNzAuNjkgNTcuMzExIDEyNy45OTggMTI4LjAwMSAxMjcuOTk4UzI1NiAxOTkuMzU0IDI1NiAxMjguNjY0QzI1NiA1Ny45NyAxOTguNjg5LjY2NyAxMjguMDAxLjY2N3ptMCAyMzkuNTZjLTIwLjExMiAwLTM2LjQxOS0xMy40MzUtMzYuNDE5LTMwLjAwNGg3Mi44MzhjMCAxNi41NjYtMTYuMzA2IDMwLjAwNC0zNi40MTkgMzAuMDA0em02MC4xNTMtMzkuOTRINjcuODQyVjE3OC40N2gxMjAuMzE0djIxLjgxNmgtLjAwMnptLS40MzItMzMuMDQ1SDY4LjE4NWMtLjM5OC0uNDU4LS44MDQtLjkxLTEuMTg4LTEuMzc1LTEyLjMxNS0xNC45NTQtMTUuMjE2LTIyLjc2LTE4LjAzMi0zMC43MTYtLjA0OC0uMjYyIDE0LjkzMyAzLjA2IDI1LjU1NiA1LjQ1IDAgMCA1LjQ2NiAxLjI2NSAxMy40NTggMi43MjItNy42NzMtOC45OTQtMTIuMjMtMjAuNDI4LTEyLjIzLTMyLjExNiAwLTI1LjY1OCAxOS42OC00OC4wNzkgMTIuNTgtNjYuMjAxIDYuOTEuNTYyIDE0LjMgMTQuNTgzIDE0LjggMzYuNTA1IDcuMzQ2LTEwLjE1MiAxMC40Mi0yOC42OSAxMC40Mi00MC4wNTYgMC0xMS43NjkgNy43NTUtMjUuNDQgMTUuNTEyLTI1LjkwNy02LjkxNSAxMS4zOTYgMS43OSAyMS4xNjUgOS41MyA0NS40IDIuOTAyIDkuMTAzIDIuNTMyIDI0LjQyMyA0Ljc3MiAzNC4xMzguNzQ0LTIwLjE3OCA0LjIxMy00OS42MiAxNy4wMTQtNTkuNzg0LTUuNjQ3IDEyLjguODM2IDI4LjgxOCA1LjI3IDM2LjUxOCA3LjE1NCAxMi40MjQgMTEuNDkgMjEuODM2IDExLjQ5IDM5LjYzOCAwIDExLjkzNi00LjQwNyAyMy4xNzMtMTEuODQgMzEuOTU4IDguNDUyLTEuNTg2IDE0LjI4OS0zLjAxNiAxNC4yODktMy4wMTZsMjcuNDUtNS4zNTVjLjAwMi0uMDAyLTMuOTg3IDE2LjQwMS0xOS4zMTQgMzIuMTk3eiIgZmlsbD0iI0RBNEUzMSIvPjwvc3ZnPg==\n\
+    \      mediatype: image/svg+xml\n  \n    install:\n      strategy: deployment\n\
+    \      spec:\n        permissions:\n        - serviceAccountName: prometheus-k8s\n\
+    \          rules:\n          - apiGroups: [\"\"]\n            resources:\n   \
+    \         - nodes\n            - services\n            - endpoints\n         \
+    \   - pods\n            verbs: [\"get\", \"list\", \"watch\"]\n          - apiGroups:\
+    \ [\"\"]\n            resources:\n            - configmaps\n            verbs:\
+    \ [\"get\"]\n        - serviceAccountName: prometheus-operator-0-14-0\n      \
+    \    rules:\n          - apiGroups:\n            - apiextensions.k8s.io\n    \
+    \        resources:\n            - customresourcedefinitions\n            verbs:\
+    \ [\"get\", \"list\"]\n          - apiGroups:\n            - monitoring.coreos.com\n\
+    \            resources:\n            - alertmanagers\n            - prometheuses\n\
+    \            - servicemonitors\n            verbs:\n            - \"*\"\n    \
+    \      - apiGroups:\n            - apps\n            resources:\n            -\
+    \ statefulsets\n            verbs: [\"*\"]\n          - apiGroups: [\"\"]\n  \
+    \          resources:\n            - configmaps\n            - secrets\n     \
+    \       verbs: [\"*\"]\n          - apiGroups: [\"\"]\n            resources:\n\
+    \            - pods\n            verbs: [\"list\", \"delete\"]\n          - apiGroups:\
+    \ [\"\"]\n            resources:\n            - services\n            - endpoints\n\
+    \            verbs: [\"get\", \"create\", \"update\"]\n          - apiGroups:\
+    \ [\"\"]\n            resources:\n            - nodes\n            verbs: [\"\
+    list\", \"watch\"]\n          - apiGroups: [\"\"]\n            resources:\n  \
+    \          - namespaces\n            verbs: ['list']\n        deployments:\n \
+    \       - name: prometheus-operator\n          spec:\n            replicas: 1\n\
+    \            selector:\n              matchLabels:\n                k8s-app: prometheus-operator\n\
+    \            template:\n              metadata:\n                labels:\n   \
+    \               k8s-app: prometheus-operator\n              spec:\n          \
+    \      serviceAccount: prometheus-operator-0-14-0\n                containers:\n\
+    \                - name: prometheus-operator\n                  image: quay.io/coreos/prometheus-operator@sha256:0e92dd9b5789c4b13d53e1319d0a6375bcca4caaf0d698af61198061222a576d\n\
+    \                  command:\n                    - sh\n                    - -c\n\
+    \                    - >\n                      /bin/operator --namespace=$K8S_NAMESPACE\
+    \ --crd-apigroup monitoring.coreos.com\n                      --labels alm-status-descriptors=prometheusoperator.0.15.0,alm-owner-prometheus=prometheusoperator\n\
+    \                      --kubelet-service=kube-system/kubelet\n               \
+    \       --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1\n     \
+    \             env:\n                    - name: K8S_NAMESPACE\n              \
+    \        valueFrom:\n                        fieldRef:\n                     \
+    \     fieldPath: metadata.namespace\n                  ports:\n              \
+    \    - containerPort: 8080\n                    name: http\n                 \
+    \ resources:\n                    limits:\n                      cpu: 200m\n \
+    \                     memory: 100Mi\n                    requests:\n         \
+    \             cpu: 100m\n                      memory: 50Mi\n    maturity: alpha\n\
+    \    version: 0.15.0\n    customresourcedefinitions:\n      owned:\n      - name:\
+    \ prometheuses.monitoring.coreos.com\n        version: v1\n        kind: Prometheus\n\
+    \        displayName: Prometheus\n        description: A running Prometheus instance\n\
+    \        resources:\n          - kind: StatefulSet\n            version: v1beta2\n\
+    \          - kind: Pod\n            version: v1\n        specDescriptors:\n  \
+    \      - description: Desired number of Pods for the cluster\n          displayName:\
+    \ Size\n          path: replicas\n          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \        - description: A selector for the ConfigMaps from which to load rule\
+    \ files\n          displayName: Rule Config Map Selector\n          path: ruleSelector\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:selector:ConfigMap'\n\
+    \        - description: ServiceMonitors to be selected for target discovery\n\
+    \          displayName: Service Monitor Selector\n          path: serviceMonitorSelector\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:selector:ServiceMonitor'\n\
+    \        - description: The ServiceAccount to use to run the Prometheus pods\n\
+    \          displayName: Service Account\n          path: serviceAccountName\n\
+    \          x-descriptors:\n            - 'urn:alm:descriptor:io.kubernetes:ServiceAccount'\n\
+    \        - description: Limits describes the minimum/maximum amount of compute\
+    \ resources required/allowed\n          displayName: Resource Requirements\n \
+    \         path: resources\n          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'\n\
+    \        statusDescriptors:\n          - description: The current number of Pods\
+    \ for the cluster\n            displayName: Cluster Size\n            path: replicas\n\
+    \          - path: prometheusSelector\n            displayName: Prometheus Service\
+    \ Selector\n            description: Label selector to find the service that routes\
+    \ to this prometheus\n            x-descriptors:\n            - 'urn:alm:descriptor:label:selector'\n\
+    \      - name: servicemonitors.monitoring.coreos.com\n        version: v1\n  \
+    \      kind: ServiceMonitor\n        displayName: Service Monitor\n        description:\
+    \ Configures prometheus to monitor a particular k8s service\n        resources:\n\
+    \          - kind: Pod\n            version: v1\n        specDescriptors:\n  \
+    \      - description: Selector to select which namespaces the Endpoints objects\
+    \ are discovered from\n          displayName: Monitoring Namespaces\n        \
+    \  path: namespaceSelector\n          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:namespaceSelector'\n\
+    \        - description: The label to use to retrieve the job name from\n     \
+    \     displayName: Job Label\n          path: jobLabel\n          x-descriptors:\n\
+    \            - 'urn:alm:descriptor:com.tectonic.ui:label'\n        - description:\
+    \ A list of endpoints allowed as part of this ServiceMonitor\n          displayName:\
+    \ Endpoints\n          path: endpoints\n          x-descriptors:\n           \
+    \ - 'urn:alm:descriptor:com.tectonic.ui:endpointList'\n      - name: alertmanagers.monitoring.coreos.com\n\
+    \        version: v1\n        kind: Alertmanager\n        displayName: Alert Manager\n\
+    \        description: Configures an Alert Manager for the namespace\n        resources:\n\
+    \          - kind: StatefulSet\n            version: v1beta2\n          - kind:\
+    \ Pod\n            version: v1\n        specDescriptors:\n        - description:\
+    \ Desired number of Pods for the cluster\n          displayName: Size\n      \
+    \    path: replicas\n          x-descriptors:\n          - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \        - description: Limits describes the minimum/maximum amount of compute\
+    \ resources required/allowed\n          displayName: Resource Requirements\n \
+    \         path: resources\n          x-descriptors:\n            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'\n\
+    \  \n- #! validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n\
+    \  #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    name: vault-operator.0.1.9\n\
+    \    namespace: placeholder\n    annotations:\n      tectonic-visibility: ocs\n\
+    \      alm-examples: '[{\"apiVersion\":\"vault.security.coreos.com/v1alpha1\"\
+    ,\"kind\":\"VaultService\",\"metadata\":{\"name\":\"example\"},\"spec\":{\"nodes\"\
+    :2,\"version\":\"0.9.1-0\"}}]'\n    labels:\n      alm-catalog: tectonic-ocs\n\
+    \  spec:\n    displayName: Vault\n    description: |\n      An encrypted, multi-tentant\
+    \ secure secret store. Vault handles the lifecycle of your secrets: leasing, key\
+    \ revocation, key rolling, and auditing.\n  \n      _The Vault Open Cloud Service\
+    \ is Public Alpha. The goal before Beta is for additional user testing and minor\
+    \ bug fixes._\n  \n      ### Unsealing and using Vault\n  \n      Once a Vault\
+    \ instance is running, it must be initalized and \"unsealed\". Afterwards, your\
+    \ software can use the automatically created Kubernetes Service and Secret to\
+    \ communicate with it.\n  \n      [Read the complete guide to using the Vault\
+    \ Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/vault-ocs.html)\n\
+    \  \n      ### Supported Features\n  \n      **Secure by Default**\n  \n  \n \
+    \     Hands-free automated creation of TLS certificates between all components\
+    \ ensure all best practices are followed for secret security. Further, the API\
+    \ makes unseal operations easy.\n  \n  \n      **Highly available**\n  \n  \n\
+    \      Multiple instances of Vault are clustered together via an etcd backend\
+    \ and secured.\n  \n  \n      **Safe Upgrades**\n  \n  \n      Rolling out a new\
+    \ Vault version is as easy as updating the Vault Cluster definition. Everything\
+    \ is automatically handled using Vault best practices while pausing for unseal\
+    \ tokens.\n  \n    keywords: ['vault', 'secret', 'encryption']\n    maintainers:\n\
+    \    - name: CoreOS, Inc\n      email: support@coreos.com\n    provider:\n   \
+    \   name: CoreOS, Inc\n    links:\n    - name: Vault Project\n      url: https://www.vaultproject.io/\n\
+    \    labels:\n      alm-status-descriptors: vault-operator.0.1.9\n      alm-owner-vault:\
+    \ vault-operator\n      operated-by: vault-operator\n    selector:\n      matchLabels:\n\
+    \        alm-owner-vault: vault-operator\n        operated-by: vault-operator\n\
+    \    icon:\n    - base64data: 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ICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgICAgICAgICAgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iPgogICAgICAgICA8eG1wOkNyZWF0b3JUb29sPkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE1IChNYWNpbnRvc2gpPC94bXA6Q3JlYXRvclRvb2w+CiAgICAgICAgIDx4bXA6Q3JlYXRlRGF0ZT4yMDE3LTA5LTA2VDE1OjMxOjU2LTA0OjAwPC94bXA6Q3JlYXRlRGF0ZT4KICAgICAgICAgPHhtcDpNZXRhZGF0YURhdGU+MjAxNy0wOS0wNlQxNTozMTo1Ni0wNDowMDwveG1wOk1ldGFkYXRhRGF0ZT4KICAgICAgICAgPHhtcDpNb2RpZnlEYXRlPjIwMTctMDktMDZUMTU6MzE6NTYtMDQ6MDA8L3htcDpNb2RpZnlEYXRlPgogICAgICAgICA8eG1wTU06SW5zdGFuY2VJRD54bXAuaWlkOjFlMjY4MTE5LWU2NmYtNGJjNC1hZTI0LThiMTViNTg3MzE2MjwveG1wTU06SW5zdGFuY2VJRD4KICAgICAgICAgPHhtcE1NOkRvY3VtZW50SUQ+YWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjczODM4YzJiLWQzYzgtMTE3YS1iNTYyLTllNjU3MTBkNzc5YzwveG1wTU06RG9jdW1lbnRJRD4KICAgICAgICAgPHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD54bXAuZGlkOjQ1MjdmNDhmLTc2MGMtNGRhYi04NTJkLTNkNGZiOTA4ZmEzNjwveG1wTU06T3JpZ2luYWxEb2N1bWVudElEPgogICAgICAgICA8eG1wTU06SGlzdG9yeT4KICAgICAgICAgICAgPHJkZjpTZXE+CiAgICAgICAgICAgICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0iUmVzb3VyY2UiPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6YWN0aW9uPmNyZWF0ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDo0NTI3ZjQ4Zi03NjBjLTRkYWItODUyZC0zZDRmYjkwOGZhMzY8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTctMDktMDZUMTU6MzE6NTYtMDQ6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE1IChNYWNpbnRvc2gpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgICAgPHJkZjpsaSByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDphY3Rpb24+c2F2ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDoxZTI2ODExOS1lNjZmLTRiYzQtYWUyNC04YjE1YjU4NzMxNjI8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTctMDktMDZUMTU6MzE6NTYtMDQ6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE1IChNYWNpbnRvc2gpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICAgICA8c3RFdnQ6Y2hhbmdlZD4vPC9zdEV2dDpjaGFuZ2VkPgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6U2VxPgogICAgICAgICA8L3htcE1NOkhpc3Rvcnk+CiAgICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2UvcG5nPC9kYzpmb3JtYXQ+CiAgICAgICAgIDxwaG90b3Nob3A6Q29sb3JNb2RlPjM8L3Bob3Rvc2hvcDpDb2xvck1vZGU+CiAgICAgICAgIDxwaG90b3Nob3A6SUNDUHJvZmlsZT5EaXNwbGF5PC9waG90b3Nob3A6SUNDUHJvZmlsZT4KICAgICAgICAgPHRpZmY6T3JpZW50YXRpb24+MTwvdGlmZjpPcmllbnRhdGlvbj4KICAgICAgICAgPHRpZmY6WFJlc29sdXRpb24+NzIwMDAwLzEwMDAwPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpZUmVzb2x1dGlvbj43MjAwMDAvMTAwMDA8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDxleGlmOkNvbG9yU3BhY2U+NjU1MzU8L2V4aWY6Q29sb3JTcGFjZT4KICAgICAgICAgPGV4aWY6UGl4ZWxYRGltZW5zaW9uPjY0PC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxZRGltZW5zaW9uPjU5PC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg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\n\
+    \      mediatype: image/png\n    install:\n      strategy: deployment\n      spec:\n\
+    \        permissions:\n        - serviceAccountName: vault-operator\n        \
+    \  rules:\n          - apiGroups:\n            - etcd.database.coreos.com\n  \
+    \          resources:\n            - etcdclusters\n            verbs:\n      \
+    \      - \"*\"\n          - apiGroups:\n            - vault.security.coreos.com\n\
+    \            resources:\n            - vaultservices\n            verbs:\n   \
+    \         - \"*\"\n          - apiGroups:\n            - storage.k8s.io\n    \
+    \        resources:\n            - storageclasses\n            verbs:\n      \
+    \      - \"*\"\n          - apiGroups:\n            - \"\"\n            resources:\n\
+    \            - pods\n            - services\n            - endpoints\n       \
+    \     - persistentvolumeclaims\n            - events\n            - configmaps\n\
+    \            - secrets\n            verbs:\n            - \"*\"\n          - apiGroups:\n\
+    \            - apps\n            resources:\n            - deployments\n     \
+    \       verbs:\n            - \"*\"\n        deployments:\n        - name: vault-operator\n\
+    \          spec:\n            replicas: 1\n            selector:\n           \
+    \   matchLabels:\n                name: vault-operator\n            template:\n\
+    \              metadata:\n                labels:\n                  name: vault-operator\n\
+    \              spec:\n                serviceAccountName: vault-operator\n   \
+    \             containers:\n                - name: vault-operator\n          \
+    \        image: quay.io/coreos/vault-operator@sha256:945a0a6d88cf6fa2bce9a83019a2a64f74d89fc8281301a4259f3302eabc79e6\n\
+    \                  env:\n                  - name: MY_POD_NAMESPACE\n        \
+    \            valueFrom:\n                      fieldRef:\n                   \
+    \     fieldPath: metadata.namespace\n                  - name: MY_POD_NAME\n \
+    \                   valueFrom:\n                      fieldRef:\n            \
+    \            fieldPath: metadata.name\n    version: 0.1.9\n    replaces: vault-operator.0.1.5\n\
+    \    maturity: alpha\n    customresourcedefinitions:\n      owned:\n      - name:\
+    \ vaultservices.vault.security.coreos.com\n        version: v1alpha1\n       \
+    \ kind: VaultService\n        displayName: Vault Service\n        description:\
+    \ A running Vault instance, backed by an Etcd Cluster\n        resources:\n  \
+    \        - name: etcdclusters.etcd.database.coreos.com\n            version: v1beta2\n\
+    \            kind: EtcdCluster\n          - kind: Service\n            version:\
+    \ v1\n          - kind: ConfigMap\n            version: v1\n          - kind:\
+    \ Secret\n            version: v1\n          - kind: Deployment\n            version:\
+    \ v1beta2\n          - kind: ReplicaSet\n            version: v1beta2\n      \
+    \    - kind: Pod\n            version: v1\n        specDescriptors:\n        \
+    \  - description: The desired number of Pods for the cluster\n            displayName:\
+    \ Size\n            path: nodes\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \        statusDescriptors:\n          - description: The service at which the\
+    \ running Vault cluster can be accessed.\n            displayName: Service\n \
+    \           path: serviceName\n            x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes:Service'\n\
+    \          - description: The port at which the Vault cluster is running under\
+    \ the service.\n            displayName: Client Port\n            path: clientPort\n\
+    \      required:\n      - name: etcdclusters.etcd.database.coreos.com\n      \
+    \  version: v1beta2\n        kind: EtcdCluster\n        displayName: etcd Cluster\n\
+    \        description: Represents a cluster of etcd nodes.\n      - name: etcdbackups.etcd.database.coreos.com\n\
+    \        version: v1beta2\n        kind: EtcdBackup\n        displayName: etcd\
+    \ Backup\n        description: Represents a backup for an etcd cluster\n     \
+    \ - name: etcdrestores.etcd.database.coreos.com\n        version: v1beta2\n  \
+    \      kind: EtcdRestore\n        displayName: etcd Restore\n        description:\
+    \ Represents one try of restoring etcd cluster from previous backup\n  \n- #!\
+    \ validate-crd: ./deploy/chart/templates/03-clusterserviceversion.crd.yaml\n \
+    \ #! parse-kind: ClusterServiceVersion\n  apiVersion: app.coreos.com/v1alpha1\n\
+    \  kind: ClusterServiceVersion-v1\n  metadata:\n    namespace: placeholder\n \
+    \   name: vault-operator.0.1.5\n    annotations:\n      tectonic-visibility: ocs\n\
+    \  spec:\n    displayName: Vault\n    description: |\n      An encrypted, multi-tentant\
+    \ secure secret store. Vault handles the lifecycle of your secrets: leasing, key\
+    \ revocation, key rolling, and auditing.\n  \n      _The Vault Open Cloud Service\
+    \ is Public Alpha. The goal before Beta is for additional user testing and minor\
+    \ bug fixes._\n  \n      ### Unsealing and using Vault\n  \n      Once a Vault\
+    \ instance is running, it must be initalized and \"unsealed\". Afterwards, your\
+    \ software can use the automatically created Kubernetes Service and Secret to\
+    \ communicate with it.\n  \n      [Read the complete guide to using the Vault\
+    \ Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/vault-ocs.html)\n\
+    \  \n      ### Supported Features\n  \n      **Secure by Default**\n      Hands-free\
+    \ automated creation of TLS certificates between all components ensure all best\
+    \ practices are followed for secret security. Further, the API makes unseal operations\
+    \ easy.\n      **Highly available**\n      Multiple instances of Vault are clustered\
+    \ together via an etcd backend and secured.\n      **Safe Upgrades**\n      Rolling\
+    \ out a new Vault version is as easy as updating the Vault Cluster definition.\
+    \ Everything is automatically handled using Vault best practices while pausing\
+    \ for unseal tokens.\n  \n    keywords: ['vault', 'secret', 'encryption']\n  \
+    \  maintainers:\n    - name: CoreOS, Inc\n      email: support@coreos.com\n  \
+    \  provider:\n      name: CoreOS, Inc\n    links:\n    - name: Vault Project\n\
+    \      url: https://www.vaultproject.io/\n    labels:\n      alm-status-descriptors:\
+    \ vault-operator.0.1.5\n      alm-owner-vault: vault-operator\n      operated-by:\
+    \ vault-operator\n    selector:\n      matchLabels:\n        alm-owner-vault:\
+    \ vault-operator\n        operated-by: vault-operator\n    icon:\n    - base64data:\
+    \ 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ICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgICAgICAgICAgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iPgogICAgICAgICA8eG1wOkNyZWF0b3JUb29sPkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE1IChNYWNpbnRvc2gpPC94bXA6Q3JlYXRvclRvb2w+CiAgICAgICAgIDx4bXA6Q3JlYXRlRGF0ZT4yMDE3LTA5LTA2VDE1OjMxOjU2LTA0OjAwPC94bXA6Q3JlYXRlRGF0ZT4KICAgICAgICAgPHhtcDpNZXRhZGF0YURhdGU+MjAxNy0wOS0wNlQxNTozMTo1Ni0wNDowMDwveG1wOk1ldGFkYXRhRGF0ZT4KICAgICAgICAgPHhtcDpNb2RpZnlEYXRlPjIwMTctMDktMDZUMTU6MzE6NTYtMDQ6MDA8L3htcDpNb2RpZnlEYXRlPgogICAgICAgICA8eG1wTU06SW5zdGFuY2VJRD54bXAuaWlkOjFlMjY4MTE5LWU2NmYtNGJjNC1hZTI0LThiMTViNTg3MzE2MjwveG1wTU06SW5zdGFuY2VJRD4KICAgICAgICAgPHhtcE1NOkRvY3VtZW50SUQ+YWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjczODM4YzJiLWQzYzgtMTE3YS1iNTYyLTllNjU3MTBkNzc5YzwveG1wTU06RG9jdW1lbnRJRD4KICAgICAgICAgPHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD54bXAuZGlkOjQ1MjdmNDhmLTc2MGMtNGRhYi04NTJkLTNkNGZiOTA4ZmEzNjwveG1wTU06T3JpZ2luYWxEb2N1bWVudElEPgogICAgICAgICA8eG1wTU06SGlzdG9yeT4KICAgICAgICAgICAgPHJkZjpTZXE+CiAgICAgICAgICAgICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0iUmVzb3VyY2UiPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6YWN0aW9uPmNyZWF0ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDo0NTI3ZjQ4Zi03NjBjLTRkYWItODUyZC0zZDRmYjkwOGZhMzY8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTctMDktMDZUMTU6MzE6NTYtMDQ6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE1IChNYWNpbnRvc2gpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgICAgPHJkZjpsaSByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDphY3Rpb24+c2F2ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDoxZTI2ODExOS1lNjZmLTRiYzQtYWUyNC04YjE1YjU4NzMxNjI8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTctMDktMDZUMTU6MzE6NTYtMDQ6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE1IChNYWNpbnRvc2gpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICAgICA8c3RFdnQ6Y2hhbmdlZD4vPC9zdEV2dDpjaGFuZ2VkPgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6U2VxPgogICAgICAgICA8L3htcE1NOkhpc3Rvcnk+CiAgICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2UvcG5nPC9kYzpmb3JtYXQ+CiAgICAgICAgIDxwaG90b3Nob3A6Q29sb3JNb2RlPjM8L3Bob3Rvc2hvcDpDb2xvck1vZGU+CiAgICAgICAgIDxwaG90b3Nob3A6SUNDUHJvZmlsZT5EaXNwbGF5PC9waG90b3Nob3A6SUNDUHJvZmlsZT4KICAgICAgICAgPHRpZmY6T3JpZW50YXRpb24+MTwvdGlmZjpPcmllbnRhdGlvbj4KICAgICAgICAgPHRpZmY6WFJlc29sdXRpb24+NzIwMDAwLzEwMDAwPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpZUmVzb2x1dGlvbj43MjAwMDAvMTAwMDA8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDxleGlmOkNvbG9yU3BhY2U+NjU1MzU8L2V4aWY6Q29sb3JTcGFjZT4KICAgICAgICAgPGV4aWY6UGl4ZWxYRGltZW5zaW9uPjY0PC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxZRGltZW5zaW9uPjU5PC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz6RZ44uAAAAIGNIUk0AAG11AABzoAAA/N0AAINkAABw6AAA7GgAADA+AAAQkOTsmeoAAAreSURBVHja7Jt5VFN3Fse/7yUkgQSyQBAiJWwTglKZqKBVFgURsVFgpAO2TRUonU7n0MWpVqnL6a7jtAdoz+lAsS61damHTnXascLUojMHLVUcpaesjUAVlFUWY7b35g+KhUBCEhJ71Pmd8/sDeO/edz+/e+/v3t97EDRN434eJO7zcd8DYJr+Ijc396kbN26EMxgM7b1kKE3TBEmSRHJy8m6VSlVrFkBLS4u2vLw8715cbS6X+/WcOXN6LYbAM888szckJOSre814giC0y5YtW93c3HzFIgA+n48nnnhi/b0GICIi4j2ZTHZdp9NZToJarRYpKSmXIiIiyu6ZRMdk9sfHx7/OZrMhEoksAxCJRBCLxdi0adOLDAaDuhcAxMbGFoSHh/exWCwIhULLAJhMJrq6uhAVFaWWyWQf3O3Gs9nsrrS0tB1MJhN8Ph8CgcDyNlhSUgKCIMBmszFz5sxX6urqsmmadrlbASiVyu0KheJma2vruNWf0AM0Gg2GhobQ19cHuVzePmvWrPfvVuN5PF772rVrCwBAIBDcnhY9YPr06SOFAzgcDhISEl6tra3NMRqN3LsNQE5Oztbly5cb6+vrxyU/swBM3UShUHRHR0cXVVZWbrqbjOdwOPXu7u6lhw8fRnd3NwiCuP23sLCwX+oD026wtLR0dPkIDw8PdHV1ua9bt+6yTqcT3S0AYmJifi+VSj9ta2sDkzl2nSsqKsx7AJ/PHycsMjJyQKlU7iwrK3trSp1XkBxU+xVAMzDK5cRAb+fYqi0wGLS62W49AoHgYlRU1KcajQZyudy2bnB0shAIBLeBZGdnv+3m5tZh93ak+gNEF/8L/jdnQU7zGTY0Mg4M1fMgl6QNX8TiwHX7R3D/5wWwcvMBEHbpSkxMzPf19YWHhwdEItG4aRFAQEDAmBkYGAihUIiHH35Yn5ubu81eAK6bXwfJZYEdFQaX5BXDyhXRIIwGEDMjAZIE6RcIVvrjII08sLNeBNhsm/X4+vp+m5iY+AVBEBCJRBAKheOmxSRYVVU1USuJhoYGeHt7l7DZ7Be1Wu1vbH0wTdE7YBa9CUN9O/TffD0s9/tqYE4s6LoLAEWBuqKG7ou/w0WZCt2uEkCvsxlARkbGBh8fH9A0PSbxmW2STJNgSkrKhBcaDAb4+fmhsbEx8+TJkwfs6sgkwaCvmsQ2wQHoW2PdMlAOSl1ns/zg4OCvS0tLE/r6+mAwGMxel56ebt4DgoKCLDUVWLBgwcELFy683NvbG26T8dOmw/VPT8PY8CO0e4drK8Zv54Hz5JPQHfsS+q8+G77O1x+02AdEXyfo3m5b2l0899xzGyQSCSiKsmr1JwRgWimZhoK3tzeSkpJePnjw4Oc2VWV7joCzbD5oAFRrM/QnT4Bb/AVc5nrCJe1J9C8IBtWiBql8HOCLgMAwGD8tASijVfIDAgIOL1my5JxWq4W7u7v9R2KWAIxASEpKOlpZWflde3v7XKs16XQgAIwOONqgBU0CtB6A8WdDKSNAkqAp2xpRmUy2tbi4GHq9HtQk90ZGRtpWB5gCkEgkyMjI2FhQUFBh7QMO5mSAynsBhvom6E+eAAAMZS8Fe7UK+q+Og/qpBQBg/Gw34O0H/NRk9eqHhIR8FBoaWt/a2mqT+0+YBMvKJj8HGWkts7KyKtVqdaz1h3KewJBJXIv9gc7WURmQAWZEJAw1Z6yNfX1WVlaoj4+PemBgwCrjCwsLzdcBE+2bppPH40EikSAvL2+DtbYzlq+G66H/gF30GQjPacN1T95r4H15EZw3dgNMFxBcLtzLqyE8XwW39z8BSOakchUKxW6FQqFmMpm3C7fJpk3NkLlhNBqhVCrPFhUVlV2+fPl3k3pNfCoIigIjfC6I4DDQ3dfgEp8C9PWCEZ0McHggJF5gxyuGmxnVatx8/ilAO2i+jCXJmytXrnyFw+HAw8PDJtc3C2Dfvn1WbztsNhthYWFbrQFgOFIC4tk3QJ2rBP39d8PnjwffB3vNs9Af+wQY6gOlHoRm31FwViyFZmeBReMBIC4u7m/z58+/euXKFasXbtIcsGrVKqtupGkaJEnC398fR48ePdDc3Jw5qTLPaaD7ugHjqCLF3RMYGJsXiIBQ0JfrJ8tDN4qLi4P8/f17enp6bFr9Rx55xLwHSKVSmwi6u7tj0aJFW5qbm9MnkjcGWve1MT+zkpRwfeGPuHX4OLQfvvvLdZMY//NRV+HChQt7WlpaJt25HFoHTBQKc+fObTp//vy+mpqabOu7I3dw9xyDiw/ATFoOQ/VpGC9dsG4z4XLb8/PzdwiFQhiNRrti32EAaJqGm5sbUlNTt9XU1DwKgGNdFtWD+rEZ8AkGdY0GPTRotc7w8PC3BgcHb549e9ZizW9ujD4RmjKAES+Ijo7+KTY29oNTp05Z915RdwsDmQnQr82G9vi/QP3YZJ3juLq2hYeHF+/atQs6nc6u1U9LSzMPwNzh4WRe4Orqiuzs7FdOnz6dTdO0VQeoVFsLbr5m2xHDwoULX5NKpbrOzs4pub5ZAA888IB92wlBYNWqVd3l5eXvfPzxx1uccc7H5/MbExISSimKgqenp0NkjgPQ1NRklyCapjE4OAi5XP4mg8F42mg0ih0NQKlUbgsMDKTb29sdsvoTAtizZ4/dwiiKgpeX161Zs2Ztr6mpeduRxnt7e19KS0s7oNfr7QpTqwGIxVNbOBaLhXnz5r1XV1e3TqPRTHfUg6pUqvygoCC0trbCzc3NeQC8vLymJJCmaYjFYl1MTMzrJ06ccMhrteDg4G8fe+yxf+h0OrtLXqsBOEIBg8HA0qVLS86cObO+v78/aKrycnJy/qxQKNDQ0ACSJJ0LYCpl5eghkUiolStXbtu/f/9HU4z9E0NDQ//euXMnNBqNQ55t69atzvWAkVBIT0/ff/z48Y1dXV0z7ZUTExOT39PTg4sXL457xeUUD7CnEjQHQCqVIicnJ3/Hjh2f2xn7n0dGRp7r7u6e9BWXwwD4+fk5TDiHw0FWVtbRvXv3nu7o6Iix9f4VK1Zs5PP5U254bAJw6NAhhwknSRIcDgcymezljo6OU7bcGxERcSAuLq6uo6PD4ZnfIoDq6mqHCacoCkwmE2FhYafr6upOXr9+fbG1t6pUqk1cLhc8Hs9pqz8hgJCQEIcqoGkaAoEAsbGxLx05cuRbKxueDxMTE1va2toclpPu+DZo2ig99NBD1efOnftSrVYvn6SSHNq8eXO+p6cndDqdw/f9O7YLmIYCn89HSkrKSwUFBRYBhIaGFnh5eXU2NjZCr9fD2WMcAA8PD6coMhqNWLRoUW1FRcWR2tra9AkfhsnsnzFjxl8KCwth+kmrI0diYuKdDYGRXMDj8bBmzZoN69evnxDA7NmzdwYGBvZ3dHQ4pej51UJgZOj1eiQnJ6vLysr2VFVVrTWpGToXL178VxaLBbFY7NTMbxGAr6+v05TRNA0vLy9s2bJlY0pKSqZer799gBofH/9maGjorfb2dnA4HNypMQ7AwMCAUxWq1Wr4+/tfk8vlhZcuXXoJALhcbltqauq7JElCKBTesdWfEMDo7wSdNVgsFh588MHtP/zwQ57BYHBLT09/dcaMGcbW1law7fgwyqEAnO1+Ix8vyWSyvqCgoEMtLS2PqlSqUoqinFry/urboCkErVaL2bNnv5OZmXlMKpXi6tWr4HLv/OfIxP//cfI+H/8bANeS5YFpLrRuAAAAAElFTkSuQmCC\n\
+    \      mediatype: image/png\n    install:\n      strategy: deployment\n      spec:\n\
+    \        permissions:\n        - serviceAccountName: vault-operator\n        \
+    \  rules:\n          - apiGroups:\n            - etcd.database.coreos.com\n  \
+    \          resources:\n            - etcdclusters\n            verbs:\n      \
+    \      - \"*\"\n          - apiGroups:\n            - vault.security.coreos.com\n\
+    \            resources:\n            - vaultservices\n            verbs:\n   \
+    \         - \"*\"\n          - apiGroups:\n            - storage.k8s.io\n    \
+    \        resources:\n            - storageclasses\n            verbs:\n      \
+    \      - \"*\"\n          - apiGroups:\n            - \"\"\n            resources:\n\
+    \            - pods\n            - services\n            - endpoints\n       \
+    \     - persistentvolumeclaims\n            - events\n            - configmaps\n\
+    \            - secrets\n            verbs:\n            - \"*\"\n          - apiGroups:\n\
+    \            - apps\n            resources:\n            - deployments\n     \
+    \       verbs:\n            - \"*\"\n        deployments:\n        - name: vault-operator\n\
+    \          spec:\n            replicas: 1\n            selector:\n           \
+    \   matchLabels:\n                name: vault-operator\n            template:\n\
+    \              metadata:\n                labels:\n                  name: vault-operator\n\
+    \              spec:\n                serviceAccountName: vault-operator\n   \
+    \             containers:\n                - name: vault-operator\n          \
+    \        image: quay.io/coreos/vault-operator@sha256:74036811bc5d6cc1a136d8cc6d5577db67f29ba95eba02fbf0c3a8d2357dc8fe\n\
+    \                  env:\n                  - name: MY_POD_NAMESPACE\n        \
+    \            valueFrom:\n                      fieldRef:\n                   \
+    \     fieldPath: metadata.namespace\n                  - name: MY_POD_NAME\n \
+    \                   valueFrom:\n                      fieldRef:\n            \
+    \            fieldPath: metadata.name\n    version: 0.1.5\n    maturity: alpha\n\
+    \    customresourcedefinitions:\n      owned:\n      - name: vaultservices.vault.security.coreos.com\n\
+    \        version: v1alpha1\n        kind: VaultService\n        displayName: Vault\
+    \ Service\n        description: A running Vault instance, backed by an Etcd Cluster\n\
+    \        resources:\n          - name: etcdclusters.etcd.database.coreos.com\n\
+    \            version: v1beta2\n            kind: EtcdCluster\n          - kind:\
+    \ Service\n            version: v1\n          - kind: ConfigMap\n            version:\
+    \ v1\n          - kind: Secret\n            version: v1\n          - kind: Pod\n\
+    \            version: v1\n        specDescriptors:\n          - description: The\
+    \ desired number of Pods for the cluster\n            displayName: Size\n    \
+    \        path: nodes\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podCount'\n\
+    \        statusDescriptors:\n          - description: The status of each of the\
+    \ node Pods for the Vault cluster.\n            displayName: Node Status\n   \
+    \         path: nodes\n            x-descriptors:\n              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'\n\
+    \          - description: The service at which the running Vault cluster can be\
+    \ accessed.\n            displayName: Service\n            path: serviceName\n\
+    \            x-descriptors:\n              - 'urn:alm:descriptor:io.kubernetes:Service'\n\
+    \          - description: The port at which the Vault cluster is running under\
+    \ the service.\n            displayName: Client Port\n            path: clientPort\n\
+    \      required:\n      - name: etcdclusters.etcd.database.coreos.com\n      \
+    \  version: v1beta2\n        kind: EtcdCluster\n        displayName: etcd Cluster\n\
+    \        description: Represents a cluster of etcd nodes.\n  "
+  packages: "- #! package-manifest: ./deploy/chart/catalog_resources/ocs/etcdoperator.v0.9.2.clusterserviceversion.yaml\n\
+    \  packageName: etcd\n  channels:\n  - name: alpha\n    currentCSV: etcdoperator.v0.9.2\n\
+    \  \n- #! package-manifest: ./deploy/chart/catalog_resources/ocs/prometheusoperator.0.15.0.clusterserviceversion.yaml\n\
+    \  packageName: prometheus\n  channels:\n  - name: alpha\n    currentCSV: prometheusoperator.0.15.0\n\
+    \  \n- #! package-manifest: ./deploy/chart/catalog_resources/ocs/vaultoperator.0.1.9.clusterserviceversion.yaml\n\
+    \  packageName: vault\n  channels:\n  - name: alpha\n    currentCSV: vault-operator.0.1.9"

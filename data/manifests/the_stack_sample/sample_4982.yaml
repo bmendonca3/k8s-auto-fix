@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: lacchain-writernode-ethstats
+  labels:
+    app: lacchain-writernode-ethstats
+  namespace: lacchain-protest-net
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lacchain-writernode-ethstats
+  serviceName: lacchain-writernode-ethstats
+  template:
+    metadata:
+      labels:
+        app: lacchain-writernode-ethstats
+    spec:
+      containers:
+      - name: lacchain-writernode-ethstats
+        image: alethio/ethstats-cli
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: HOST_BESU
+          value: writer-besu-lacchain
+        - name: NODE_NAME
+          value: WRITER_LACCHAIN_K8S_TEST
+        - name: NODE_EMAIL
+          value: xxxxx@gmail.com
+        volumeMounts:
+        - name: ethstats-data
+          mountPath: /root/.config/configstore/
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - 'exec
+
+          ./bin/ethstats-cli.js -vd --register --account-email ${NODE_EMAIL} --node-name
+          "${NODE_NAME}" --server-url http://35.236.236.77:3000 --client-url ws://${HOST_BESU}:4546
+
+          '
+        ports:
+        - containerPort: 9001
+          name: ethstats
+          protocol: TCP
+      securityContext:
+        fsGroup: 2000
+      volumes:
+      - name: ethstats-data
+        persistentVolumeClaim:
+          claimName: pvc-data-writer-ethstats

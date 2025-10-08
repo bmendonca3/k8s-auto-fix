@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsdb-read
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: opentsdb-read
+  template:
+    metadata:
+      labels:
+        app: opentsdb-read
+    spec:
+      containers:
+      - name: opentsdb-read
+        image: gcr.io/cloud-solutions-images/opentsdb-bigtable:v2.1
+        ports:
+        - containerPort: 4242
+          protocol: TCP
+        volumeMounts:
+        - name: opentsdb-config
+          mountPath: /opt/opentsdb
+      volumes:
+      - name: opentsdb-config
+        configMap:
+          name: opentsdb-config
+          items:
+          - key: opentsdb.conf
+            path: opentsdb.conf

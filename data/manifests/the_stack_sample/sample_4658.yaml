@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sample-source-controller-manager
+  namespace: knative-samples
+  labels:
+    samples.knative.dev/release: devel
+    control-plane: sample-source-controller-manager
+spec:
+  selector:
+    matchLabels: &id001
+      control-plane: sample-source-controller-manager
+  serviceName: sample-source-controller-manager
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      serviceAccountName: sample-source-controller-manager
+      containers:
+      - image: knative.dev/sample-source/cmd/controller
+        name: manager
+        env:
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONFIG_LOGGING_NAME
+          value: config-logging
+        - name: CONFIG_OBSERVABILITY_NAME
+          value: config-observability
+        - name: METRICS_DOMAIN
+          value: knative.dev/sources
+        - name: SAMPLE_SOURCE_RA_IMAGE
+          value: knative.dev/sample-source/cmd/receive_adapter
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 1000m
+            memory: 1000Mi
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: config-logging
+        configMap:
+          name: config-logging

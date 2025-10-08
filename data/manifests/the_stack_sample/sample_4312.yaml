@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcldb
+  labels:
+    app: oracledb
+spec:
+  selector:
+    matchLabels:
+      app: oracledb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: oracledb
+    spec:
+      containers:
+      - image: daniel570/oracledb:18.3.0-ee
+        name: orcldb
+        ports:
+        - containerPort: 1521
+          name: orcldb
+        volumeMounts:
+        - name: data
+          mountPath: /opt/oracle/oradata
+      imagePullSecrets:
+      - name: dockerstore
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 54321
+        fsGroup: 54321
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: data-pvc

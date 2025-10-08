@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+data:
+  prometheus.yml: "global:\n  scrape_interval: 30s\nscrape_configs:\n# etcd is living\
+    \ outside of our cluster and we configure\n# it directly.\n- job_name: 'etcd'\n\
+    \  static_configs:\n  - targets:\n    - 172.22.111.162:2379\n    - 172.22.111.163:2379\n\
+    \    - 172.22.111.164:2379\n\n- job_name: masters\n  static_configs:\n  - targets:\n\
+    \    - 172.22.111.162:10251\n    - 172.22.111.163:10251\n    - 172.22.111.164:10251\n\
+    \n- job_name: 'ceph-service'\n  static_configs:\n  - targets:\n    - 172.22.111.172:9192\n\
+    \    - 172.22.111.173:9192\n    - 172.22.111.174:9192\n    - 172.22.111.175:9192\n\
+    \    - 172.22.111.176:9192\n    - 172.22.111.177:9192\n    - 172.22.111.178:9192\n\
+    \    - 172.22.111.179:9192\n\n- job_name: 'ceph-node'\n  static_configs:\n  -\
+    \ targets:\n    - 172.22.111.172:9100\n    - 172.22.111.173:9100\n    - 172.22.111.174:9100\n\
+    \    - 172.22.111.175:9100\n    - 172.22.111.176:9100\n    - 172.22.111.177:9100\n\
+    \    - 172.22.111.178:9100\n    - 172.22.111.179:9100\n\n- job_name: elasticsearch\n\
+    \  metrics_path: \"/_prometheus/metrics\"\n  static_configs:\n  - targets:\n \
+    \   - elasticsearch-discovery:9200\n\n\n- job_name: postgres\n  metrics_path:\
+    \ \"/metrics\"\n  static_configs:\n  - targets:\n    - postgres-exporter:9187\n\
+    \n      #    - job_name: pgpool                                              \
+    \                                                                            \
+    \           \n      #static_configs:                                         \
+    \                                                                            \
+    \                             \n      #- targets:                            \
+    \                                                                            \
+    \                                               \n      #- pgpool-exporter:8000\n\
+    \n- job_name: redis\n  static_configs:\n  - targets: \n    - redis-exporter:9121\n\
+    \n- job_name: kafka\n  metrics_path: \"/metrics\"                            \
+    \                                                                            \
+    \                                  \n  static_configs:                       \
+    \                                                                            \
+    \                                                \n  - targets:              \
+    \                                                                            \
+    \                                                              \n    - kafka-exporter:7979\n\
+    \    - kafka-jmx-exporter:9138\n\n- job_name: 'kubernetes-apiservers'\n  static_configs:\n\
+    \  - targets:\n    - kubernetes.default.svc.cluster.local\n  #kubernetes_sd_configs:\n\
+    \  #- role: endpoints\n  scheme: https\n  tls_config:\n    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n\
+    \    insecure_skip_verify: true\n  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \  #relabel_configs:\n  #- source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name,\
+    \ __meta_kubernetes_endpoint_port_name]\n  #  action: keep\n  #  regex: default;kubernetes;https\n\
+    - job_name: 'kubernetes-nodes'\n  scheme: https\n  tls_config:\n    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n\
+    \    insecure_skip_verify: true\n  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \  kubernetes_sd_configs:\n  - role: node\n  relabel_configs:\n  - action: labelmap\n\
+    \    regex: __meta_kubernetes_node_label_(.+)\n\n- job_name: 'kubernetes-service-endpoints'\n\
+    \  kubernetes_sd_configs:\n  - role: endpoints\n  relabel_configs:\n  - source_labels:\
+    \ [__meta_kubernetes_service_annotation_prometheus_io_scrape]\n    action: keep\n\
+    \    regex: true\n  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]\n\
+    \    action: replace\n    target_label: __scheme__\n    regex: (https?)\n  - source_labels:\
+    \ [__meta_kubernetes_service_annotation_prometheus_io_path]\n    action: replace\n\
+    \    target_label: __metrics_path__\n    regex: (.+)\n  - source_labels: [__address__,\
+    \ __meta_kubernetes_service_annotation_prometheus_io_port]\n    action: replace\n\
+    \    target_label: __address__\n    regex: (.+)(?::\\d+);(\\d+)\n    replacement:\
+    \ $1:$2\n  - action: labelmap\n    regex: __meta_kubernetes_service_label_(.+)\n\
+    \  - source_labels: [__meta_kubernetes_namespace]\n    action: replace\n    target_label:\
+    \ kubernetes_namespace\n  - source_labels: [__meta_kubernetes_service_name]\n\
+    \    action: replace\n    target_label: kubernetes_name\n\n- job_name: 'kubernetes-services'\n\
+    \  metrics_path: /probe\n  params:\n    module: [http_2xx]\n  kubernetes_sd_configs:\n\
+    \  - role: service\n  relabel_configs:\n  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]\n\
+    \    action: keep\n    regex: true\n  - source_labels: [__address__]\n    target_label:\
+    \ __param_target\n  - target_label: __address__\n    replacement: blackbox\n \
+    \ - source_labels: [__param_target]\n    target_label: instance\n  - action: labelmap\n\
+    \    regex: __meta_kubernetes_service_label_(.+)\n  - source_labels: [__meta_kubernetes_service_namespace]\n\
+    \    target_label: kubernetes_namespace\n  - source_labels: [__meta_kubernetes_service_name]\n\
+    \    target_label: kubernetes_name\n\n- job_name: 'kubernetes-pods'\n  kubernetes_sd_configs:\n\
+    \  - role: pod\n  relabel_configs:\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n\
+    \    action: keep\n    regex: true\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n\
+    \    action: replace\n    target_label: __metrics_path__\n    regex: (.+)\n  -\
+    \ source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n\
+    \    action: replace\n    regex: (.+):(?:\\d+);(\\d+)\n    replacement: ${1}:${2}\n\
+    \    target_label: __address__\n  - action: labelmap\n    regex: __meta_kubernetes_pod_label_(.+)\n\
+    \  - source_labels: [__meta_kubernetes_namespace]\n    action: replace\n    target_label:\
+    \ kubernetes_namespace\n  - source_labels: [__meta_kubernetes_pod_name]\n    action:\
+    \ replace\n    target_label: kubernetes_pod_name"

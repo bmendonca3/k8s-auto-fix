@@ -1,0 +1,282 @@
+[
+  {
+    "id": "00721",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0106.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: tf-r2.4.0-keras-api-custom-layers-v2-32\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: 2.4.0\n      spec:\n        containers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          image: gcr.io/xl-ml-test/health-monitor:stable\n          imagePullPolicy: Always\n          name: monitor\n        - args:\n          - /bin/bash\n          - -c\n          - 'set -u\n\n            set -e\n\n            set -x\n\n\n            export PATH=$PATH:/root/google-cloud-sdk/bin\n\n            gcloud source repos clone tf2-api-tests --project=xl-ml-test\n\n            cd tf2-api-tests\n\n            pip3 install behave\n\n            behave -e ipynb_checkpoints --tags=-fails --tags=-failspod -i custom_layers_model\n\n            '\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/tensorflow:r2.4.0\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v2: 32\n            requests:\n              cpu: 2\n              memory: 20G\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n            readOnly: false\n        initContainers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"metric_to_aggregation_strategies\\\": {\\n\\\n              \\   \\\"examples_per_second\\\": [\\n    \\\"average\\\"\\n   ]\\n  },\\n  \\\"use_run_name_prefix\\\"\\\n              : true,\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"alert_for_failed_jobs\\\": true\\n },\\n \\\"test_name\\\": \\\"tf-r2.4.0-keras-api-custom-layers-v2-32\\\"\\\n              \\n}\\n\"\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/publisher:stable\n          imagePullPolicy: Always\n          name: publisher\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"publisher\" has cpu request 0"
+  },
+  {
+    "id": "00722",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0106.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: tf-r2.4.0-keras-api-custom-layers-v2-32\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: 2.4.0\n      spec:\n        containers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          image: gcr.io/xl-ml-test/health-monitor:stable\n          imagePullPolicy: Always\n          name: monitor\n        - args:\n          - /bin/bash\n          - -c\n          - 'set -u\n\n            set -e\n\n            set -x\n\n\n            export PATH=$PATH:/root/google-cloud-sdk/bin\n\n            gcloud source repos clone tf2-api-tests --project=xl-ml-test\n\n            cd tf2-api-tests\n\n            pip3 install behave\n\n            behave -e ipynb_checkpoints --tags=-fails --tags=-failspod -i custom_layers_model\n\n            '\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/tensorflow:r2.4.0\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v2: 32\n            requests:\n              cpu: 2\n              memory: 20G\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n            readOnly: false\n        initContainers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"metric_to_aggregation_strategies\\\": {\\n\\\n              \\   \\\"examples_per_second\\\": [\\n    \\\"average\\\"\\n   ]\\n  },\\n  \\\"use_run_name_prefix\\\"\\\n              : true,\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"alert_for_failed_jobs\\\": true\\n },\\n \\\"test_name\\\": \\\"tf-r2.4.0-keras-api-custom-layers-v2-32\\\"\\\n              \\n}\\n\"\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/publisher:stable\n          imagePullPolicy: Always\n          name: publisher\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"monitor\" has memory limit 0"
+  },
+  {
+    "id": "00723",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0106.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: tf-r2.4.0-keras-api-custom-layers-v2-32\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: 2.4.0\n      spec:\n        containers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          image: gcr.io/xl-ml-test/health-monitor:stable\n          imagePullPolicy: Always\n          name: monitor\n        - args:\n          - /bin/bash\n          - -c\n          - 'set -u\n\n            set -e\n\n            set -x\n\n\n            export PATH=$PATH:/root/google-cloud-sdk/bin\n\n            gcloud source repos clone tf2-api-tests --project=xl-ml-test\n\n            cd tf2-api-tests\n\n            pip3 install behave\n\n            behave -e ipynb_checkpoints --tags=-fails --tags=-failspod -i custom_layers_model\n\n            '\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/tensorflow:r2.4.0\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v2: 32\n            requests:\n              cpu: 2\n              memory: 20G\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n            readOnly: false\n        initContainers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"metric_to_aggregation_strategies\\\": {\\n\\\n              \\   \\\"examples_per_second\\\": [\\n    \\\"average\\\"\\n   ]\\n  },\\n  \\\"use_run_name_prefix\\\"\\\n              : true,\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"alert_for_failed_jobs\\\": true\\n },\\n \\\"test_name\\\": \\\"tf-r2.4.0-keras-api-custom-layers-v2-32\\\"\\\n              \\n}\\n\"\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/publisher:stable\n          imagePullPolicy: Always\n          name: publisher\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"publisher\" has memory limit 0"
+  },
+  {
+    "id": "00724",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0106.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: tf-r2.4.0-keras-api-custom-layers-v2-32\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: 2.4.0\n      spec:\n        containers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          image: gcr.io/xl-ml-test/health-monitor:stable\n          imagePullPolicy: Always\n          name: monitor\n        - args:\n          - /bin/bash\n          - -c\n          - 'set -u\n\n            set -e\n\n            set -x\n\n\n            export PATH=$PATH:/root/google-cloud-sdk/bin\n\n            gcloud source repos clone tf2-api-tests --project=xl-ml-test\n\n            cd tf2-api-tests\n\n            pip3 install behave\n\n            behave -e ipynb_checkpoints --tags=-fails --tags=-failspod -i custom_layers_model\n\n            '\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/tensorflow:r2.4.0\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v2: 32\n            requests:\n              cpu: 2\n              memory: 20G\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n            readOnly: false\n        initContainers:\n        - env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: MODEL_DIR\n            value: $(OUTPUT_BUCKET)/tf-r2.4.0/keras-api/custom-layers/v2-32/$(JOB_NAME)\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"metric_to_aggregation_strategies\\\": {\\n\\\n              \\   \\\"examples_per_second\\\": [\\n    \\\"average\\\"\\n   ]\\n  },\\n  \\\"use_run_name_prefix\\\"\\\n              : true,\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"alert_for_failed_jobs\\\": true\\n },\\n \\\"test_name\\\": \\\"tf-r2.4.0-keras-api-custom-layers-v2-32\\\"\\\n              \\n}\\n\"\n          envFrom:\n          - configMapRef:\n              name: gcs-buckets\n          image: gcr.io/xl-ml-test/publisher:stable\n          imagePullPolicy: Always\n          name: publisher\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"train\" has memory limit 0"
+  },
+  {
+    "id": "00725",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0107.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: skipper-demo\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      application: skipper-demo\n  template:\n    metadata:\n      labels:\n        application: skipper-demo\n    spec:\n      containers:\n      - name: skipper-demo\n        image: registry.opensource.zalan.do/teapot/skipper:v0.12.0\n        args:\n        - skipper\n        - -inline-routes\n        - '* -> inlineContent(\"<body style=''color: white; background-color: green;''><h1>Hello!</h1>\")\n          -> <shunt>'\n        ports:\n        - containerPort: 9090\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"skipper-demo\" does not have a read-only root file system"
+  },
+  {
+    "id": "00726",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0107.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: skipper-demo\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      application: skipper-demo\n  template:\n    metadata:\n      labels:\n        application: skipper-demo\n    spec:\n      containers:\n      - name: skipper-demo\n        image: registry.opensource.zalan.do/teapot/skipper:v0.12.0\n        args:\n        - skipper\n        - -inline-routes\n        - '* -> inlineContent(\"<body style=''color: white; background-color: green;''><h1>Hello!</h1>\")\n          -> <shunt>'\n        ports:\n        - containerPort: 9090\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"skipper-demo\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00727",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0107.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: skipper-demo\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      application: skipper-demo\n  template:\n    metadata:\n      labels:\n        application: skipper-demo\n    spec:\n      containers:\n      - name: skipper-demo\n        image: registry.opensource.zalan.do/teapot/skipper:v0.12.0\n        args:\n        - skipper\n        - -inline-routes\n        - '* -> inlineContent(\"<body style=''color: white; background-color: green;''><h1>Hello!</h1>\")\n          -> <shunt>'\n        ports:\n        - containerPort: 9090\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"skipper-demo\" has cpu request 0"
+  },
+  {
+    "id": "00728",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0107.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: skipper-demo\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      application: skipper-demo\n  template:\n    metadata:\n      labels:\n        application: skipper-demo\n    spec:\n      containers:\n      - name: skipper-demo\n        image: registry.opensource.zalan.do/teapot/skipper:v0.12.0\n        args:\n        - skipper\n        - -inline-routes\n        - '* -> inlineContent(\"<body style=''color: white; background-color: green;''><h1>Hello!</h1>\")\n          -> <shunt>'\n        ports:\n        - containerPort: 9090\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"skipper-demo\" has memory limit 0"
+  },
+  {
+    "id": "00729",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0109.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8031\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00730",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0109.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8031\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "00731",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0109.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8031\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00732",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0109.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8031\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "00733",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0109.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8031\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "00734",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0110.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-9918\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00735",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0110.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-9918\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "00736",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0110.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-9918\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00737",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0110.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-9918\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "00738",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0110.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-9918\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "00739",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0113.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: prow-controller-manager\n  labels:\n    app: prow-controller-manager\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-controller-manager\n  template:\n    metadata:\n      labels:\n        app: prow-controller-manager\n    spec:\n      serviceAccountName: prow-controller-manager\n      containers:\n      - name: prow-controller-manager\n        image: gcr.io/k8s-prow/prow-controller-manager:v20220203-9315ecd1a0\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --enable-controller=plank\n        - --job-config-path=/etc/job-config\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config:/etc/kubeconfig-build-test-infra-trusted/kubeconfig\n        ports:\n        - name: metrics\n          containerPort: 9090\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/kubeconfig-build-test-infra-trusted\n          name: kubeconfig-build-test-infra-trusted\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: kubeconfig-build-test-infra-trusted\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig-build-test-infra-trusted\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"prow-controller-manager\" does not have a read-only root file system"
+  },
+  {
+    "id": "00740",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0113.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: prow-controller-manager\n  labels:\n    app: prow-controller-manager\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-controller-manager\n  template:\n    metadata:\n      labels:\n        app: prow-controller-manager\n    spec:\n      serviceAccountName: prow-controller-manager\n      containers:\n      - name: prow-controller-manager\n        image: gcr.io/k8s-prow/prow-controller-manager:v20220203-9315ecd1a0\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --enable-controller=plank\n        - --job-config-path=/etc/job-config\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config:/etc/kubeconfig-build-test-infra-trusted/kubeconfig\n        ports:\n        - name: metrics\n          containerPort: 9090\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/kubeconfig-build-test-infra-trusted\n          name: kubeconfig-build-test-infra-trusted\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: kubeconfig-build-test-infra-trusted\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig-build-test-infra-trusted\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"prow-controller-manager\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00741",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0113.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: prow-controller-manager\n  labels:\n    app: prow-controller-manager\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-controller-manager\n  template:\n    metadata:\n      labels:\n        app: prow-controller-manager\n    spec:\n      serviceAccountName: prow-controller-manager\n      containers:\n      - name: prow-controller-manager\n        image: gcr.io/k8s-prow/prow-controller-manager:v20220203-9315ecd1a0\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --enable-controller=plank\n        - --job-config-path=/etc/job-config\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config:/etc/kubeconfig-build-test-infra-trusted/kubeconfig\n        ports:\n        - name: metrics\n          containerPort: 9090\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/kubeconfig-build-test-infra-trusted\n          name: kubeconfig-build-test-infra-trusted\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: kubeconfig-build-test-infra-trusted\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig-build-test-infra-trusted\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"prow-controller-manager\" has cpu request 0"
+  },
+  {
+    "id": "00742",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0113.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: prow-controller-manager\n  labels:\n    app: prow-controller-manager\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-controller-manager\n  template:\n    metadata:\n      labels:\n        app: prow-controller-manager\n    spec:\n      serviceAccountName: prow-controller-manager\n      containers:\n      - name: prow-controller-manager\n        image: gcr.io/k8s-prow/prow-controller-manager:v20220203-9315ecd1a0\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --enable-controller=plank\n        - --job-config-path=/etc/job-config\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config:/etc/kubeconfig-build-test-infra-trusted/kubeconfig\n        ports:\n        - name: metrics\n          containerPort: 9090\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/kubeconfig-build-test-infra-trusted\n          name: kubeconfig-build-test-infra-trusted\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: kubeconfig-build-test-infra-trusted\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig-build-test-infra-trusted\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"prow-controller-manager\" has memory limit 0"
+  },
+  {
+    "id": "00743",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0116.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: payment\n  labels:\n    app: payment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: payment\n  template:\n    metadata:\n      labels:\n        app: payment\n    spec:\n      containers:\n      - name: server\n        image: hipster-paymentservice:v0.0.1\n        resources: {}\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        - name: ENV_PLATFORM\n          value: gcp\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"server\" does not have a read-only root file system"
+  },
+  {
+    "id": "00744",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0116.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: payment\n  labels:\n    app: payment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: payment\n  template:\n    metadata:\n      labels:\n        app: payment\n    spec:\n      containers:\n      - name: server\n        image: hipster-paymentservice:v0.0.1\n        resources: {}\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        - name: ENV_PLATFORM\n          value: gcp\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"server\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00745",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0116.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: payment\n  labels:\n    app: payment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: payment\n  template:\n    metadata:\n      labels:\n        app: payment\n    spec:\n      containers:\n      - name: server\n        image: hipster-paymentservice:v0.0.1\n        resources: {}\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        - name: ENV_PLATFORM\n          value: gcp\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"server\" has cpu request 0"
+  },
+  {
+    "id": "00746",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0116.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: payment\n  labels:\n    app: payment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: payment\n  template:\n    metadata:\n      labels:\n        app: payment\n    spec:\n      containers:\n      - name: server\n        image: hipster-paymentservice:v0.0.1\n        resources: {}\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        - name: ENV_PLATFORM\n          value: gcp\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"server\" has memory limit 0"
+  },
+  {
+    "id": "00747",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0121.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: score-app\n    env: qa\n  name: sotr-app\n  namespace: mlops\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: sotr-app\n  template:\n    metadata:\n      labels:\n        app: sotr-app\n        env: qa\n    spec:\n      containers:\n      - image: wsosnowski2/sotr\n        name: sotr-project\n        ports:\n        - containerPort: 8010\n          protocol: TCP\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"sotr-project\" is using an invalid container image, \"wsosnowski2/sotr\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00748",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0121.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: score-app\n    env: qa\n  name: sotr-app\n  namespace: mlops\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: sotr-app\n  template:\n    metadata:\n      labels:\n        app: sotr-app\n        env: qa\n    spec:\n      containers:\n      - image: wsosnowski2/sotr\n        name: sotr-project\n        ports:\n        - containerPort: 8010\n          protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"sotr-project\" does not have a read-only root file system"
+  },
+  {
+    "id": "00749",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0121.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: score-app\n    env: qa\n  name: sotr-app\n  namespace: mlops\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: sotr-app\n  template:\n    metadata:\n      labels:\n        app: sotr-app\n        env: qa\n    spec:\n      containers:\n      - image: wsosnowski2/sotr\n        name: sotr-project\n        ports:\n        - containerPort: 8010\n          protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"sotr-project\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00750",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0121.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: score-app\n    env: qa\n  name: sotr-app\n  namespace: mlops\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: sotr-app\n  template:\n    metadata:\n      labels:\n        app: sotr-app\n        env: qa\n    spec:\n      containers:\n      - image: wsosnowski2/sotr\n        name: sotr-project\n        ports:\n        - containerPort: 8010\n          protocol: TCP\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"sotr-project\" has cpu request 0"
+  },
+  {
+    "id": "00751",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0121.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: score-app\n    env: qa\n  name: sotr-app\n  namespace: mlops\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: sotr-app\n  template:\n    metadata:\n      labels:\n        app: sotr-app\n        env: qa\n    spec:\n      containers:\n      - image: wsosnowski2/sotr\n        name: sotr-project\n        ports:\n        - containerPort: 8010\n          protocol: TCP\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"sotr-project\" has memory limit 0"
+  },
+  {
+    "id": "00752",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0122.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: akstest-3225\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: akstest-3225\n  template:\n    metadata:\n      labels:\n        app: akstest-3225\n    spec:\n      containers:\n      - name: akstest-3225\n        image: aaaatiwarishubregistry.azurecr.io/akstest\n        ports:\n        - containerPort: 8123\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"akstest-3225\" is using an invalid container image, \"aaaatiwarishubregistry.azurecr.io/akstest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00753",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0122.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: akstest-3225\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: akstest-3225\n  template:\n    metadata:\n      labels:\n        app: akstest-3225\n    spec:\n      containers:\n      - name: akstest-3225\n        image: aaaatiwarishubregistry.azurecr.io/akstest\n        ports:\n        - containerPort: 8123\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"akstest-3225\" does not have a read-only root file system"
+  },
+  {
+    "id": "00754",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0122.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: akstest-3225\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: akstest-3225\n  template:\n    metadata:\n      labels:\n        app: akstest-3225\n    spec:\n      containers:\n      - name: akstest-3225\n        image: aaaatiwarishubregistry.azurecr.io/akstest\n        ports:\n        - containerPort: 8123\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"akstest-3225\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00755",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0122.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: akstest-3225\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: akstest-3225\n  template:\n    metadata:\n      labels:\n        app: akstest-3225\n    spec:\n      containers:\n      - name: akstest-3225\n        image: aaaatiwarishubregistry.azurecr.io/akstest\n        ports:\n        - containerPort: 8123\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"akstest-3225\" has cpu request 0"
+  },
+  {
+    "id": "00756",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0122.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: akstest-3225\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: akstest-3225\n  template:\n    metadata:\n      labels:\n        app: akstest-3225\n    spec:\n      containers:\n      - name: akstest-3225\n        image: aaaatiwarishubregistry.azurecr.io/akstest\n        ports:\n        - containerPort: 8123\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"akstest-3225\" has memory limit 0"
+  },
+  {
+    "id": "00757",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0128.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hello-deployment\n  labels:\n    app: hello\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: hello\n  template:\n    metadata:\n      labels:\n        app: hello\n    spec:\n      containers:\n      - name: hello\n        image: gcr.io/google-samples/hello-app:1.0\n        ports:\n        - containerPort: 8080\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          value: password\n        resources:\n          requests:\n            memory: 61Mi\n            cpu: 200m\n          limits:\n            memory: 128Mi\n            cpu: 500m\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"hello\" does not have a read-only root file system"
+  },
+  {
+    "id": "00758",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0128.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hello-deployment\n  labels:\n    app: hello\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: hello\n  template:\n    metadata:\n      labels:\n        app: hello\n    spec:\n      containers:\n      - name: hello\n        image: gcr.io/google-samples/hello-app:1.0\n        ports:\n        - containerPort: 8080\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          value: password\n        resources:\n          requests:\n            memory: 61Mi\n            cpu: 200m\n          limits:\n            memory: 128Mi\n            cpu: 500m\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"hello\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00759",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0131.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-webhooks\n  labels:\n    chart: lighthouse-1.1.41\n    app: lighthouse-webhooks\n    git.jenkins-x.io/sha: annotate\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    checksum/config: cca6b2f42d7393045e9e749df2be9e7f342f64b4c723a82c3c7c4d0cb91793f6\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-webhooks\n  template:\n    metadata:\n      labels:\n        app: lighthouse-webhooks\n      annotations:\n        prometheus.io/port: '2112'\n        prometheus.io/scrape: 'true'\n        jenkins-x.io/hash: 5e6bccde9c3bac58bf04598ba5c0d440ede72b84637d58a98043893d7122417d\n    spec:\n      serviceAccountName: lighthouse-webhooks\n      containers:\n      - name: lighthouse-webhooks\n        image: ghcr.io/jenkins-x/lighthouse-webhooks:1.1.41\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        env:\n        - name: GIT_KIND\n          value: github\n        - name: LH_CUSTOM_TRIGGER_COMMAND\n          value: jx\n        - name: GIT_SERVER\n          value: https://github.com\n        - name: GIT_USER\n          value: OHHYUN\n        - name: GIT_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-oauth-token\n              key: oauth\n        - name: HMAC_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-hmac-token\n              key: hmac\n              optional: false\n        - name: JX_LOG_FORMAT\n          value: json\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.1.41\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT\n          value: tekton-bot\n        - name: DEFAULT_PIPELINE_RUN_TIMEOUT\n          value: 2h0m0s\n        - name: FILE_BROWSER\n          value: git\n        - name: JX_DEFAULT_IMAGE\n          value: ghcr.io/jenkins-x/builder-maven:2.1.149-768\n        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE\n          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}\n        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG\n          value: 974b52c387d1fabee626da3b78536faf4c7848e9\n        envFrom:\n        - secretRef:\n            name: jx-boot-job-env-vars\n            optional: true\n        ports:\n        - containerPort: 8080\n        livenessProbe:\n          httpGet:\n            path: /\n            port: 8080\n          initialDelaySeconds: 60\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            path: /\n            port: 8080\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        resources:\n          limits:\n            cpu: 100m\n            memory: 512Mi\n          requests:\n            cpu: 80m\n            memory: 128Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"lighthouse-webhooks\" does not have a read-only root file system"
+  },
+  {
+    "id": "00760",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0131.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-webhooks\n  labels:\n    chart: lighthouse-1.1.41\n    app: lighthouse-webhooks\n    git.jenkins-x.io/sha: annotate\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    checksum/config: cca6b2f42d7393045e9e749df2be9e7f342f64b4c723a82c3c7c4d0cb91793f6\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-webhooks\n  template:\n    metadata:\n      labels:\n        app: lighthouse-webhooks\n      annotations:\n        prometheus.io/port: '2112'\n        prometheus.io/scrape: 'true'\n        jenkins-x.io/hash: 5e6bccde9c3bac58bf04598ba5c0d440ede72b84637d58a98043893d7122417d\n    spec:\n      serviceAccountName: lighthouse-webhooks\n      containers:\n      - name: lighthouse-webhooks\n        image: ghcr.io/jenkins-x/lighthouse-webhooks:1.1.41\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        env:\n        - name: GIT_KIND\n          value: github\n        - name: LH_CUSTOM_TRIGGER_COMMAND\n          value: jx\n        - name: GIT_SERVER\n          value: https://github.com\n        - name: GIT_USER\n          value: OHHYUN\n        - name: GIT_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-oauth-token\n              key: oauth\n        - name: HMAC_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-hmac-token\n              key: hmac\n              optional: false\n        - name: JX_LOG_FORMAT\n          value: json\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.1.41\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT\n          value: tekton-bot\n        - name: DEFAULT_PIPELINE_RUN_TIMEOUT\n          value: 2h0m0s\n        - name: FILE_BROWSER\n          value: git\n        - name: JX_DEFAULT_IMAGE\n          value: ghcr.io/jenkins-x/builder-maven:2.1.149-768\n        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE\n          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}\n        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG\n          value: 974b52c387d1fabee626da3b78536faf4c7848e9\n        envFrom:\n        - secretRef:\n            name: jx-boot-job-env-vars\n            optional: true\n        ports:\n        - containerPort: 8080\n        livenessProbe:\n          httpGet:\n            path: /\n            port: 8080\n          initialDelaySeconds: 60\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            path: /\n            port: 8080\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        resources:\n          limits:\n            cpu: 100m\n            memory: 512Mi\n          requests:\n            cpu: 80m\n            memory: 128Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"lighthouse-webhooks\" is not set to runAsNonRoot"
+  }
+]

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discord-voice-log-bot-deployment
+  labels:
+    app: discord-voice-log-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discord-voice-log-bot
+  template:
+    metadata:
+      labels:
+        app: discord-voice-log-bot
+    spec:
+      containers:
+      - name: discord-voice-log-bot
+        image: quay.io/satackey/discord-voice-log-bot:latest
+        volumeMounts:
+        - name: bot-config
+          mountPath: /app/configs
+          readOnly: true
+      volumes:
+      - name: bot-config
+        secret:
+          secretName: discord-voice-log-bot-secret
+          items:
+          - key: config
+            path: config.ini

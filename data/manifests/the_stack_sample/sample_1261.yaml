@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-ai
+  labels:
+    app: mock-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-ai
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      name: mock-ai
+      labels:
+        app: mock-ai
+    spec:
+      containers:
+      - name: mock-ai
+        image: europe-west2-docker.pkg.dev/ons-ci-int/int-docker-snapshot/mock-ai:Fix_file_listing_in_help_endpoint
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: '0.1'
+            memory: 512Mi
+          limits:
+            cpu: 0.5M
+            memory: 1024Mi
+        readinessProbe:
+          httpGet:
+            path: /info
+            port: 8162
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /info
+            port: 8162
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        ports:
+        - name: http-server
+          containerPort: 8162
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: -Dspring.profiles.active=dev -Dlogging.level.uk.gov.ons.ctp=DEBUG
+            -Dlogging.level.org.springframework=WARN -Dendpoints.autoconfig.enabled=false
+            -Dendpoints.beans.enabled=false -Dendpoints.configprops.enabled=false
+            -Dendpoints.dump.enabled=false -Dendpoints.env.enabled=false -Dendpoints.metrics.enabled=false
+            -Dendpoints.mapping.enabled=false -Dendpoints.shutdown.enabled=false -Dendpoints.trace.enabled=false
+            -Dmanagement.health.rabbit.enabled=false

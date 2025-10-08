@@ -1,0 +1,115 @@
+apiVersion: v1
+data:
+  bookinfo.yaml: "apiVersion: app.k8s.io/v1beta1\nkind: Application\nmetadata:\n \
+    \ name: bookinfo\n  namespace: servicemesh\n  labels:\n    app.kubernetes.io/version:\
+    \ v1\n    app.kubernetes.io/name: bookinfo\n  annotations:\n    servicemesh.kubesphere.io/enabled:\
+    \ 'true'\nspec:\n  selector:\n    matchLabels:\n      app.kubernetes.io/version:\
+    \ v1\n      app.kubernetes.io/name: bookinfo\n  addOwnerRef: true\n  descriptor:\n\
+    \    icons:\n      - src: '/assets/bookinfo.svg'\n  componentKinds:\n    - group:\
+    \ ''\n      kind: Service\n    - group: apps\n      kind: Deployment\n    - group:\
+    \ apps\n      kind: StatefulSet\n    - group: extensions\n      kind: Ingress\n\
+    \    - group: servicemesh.kubesphere.io\n      kind: Strategy\n    - group: servicemesh.kubesphere.io\n\
+    \      kind: ServicePolicy\n\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n\
+    \  namespace: servicemesh\n  annotations:\n    kubesphere.io/isElasticReplicas:\
+    \ 'false'\n    servicemesh.kubesphere.io/enabled: 'true'\n  labels:\n    app:\
+    \ productpage\n    version: v1\n    app.kubernetes.io/version: v1\n    app.kubernetes.io/name:\
+    \ bookinfo\n  name: productpage-v1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n\
+    \      app: productpage\n      version: v1\n      app.kubernetes.io/version: v1\n\
+    \      app.kubernetes.io/name: bookinfo\n  template:\n    metadata:\n      labels:\n\
+    \        app: productpage\n        version: v1\n        app.kubernetes.io/version:\
+    \ v1\n        app.kubernetes.io/name: bookinfo\n      annotations:\n        sidecar.istio.io/inject:\
+    \ 'true'\n    spec:\n      containers:\n        - name: productpage\n        \
+    \  resources:\n            requests:\n              cpu: 10m\n              memory:\
+    \ 10Mi\n            limits:\n              cpu: '1'\n              memory: 1000Mi\n\
+    \          imagePullPolicy: IfNotPresent\n          image: {{- .Values.image.bookinfo_productpage_v1_repo\
+    \ }}:{{- .Values.image.bookinfo_productpage_v1_tag }}\n          ports:\n    \
+    \        - name: http-web\n              protocol: TCP\n              containerPort:\
+    \ 9080\n              servicePort: 9080\n      serviceAccount: default\n  strategy:\n\
+    \    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 25%\n    \
+    \  maxSurge: 25%\n---\napiVersion: v1\nkind: Service\nmetadata:\n  namespace:\
+    \ servicemesh\n  labels:\n    app: productpage\n    app.kubernetes.io/version:\
+    \ v1\n    app.kubernetes.io/name: bookinfo\n  annotations:\n    kubesphere.io/workloadType:\
+    \ Deployment\n    servicemesh.kubesphere.io/enabled: 'true'\n  name: productpage\n\
+    spec:\n  type: ClusterIP\n  sessionAffinity: None\n  selector:\n    app: productpage\n\
+    \    app.kubernetes.io/version: v1\n    app.kubernetes.io/name: bookinfo\n  ports:\n\
+    \    - name: http-web\n      protocol: TCP\n      port: 9080\n      targetPort:\
+    \ 9080\n\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace:\
+    \ servicemesh\n  annotations:\n    kubesphere.io/isElasticReplicas: 'false'\n\
+    \    servicemesh.kubesphere.io/enabled: 'true'\n  labels:\n    app: reviews\n\
+    \    version: v1\n    app.kubernetes.io/version: v1\n    app.kubernetes.io/name:\
+    \ bookinfo\n  name: reviews-v1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n\
+    \      app: reviews\n      version: v1\n      app.kubernetes.io/version: v1\n\
+    \      app.kubernetes.io/name: bookinfo\n  template:\n    metadata:\n      labels:\n\
+    \        app: reviews\n        version: v1\n        app.kubernetes.io/version:\
+    \ v1\n        app.kubernetes.io/name: bookinfo\n      annotations:\n        sidecar.istio.io/inject:\
+    \ 'true'\n    spec:\n      containers:\n        - name: reviews\n          resources:\n\
+    \            requests:\n              cpu: 10m\n              memory: 10Mi\n \
+    \           limits:\n              cpu: '1'\n              memory: 1000Mi\n  \
+    \        imagePullPolicy: IfNotPresent\n          image: {{- .Values.image.bookinfo_reviews_v1_repo\
+    \ }}:{{- .Values.image.bookinfo_reviews_v1_tag }}\n          ports:\n        \
+    \    - name: http-web\n              protocol: TCP\n              containerPort:\
+    \ 9080\n              servicePort: 9080\n      serviceAccount: default\n  strategy:\n\
+    \    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 25%\n    \
+    \  maxSurge: 25%\n---\napiVersion: v1\nkind: Service\nmetadata:\n  namespace:\
+    \ servicemesh\n  labels:\n    app: reviews\n    app.kubernetes.io/version: v1\n\
+    \    app.kubernetes.io/name: bookinfo\n  annotations:\n    kubesphere.io/workloadType:\
+    \ Deployment\n    servicemesh.kubesphere.io/enabled: 'true'\n  name: reviews\n\
+    spec:\n  type: ClusterIP\n  sessionAffinity: None\n  selector:\n    app: reviews\n\
+    \    app.kubernetes.io/version: v1\n    app.kubernetes.io/name: bookinfo\n  ports:\n\
+    \    - name: http-web\n      protocol: TCP\n      port: 9080\n      targetPort:\
+    \ 9080\n\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace:\
+    \ servicemesh\n  annotations:\n    kubesphere.io/isElasticReplicas: 'false'\n\
+    \    servicemesh.kubesphere.io/enabled: 'true'\n  labels:\n    app: details\n\
+    \    version: v1\n    app.kubernetes.io/version: v1\n    app.kubernetes.io/name:\
+    \ bookinfo\n  name: details-v1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n\
+    \      app: details\n      version: v1\n      app.kubernetes.io/version: v1\n\
+    \      app.kubernetes.io/name: bookinfo\n  template:\n    metadata:\n      labels:\n\
+    \        app: details\n        version: v1\n        app.kubernetes.io/version:\
+    \ v1\n        app.kubernetes.io/name: bookinfo\n      annotations:\n        sidecar.istio.io/inject:\
+    \ 'true'\n    spec:\n      containers:\n        - name: details\n          resources:\n\
+    \            requests:\n              cpu: 10m\n              memory: 10Mi\n \
+    \           limits:\n              cpu: '1'\n              memory: 1000Mi\n  \
+    \        imagePullPolicy: IfNotPresent\n          image: {{- .Values.image.bookinfo_details_v1_repo\
+    \ }}:{{- .Values.image.bookinfo_details_v1_tag }}\n          ports:\n        \
+    \    - name: http-web\n              protocol: TCP\n              containerPort:\
+    \ 9080\n              servicePort: 9080\n      serviceAccount: default\n  strategy:\n\
+    \    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 25%\n    \
+    \  maxSurge: 25%\n---\napiVersion: v1\nkind: Service\nmetadata:\n  namespace:\
+    \ servicemesh\n  labels:\n    app: details\n    app.kubernetes.io/version: v1\n\
+    \    app.kubernetes.io/name: bookinfo\n  annotations:\n    kubesphere.io/workloadType:\
+    \ Deployment\n    servicemesh.kubesphere.io/enabled: 'true'\n  name: details\n\
+    spec:\n  type: ClusterIP\n  sessionAffinity: None\n  selector:\n    app: details\n\
+    \    app.kubernetes.io/version: v1\n    app.kubernetes.io/name: bookinfo\n  ports:\n\
+    \    - name: http-web\n      protocol: TCP\n      port: 9080\n      targetPort:\
+    \ 9080\n\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace:\
+    \ servicemesh\n  annotations:\n    kubesphere.io/isElasticReplicas: 'false'\n\
+    \    servicemesh.kubesphere.io/enabled: 'true'\n  labels:\n    app: ratings\n\
+    \    version: v1\n    app.kubernetes.io/version: v1\n    app.kubernetes.io/name:\
+    \ bookinfo\n  name: ratings-v1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n\
+    \      app: ratings\n      version: v1\n      app.kubernetes.io/version: v1\n\
+    \      app.kubernetes.io/name: bookinfo\n  template:\n    metadata:\n      labels:\n\
+    \        app: ratings\n        version: v1\n        app.kubernetes.io/version:\
+    \ v1\n        app.kubernetes.io/name: bookinfo\n      annotations:\n        sidecar.istio.io/inject:\
+    \ 'true'\n    spec:\n      containers:\n        - name: ratings\n          resources:\n\
+    \            requests:\n              cpu: 10m\n              memory: 10Mi\n \
+    \           limits:\n              cpu: '1'\n              memory: 1000Mi\n  \
+    \        imagePullPolicy: IfNotPresent\n          image: {{- .Values.image.bookinfo_ratings_v1_repo\
+    \ }}:{{- .Values.image.bookinfo_ratings_v1_tag }}\n          ports:\n        \
+    \    - name: http-web\n              protocol: TCP\n              containerPort:\
+    \ 9080\n              servicePort: 9080\n      serviceAccount: default\n  strategy:\n\
+    \    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 25%\n    \
+    \  maxSurge: 25%\n---\napiVersion: v1\nkind: Service\nmetadata:\n  namespace:\
+    \ servicemesh\n  labels:\n    app: ratings\n    app.kubernetes.io/version: v1\n\
+    \    app.kubernetes.io/name: bookinfo\n  annotations:\n    kubesphere.io/workloadType:\
+    \ Deployment\n    servicemesh.kubesphere.io/enabled: 'true'\n  name: ratings\n\
+    spec:\n  type: ClusterIP\n  sessionAffinity: None\n  selector:\n    app: ratings\n\
+    \    app.kubernetes.io/version: v1\n    app.kubernetes.io/name: bookinfo\n  ports:\n\
+    \    - name: http-web\n      protocol: TCP\n      port: 9080\n      targetPort:\
+    \ 9080\n\n---\napiVersion: extensions/v1beta1\nkind: Ingress\nmetadata:\n  namespace:\
+    \ servicemesh\n  labels:\n    app.kubernetes.io/version: v1\n    app.kubernetes.io/name:\
+    \ bookinfo\n  name: bookinfo-ingress\nspec:\n  rules:\n    - http:\n        paths:\n\
+    \          - path: /\n            backend:\n              serviceName: productpage\n\
+    \              servicePort: 9080\n      host: productpage.servicemesh.139.198.121.92.nip.io\n"
+kind: ConfigMap
+metadata:
+  name: sample-bookinfo

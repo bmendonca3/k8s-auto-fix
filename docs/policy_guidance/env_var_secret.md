@@ -1,0 +1,1 @@
+Environment variables that point to secret material must read from Kubernetes Secrets. Replace literal value fields with valueFrom.secretKeyRef referencing an existing Secret name and key. If the Pod already mounts the Secret as a volume, re-use that Secret and the matching item key rather than inventing a new one.

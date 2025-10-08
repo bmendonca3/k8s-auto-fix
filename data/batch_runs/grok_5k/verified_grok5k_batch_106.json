@@ -1,0 +1,496 @@
+[
+  {
+    "id": "04241",
+    "policy_id": "no_privileged",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: banias-frontend\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: banias-frontend\n  template:\n    metadata:\n      labels:\n        app: banias-frontend\n        k8s-app: banias-frontend\n    spec:\n      initContainers:\n      - name: init-sysctl\n        image: busybox:stable\n        command:\n        - /bin/sh\n        - -c\n        - 'sysctl -w net.ipv4.ip_forward=0\n\n          sysctl -w net.ipv4.conf.default.rp_filter=1\n\n          sysctl -w net.ipv4.conf.default.accept_source_route=0\n\n          sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1\n\n          sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1\n\n          sysctl -w kernel.msgmnb=65536\n\n          sysctl -w kernel.msgmax=65536\n\n          sysctl -w kernel.shmmax=68719476736\n\n          sysctl -w kernel.shmall=4294967296\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w fs.file-max=100000\n\n          sysctl -w net.ipv4.tcp_syncookies=1\n\n          sysctl -w net.ipv4.conf.all.log_martians=0\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w net.ipv4.tcp_max_syn_backlog=30000\n\n          sysctl -w net.ipv4.conf.all.send_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_source_route=0\n\n          sysctl -w net.ipv6.conf.all.forwarding=0\n\n          sysctl -w net.ipv4.tcp_slow_start_after_idle=0\n\n          sysctl -w net.ipv4.tcp_window_scaling=1\n\n          sysctl -w net.ipv4.tcp_timestamp=1\n\n          sysctl -w net.ipv4.tcp_sack=1\n\n          sysctl -w net.ipv4.tcp_congestion_control=htcp\n\n          sysctl -w net.ipv4.tcp_keepalive_time=60\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=10\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=300\n\n          sysctl -w net.netfilter.nf_conntrack_generic_timeout=300\n\n          sysctl -w net.ipv4.tcp_max_tw_buckets=2000000\n\n          sysctl -w net.ipv4.tcp_fin_timeout=10\n\n          sysctl -w net.ipv4.tcp_tw_reuse=1\n\n          sysctl -w net.ipv4.tcp_keepalive_intvl=15\n\n          sysctl -w net.ipv4.tcp_keepalive_probes=5\n\n          '\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: banias-frontend\n        image: gcr.io/my-project/banias-frontend:test\n        resources:\n          limits:\n            cpu: '3'\n            memory: 12G\n          requests:\n            cpu: 500m\n            memory: 200Mi\n        volumeMounts:\n        - name: google-cloud-key\n          mountPath: /var/secrets/google\n        ports:\n        - name: http\n          containerPort: 8081\n        - name: prom-metrics\n          containerPort: 8080\n        env:\n        - name: BANIAS_PROJECTID\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PROJECTID\n              name: banias-frontend-config\n        - name: BANIAS_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_DEBUG\n              name: banias-frontend-config\n        - name: BANIAS_TOPIC\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_TOPIC\n              name: banias-frontend-config\n        - name: BANIAS_PORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PORT\n              name: banias-frontend-config\n        - name: BANIAS_METRICSPORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_METRICSPORT\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXBATCH\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXBATCH\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBAGGRIGATORS\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBAGGRIGATORS\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXPUBLISHDELAY\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXPUBLISHDELAY\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n              name: banias-frontend-config\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /var/secrets/google/key.json\n        imagePullPolicy: Always\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: google-cloud-key\n        secret:\n          secretName: pubsub-key\n",
+    "errors": []
+  },
+  {
+    "id": "04242",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: banias-frontend\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: banias-frontend\n  template:\n    metadata:\n      labels:\n        app: banias-frontend\n        k8s-app: banias-frontend\n    spec:\n      initContainers:\n      - name: init-sysctl\n        image: busybox:stable\n        command:\n        - /bin/sh\n        - -c\n        - 'sysctl -w net.ipv4.ip_forward=0\n\n          sysctl -w net.ipv4.conf.default.rp_filter=1\n\n          sysctl -w net.ipv4.conf.default.accept_source_route=0\n\n          sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1\n\n          sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1\n\n          sysctl -w kernel.msgmnb=65536\n\n          sysctl -w kernel.msgmax=65536\n\n          sysctl -w kernel.shmmax=68719476736\n\n          sysctl -w kernel.shmall=4294967296\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w fs.file-max=100000\n\n          sysctl -w net.ipv4.tcp_syncookies=1\n\n          sysctl -w net.ipv4.conf.all.log_martians=0\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w net.ipv4.tcp_max_syn_backlog=30000\n\n          sysctl -w net.ipv4.conf.all.send_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_source_route=0\n\n          sysctl -w net.ipv6.conf.all.forwarding=0\n\n          sysctl -w net.ipv4.tcp_slow_start_after_idle=0\n\n          sysctl -w net.ipv4.tcp_window_scaling=1\n\n          sysctl -w net.ipv4.tcp_timestamp=1\n\n          sysctl -w net.ipv4.tcp_sack=1\n\n          sysctl -w net.ipv4.tcp_congestion_control=htcp\n\n          sysctl -w net.ipv4.tcp_keepalive_time=60\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=10\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=300\n\n          sysctl -w net.netfilter.nf_conntrack_generic_timeout=300\n\n          sysctl -w net.ipv4.tcp_max_tw_buckets=2000000\n\n          sysctl -w net.ipv4.tcp_fin_timeout=10\n\n          sysctl -w net.ipv4.tcp_tw_reuse=1\n\n          sysctl -w net.ipv4.tcp_keepalive_intvl=15\n\n          sysctl -w net.ipv4.tcp_keepalive_probes=5\n\n          '\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: banias-frontend\n        image: gcr.io/my-project/banias-frontend:test\n        resources:\n          limits:\n            cpu: '3'\n            memory: 12G\n          requests:\n            cpu: 500m\n            memory: 200Mi\n        volumeMounts:\n        - name: google-cloud-key\n          mountPath: /var/secrets/google\n        ports:\n        - name: http\n          containerPort: 8081\n        - name: prom-metrics\n          containerPort: 8080\n        env:\n        - name: BANIAS_PROJECTID\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PROJECTID\n              name: banias-frontend-config\n        - name: BANIAS_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_DEBUG\n              name: banias-frontend-config\n        - name: BANIAS_TOPIC\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_TOPIC\n              name: banias-frontend-config\n        - name: BANIAS_PORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PORT\n              name: banias-frontend-config\n        - name: BANIAS_METRICSPORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_METRICSPORT\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXBATCH\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXBATCH\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBAGGRIGATORS\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBAGGRIGATORS\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXPUBLISHDELAY\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXPUBLISHDELAY\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n              name: banias-frontend-config\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /var/secrets/google/key.json\n        imagePullPolicy: Always\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: google-cloud-key\n        secret:\n          secretName: pubsub-key\n",
+    "errors": []
+  },
+  {
+    "id": "04243",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: banias-frontend\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: banias-frontend\n  template:\n    metadata:\n      labels:\n        app: banias-frontend\n        k8s-app: banias-frontend\n    spec:\n      initContainers:\n      - name: init-sysctl\n        image: busybox:stable\n        command:\n        - /bin/sh\n        - -c\n        - 'sysctl -w net.ipv4.ip_forward=0\n\n          sysctl -w net.ipv4.conf.default.rp_filter=1\n\n          sysctl -w net.ipv4.conf.default.accept_source_route=0\n\n          sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1\n\n          sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1\n\n          sysctl -w kernel.msgmnb=65536\n\n          sysctl -w kernel.msgmax=65536\n\n          sysctl -w kernel.shmmax=68719476736\n\n          sysctl -w kernel.shmall=4294967296\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w fs.file-max=100000\n\n          sysctl -w net.ipv4.tcp_syncookies=1\n\n          sysctl -w net.ipv4.conf.all.log_martians=0\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w net.ipv4.tcp_max_syn_backlog=30000\n\n          sysctl -w net.ipv4.conf.all.send_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_source_route=0\n\n          sysctl -w net.ipv6.conf.all.forwarding=0\n\n          sysctl -w net.ipv4.tcp_slow_start_after_idle=0\n\n          sysctl -w net.ipv4.tcp_window_scaling=1\n\n          sysctl -w net.ipv4.tcp_timestamp=1\n\n          sysctl -w net.ipv4.tcp_sack=1\n\n          sysctl -w net.ipv4.tcp_congestion_control=htcp\n\n          sysctl -w net.ipv4.tcp_keepalive_time=60\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=10\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=300\n\n          sysctl -w net.netfilter.nf_conntrack_generic_timeout=300\n\n          sysctl -w net.ipv4.tcp_max_tw_buckets=2000000\n\n          sysctl -w net.ipv4.tcp_fin_timeout=10\n\n          sysctl -w net.ipv4.tcp_tw_reuse=1\n\n          sysctl -w net.ipv4.tcp_keepalive_intvl=15\n\n          sysctl -w net.ipv4.tcp_keepalive_probes=5\n\n          '\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: banias-frontend\n        image: gcr.io/my-project/banias-frontend:test\n        resources:\n          limits:\n            cpu: '3'\n            memory: 12G\n          requests:\n            cpu: 500m\n            memory: 200Mi\n        volumeMounts:\n        - name: google-cloud-key\n          mountPath: /var/secrets/google\n        ports:\n        - name: http\n          containerPort: 8081\n        - name: prom-metrics\n          containerPort: 8080\n        env:\n        - name: BANIAS_PROJECTID\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PROJECTID\n              name: banias-frontend-config\n        - name: BANIAS_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_DEBUG\n              name: banias-frontend-config\n        - name: BANIAS_TOPIC\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_TOPIC\n              name: banias-frontend-config\n        - name: BANIAS_PORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PORT\n              name: banias-frontend-config\n        - name: BANIAS_METRICSPORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_METRICSPORT\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXBATCH\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXBATCH\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBAGGRIGATORS\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBAGGRIGATORS\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXPUBLISHDELAY\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXPUBLISHDELAY\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n              name: banias-frontend-config\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /var/secrets/google/key.json\n        imagePullPolicy: Always\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: google-cloud-key\n        secret:\n          secretName: pubsub-key\n",
+    "errors": []
+  },
+  {
+    "id": "04244",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: banias-frontend\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: banias-frontend\n  template:\n    metadata:\n      labels:\n        app: banias-frontend\n        k8s-app: banias-frontend\n    spec:\n      initContainers:\n      - name: init-sysctl\n        image: busybox:stable\n        command:\n        - /bin/sh\n        - -c\n        - 'sysctl -w net.ipv4.ip_forward=0\n\n          sysctl -w net.ipv4.conf.default.rp_filter=1\n\n          sysctl -w net.ipv4.conf.default.accept_source_route=0\n\n          sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1\n\n          sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1\n\n          sysctl -w kernel.msgmnb=65536\n\n          sysctl -w kernel.msgmax=65536\n\n          sysctl -w kernel.shmmax=68719476736\n\n          sysctl -w kernel.shmall=4294967296\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w fs.file-max=100000\n\n          sysctl -w net.ipv4.tcp_syncookies=1\n\n          sysctl -w net.ipv4.conf.all.log_martians=0\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w net.ipv4.tcp_max_syn_backlog=30000\n\n          sysctl -w net.ipv4.conf.all.send_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_source_route=0\n\n          sysctl -w net.ipv6.conf.all.forwarding=0\n\n          sysctl -w net.ipv4.tcp_slow_start_after_idle=0\n\n          sysctl -w net.ipv4.tcp_window_scaling=1\n\n          sysctl -w net.ipv4.tcp_timestamp=1\n\n          sysctl -w net.ipv4.tcp_sack=1\n\n          sysctl -w net.ipv4.tcp_congestion_control=htcp\n\n          sysctl -w net.ipv4.tcp_keepalive_time=60\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=10\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=300\n\n          sysctl -w net.netfilter.nf_conntrack_generic_timeout=300\n\n          sysctl -w net.ipv4.tcp_max_tw_buckets=2000000\n\n          sysctl -w net.ipv4.tcp_fin_timeout=10\n\n          sysctl -w net.ipv4.tcp_tw_reuse=1\n\n          sysctl -w net.ipv4.tcp_keepalive_intvl=15\n\n          sysctl -w net.ipv4.tcp_keepalive_probes=5\n\n          '\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: banias-frontend\n        image: gcr.io/my-project/banias-frontend:test\n        resources:\n          limits:\n            cpu: '3'\n            memory: 12G\n          requests:\n            cpu: 500m\n            memory: 200Mi\n        volumeMounts:\n        - name: google-cloud-key\n          mountPath: /var/secrets/google\n        ports:\n        - name: http\n          containerPort: 8081\n        - name: prom-metrics\n          containerPort: 8080\n        env:\n        - name: BANIAS_PROJECTID\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PROJECTID\n              name: banias-frontend-config\n        - name: BANIAS_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_DEBUG\n              name: banias-frontend-config\n        - name: BANIAS_TOPIC\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_TOPIC\n              name: banias-frontend-config\n        - name: BANIAS_PORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PORT\n              name: banias-frontend-config\n        - name: BANIAS_METRICSPORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_METRICSPORT\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXBATCH\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXBATCH\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBAGGRIGATORS\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBAGGRIGATORS\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXPUBLISHDELAY\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXPUBLISHDELAY\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n              name: banias-frontend-config\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /var/secrets/google/key.json\n        imagePullPolicy: Always\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: google-cloud-key\n        secret:\n          secretName: pubsub-key\n",
+    "errors": []
+  },
+  {
+    "id": "04245",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: banias-frontend\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: banias-frontend\n  template:\n    metadata:\n      labels:\n        app: banias-frontend\n        k8s-app: banias-frontend\n    spec:\n      initContainers:\n      - name: init-sysctl\n        image: busybox:stable\n        command:\n        - /bin/sh\n        - -c\n        - 'sysctl -w net.ipv4.ip_forward=0\n\n          sysctl -w net.ipv4.conf.default.rp_filter=1\n\n          sysctl -w net.ipv4.conf.default.accept_source_route=0\n\n          sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1\n\n          sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1\n\n          sysctl -w kernel.msgmnb=65536\n\n          sysctl -w kernel.msgmax=65536\n\n          sysctl -w kernel.shmmax=68719476736\n\n          sysctl -w kernel.shmall=4294967296\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w fs.file-max=100000\n\n          sysctl -w net.ipv4.tcp_syncookies=1\n\n          sysctl -w net.ipv4.conf.all.log_martians=0\n\n          sysctl -w net.core.somaxconn=50000\n\n          sysctl -w net.ipv4.tcp_max_syn_backlog=30000\n\n          sysctl -w net.ipv4.conf.all.send_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_redirects=0\n\n          sysctl -w net.ipv4.conf.all.accept_source_route=0\n\n          sysctl -w net.ipv6.conf.all.forwarding=0\n\n          sysctl -w net.ipv4.tcp_slow_start_after_idle=0\n\n          sysctl -w net.ipv4.tcp_window_scaling=1\n\n          sysctl -w net.ipv4.tcp_timestamp=1\n\n          sysctl -w net.ipv4.tcp_sack=1\n\n          sysctl -w net.ipv4.tcp_congestion_control=htcp\n\n          sysctl -w net.ipv4.tcp_keepalive_time=60\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=10\n\n          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=300\n\n          sysctl -w net.netfilter.nf_conntrack_generic_timeout=300\n\n          sysctl -w net.ipv4.tcp_max_tw_buckets=2000000\n\n          sysctl -w net.ipv4.tcp_fin_timeout=10\n\n          sysctl -w net.ipv4.tcp_tw_reuse=1\n\n          sysctl -w net.ipv4.tcp_keepalive_intvl=15\n\n          sysctl -w net.ipv4.tcp_keepalive_probes=5\n\n          '\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: banias-frontend\n        image: gcr.io/my-project/banias-frontend:test\n        resources:\n          limits:\n            cpu: '3'\n            memory: 12G\n          requests:\n            cpu: 500m\n            memory: 200Mi\n        volumeMounts:\n        - name: google-cloud-key\n          mountPath: /var/secrets/google\n        ports:\n        - name: http\n          containerPort: 8081\n        - name: prom-metrics\n          containerPort: 8080\n        env:\n        - name: BANIAS_PROJECTID\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PROJECTID\n              name: banias-frontend-config\n        - name: BANIAS_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_DEBUG\n              name: banias-frontend-config\n        - name: BANIAS_TOPIC\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_TOPIC\n              name: banias-frontend-config\n        - name: BANIAS_PORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PORT\n              name: banias-frontend-config\n        - name: BANIAS_METRICSPORT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_METRICSPORT\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXBATCH\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXBATCH\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBAGGRIGATORS\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBAGGRIGATORS\n              name: banias-frontend-config\n        - name: BANIAS_PUBSUBMAXPUBLISHDELAY\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_PUBSUBMAXPUBLISHDELAY\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINESAMOUNT\n              name: banias-frontend-config\n        - name: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n          valueFrom:\n            configMapKeyRef:\n              key: BANIAS_MAXPUBSUBGOROUTINEIDLEDURATION\n              name: banias-frontend-config\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /var/secrets/google/key.json\n        imagePullPolicy: Always\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: google-cloud-key\n        secret:\n          secretName: pubsub-key\n",
+    "errors": []
+  },
+  {
+    "id": "04246",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6857\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04247",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6857\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04248",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6857\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04249",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6857\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04250",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6857\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04251",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210305-350f3b2f2e\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "04252",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210305-350f3b2f2e\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "04253",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210305-350f3b2f2e\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "04254",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210305-350f3b2f2e\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "04255",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04256",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04257",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04258",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04259",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04260",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04261",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04262",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04263",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04264",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04265",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04266",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04267",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04268",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04269",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04270",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04271",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04272",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04273",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04274",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04275",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: results-app\n  labels:\n    app: my-voting-app\n    tier: results\nspec:\n  containers:\n  - image: dockersamples/examplevotingapp_result:stable\n    name: results-app\n    ports:\n    - containerPort: 80\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04276",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: results-app\n  labels:\n    app: my-voting-app\n    tier: results\nspec:\n  containers:\n  - image: dockersamples/examplevotingapp_result:stable\n    name: results-app\n    ports:\n    - containerPort: 80\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04277",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: results-app\n  labels:\n    app: my-voting-app\n    tier: results\nspec:\n  containers:\n  - image: dockersamples/examplevotingapp_result:stable\n    name: results-app\n    ports:\n    - containerPort: 80\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04278",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: results-app\n  labels:\n    app: my-voting-app\n    tier: results\nspec:\n  containers:\n  - image: dockersamples/examplevotingapp_result:stable\n    name: results-app\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04279",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: results-app\n  labels:\n    app: my-voting-app\n    tier: results\nspec:\n  containers:\n  - image: dockersamples/examplevotingapp_result:stable\n    name: results-app\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04280",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  namespace: monitoring
+  name: uptimerobot-heartbeat
+spec:
+  schedule: '*/5 * * * *'
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            botkube.io/disable: 'true'
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: uptimerobot-heartbeat
+            image: ghcr.io/k8s-at-home/kubectl:v1.23.1
+            imagePullPolicy: IfNotPresent
+            envFrom:
+            - secretRef:
+                name: uptimerobot-heartbeat-url
+            command:
+            - /bin/sh
+            - -ec
+            - "set -o nounset\nset -o errexit\nif [ -z \"$UPTIMEROBOT_HEARTBEAT_URL\"\
+              \ ]; then\n  printf \"%s - Yikes - Missing UPTIMEROBOT_HEARTBEAT_URL\
+              \ environment variable\" \"$(date -u)\"\n  exit 0\nfi\nstatus_code=$(curl\
+              \ --connect-timeout 10 --max-time 30 -I -s -o /dev/null -w '%{http_code}'\
+              \ \"$UPTIMEROBOT_HEARTBEAT_URL\")\nif [ \"${status_code}\" != \"200\"\
+              \ ]; then\n  printf \"%s - Yikes - Heartbeat request failed, http code:\
+              \ %s\" \"$(date -u)\" \"$status_code\"\n  exit 0\nfi\nprintf \"%s -\
+              \ Success - Heartbeat request received and processed successfully\"\
+              \ \"$(date -u)\""

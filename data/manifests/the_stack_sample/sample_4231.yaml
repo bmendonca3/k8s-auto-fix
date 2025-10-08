@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-app-mongo
+  labels:
+    app: server-app-mongo
+    group: sample
+    version: kube-tests
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: server-app-mongo
+      group: sample
+      version: kube-tests
+  template:
+    metadata:
+      labels:
+        app: server-app-mongo
+        group: sample
+        version: kube-tests
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: server-app-mongo
+        image: server-app-mongo:latest
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: server-app-mongo
+        - secretRef:
+            name: server-app-mongo
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: metrics
+          containerPort: 8090
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8090
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8090
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+      terminationGracePeriodSeconds: 30

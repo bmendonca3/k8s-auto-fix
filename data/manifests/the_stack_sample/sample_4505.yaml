@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fio-{{ .Values.rtc }}-emptydir-memory
+  namespace: io-test
+spec:
+  runtimeClassName: kata-{{ .Values.rtc }}
+  containers:
+  - name: fio
+    image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'
+    resources:
+      requests:
+        cpu: '{{ .Values.resources.requests.cpu }}'
+      limits:
+        cpu: '{{ .Values.resources.limits.cpu }}'
+    volumeMounts:
+    - mountPath: /test-volume
+      name: emptydir-volume
+  volumes:
+  - name: emptydir-volume
+    emptyDir:
+      medium: Memory
+      sizeLimit: 8Gi

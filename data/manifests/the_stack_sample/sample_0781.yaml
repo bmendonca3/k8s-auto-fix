@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-db
+spec:
+  serviceName: postgresql-db-service
+  selector:
+    matchLabels:
+      app: postgresql-db
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: postgresql-db
+    spec:
+      securityContext:
+        fsGroup: 2000
+      initContainers:
+      - name: init-chmod-data
+        image: postgres
+        command:
+        - sh
+        - -c
+        args:
+        - chown -R 1001:2000 /data
+        volumeMounts:
+        - name: postgresql-db-disk
+          mountPath: /data
+      containers:
+      - name: postgresql-db
+        image: postgres
+        securityContext:
+          runAsUser: 1001
+          runAsGroup: 2000
+        volumeMounts:
+        - name: postgresql-db-disk
+          mountPath: /data
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stock-market-secret
+              key: postgres-password
+        - name: PGDATA
+          value: /data/pgdata
+  volumeClaimTemplates:
+  - metadata:
+      name: postgresql-db-disk
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi

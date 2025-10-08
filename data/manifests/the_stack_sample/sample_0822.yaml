@@ -1,0 +1,271 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: clusterloggingconfigs.deckhouse.io
+  labels:
+    heritage: deckhouse
+    module: log-shipper
+spec:
+  group: deckhouse.io
+  scope: Cluster
+  names:
+    plural: clusterloggingconfigs
+    singular: clusterloggingconfig
+    kind: ClusterLoggingConfig
+  preserveUnknownFields: false
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        required:
+        - spec
+        description: 'CustomResource for source in log-pipeline.
+
+
+          Each CustomResource `ClusterLoggingConfig` describes rules for log fetching
+          from cluster.
+
+          '
+        properties:
+          spec:
+            type: object
+            required:
+            - type
+            - destinationRefs
+            anyOf:
+            - oneOf:
+              - properties:
+                  type:
+                    enum:
+                    - KubernetesPods
+                  kubernetesPods: {}
+                required:
+                - kubernetesPods
+              - properties:
+                  type:
+                    enum:
+                    - File
+                  file: {}
+                required:
+                - file
+            properties:
+              type:
+                type: string
+                enum:
+                - KubernetesPods
+                - File
+                description: 'Set on of possible input sources.
+
+
+                  `KubernetesPods` source reads logs from Kubernetes Pods.
+
+
+                  `File` source reads local file from node filesystem.
+
+                  '
+              kubernetesPods:
+                type: object
+                default: {}
+                properties:
+                  namespaceSelector:
+                    type: object
+                    description: Specifies the Namespace selector to filter Pods with.
+                    properties:
+                      matchNames:
+                        type: array
+                        items:
+                          type: string
+                  labelSelector:
+                    type: object
+                    description: 'Specifies the label selector to filter Pods with.
+
+
+                      You can get more into [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
+
+                      '
+                    anyOf:
+                    - required:
+                      - matchLabels
+                    - required:
+                      - matchExpressions
+                    properties:
+                      matchLabels:
+                        type: object
+                        description: List of labels which Pod should have.
+                        example:
+                          foo: bar
+                          baz: whooo
+                        additionalProperties:
+                          type: string
+                      matchExpressions:
+                        type: array
+                        description: List of label expressions for Pods.
+                        example: "```yaml\nmatchExpressions:\n- key: tier\n  operator\"\
+                          : In\n  values:\n  - production\n  - staging\n```\n"
+                        items:
+                          type: object
+                          required:
+                          - key
+                          - operator
+                          properties:
+                            key:
+                              type: string
+                            operator:
+                              type: string
+                              enum:
+                              - In
+                              - NotIn
+                              - Exists
+                              - DoesNotExist
+                            values:
+                              type: array
+                              items:
+                                type: string
+              file:
+                type: object
+                properties:
+                  include:
+                    type: array
+                    description: Array of file patterns to include.
+                    example:
+                    - /var/log/*.log
+                    - /var/log/nginx/*.log
+                    items:
+                      type: string
+                  exclude:
+                    type: array
+                    description: Array of file patterns to exclude.
+                    example:
+                    - /var/log/nginx/error.log
+                    - /var/log/audit.log
+                    items:
+                      type: string
+                  lineDelimiter:
+                    type: string
+                    description: String sequence used to separate one file line from
+                      another.
+                    example: \r\n
+              logFilter:
+                type: array
+                description: 'List of filter for logs.
+
+                  Only matched lines would be stored to log destination.
+
+                  '
+                example: "```yaml\nlogFilter:\n- field: tier\n  operator: Exists\n\
+                  - field: tier\n  operator: In\n  values:\n  - production\n  - staging\n\
+                  - field: foo\n  operator: NotIn\n  values: \n  - dev\n  - 42\n \
+                  \ - \"true\"\n  - \"3.14\"\n- field: bar\n  operator: Regex\n  values:\n\
+                  \  - ^abc\n  - ^\\d.+$\n```\n"
+                items:
+                  type: object
+                  required:
+                  - field
+                  - operator
+                  properties:
+                    field:
+                      description: Field name for filtering.
+                      type: string
+                    operator:
+                      type: string
+                      description: 'Operator for log field comparations:
+
+                        * `In` operator find substring in string
+
+                        * `NotIn` operator is negative version of `In` operator
+
+                        * `Regex` operator is trying to match regexp over field, only
+                        log events with matching fields will pass
+
+                        * `NotRegex` operator is negative version of `Regex` operator,
+                        log events without fields or with not matched fields will
+                        pass
+
+                        * `Exists` operator drop log event if it contains some fields
+
+                        * `DoesNotExist` operator drop log event if it does not contain
+                        some fields
+
+                        '
+                      enum:
+                      - In
+                      - NotIn
+                      - Regex
+                      - NotRegex
+                      - Exists
+                      - DoesNotExist
+                    values:
+                      type: array
+                      description: 'Array of `ClusterLogDestination` CustomResource
+                        names which this source will output with.
+
+                        Fields with float or boolean values will be converted to strings
+                        during comparation.
+
+                        '
+                      items:
+                        x-kubernetes-int-or-string: true
+                        anyOf:
+                        - type: integer
+                        - type: string
+                  oneOf:
+                  - properties:
+                      operator:
+                        enum:
+                        - Exists
+                        - DoesNotExist
+                      values:
+                        maxItems: 0
+                  - properties:
+                      operator:
+                        enum:
+                        - Regex
+                        - NotRegex
+                        - In
+                        - NotIn
+                      values:
+                        minItems: 1
+              multilineParser:
+                type: object
+                description: Multiline parser for different patterns
+                required:
+                - type
+                properties:
+                  type:
+                    type: string
+                    description: 'Parser types:
+
+                      * None - Do not parse logs.
+
+                      * General - Try to match general multiline logs with space or
+                      tabulation on extra lines.
+
+                      * Backslash - Try to match bash style logs with backslash on
+                      all lines except last event line.
+
+                      * LogWithTime - Try to detect events by timestamps.
+
+                      * MultilineJSON - Try to match json logs by `{` as a first symbol.
+
+                      '
+                    enum:
+                    - None
+                    - General
+                    - Backslash
+                    - LogWithTime
+                    - MultilineJSON
+                    default: None
+              destinationRefs:
+                type: array
+                description: 'Array of `ClusterLogDestination` CustomResource names
+                  which this source will output with.
+
+                  Fields with float or boolean values will be converted to string.
+
+                  '
+                minItems: 1
+                items:
+                  type: string

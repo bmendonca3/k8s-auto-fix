@@ -1,0 +1,34 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: alertmanager
+  namespace: kube-system
+data:
+  config.yml: "global:\n  # ResolveTimeout is the time after which an alert is declared\
+    \ resolved\n  # if it has not been updated.\n  resolve_timeout: 5m\n\n  # The\
+    \ smarthost and SMTP sender used for mail notifications.\n  smtp_smarthost: 'smtp.gmail.com:587'\n\
+    \  smtp_from: 'foo@bar.com'\n  smtp_auth_username: 'foo@bar.com'\n  smtp_auth_password:\
+    \ 'barfoo'\n\n  # The API URL to use for Slack notifications.\n  slack_api_url:\
+    \ 'https://hooks.slack.com/services/some/api/token'\n\n# # The directory from\
+    \ which notification templates are read.\ntemplates:\n- '/etc/alertmanager-templates/*.tmpl'\n\
+    \n# The root route on which each incoming alert enters.\nroute:\n\n  # The labels\
+    \ by which incoming alerts are grouped together. For example,\n  # multiple alerts\
+    \ coming in for cluster=A and alertname=LatencyHigh would\n  # be batched into\
+    \ a single group.\n\n  group_by: ['alertname', 'cluster', 'service']\n\n  # When\
+    \ a new group of alerts is created by an incoming alert, wait at\n  # least 'group_wait'\
+    \ to send the initial notification.\n  # This way ensures that you get multiple\
+    \ alerts for the same group that start\n  # firing shortly after another are batched\
+    \ together on the first\n  # notification.\n\n  group_wait: 30s\n\n  # When the\
+    \ first notification was sent, wait 'group_interval' to send a batch\n  # of new\
+    \ alerts that started firing for that group.\n\n  group_interval: 5m\n\n  # If\
+    \ an alert has successfully been sent, wait 'repeat_interval' to\n  # resend them.\n\
+    \n  #repeat_interval: 1m\n  repeat_interval: 15m\n\n  # A default receiver\n\n\
+    \  # If an alert isn't caught by a route, send it to default.\n  receiver: default\n\
+    \n  # All the above attributes are inherited by all child routes and can\n  #\
+    \ overwritten on each.\n\n  # The child route trees.\n  routes:\n  # Send severity=slack\
+    \ alerts to slack.\n  - match:\n      severity: slack\n    receiver: slack_alert\n\
+    \  # - match:\n  #     severity: email\n  #   receiver: email_alert\n\nreceivers:\n\
+    - name: 'default'\n  slack_configs:\n  - channel: '#alertmanager-test'\n    text:\
+    \ '<!channel>{{ template \"slack.devops.text\" . }}'\n    send_resolved: true\n\
+    \n- name: 'slack_alert'\n  slack_configs:\n  - channel: '#alertmanager-test'\n\
+    \    send_resolved: true"

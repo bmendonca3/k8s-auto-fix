@@ -1,0 +1,51 @@
+[
+  {
+    "id": "cis_kubernetes_requests#1",
+    "policies": [
+      "set_requests_limits"
+    ],
+    "source": "CIS Kubernetes Benchmark (v1.24) - Section 5.7.2",
+    "citation": "https://www.cisecurity.org/benchmark/kubernetes",
+    "text": "The CIS Kubernetes Benchmark recommends setting explicit CPU and memory requests and limits for every container. Defining `resources.requests` ensures the scheduler can reserve capacity, while `resources.limits` prevents noisy-neighbor contention. Baseline values such as `requests.cpu: 100m`, `requests.memory: 128Mi`, `limits.cpu: 500m`, and `limits.memory: 256Mi` satisfy the control and match common hardening templates."
+  },
+  {
+    "id": "cis_kubernetes_secrets#1",
+    "policies": [
+      "env_var_secret"
+    ],
+    "source": "CIS Kubernetes Benchmark (v1.24) - Section 5.5.1",
+    "citation": "https://www.cisecurity.org/benchmark/kubernetes",
+    "text": "Store sensitive configuration data in Kubernetes Secrets rather than inline environment variables. Replace literal `env[].value` strings that contain credentials with `valueFrom.secretKeyRef` references, reusing existing mounted Secrets when possible. This control limits accidental disclosure in logs, admission webhooks, and version control systems."
+  },
+  {
+    "id": "pod_security_baseline_network#1",
+    "policies": [
+      "no_host_path",
+      "no_host_ports"
+    ],
+    "source": "Kubernetes Pod Security Standards - Baseline Profile",
+    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#baseline",
+    "text": "The Baseline profile limits host access to reduce privilege escalation paths. Avoid `hostPath` volumes unless combined with a read-only root filesystem and narrow subPath rules. Services should prefer cluster networking; remove `hostPort` mappings so the kubelet cannot bind privileged ports on the node. Where host networking is unavoidable, document the exception and add compensating controls."
+  },
+  {
+    "id": "pod_security_nonroot#1",
+    "policies": [
+      "run_as_non_root",
+      "run_as_user"
+    ],
+    "source": "Kubernetes Pod Security Standards - Restricted Profile",
+    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted",
+    "text": "Restricted pods must run as non-root users. Set `securityContext.runAsNonRoot: true` and provide an explicit numeric `runAsUser` greater than zero (for example, `1000`). Avoid inheriting the root user from the container image. This guidance enforces least privilege and aligns with the Kubernetes Pod Security Restricted profile."
+  },
+  {
+    "id": "pod_security_restricted#1",
+    "policies": [
+      "no_privileged",
+      "drop_capabilities",
+      "enforce_seccomp"
+    ],
+    "source": "Kubernetes Pod Security Standards - Restricted Profile",
+    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted",
+    "text": "The Restricted profile prohibits privileged workloads and requires pods to run with a locked-down securityContext. Containers must set `privileged: false`, block privilege escalation, and restrict Linux capabilities to the minimal set, typically dropping `NET_RAW`, `SYS_ADMIN`, and similar sensitive flags. Seccomp must use `RuntimeDefault` or a custom profile that is at least as strict. These controls limit the blast radius if the container is compromised and align with the Kubernetes Pod Security Restricted guidance."
+  }
+]

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: explainshell-deployment
+  namespace: explainshell
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: explainshell-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: explainshell-web
+    spec:
+      containers:
+      - env:
+        - name: HOST_IP
+          value: 0.0.0.0
+        - name: MONGO_URI
+          value: mongodb://mongo-database-0.mongodb-service.explainshell.svc.cluster.local
+        - name: PYTHONPATH
+          value: /opt/webapp
+        command:
+        - /bin/bash
+        - -c
+        - "apt-get update\napt-get install -y make gcc \npython explainshell/manager.py\
+          \ --log info /usr/share/man/man1/\npython explainshell/manager.py --log\
+          \ info /usr/share/man/man3/\npython explainshell/manager.py --log info /usr/share/man/man5/\n\
+          python explainshell/manager.py --log info /usr/share/man/man7/\npython explainshell/manager.py\
+          \ --log info /usr/share/man/man8/\nexec make serve\n"
+        image: swr.cn-north-4.myhuaweicloud.com/opensourceway/common/explainshell_web:v1.0.1
+        name: explainshell-web
+        ports:
+        - containerPort: 5000
+        resources: {}
+      restartPolicy: Always
+status: {}

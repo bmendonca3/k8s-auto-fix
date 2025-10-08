@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: openshift-kube-scheduler-operator
+  name: openshift-kube-scheduler-operator
+  labels:
+    app: openshift-kube-scheduler-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openshift-kube-scheduler-operator
+  template:
+    metadata:
+      name: openshift-kube-scheduler-operator
+      labels:
+        app: openshift-kube-scheduler-operator
+    spec:
+      serviceAccountName: openshift-kube-scheduler-operator
+      containers:
+      - name: kube-scheduler-operator-container
+        image: docker.io/openshift/origin-cluster-kube-scheduler-operator:v4.0
+        imagePullPolicy: Always
+        command:
+        - cluster-kube-scheduler-operator
+        - operator
+        args:
+        - --config=/var/run/configmaps/config/config.yaml
+        - -v=4
+        resources:
+          requests:
+            memory: 50Mi
+        volumeMounts:
+        - mountPath: /var/run/configmaps/config
+          name: config
+        env:
+        - name: IMAGE
+          value: quay.io/openshift/origin-hyperkube:v4.0
+        - name: OPERATOR_IMAGE
+          value: docker.io/openshift/origin-cluster-kube-scheduler-operator:v4.0
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        terminationMessagePolicy: FallbackToLogsOnError
+      volumes:
+      - name: config
+        configMap:
+          name: openshift-kube-scheduler-operator-config
+      nodeSelector:
+        node-role.kubernetes.io/master: ''
+      priorityClassName: system-cluster-critical
+      tolerations:
+      - operator: Exists

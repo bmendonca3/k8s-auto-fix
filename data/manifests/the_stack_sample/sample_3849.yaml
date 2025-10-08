@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phabricator-proxy
+  namespace: buildkite
+spec:
+  selector:
+    matchLabels:
+      app: phabricator-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: phabricator-proxy
+    spec:
+      containers:
+      - name: phabricator-proxy
+        image: gcr.io/llvm-premerge-checks/phabricator-proxy:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: BUILDKITE_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: buildkite-api-token
+              key: token
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 2
+          failureThreshold: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1500Mi
+          requests:
+            cpu: 500m
+            memory: 1500Mi
+      nodeSelector:
+        cloud.google.com/gke-nodepool: default-pool

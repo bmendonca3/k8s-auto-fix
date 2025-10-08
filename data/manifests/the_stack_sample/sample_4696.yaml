@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: application-operator
+  template:
+    metadata:
+      labels:
+        name: application-operator
+    spec:
+      serviceAccountName: application-operator
+      containers:
+      - name: application-operator
+        image: REPLACE_IMAGE
+        command:
+        - application-operator
+        imagePullPolicy: Always
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: application-operator

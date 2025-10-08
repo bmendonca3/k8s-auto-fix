@@ -1,0 +1,1 @@
+When a livenessProbe references a port (number or name) make sure the container exposes that port inside spec.containers[].ports. Add a new entry with containerPort=<probe port> and keep the same port name when the probe uses a named port so service discovery stays consistent.

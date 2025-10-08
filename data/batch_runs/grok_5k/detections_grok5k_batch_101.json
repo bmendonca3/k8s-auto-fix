@@ -1,0 +1,282 @@
+[
+  {
+    "id": "04041",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1816.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: testground-daemon\n  labels:\n    app: testground-daemon\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: testground-daemon\n  template:\n    metadata:\n      labels:\n        app: testground-daemon\n    spec:\n      serviceAccountName: testground-daemon\n      initContainers:\n      - name: iproute-add\n        image: busybox:1.31.1\n        securityContext:\n          privileged: true\n        command:\n        - sh\n        - -ac\n        - 'while [ \"$GW\" = \"\" ]; do export GW=$(ip route | grep cni0 | awk ''{print\n          $7}''); echo \"Got GW: $GW\"; sleep 5; done; echo $GW && ip route && ip route\n          add 100.64.0.0/16 via $GW && ip route || true;\n\n          '\n      containers:\n      - name: goproxy\n        image: iptestground/goproxy:2.0.2\n        ports:\n        - containerPort: 8081\n          hostPort: 8081\n        volumeMounts:\n        - name: envtoml\n          mountPath: /root/testground/.env.toml\n          subPath: .env.toml\n        - name: efs-pvc\n          mountPath: /go\n        resources:\n          requests:\n            memory: 512Mi\n            cpu: 500m\n          limits:\n            memory: 512Mi\n      - name: testground-daemon\n        image: iptestground/testground:edge\n        imagePullPolicy: Always\n        env:\n        - name: REDIS_HOST\n          value: testground-infra-redis-headless\n        securityContext:\n          privileged: true\n        ports:\n        - containerPort: 8042\n          hostPort: 8042\n        volumeMounts:\n        - name: daemon-datadir\n          mountPath: /root/testground/\n        - name: efs-pvc\n          mountPath: /efs\n        - name: dockersock\n          mountPath: /var/run/docker.sock\n        - name: envtoml\n          mountPath: /root/testground/.env.toml\n          subPath: .env.toml\n        resources:\n          requests:\n            memory: 2048Mi\n            cpu: 2000m\n          limits:\n            memory: 2048Mi\n      volumes:\n      - name: efs-pvc\n        persistentVolumeClaim:\n          claimName: efs\n      - name: daemon-datadir\n        persistentVolumeClaim:\n          claimName: testground-daemon-datadir-pvc\n      - name: dockersock\n        hostPath:\n          path: /var/run/docker.sock\n      - name: envtoml\n        configMap:\n          name: env-toml-cfg\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"iproute-add\" has cpu request 0"
+  },
+  {
+    "id": "04042",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1816.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: testground-daemon\n  labels:\n    app: testground-daemon\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: testground-daemon\n  template:\n    metadata:\n      labels:\n        app: testground-daemon\n    spec:\n      serviceAccountName: testground-daemon\n      initContainers:\n      - name: iproute-add\n        image: busybox:1.31.1\n        securityContext:\n          privileged: true\n        command:\n        - sh\n        - -ac\n        - 'while [ \"$GW\" = \"\" ]; do export GW=$(ip route | grep cni0 | awk ''{print\n          $7}''); echo \"Got GW: $GW\"; sleep 5; done; echo $GW && ip route && ip route\n          add 100.64.0.0/16 via $GW && ip route || true;\n\n          '\n      containers:\n      - name: goproxy\n        image: iptestground/goproxy:2.0.2\n        ports:\n        - containerPort: 8081\n          hostPort: 8081\n        volumeMounts:\n        - name: envtoml\n          mountPath: /root/testground/.env.toml\n          subPath: .env.toml\n        - name: efs-pvc\n          mountPath: /go\n        resources:\n          requests:\n            memory: 512Mi\n            cpu: 500m\n          limits:\n            memory: 512Mi\n      - name: testground-daemon\n        image: iptestground/testground:edge\n        imagePullPolicy: Always\n        env:\n        - name: REDIS_HOST\n          value: testground-infra-redis-headless\n        securityContext:\n          privileged: true\n        ports:\n        - containerPort: 8042\n          hostPort: 8042\n        volumeMounts:\n        - name: daemon-datadir\n          mountPath: /root/testground/\n        - name: efs-pvc\n          mountPath: /efs\n        - name: dockersock\n          mountPath: /var/run/docker.sock\n        - name: envtoml\n          mountPath: /root/testground/.env.toml\n          subPath: .env.toml\n        resources:\n          requests:\n            memory: 2048Mi\n            cpu: 2000m\n          limits:\n            memory: 2048Mi\n      volumes:\n      - name: efs-pvc\n        persistentVolumeClaim:\n          claimName: efs\n      - name: daemon-datadir\n        persistentVolumeClaim:\n          claimName: testground-daemon-datadir-pvc\n      - name: dockersock\n        hostPath:\n          path: /var/run/docker.sock\n      - name: envtoml\n        configMap:\n          name: env-toml-cfg\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"iproute-add\" has memory limit 0"
+  },
+  {
+    "id": "04043",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1819.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shippingservice\nspec:\n  selector:\n    matchLabels:\n      app: shippingservice\n  template:\n    metadata:\n      labels:\n        app: shippingservice\n    spec:\n      containers:\n      - name: server\n        image: shippingservice\n        ports:\n        - containerPort: 50051\n        env:\n        - name: PORT\n          value: '50051'\n        readinessProbe:\n          periodSeconds: 5\n          exec:\n            command:\n            - /bin/grpc_health_probe\n            - -addr=:50051\n        livenessProbe:\n          exec:\n            command:\n            - /bin/grpc_health_probe\n            - -addr=:50051\n        resources:\n          requests:\n            cpu: 100m\n            memory: 64Mi\n          limits:\n            cpu: 200m\n            memory: 128Mi\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"server\" is using an invalid container image, \"shippingservice\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04044",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1819.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shippingservice\nspec:\n  selector:\n    matchLabels:\n      app: shippingservice\n  template:\n    metadata:\n      labels:\n        app: shippingservice\n    spec:\n      containers:\n      - name: server\n        image: shippingservice\n        ports:\n        - containerPort: 50051\n        env:\n        - name: PORT\n          value: '50051'\n        readinessProbe:\n          periodSeconds: 5\n          exec:\n            command:\n            - /bin/grpc_health_probe\n            - -addr=:50051\n        livenessProbe:\n          exec:\n            command:\n            - /bin/grpc_health_probe\n            - -addr=:50051\n        resources:\n          requests:\n            cpu: 100m\n            memory: 64Mi\n          limits:\n            cpu: 200m\n            memory: 128Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"server\" does not have a read-only root file system"
+  },
+  {
+    "id": "04045",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1819.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shippingservice\nspec:\n  selector:\n    matchLabels:\n      app: shippingservice\n  template:\n    metadata:\n      labels:\n        app: shippingservice\n    spec:\n      containers:\n      - name: server\n        image: shippingservice\n        ports:\n        - containerPort: 50051\n        env:\n        - name: PORT\n          value: '50051'\n        readinessProbe:\n          periodSeconds: 5\n          exec:\n            command:\n            - /bin/grpc_health_probe\n            - -addr=:50051\n        livenessProbe:\n          exec:\n            command:\n            - /bin/grpc_health_probe\n            - -addr=:50051\n        resources:\n          requests:\n            cpu: 100m\n            memory: 64Mi\n          limits:\n            cpu: 200m\n            memory: 128Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"server\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04046",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1823.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: strimzi-user-operator\n  labels:\n    app: strimzi\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: strimzi-user-operator\n  template:\n    metadata:\n      labels:\n        name: strimzi-user-operator\n    spec:\n      serviceAccountName: strimzi-user-operator\n      containers:\n      - name: strimzi-user-operator\n        image: quay.io/strimzi/operator:0.25.0\n        args:\n        - /opt/strimzi/bin/user_operator_run.sh\n        env:\n        - name: STRIMZI_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_LABELS\n          value: strimzi.io/cluster=my-cluster\n        - name: STRIMZI_CA_CERT_NAME\n          value: my-cluster-clients-ca-cert\n        - name: STRIMZI_CA_KEY_NAME\n          value: my-cluster-clients-ca\n        - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS\n          value: '120000'\n        - name: STRIMZI_LOG_LEVEL\n          value: INFO\n        - name: STRIMZI_GC_LOG_ENABLED\n          value: 'true'\n        - name: STRIMZI_CA_VALIDITY\n          value: '365'\n        - name: STRIMZI_CA_RENEWAL\n          value: '30'\n        livenessProbe:\n          httpGet:\n            path: /healthy\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        resources:\n          limits:\n            memory: 256Mi\n            cpu: 500m\n          requests:\n            memory: 256Mi\n            cpu: 100m\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"strimzi-user-operator\" does not have a read-only root file system"
+  },
+  {
+    "id": "04047",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1823.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: strimzi-user-operator\n  labels:\n    app: strimzi\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: strimzi-user-operator\n  template:\n    metadata:\n      labels:\n        name: strimzi-user-operator\n    spec:\n      serviceAccountName: strimzi-user-operator\n      containers:\n      - name: strimzi-user-operator\n        image: quay.io/strimzi/operator:0.25.0\n        args:\n        - /opt/strimzi/bin/user_operator_run.sh\n        env:\n        - name: STRIMZI_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_LABELS\n          value: strimzi.io/cluster=my-cluster\n        - name: STRIMZI_CA_CERT_NAME\n          value: my-cluster-clients-ca-cert\n        - name: STRIMZI_CA_KEY_NAME\n          value: my-cluster-clients-ca\n        - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS\n          value: '120000'\n        - name: STRIMZI_LOG_LEVEL\n          value: INFO\n        - name: STRIMZI_GC_LOG_ENABLED\n          value: 'true'\n        - name: STRIMZI_CA_VALIDITY\n          value: '365'\n        - name: STRIMZI_CA_RENEWAL\n          value: '30'\n        livenessProbe:\n          httpGet:\n            path: /healthy\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        resources:\n          limits:\n            memory: 256Mi\n            cpu: 500m\n          requests:\n            memory: 256Mi\n            cpu: 100m\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"strimzi-user-operator\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04048",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1825.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: sistema-noticias-statefulset\nspec:\n  selector:\n    matchLabels:\n      app: sistema-noticias\n  template:\n    metadata:\n      name: sistema-noticias\n      labels:\n        app: sistema-noticias\n    spec:\n      containers:\n      - name: sistema-noticias\n        image: aluracursos/sistema-noticias:1\n        ports:\n        - containerPort: 80\n        envFrom:\n        - configMapRef:\n            name: sistema-noticias-config-map\n        volumeMounts:\n        - mountPath: /var/www/html/uploads\n          name: imagens-pvc\n        - mountPath: /tmp\n          name: sessao-pvc\n      volumes:\n      - name: imagens-pvc\n        persistentVolumeClaim:\n          claimName: imagens-pvc\n      - name: sessao-pvc\n        persistentVolumeClaim:\n          claimName: sessao-pvc\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"sistema-noticias\" does not have a read-only root file system"
+  },
+  {
+    "id": "04049",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1825.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: sistema-noticias-statefulset\nspec:\n  selector:\n    matchLabels:\n      app: sistema-noticias\n  template:\n    metadata:\n      name: sistema-noticias\n      labels:\n        app: sistema-noticias\n    spec:\n      containers:\n      - name: sistema-noticias\n        image: aluracursos/sistema-noticias:1\n        ports:\n        - containerPort: 80\n        envFrom:\n        - configMapRef:\n            name: sistema-noticias-config-map\n        volumeMounts:\n        - mountPath: /var/www/html/uploads\n          name: imagens-pvc\n        - mountPath: /tmp\n          name: sessao-pvc\n      volumes:\n      - name: imagens-pvc\n        persistentVolumeClaim:\n          claimName: imagens-pvc\n      - name: sessao-pvc\n        persistentVolumeClaim:\n          claimName: sessao-pvc\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"sistema-noticias\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04050",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1825.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: sistema-noticias-statefulset\nspec:\n  selector:\n    matchLabels:\n      app: sistema-noticias\n  template:\n    metadata:\n      name: sistema-noticias\n      labels:\n        app: sistema-noticias\n    spec:\n      containers:\n      - name: sistema-noticias\n        image: aluracursos/sistema-noticias:1\n        ports:\n        - containerPort: 80\n        envFrom:\n        - configMapRef:\n            name: sistema-noticias-config-map\n        volumeMounts:\n        - mountPath: /var/www/html/uploads\n          name: imagens-pvc\n        - mountPath: /tmp\n          name: sessao-pvc\n      volumes:\n      - name: imagens-pvc\n        persistentVolumeClaim:\n          claimName: imagens-pvc\n      - name: sessao-pvc\n        persistentVolumeClaim:\n          claimName: sessao-pvc\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"sistema-noticias\" has cpu request 0"
+  },
+  {
+    "id": "04051",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1825.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: sistema-noticias-statefulset\nspec:\n  selector:\n    matchLabels:\n      app: sistema-noticias\n  template:\n    metadata:\n      name: sistema-noticias\n      labels:\n        app: sistema-noticias\n    spec:\n      containers:\n      - name: sistema-noticias\n        image: aluracursos/sistema-noticias:1\n        ports:\n        - containerPort: 80\n        envFrom:\n        - configMapRef:\n            name: sistema-noticias-config-map\n        volumeMounts:\n        - mountPath: /var/www/html/uploads\n          name: imagens-pvc\n        - mountPath: /tmp\n          name: sessao-pvc\n      volumes:\n      - name: imagens-pvc\n        persistentVolumeClaim:\n          claimName: imagens-pvc\n      - name: sessao-pvc\n        persistentVolumeClaim:\n          claimName: sessao-pvc\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"sistema-noticias\" has memory limit 0"
+  },
+  {
+    "id": "04052",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1831.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-api\n  labels:\n    micro: runtime\n    name: micro-api\n  annotations:\n    name: go.micro.api\n    version: latest\n    source: github.com/xinhari/hari\n    owner: micro\n    group: micro\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      name: micro-api\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-api\n        micro: runtime\n    spec:\n      containers:\n      - name: api\n        env:\n        - name: MICRO_AUTH\n          value: service\n        - name: MICRO_AUTH_PUBLIC_KEY\n          valueFrom:\n            secretKeyRef:\n              name: micro-keypair\n              key: public\n        - name: MICRO_API_NAMESPACE\n          value: domain\n        - name: MICRO_ENABLE_STATS\n          value: 'true'\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_REGISTER_TTL\n          value: '60'\n        - name: MICRO_REGISTER_INTERVAL\n          value: '30'\n        - name: MICRO_ENABLE_ACME\n          value: 'true'\n        - name: MICRO_ACME_PROVIDER\n          value: certmagic\n        - name: MICRO_ACME_HOSTS\n          value: '*.micro.mu,*.cloud.micro.mu,micro.mu'\n        - name: MICRO_STORE\n          value: service\n        - name: MICRO_STORE_DATABASE\n          value: micro\n        - name: MICRO_STORE_TABLE\n          value: micro\n        - name: CF_API_TOKEN\n          valueFrom:\n            secretKeyRef:\n              key: CF_API_TOKEN\n              name: cloudflare-credentials\n        args:\n        - api\n        image: agus7fauzi/hari\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 443\n          name: api-port\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"api\" is using an invalid container image, \"agus7fauzi/hari\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04053",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1831.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-api\n  labels:\n    micro: runtime\n    name: micro-api\n  annotations:\n    name: go.micro.api\n    version: latest\n    source: github.com/xinhari/hari\n    owner: micro\n    group: micro\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      name: micro-api\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-api\n        micro: runtime\n    spec:\n      containers:\n      - name: api\n        env:\n        - name: MICRO_AUTH\n          value: service\n        - name: MICRO_AUTH_PUBLIC_KEY\n          valueFrom:\n            secretKeyRef:\n              name: micro-keypair\n              key: public\n        - name: MICRO_API_NAMESPACE\n          value: domain\n        - name: MICRO_ENABLE_STATS\n          value: 'true'\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_REGISTER_TTL\n          value: '60'\n        - name: MICRO_REGISTER_INTERVAL\n          value: '30'\n        - name: MICRO_ENABLE_ACME\n          value: 'true'\n        - name: MICRO_ACME_PROVIDER\n          value: certmagic\n        - name: MICRO_ACME_HOSTS\n          value: '*.micro.mu,*.cloud.micro.mu,micro.mu'\n        - name: MICRO_STORE\n          value: service\n        - name: MICRO_STORE_DATABASE\n          value: micro\n        - name: MICRO_STORE_TABLE\n          value: micro\n        - name: CF_API_TOKEN\n          valueFrom:\n            secretKeyRef:\n              key: CF_API_TOKEN\n              name: cloudflare-credentials\n        args:\n        - api\n        image: agus7fauzi/hari\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 443\n          name: api-port\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"api\" does not have a read-only root file system"
+  },
+  {
+    "id": "04054",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1831.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-api\n  labels:\n    micro: runtime\n    name: micro-api\n  annotations:\n    name: go.micro.api\n    version: latest\n    source: github.com/xinhari/hari\n    owner: micro\n    group: micro\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      name: micro-api\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-api\n        micro: runtime\n    spec:\n      containers:\n      - name: api\n        env:\n        - name: MICRO_AUTH\n          value: service\n        - name: MICRO_AUTH_PUBLIC_KEY\n          valueFrom:\n            secretKeyRef:\n              name: micro-keypair\n              key: public\n        - name: MICRO_API_NAMESPACE\n          value: domain\n        - name: MICRO_ENABLE_STATS\n          value: 'true'\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_REGISTER_TTL\n          value: '60'\n        - name: MICRO_REGISTER_INTERVAL\n          value: '30'\n        - name: MICRO_ENABLE_ACME\n          value: 'true'\n        - name: MICRO_ACME_PROVIDER\n          value: certmagic\n        - name: MICRO_ACME_HOSTS\n          value: '*.micro.mu,*.cloud.micro.mu,micro.mu'\n        - name: MICRO_STORE\n          value: service\n        - name: MICRO_STORE_DATABASE\n          value: micro\n        - name: MICRO_STORE_TABLE\n          value: micro\n        - name: CF_API_TOKEN\n          valueFrom:\n            secretKeyRef:\n              key: CF_API_TOKEN\n              name: cloudflare-credentials\n        args:\n        - api\n        image: agus7fauzi/hari\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 443\n          name: api-port\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"api\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04055",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1831.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-api\n  labels:\n    micro: runtime\n    name: micro-api\n  annotations:\n    name: go.micro.api\n    version: latest\n    source: github.com/xinhari/hari\n    owner: micro\n    group: micro\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      name: micro-api\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-api\n        micro: runtime\n    spec:\n      containers:\n      - name: api\n        env:\n        - name: MICRO_AUTH\n          value: service\n        - name: MICRO_AUTH_PUBLIC_KEY\n          valueFrom:\n            secretKeyRef:\n              name: micro-keypair\n              key: public\n        - name: MICRO_API_NAMESPACE\n          value: domain\n        - name: MICRO_ENABLE_STATS\n          value: 'true'\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_REGISTER_TTL\n          value: '60'\n        - name: MICRO_REGISTER_INTERVAL\n          value: '30'\n        - name: MICRO_ENABLE_ACME\n          value: 'true'\n        - name: MICRO_ACME_PROVIDER\n          value: certmagic\n        - name: MICRO_ACME_HOSTS\n          value: '*.micro.mu,*.cloud.micro.mu,micro.mu'\n        - name: MICRO_STORE\n          value: service\n        - name: MICRO_STORE_DATABASE\n          value: micro\n        - name: MICRO_STORE_TABLE\n          value: micro\n        - name: CF_API_TOKEN\n          valueFrom:\n            secretKeyRef:\n              key: CF_API_TOKEN\n              name: cloudflare-credentials\n        args:\n        - api\n        image: agus7fauzi/hari\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 443\n          name: api-port\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"api\" has cpu request 0"
+  },
+  {
+    "id": "04056",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1831.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-api\n  labels:\n    micro: runtime\n    name: micro-api\n  annotations:\n    name: go.micro.api\n    version: latest\n    source: github.com/xinhari/hari\n    owner: micro\n    group: micro\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      name: micro-api\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-api\n        micro: runtime\n    spec:\n      containers:\n      - name: api\n        env:\n        - name: MICRO_AUTH\n          value: service\n        - name: MICRO_AUTH_PUBLIC_KEY\n          valueFrom:\n            secretKeyRef:\n              name: micro-keypair\n              key: public\n        - name: MICRO_API_NAMESPACE\n          value: domain\n        - name: MICRO_ENABLE_STATS\n          value: 'true'\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_REGISTER_TTL\n          value: '60'\n        - name: MICRO_REGISTER_INTERVAL\n          value: '30'\n        - name: MICRO_ENABLE_ACME\n          value: 'true'\n        - name: MICRO_ACME_PROVIDER\n          value: certmagic\n        - name: MICRO_ACME_HOSTS\n          value: '*.micro.mu,*.cloud.micro.mu,micro.mu'\n        - name: MICRO_STORE\n          value: service\n        - name: MICRO_STORE_DATABASE\n          value: micro\n        - name: MICRO_STORE_TABLE\n          value: micro\n        - name: CF_API_TOKEN\n          valueFrom:\n            secretKeyRef:\n              key: CF_API_TOKEN\n              name: cloudflare-credentials\n        args:\n        - api\n        image: agus7fauzi/hari\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 443\n          name: api-port\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"api\" has memory limit 0"
+  },
+  {
+    "id": "04057",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1835.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-a1\n  namespace: test-kahoy\n  labels:\n    app: app-a1\n  annotations:\n    app: app-a1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app-a1\n  template:\n    metadata:\n      labels:\n        app: app-a1\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:latest\n        ports:\n        - name: http\n          containerPort: 80\n          protocol: TCP\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04058",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1835.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-a1\n  namespace: test-kahoy\n  labels:\n    app: app-a1\n  annotations:\n    app: app-a1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app-a1\n  template:\n    metadata:\n      labels:\n        app: app-a1\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:latest\n        ports:\n        - name: http\n          containerPort: 80\n          protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "04059",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1835.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-a1\n  namespace: test-kahoy\n  labels:\n    app: app-a1\n  annotations:\n    app: app-a1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app-a1\n  template:\n    metadata:\n      labels:\n        app: app-a1\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:latest\n        ports:\n        - name: http\n          containerPort: 80\n          protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04060",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1835.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-a1\n  namespace: test-kahoy\n  labels:\n    app: app-a1\n  annotations:\n    app: app-a1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app-a1\n  template:\n    metadata:\n      labels:\n        app: app-a1\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:latest\n        ports:\n        - name: http\n          containerPort: 80\n          protocol: TCP\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "04061",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1835.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-a1\n  namespace: test-kahoy\n  labels:\n    app: app-a1\n  annotations:\n    app: app-a1\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app-a1\n  template:\n    metadata:\n      labels:\n        app: app-a1\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:latest\n        ports:\n        - name: http\n          containerPort: 80\n          protocol: TCP\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "04062",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"downloader\" is using an invalid container image, \"$CORTEX_IMAGE_DOWNLOADER\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04063",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"python-predictor-cpu\" is using an invalid container image, \"$CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04064",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"tensorflow-predictor\" is using an invalid container image, \"$CORTEX_IMAGE_TENSORFLOW_PREDICTOR\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04065",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"tensorflow-serving-cpu\" is using an invalid container image, \"$CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04066",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"downloader\" does not have a read-only root file system"
+  },
+  {
+    "id": "04067",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"python-predictor-cpu\" does not have a read-only root file system"
+  },
+  {
+    "id": "04068",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"tensorflow-predictor\" does not have a read-only root file system"
+  },
+  {
+    "id": "04069",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"tensorflow-serving-cpu\" does not have a read-only root file system"
+  },
+  {
+    "id": "04070",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"downloader\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04071",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"python-predictor-cpu\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04072",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"tensorflow-predictor\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04073",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"tensorflow-serving-cpu\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04074",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"downloader\" has cpu request 0"
+  },
+  {
+    "id": "04075",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"python-predictor-cpu\" has cpu request 0"
+  },
+  {
+    "id": "04076",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"tensorflow-predictor\" has cpu request 0"
+  },
+  {
+    "id": "04077",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"tensorflow-serving-cpu\" has cpu request 0"
+  },
+  {
+    "id": "04078",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"downloader\" has memory limit 0"
+  },
+  {
+    "id": "04079",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"python-predictor-cpu\" has memory limit 0"
+  },
+  {
+    "id": "04080",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1838.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"tensorflow-predictor\" has memory limit 0"
+  }
+]

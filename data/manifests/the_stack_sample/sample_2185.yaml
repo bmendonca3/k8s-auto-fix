@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lockvalidation-dpl
+  namespace: kube-lock
+  labels:
+    app: lockvalidation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lockvalidation
+  template:
+    metadata:
+      labels:
+        app: lockvalidation
+    spec:
+      serviceAccountName: lockvalidation-sa
+      containers:
+      - name: lockvalidation
+        image: pkotas/lockvalidation:devel
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /etc/lockvalidation/cert
+          readOnly: true
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: lockvalidation-crt

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: led-pod-stat
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: led-stat
+  template:
+    metadata:
+      labels:
+        name: led-stat
+    spec:
+      containers:
+      - name: redis
+        image: arm32v7/redis:5.0.3
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 6379
+          protocol: TCP
+      - name: ledctl
+        image: utsavanand2/rpi_led:0.1
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+      - name: pod-status
+        image: utsavanand2/pod-status:0.1
+        imagePullPolicy: Always
+        env:
+        - name: NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+      terminationGracePeriodSeconds: 30

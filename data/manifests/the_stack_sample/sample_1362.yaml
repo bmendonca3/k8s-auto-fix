@@ -1,0 +1,154 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: reefer-itgtests-job
+spec:
+  template:
+    metadata:
+      name: reefer-itgtests-job
+    spec:
+      containers:
+      - name: ibmcase-python
+        image: quay.io/ibmcase/kcontainer-python:itgtests
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - "# Obfuscate KAFKA_PASSWORD\nif [ \"`echo -n ${KAFKA_PASSWORD} | wc -c`\"\
+          \ -gt 3 ]; then\n  FIRST_CH=${KAFKA_PASSWORD:0:1}\n  LAST_CH=${KAFKA_PASSWORD:\
+          \ -1}\n  OBFUSCATED_PASSWORD=\"${FIRST_CH}*****${LAST_CH}\"\nelse\n  OBFUSCATED_PASSWORD=\"\
+          *******\"\nfi\n\necho \"-----------------------------------------------------------------\"\
+          \necho \"-- Reefer Container Shipment EDA application Integration Tests\
+          \ --\"\necho \"-----------------------------------------------------------------\"\
+          \necho\necho \"Executing integrations tests from branch $BRANCH of $GITHUB_REPO\"\
+          \necho \"Kafka Brokers: $KAFKA_BROKERS\"\necho \"Kafka Security protocol:\
+          \ $SECURITY_PROTOCOL\"\necho \"Kafka SASL mechanism: $SASL_MECHANISM\"\n\
+          echo \"Kafka user: $KAFKA_USER\"\necho \"Kafka password: $OBFUSCATED_PASSWORD\"\
+          \necho \"Orders topic name: $ITGTESTS_ORDERS_TOPIC\"\necho \"Order Command\
+          \ topic name: $ITGTESTS_ORDER_COMMANDS_TOPIC\"\necho \"Containers topic\
+          \ name: $ITGTESTS_CONTAINERS_TOPIC\"\necho \"------------------------------------------------------------------\"\
+          \necho\n\n# Check important environments variables are properly set\nif\
+          \ [ -z \"$KAFKA_BROKERS\" ]; then\n  echo \"[ERROR] - KAFKA_BROKERS environment\
+          \ variable must be set.\"\n  exit 1\nfi\n\n# Check that a Kafka user and\
+          \ password are provided if there is authentication set up\nif [ \"$SECURITY_PROTOCOL\"\
+          \ == \"SASL_PLAINTEXT\" ] || [ \"$SECURITY_PROTOCOL\" == \"SASL_SSL\" ];\
+          \ then\n  if [ -z \"$KAFKA_USER\" ]; then\n    echo \"[ERROR] - A Kafka\
+          \ user was not provided.\"\n    exit 1\n  fi\n  if [ -z \"$KAFKA_PASSWORD\"\
+          \ ]; then\n    echo \"[ERROR] - A Kafka password was not provided.\"\n \
+          \   exit 1\n  fi\nfi\n\n# Ideally, we would check here if SECURITY_PROTOCOL\
+          \ is SSL or SASL_SSL which are the two security protocols that use SSL certs.\n\
+          # However, IBM Event Streams on IBM Cloud uses SASL_SSL but there is no\
+          \ need for a certificate.\n# Hence, we can only warn that\nif [ \"$SECURITY_PROTOCOL\"\
+          \ == \"SSL\" ] || [ \"$SECURITY_PROTOCOL\" == \"SASL_SSL\" ]; then\n  if\
+          \ [ ! -f \"$PEM_CERT\" ]; then\n    echo \"[WARNING] - A PEM certificate\
+          \ could not be found. This might be necessary to establish the appropriate\
+          \ secured communication to the Kafka cluster.\"\n    echo \"[WARNING] -\
+          \ If it is needed, make sure you have created a Kubernetes Secret named\
+          \ 'kafka-truststore-pem' with the PEM certificate\"\n    echo \"[WARNING]\
+          \ - as referenced in the Integration Tests YAML file.\"\n  fi\nfi\n\n# Creating\
+          \ the working directory\nmkdir ${WORKING_DIR} && cd ${WORKING_DIR}\n\n#\
+          \ Clone the repository where the integration tests to be executed are and\
+          \ checkout the specific branch\ngit clone ${GITHUB_REPO} && cd ${REPO_NAME}\
+          \ && if [ \"master\" != \"${BRANCH}\" ]; then git checkout ${BRANCH}; fi\n\
+          \n# Get into the location for the integration tests\ncd ${ITGTESTS_LOCATION}\n\
+          \n# Execute the integration tests\n\n# Create the tests reporting file\n\
+          touch /tmp/results.txt\n\nexport PYTHONPATH=${PYTHONPATH}:${WORKING_DIR}/${REPO_NAME}/itg-tests\n\
+          \necho '******************************************'\necho '******************************************'\n\
+          echo '**********   E2E Happy Path   ************'\necho '******************************************'\n\
+          echo '******************************************'\n\npython -u E2EHappyPath.py\
+          \ && source /tmp/E2EHappyPath.properties\n\necho '******************************************'\n\
+          echo '******************************************'\necho '*********   Saga\
+          \ No Container   **********'\necho '******************************************'\n\
+          echo '******************************************'\n\npython -u Saga_NoContainer.py\n\
+          \necho '******************************************'\necho '******************************************'\n\
+          echo '**********   Saga No Voyage   ************'\necho '******************************************'\n\
+          echo '******************************************'\n\npython -u Saga_NoVoyage.py\
+          \ && source /tmp/SagaNoVoyage.properties\n\necho '******************************************'\n\
+          echo '******************************************'\necho '**********   Order\
+          \ Cancelled   ***********'\necho '******************************************'\n\
+          echo '******************************************'\n\npython -u OrderCancellation.py\n\
+          \necho '******************************************'\necho '******************************************'\n\
+          echo '*********   Container Anomaly   **********'\necho '******************************************'\n\
+          echo '******************************************'\n\npython -u ContainerAnomaly.py\n\
+          \necho '****************************************************'\necho '****************************************************'\n\
+          echo '*********   Retry and Dead Letter Queue   **********'\necho '****************************************************'\n\
+          echo '****************************************************'\n\npython -u\
+          \ ContainerAnomalyDlq.py\n\necho\necho 'END RESULTS:'\necho\ncat /tmp/results.txt\n\
+          \necho \"---------\"\necho \"-- END --\"\necho \"---------\"\n"
+        env:
+        - name: KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-brokers
+              key: brokers
+        - name: KAFKA_USER
+          valueFrom:
+            secretKeyRef:
+              name: kafka-credentials
+              key: username
+              optional: true
+        - name: KAFKA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kafka-credentials
+              key: password
+              optional: true
+        - name: PEM_CERT
+          value: /tmp/certs/kafka-cert.pem
+        - name: SASL_MECHANISM
+          value: PLAIN
+        - name: SECURITY_PROTOCOL
+          value: SASL_SSL
+        - name: WORKING_DIR
+          value: /tmp/github
+        - name: GITHUB_REPO
+          value: https://github.com/ibm-cloud-architecture/refarch-kc.git
+        - name: BRANCH
+          value: master
+        - name: REPO_NAME
+          value: refarch-kc
+        - name: ITGTESTS_LOCATION
+          value: itg-tests/es-it
+        - name: ORDER_CMD_MS
+          value: order-command-ms:9080
+        - name: ORDER_QUERY_MS
+          value: order-query-ms:9080
+        - name: CONTAINER_SPRING_MS
+          value: spring-container-ms:8080
+        - name: VOYAGE_MS
+          value: voyages-ms:3000
+        - name: ITGTESTS_ORDERS_TOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-topics
+              key: ordersTopic
+        - name: ITGTESTS_ORDER_COMMANDS_TOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-topics
+              key: orderCommandsTopic
+        - name: ITGTESTS_CONTAINERS_TOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-topics
+              key: containersTopic
+        - name: ITGTESTS_CONTAINER_ANOMALY_RETRY_TOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-topics
+              key: containerAnomalyRetryTopic
+        - name: ITGTESTS_CONTAINER_ANOMALY_DEAD_TOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-topics
+              key: containerAnomalyDeadTopic
+        volumeMounts:
+        - mountPath: /tmp/certs
+          name: eventstreams-pem-file
+      volumes:
+      - name: eventstreams-pem-file
+        secret:
+          secretName: kafka-truststore-pem
+          optional: true
+      restartPolicy: Never
+  backoffLimit: 0

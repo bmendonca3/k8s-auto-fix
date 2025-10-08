@@ -1,0 +1,54 @@
+apiVersion: v1
+data:
+  config.yaml: "\"resourceRules\":\n  \"cpu\":\n    \"containerLabel\": \"container\"\
+    \n    \"containerQuery\": \"sum(irate(container_cpu_usage_seconds_total{<<.LabelMatchers>>,container!=\\\
+    \"POD\\\",container!=\\\"\\\",pod!=\\\"\\\"}[5m])) by (<<.GroupBy>>)\"\n    \"\
+    nodeQuery\": \"sum(irate(node_cpu_seconds_total{mode=\\\"used\\\"}[5m]) * on(namespace,\
+    \ pod) group_left(node) node_namespace_pod:kube_pod_info:{<<.LabelMatchers>>})\
+    \ by (<<.GroupBy>>)\"\n    \"resources\":\n      \"overrides\":\n        \"namespace\"\
+    :\n          \"resource\": \"namespace\"\n        \"node\":\n          \"resource\"\
+    : \"node\"\n        \"pod\":\n          \"resource\": \"pod\"\n  \"memory\":\n\
+    \    \"containerLabel\": \"container\"\n    \"containerQuery\": \"sum(container_memory_working_set_bytes{<<.LabelMatchers>>,container!=\\\
+    \"POD\\\",container!=\\\"\\\",pod!=\\\"\\\"}) by (<<.GroupBy>>)\"\n    \"nodeQuery\"\
+    : \"sum(node_memory_MemTotal_bytes{job=\\\"node-exporter\\\",<<.LabelMatchers>>}\
+    \ - node_memory_MemFree_bytes{job=\\\"node-exporter\\\",<<.LabelMatchers>>} -\
+    \ node_memory_Cached_bytes{job=\\\"node-exporter\\\",<<.LabelMatchers>>} - node_memory_Buffers_bytes{job=\\\
+    \"node-exporter\\\",<<.LabelMatchers>>} - node_memory_SReclaimable_bytes{job=\\\
+    \"node-exporter\\\",<<.LabelMatchers>>}) by (<<.GroupBy>>)\"\n    \"resources\"\
+    :\n      \"overrides\":\n        \"instance\":\n          \"resource\": \"node\"\
+    \n        \"namespace\":\n          \"resource\": \"namespace\"\n        \"pod\"\
+    :\n          \"resource\": \"pod\"\n  \"window\": \"5m\"\n\"rules\":\n- \"metricsQuery\"\
+    : \"sum(rate(<<.Series>>{<<.LabelMatchers>>,container!=\\\"POD\\\"}[1m])) by (<<.GroupBy>>)\"\
+    \n  \"name\":\n    \"as\": \"\"\n    \"matches\": \"^container_(.*)_seconds_total$\"\
+    \n  \"resources\":\n    \"overrides\":\n      \"namespace\":\n        \"resource\"\
+    : \"namespace\"\n      \"pod\":\n        \"resource\": \"pod\"\n  \"seriesFilters\"\
+    : []\n  \"seriesQuery\": \"{__name__=~\\\"^container_.*\\\",container!=\\\"POD\\\
+    \",namespace!=\\\"\\\",pod!=\\\"\\\"}\"\n- \"metricsQuery\": \"sum(rate(<<.Series>>{<<.LabelMatchers>>,container!=\\\
+    \"POD\\\"}[1m])) by (<<.GroupBy>>)\"\n  \"name\":\n    \"as\": \"\"\n    \"matches\"\
+    : \"^container_(.*)_total$\"\n  \"resources\":\n    \"overrides\":\n      \"namespace\"\
+    :\n        \"resource\": \"namespace\"\n      \"pod\":\n        \"resource\":\
+    \ \"pod\"\n  \"seriesFilters\":\n  - \"isNot\": \"^container_.*_seconds_total$\"\
+    \n  \"seriesQuery\": \"{__name__=~\\\"^container_.*\\\",container!=\\\"POD\\\"\
+    ,namespace!=\\\"\\\",pod!=\\\"\\\"}\"\n- \"metricsQuery\": \"sum(<<.Series>>{<<.LabelMatchers>>,container!=\\\
+    \"POD\\\"}) by (<<.GroupBy>>)\"\n  \"name\":\n    \"as\": \"\"\n    \"matches\"\
+    : \"^container_(.*)$\"\n  \"resources\":\n    \"overrides\":\n      \"namespace\"\
+    :\n        \"resource\": \"namespace\"\n      \"pod\":\n        \"resource\":\
+    \ \"pod\"\n  \"seriesFilters\":\n  - \"isNot\": \"^container_.*_total$\"\n  \"\
+    seriesQuery\": \"{__name__=~\\\"^container_.*\\\",container!=\\\"POD\\\",namespace!=\\\
+    \"\\\",pod!=\\\"\\\"}\"\n- \"metricsQuery\": \"sum(<<.Series>>{<<.LabelMatchers>>})\
+    \ by (<<.GroupBy>>)\"\n  \"name\":\n    \"as\": \"\"\n    \"matches\": \"\"\n\
+    \  \"resources\":\n    \"template\": \"<<.Resource>>\"\n  \"seriesFilters\":\n\
+    \  - \"isNot\": \".*_total$\"\n  \"seriesQuery\": \"{namespace!=\\\"\\\",__name__!~\\\
+    \"^container_.*\\\"}\"\n- \"metricsQuery\": \"sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m]))\
+    \ by (<<.GroupBy>>)\"\n  \"name\":\n    \"as\": \"\"\n    \"matches\": \"^(.*)_total$\"\
+    \n  \"resources\":\n    \"template\": \"<<.Resource>>\"\n  \"seriesFilters\":\n\
+    \  - \"isNot\": \".*_seconds_total\"\n  \"seriesQuery\": \"{namespace!=\\\"\\\"\
+    ,__name__!~\\\"^container_.*\\\"}\"\n- \"metricsQuery\": \"sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m]))\
+    \ by (<<.GroupBy>>)\"\n  \"name\":\n    \"as\": \"\"\n    \"matches\": \"^(.*)_seconds_total$\"\
+    \n  \"resources\":\n    \"template\": \"<<.Resource>>\"\n  \"seriesFilters\":\
+    \ []\n  \"seriesQuery\": \"{namespace!=\\\"\\\",__name__!~\\\"^container_.*\\\"\
+    }\""
+kind: ConfigMap
+metadata:
+  name: adapter-config
+  namespace: kubesphere-monitoring-system

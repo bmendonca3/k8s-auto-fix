@@ -1,0 +1,282 @@
+[
+  {
+    "id": "01521",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0490.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: study-builder\n  labels:\n    app: study-builder\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: study-builder\n  template:\n    metadata:\n      labels:\n        app: study-builder\n      annotations:\n        sidecar.istio.io/inject: 'true'\n    spec:\n      containers:\n      - name: study-builder\n        image: gcr.io/<PREFIX>-<ENV>-apps/study-builder:latest\n        env:\n        - name: DB_USER\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: dbusername\n        - name: DB_PASS\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: dbpassword\n        - name: DB_NAME\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: dbname\n        - name: DB_INSTANCE_URL\n          value: 127.0.0.1\n        - name: FROM_EMAIL_ADDRESS\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: email_address\n        - name: FROM_EMAIL_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: email_password\n        - name: SMTP_HOSTNAME\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: smtp_hostname\n        - name: SMTP_USE_IP_ALLOWLIST\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: smtp_use_ip_allowlist\n        - name: FROM_EMAIL_DOMAIN\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: from_email_domain\n        - name: CLIENT_ID\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: client_id\n        - name: SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: secret_key\n        - name: STUDY_BUILDER_BASE_URL\n          valueFrom:\n            secretKeyRef:\n              name: shared-secrets\n              key: studies_base_url\n        - name: PARTICIPANT_USER_DATASTORE_URL\n          value: http://participant-user-datastore-np:50000/participant-user-datastore\n        - name: RESPONSE_DATASTORE_URL\n          value: http://response-datastore-np:50000/response-datastore\n        - name: SCIM_AUTH_URL\n          value: http://auth-server-np:50000/auth-server\n        - name: GCP_BUCKET_NAME\n          valueFrom:\n            secretKeyRef:\n              name: shared-secrets\n              key: study_resources_bucket_name\n        - name: ORG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: shared-secrets\n              key: org_name\n        - name: CATALINA_OPTS\n          value: -Duser.timezone=America/New_York\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /secrets/gcloud_key/key.json\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /studybuilder/healthCheck.do\n            port: 8080\n          initialDelaySeconds: 180\n          periodSeconds: 20\n        resources:\n          requests:\n            memory: 500Mi\n            cpu: 50m\n        volumeMounts:\n        - name: gcloud-key-volume\n          mountPath: /secrets/gcloud_key\n          readOnly: true\n      - name: cloudsql-proxy\n        image: gcr.io/cloudsql-docker/gce-proxy:latest\n        command:\n        - /cloud_sql_proxy\n        - -instances=<PREFIX>-<ENV>-data:<LOCATION>:mystudies=tcp:3306\n        - -credential_file=/secrets/gcloud_key/key.json\n        volumeMounts:\n        - name: gcloud-key-volume\n          mountPath: /secrets/gcloud_key\n          readOnly: true\n      volumes:\n      - name: gcloud-key-volume\n        secret:\n          secretName: study-builder-gke-sa-gcloud-key\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"cloudsql-proxy\" has memory limit 0"
+  },
+  {
+    "id": "01522",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0490.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: study-builder\n  labels:\n    app: study-builder\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: study-builder\n  template:\n    metadata:\n      labels:\n        app: study-builder\n      annotations:\n        sidecar.istio.io/inject: 'true'\n    spec:\n      containers:\n      - name: study-builder\n        image: gcr.io/<PREFIX>-<ENV>-apps/study-builder:latest\n        env:\n        - name: DB_USER\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: dbusername\n        - name: DB_PASS\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: dbpassword\n        - name: DB_NAME\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: dbname\n        - name: DB_INSTANCE_URL\n          value: 127.0.0.1\n        - name: FROM_EMAIL_ADDRESS\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: email_address\n        - name: FROM_EMAIL_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: email_password\n        - name: SMTP_HOSTNAME\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: smtp_hostname\n        - name: SMTP_USE_IP_ALLOWLIST\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: smtp_use_ip_allowlist\n        - name: FROM_EMAIL_DOMAIN\n          valueFrom:\n            secretKeyRef:\n              name: email-credentials\n              key: from_email_domain\n        - name: CLIENT_ID\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: client_id\n        - name: SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: study-builder-credentials\n              key: secret_key\n        - name: STUDY_BUILDER_BASE_URL\n          valueFrom:\n            secretKeyRef:\n              name: shared-secrets\n              key: studies_base_url\n        - name: PARTICIPANT_USER_DATASTORE_URL\n          value: http://participant-user-datastore-np:50000/participant-user-datastore\n        - name: RESPONSE_DATASTORE_URL\n          value: http://response-datastore-np:50000/response-datastore\n        - name: SCIM_AUTH_URL\n          value: http://auth-server-np:50000/auth-server\n        - name: GCP_BUCKET_NAME\n          valueFrom:\n            secretKeyRef:\n              name: shared-secrets\n              key: study_resources_bucket_name\n        - name: ORG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: shared-secrets\n              key: org_name\n        - name: CATALINA_OPTS\n          value: -Duser.timezone=America/New_York\n        - name: GOOGLE_APPLICATION_CREDENTIALS\n          value: /secrets/gcloud_key/key.json\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /studybuilder/healthCheck.do\n            port: 8080\n          initialDelaySeconds: 180\n          periodSeconds: 20\n        resources:\n          requests:\n            memory: 500Mi\n            cpu: 50m\n        volumeMounts:\n        - name: gcloud-key-volume\n          mountPath: /secrets/gcloud_key\n          readOnly: true\n      - name: cloudsql-proxy\n        image: gcr.io/cloudsql-docker/gce-proxy:latest\n        command:\n        - /cloud_sql_proxy\n        - -instances=<PREFIX>-<ENV>-data:<LOCATION>:mystudies=tcp:3306\n        - -credential_file=/secrets/gcloud_key/key.json\n        volumeMounts:\n        - name: gcloud-key-volume\n          mountPath: /secrets/gcloud_key\n          readOnly: true\n      volumes:\n      - name: gcloud-key-volume\n        secret:\n          secretName: study-builder-gke-sa-gcloud-key\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"study-builder\" has memory limit 0"
+  },
+  {
+    "id": "01523",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0493.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pod-identity-webhook\n  namespace: pod-identity\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: pod-identity-webhook\n  template:\n    metadata:\n      labels:\n        app: pod-identity-webhook\n    spec:\n      serviceAccountName: pod-identity-webhook\n      containers:\n      - name: pod-identity-webhook\n        image: IMAGE\n        imagePullPolicy: Always\n        command:\n        - /webhook\n        - --in-cluster\n        - --namespace=pod-identity\n        - --service-name=pod-identity-webhook\n        - --tls-secret=pod-identity-webhook\n        - --annotation-prefix=eks.amazonaws.com\n        - --token-audience=sts.amazonaws.com\n        - --logtostderr\n        volumeMounts:\n        - name: webhook-certs\n          mountPath: /var/run/app/certs\n          readOnly: false\n      volumes:\n      - name: webhook-certs\n        emptyDir: {}\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"pod-identity-webhook\" is using an invalid container image, \"IMAGE\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01524",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0493.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pod-identity-webhook\n  namespace: pod-identity\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: pod-identity-webhook\n  template:\n    metadata:\n      labels:\n        app: pod-identity-webhook\n    spec:\n      serviceAccountName: pod-identity-webhook\n      containers:\n      - name: pod-identity-webhook\n        image: IMAGE\n        imagePullPolicy: Always\n        command:\n        - /webhook\n        - --in-cluster\n        - --namespace=pod-identity\n        - --service-name=pod-identity-webhook\n        - --tls-secret=pod-identity-webhook\n        - --annotation-prefix=eks.amazonaws.com\n        - --token-audience=sts.amazonaws.com\n        - --logtostderr\n        volumeMounts:\n        - name: webhook-certs\n          mountPath: /var/run/app/certs\n          readOnly: false\n      volumes:\n      - name: webhook-certs\n        emptyDir: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"pod-identity-webhook\" does not have a read-only root file system"
+  },
+  {
+    "id": "01525",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0493.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pod-identity-webhook\n  namespace: pod-identity\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: pod-identity-webhook\n  template:\n    metadata:\n      labels:\n        app: pod-identity-webhook\n    spec:\n      serviceAccountName: pod-identity-webhook\n      containers:\n      - name: pod-identity-webhook\n        image: IMAGE\n        imagePullPolicy: Always\n        command:\n        - /webhook\n        - --in-cluster\n        - --namespace=pod-identity\n        - --service-name=pod-identity-webhook\n        - --tls-secret=pod-identity-webhook\n        - --annotation-prefix=eks.amazonaws.com\n        - --token-audience=sts.amazonaws.com\n        - --logtostderr\n        volumeMounts:\n        - name: webhook-certs\n          mountPath: /var/run/app/certs\n          readOnly: false\n      volumes:\n      - name: webhook-certs\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"pod-identity-webhook\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01526",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0493.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pod-identity-webhook\n  namespace: pod-identity\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: pod-identity-webhook\n  template:\n    metadata:\n      labels:\n        app: pod-identity-webhook\n    spec:\n      serviceAccountName: pod-identity-webhook\n      containers:\n      - name: pod-identity-webhook\n        image: IMAGE\n        imagePullPolicy: Always\n        command:\n        - /webhook\n        - --in-cluster\n        - --namespace=pod-identity\n        - --service-name=pod-identity-webhook\n        - --tls-secret=pod-identity-webhook\n        - --annotation-prefix=eks.amazonaws.com\n        - --token-audience=sts.amazonaws.com\n        - --logtostderr\n        volumeMounts:\n        - name: webhook-certs\n          mountPath: /var/run/app/certs\n          readOnly: false\n      volumes:\n      - name: webhook-certs\n        emptyDir: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"pod-identity-webhook\" has cpu request 0"
+  },
+  {
+    "id": "01527",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0493.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pod-identity-webhook\n  namespace: pod-identity\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: pod-identity-webhook\n  template:\n    metadata:\n      labels:\n        app: pod-identity-webhook\n    spec:\n      serviceAccountName: pod-identity-webhook\n      containers:\n      - name: pod-identity-webhook\n        image: IMAGE\n        imagePullPolicy: Always\n        command:\n        - /webhook\n        - --in-cluster\n        - --namespace=pod-identity\n        - --service-name=pod-identity-webhook\n        - --tls-secret=pod-identity-webhook\n        - --annotation-prefix=eks.amazonaws.com\n        - --token-audience=sts.amazonaws.com\n        - --logtostderr\n        volumeMounts:\n        - name: webhook-certs\n          mountPath: /var/run/app/certs\n          readOnly: false\n      volumes:\n      - name: webhook-certs\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"pod-identity-webhook\" has memory limit 0"
+  },
+  {
+    "id": "01528",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0494.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  namespace: default\n  name: branchprotector\nspec:\n  jobTemplate:\n    template:\n      spec:\n        containers:\n        - name: branchprotector\n          image: gcr.io/k8s-prow/branchprotector:v20200529-d374280316\n          args:\n          - --config-path=/etc/config/config.yaml\n          - --job-config-path=/etc/job-config\n          - --github-token-path=/etc/github/oauth\n          - --confirm\n          - --github-endpoint=http://ghproxy\n          - --github-endpoint=https://api.github.com\n          volumeMounts:\n          - name: oauth\n            mountPath: /etc/github\n            readOnly: true\n          - name: config\n            mountPath: /etc/config\n            readOnly: true\n          - name: job-config\n            mountPath: /etc/job-config\n            readOnly: true\n        volumes:\n        - name: oauth\n          secret:\n            secretName: oauth-token\n        - name: config\n          configMap:\n            name: config\n        - name: job-config\n          configMap:\n            name: job-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"branchprotector\" does not have a read-only root file system"
+  },
+  {
+    "id": "01529",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0494.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  namespace: default\n  name: branchprotector\nspec:\n  jobTemplate:\n    template:\n      spec:\n        containers:\n        - name: branchprotector\n          image: gcr.io/k8s-prow/branchprotector:v20200529-d374280316\n          args:\n          - --config-path=/etc/config/config.yaml\n          - --job-config-path=/etc/job-config\n          - --github-token-path=/etc/github/oauth\n          - --confirm\n          - --github-endpoint=http://ghproxy\n          - --github-endpoint=https://api.github.com\n          volumeMounts:\n          - name: oauth\n            mountPath: /etc/github\n            readOnly: true\n          - name: config\n            mountPath: /etc/config\n            readOnly: true\n          - name: job-config\n            mountPath: /etc/job-config\n            readOnly: true\n        volumes:\n        - name: oauth\n          secret:\n            secretName: oauth-token\n        - name: config\n          configMap:\n            name: config\n        - name: job-config\n          configMap:\n            name: job-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"branchprotector\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01530",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0494.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  namespace: default\n  name: branchprotector\nspec:\n  jobTemplate:\n    template:\n      spec:\n        containers:\n        - name: branchprotector\n          image: gcr.io/k8s-prow/branchprotector:v20200529-d374280316\n          args:\n          - --config-path=/etc/config/config.yaml\n          - --job-config-path=/etc/job-config\n          - --github-token-path=/etc/github/oauth\n          - --confirm\n          - --github-endpoint=http://ghproxy\n          - --github-endpoint=https://api.github.com\n          volumeMounts:\n          - name: oauth\n            mountPath: /etc/github\n            readOnly: true\n          - name: config\n            mountPath: /etc/config\n            readOnly: true\n          - name: job-config\n            mountPath: /etc/job-config\n            readOnly: true\n        volumes:\n        - name: oauth\n          secret:\n            secretName: oauth-token\n        - name: config\n          configMap:\n            name: config\n        - name: job-config\n          configMap:\n            name: job-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"branchprotector\" has cpu request 0"
+  },
+  {
+    "id": "01531",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0494.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  namespace: default\n  name: branchprotector\nspec:\n  jobTemplate:\n    template:\n      spec:\n        containers:\n        - name: branchprotector\n          image: gcr.io/k8s-prow/branchprotector:v20200529-d374280316\n          args:\n          - --config-path=/etc/config/config.yaml\n          - --job-config-path=/etc/job-config\n          - --github-token-path=/etc/github/oauth\n          - --confirm\n          - --github-endpoint=http://ghproxy\n          - --github-endpoint=https://api.github.com\n          volumeMounts:\n          - name: oauth\n            mountPath: /etc/github\n            readOnly: true\n          - name: config\n            mountPath: /etc/config\n            readOnly: true\n          - name: job-config\n            mountPath: /etc/job-config\n            readOnly: true\n        volumes:\n        - name: oauth\n          secret:\n            secretName: oauth-token\n        - name: config\n          configMap:\n            name: config\n        - name: job-config\n          configMap:\n            name: job-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"branchprotector\" has memory limit 0"
+  },
+  {
+    "id": "01532",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0499.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: sample-app\n  name: sample-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: sample-app\n  template:\n    metadata:\n      labels:\n        app: sample-app\n        fluent-pvc-operator.tech.zozo.com/fluent-pvc-name: fluent-pvc-operator-example-log-collection\n    spec:\n      containers:\n      - name: sample-app\n        image: fluent-pvc-operator-sample-app:development\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        env:\n        - name: BENCHMARK_LOGGING_MAX_LOG_COUNT\n          value: '10000'\n        - name: BENCHMARK_LOGGING_INTERVAL_MILLIS\n          value: '1000'\n        - name: BENCHMARK_LOGGING_EVENT_NAME\n          value: test-event\n        - name: BENCHMARK_LOGGING_PAYLOAD_KEY1\n          value: myKey1\n        - name: BENCHMARK_LOGGING_PAYLOAD_VALUE1\n          value: myValue1\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"sample-app\" does not have a read-only root file system"
+  },
+  {
+    "id": "01533",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0499.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: sample-app\n  name: sample-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: sample-app\n  template:\n    metadata:\n      labels:\n        app: sample-app\n        fluent-pvc-operator.tech.zozo.com/fluent-pvc-name: fluent-pvc-operator-example-log-collection\n    spec:\n      containers:\n      - name: sample-app\n        image: fluent-pvc-operator-sample-app:development\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        env:\n        - name: BENCHMARK_LOGGING_MAX_LOG_COUNT\n          value: '10000'\n        - name: BENCHMARK_LOGGING_INTERVAL_MILLIS\n          value: '1000'\n        - name: BENCHMARK_LOGGING_EVENT_NAME\n          value: test-event\n        - name: BENCHMARK_LOGGING_PAYLOAD_KEY1\n          value: myKey1\n        - name: BENCHMARK_LOGGING_PAYLOAD_VALUE1\n          value: myValue1\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"sample-app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01534",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0499.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: sample-app\n  name: sample-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: sample-app\n  template:\n    metadata:\n      labels:\n        app: sample-app\n        fluent-pvc-operator.tech.zozo.com/fluent-pvc-name: fluent-pvc-operator-example-log-collection\n    spec:\n      containers:\n      - name: sample-app\n        image: fluent-pvc-operator-sample-app:development\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        env:\n        - name: BENCHMARK_LOGGING_MAX_LOG_COUNT\n          value: '10000'\n        - name: BENCHMARK_LOGGING_INTERVAL_MILLIS\n          value: '1000'\n        - name: BENCHMARK_LOGGING_EVENT_NAME\n          value: test-event\n        - name: BENCHMARK_LOGGING_PAYLOAD_KEY1\n          value: myKey1\n        - name: BENCHMARK_LOGGING_PAYLOAD_VALUE1\n          value: myValue1\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"sample-app\" has cpu request 0"
+  },
+  {
+    "id": "01535",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0505.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: myjavaapp-deploy\n  labels:\n    app: myjavaapp\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: myjavaapp\n  template:\n    metadata:\n      labels:\n        app: myjavaapp\n    spec:\n      containers:\n      - name: myjavaapp-container\n        image: nagendra464/deployimage:1\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"myjavaapp-container\" does not have a read-only root file system"
+  },
+  {
+    "id": "01536",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0505.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: myjavaapp-deploy\n  labels:\n    app: myjavaapp\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: myjavaapp\n  template:\n    metadata:\n      labels:\n        app: myjavaapp\n    spec:\n      containers:\n      - name: myjavaapp-container\n        image: nagendra464/deployimage:1\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"myjavaapp-container\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01537",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0505.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: myjavaapp-deploy\n  labels:\n    app: myjavaapp\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: myjavaapp\n  template:\n    metadata:\n      labels:\n        app: myjavaapp\n    spec:\n      containers:\n      - name: myjavaapp-container\n        image: nagendra464/deployimage:1\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"myjavaapp-container\" has cpu request 0"
+  },
+  {
+    "id": "01538",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0505.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: myjavaapp-deploy\n  labels:\n    app: myjavaapp\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: myjavaapp\n  template:\n    metadata:\n      labels:\n        app: myjavaapp\n    spec:\n      containers:\n      - name: myjavaapp-container\n        image: nagendra464/deployimage:1\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"myjavaapp-container\" has memory limit 0"
+  },
+  {
+    "id": "01539",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0507.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hvpa-controller\n  namespace: system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      controller: hvpa\n  template:\n    metadata:\n      labels:\n        controller: hvpa\n    spec:\n      containers:\n      - image: ggaurav10/hvpa-controller:latest\n        name: hvpa-manager\n        command:\n        - ./manager\n        - --logtostderr=true\n        - --v=2\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"hvpa-manager\" is using an invalid container image, \"ggaurav10/hvpa-controller:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01540",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0507.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hvpa-controller\n  namespace: system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      controller: hvpa\n  template:\n    metadata:\n      labels:\n        controller: hvpa\n    spec:\n      containers:\n      - image: ggaurav10/hvpa-controller:latest\n        name: hvpa-manager\n        command:\n        - ./manager\n        - --logtostderr=true\n        - --v=2\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"hvpa-manager\" does not have a read-only root file system"
+  },
+  {
+    "id": "01541",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0507.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hvpa-controller\n  namespace: system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      controller: hvpa\n  template:\n    metadata:\n      labels:\n        controller: hvpa\n    spec:\n      containers:\n      - image: ggaurav10/hvpa-controller:latest\n        name: hvpa-manager\n        command:\n        - ./manager\n        - --logtostderr=true\n        - --v=2\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"hvpa-manager\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01542",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0507.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hvpa-controller\n  namespace: system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      controller: hvpa\n  template:\n    metadata:\n      labels:\n        controller: hvpa\n    spec:\n      containers:\n      - image: ggaurav10/hvpa-controller:latest\n        name: hvpa-manager\n        command:\n        - ./manager\n        - --logtostderr=true\n        - --v=2\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"hvpa-manager\" has cpu request 0"
+  },
+  {
+    "id": "01543",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0507.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hvpa-controller\n  namespace: system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      controller: hvpa\n  template:\n    metadata:\n      labels:\n        controller: hvpa\n    spec:\n      containers:\n      - image: ggaurav10/hvpa-controller:latest\n        name: hvpa-manager\n        command:\n        - ./manager\n        - --logtostderr=true\n        - --v=2\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"hvpa-manager\" has memory limit 0"
+  },
+  {
+    "id": "01544",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0508.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: app2\n  name: app2\n  namespace: app2-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app2\n  template:\n    metadata:\n      labels:\n        app: app2\n    spec:\n      containers:\n      - image: nginx\n        name: app2\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"app2\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01545",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0508.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: app2\n  name: app2\n  namespace: app2-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app2\n  template:\n    metadata:\n      labels:\n        app: app2\n    spec:\n      containers:\n      - image: nginx\n        name: app2\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"app2\" does not have a read-only root file system"
+  },
+  {
+    "id": "01546",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0508.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: app2\n  name: app2\n  namespace: app2-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app2\n  template:\n    metadata:\n      labels:\n        app: app2\n    spec:\n      containers:\n      - image: nginx\n        name: app2\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"app2\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01547",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0508.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: app2\n  name: app2\n  namespace: app2-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app2\n  template:\n    metadata:\n      labels:\n        app: app2\n    spec:\n      containers:\n      - image: nginx\n        name: app2\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"app2\" has cpu request 0"
+  },
+  {
+    "id": "01548",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0508.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: app2\n  name: app2\n  namespace: app2-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app2\n  template:\n    metadata:\n      labels:\n        app: app2\n    spec:\n      containers:\n      - image: nginx\n        name: app2\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"app2\" has memory limit 0"
+  },
+  {
+    "id": "01549",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0512.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7005\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01550",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0512.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7005\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "01551",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0512.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7005\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01552",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0512.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7005\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "01553",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0512.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7005\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "01554",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0514.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: captureorder\nspec:\n  selector:\n    matchLabels:\n      app: captureorder\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: captureorder\n    spec:\n      containers:\n      - name: captureorder\n        image: shasbdois.azurecr.io/captureorder:placeholdertag\n        imagePullPolicy: Always\n        readinessProbe:\n          httpGet:\n            port: 8080\n            path: /healthz\n        livenessProbe:\n          httpGet:\n            port: 8080\n            path: /healthz\n        resources:\n          requests:\n            memory: 64Mi\n            cpu: 100m\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        env:\n        - name: TEAMNAME\n          value: team-azch\n        - name: MONGOHOST\n          valueFrom:\n            secretKeyRef:\n              name: mongodb\n              key: mongoHost\n        - name: MONGOUSER\n          valueFrom:\n            secretKeyRef:\n              name: mongodb\n              key: mongoUser\n        - name: MONGOPASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mongodb\n              key: mongoPassword\n        ports:\n        - containerPort: 80\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"captureorder\" does not have a read-only root file system"
+  },
+  {
+    "id": "01555",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0514.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: captureorder\nspec:\n  selector:\n    matchLabels:\n      app: captureorder\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: captureorder\n    spec:\n      containers:\n      - name: captureorder\n        image: shasbdois.azurecr.io/captureorder:placeholdertag\n        imagePullPolicy: Always\n        readinessProbe:\n          httpGet:\n            port: 8080\n            path: /healthz\n        livenessProbe:\n          httpGet:\n            port: 8080\n            path: /healthz\n        resources:\n          requests:\n            memory: 64Mi\n            cpu: 100m\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        env:\n        - name: TEAMNAME\n          value: team-azch\n        - name: MONGOHOST\n          valueFrom:\n            secretKeyRef:\n              name: mongodb\n              key: mongoHost\n        - name: MONGOUSER\n          valueFrom:\n            secretKeyRef:\n              name: mongodb\n              key: mongoUser\n        - name: MONGOPASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mongodb\n              key: mongoPassword\n        ports:\n        - containerPort: 80\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"captureorder\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01556",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0517.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: kuard-a\nspec:\n  volumes:\n  - name: kuard-data\n    nfs:\n      server: ks101\n      path: /var/export\n  containers:\n  - image: gcr.io/kuar-demo/kuard-amd64:1\n    name: kuard-a\n    volumeMounts:\n    - mountPath: /data\n      name: kuard-data\n    resources:\n      requests:\n        cpu: 600m\n        memory: 128Mi\n      limits:\n        cpu: 1000m\n        memory: 256Mi\n    livenessProbe:\n      httpGet:\n        path: /healthy\n        port: 8080\n      initialDelaySeconds: 5\n      timeoutSeconds: 1\n      periodSeconds: 10\n      failureThreshold: 3\n    ports:\n    - containerPort: 8080\n      name: http\n      protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"kuard-a\" does not have a read-only root file system"
+  },
+  {
+    "id": "01557",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0517.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: kuard-a\nspec:\n  volumes:\n  - name: kuard-data\n    nfs:\n      server: ks101\n      path: /var/export\n  containers:\n  - image: gcr.io/kuar-demo/kuard-amd64:1\n    name: kuard-a\n    volumeMounts:\n    - mountPath: /data\n      name: kuard-data\n    resources:\n      requests:\n        cpu: 600m\n        memory: 128Mi\n      limits:\n        cpu: 1000m\n        memory: 256Mi\n    livenessProbe:\n      httpGet:\n        path: /healthy\n        port: 8080\n      initialDelaySeconds: 5\n      timeoutSeconds: 1\n      periodSeconds: 10\n      failureThreshold: 3\n    ports:\n    - containerPort: 8080\n      name: http\n      protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"kuard-a\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01558",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0518.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-example-agent-injector\n  labels:\n    app.kubernetes.io/name: vault-example-agent-injector\n    component: webhook\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault-example-agent-injector\n      component: webhook\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault-example-agent-injector\n        component: webhook\n    spec:\n      serviceAccountName: vault-example-agent-injector\n      securityContext:\n        runAsNonRoot: true\n        runAsGroup: 1000\n        runAsUser: 100\n      containers:\n      - name: sidecar-injector\n        image: hashicorp/vault-k8s:0.1.2\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: AGENT_INJECT_LISTEN\n          value: :8080\n        - name: AGENT_INJECT_LOG_LEVEL\n          value: info\n        - name: AGENT_INJECT_VAULT_ADDR\n          value: https://vault-example.vault-example.svc:8200\n        - name: AGENT_INJECT_VAULT_IMAGE\n          value: vault:1.3.1\n        - name: AGENT_INJECT_TLS_AUTO\n          value: vault-example-agent-injector-cfg\n        - name: AGENT_INJECT_TLS_AUTO_HOSTS\n          value: vault-example-agent-injector-svc,vault-example-agent-injector-svc.vault-example,vault-example-agent-injector-svc.vault-example.svc\n        args:\n        - agent-inject\n        - 2>&1\n        livenessProbe:\n          httpGet:\n            path: /health/ready\n            port: 8080\n            scheme: HTTPS\n          failureThreshold: 2\n          initialDelaySeconds: 1\n          periodSeconds: 2\n          successThreshold: 1\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /health/ready\n            port: 8080\n            scheme: HTTPS\n          failureThreshold: 2\n          initialDelaySeconds: 2\n          periodSeconds: 2\n          successThreshold: 1\n          timeoutSeconds: 5\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"sidecar-injector\" does not have a read-only root file system"
+  },
+  {
+    "id": "01559",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0518.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-example-agent-injector\n  labels:\n    app.kubernetes.io/name: vault-example-agent-injector\n    component: webhook\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault-example-agent-injector\n      component: webhook\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault-example-agent-injector\n        component: webhook\n    spec:\n      serviceAccountName: vault-example-agent-injector\n      securityContext:\n        runAsNonRoot: true\n        runAsGroup: 1000\n        runAsUser: 100\n      containers:\n      - name: sidecar-injector\n        image: hashicorp/vault-k8s:0.1.2\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: AGENT_INJECT_LISTEN\n          value: :8080\n        - name: AGENT_INJECT_LOG_LEVEL\n          value: info\n        - name: AGENT_INJECT_VAULT_ADDR\n          value: https://vault-example.vault-example.svc:8200\n        - name: AGENT_INJECT_VAULT_IMAGE\n          value: vault:1.3.1\n        - name: AGENT_INJECT_TLS_AUTO\n          value: vault-example-agent-injector-cfg\n        - name: AGENT_INJECT_TLS_AUTO_HOSTS\n          value: vault-example-agent-injector-svc,vault-example-agent-injector-svc.vault-example,vault-example-agent-injector-svc.vault-example.svc\n        args:\n        - agent-inject\n        - 2>&1\n        livenessProbe:\n          httpGet:\n            path: /health/ready\n            port: 8080\n            scheme: HTTPS\n          failureThreshold: 2\n          initialDelaySeconds: 1\n          periodSeconds: 2\n          successThreshold: 1\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /health/ready\n            port: 8080\n            scheme: HTTPS\n          failureThreshold: 2\n          initialDelaySeconds: 2\n          periodSeconds: 2\n          successThreshold: 1\n          timeoutSeconds: 5\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"sidecar-injector\" has cpu request 0"
+  },
+  {
+    "id": "01560",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0518.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-example-agent-injector\n  labels:\n    app.kubernetes.io/name: vault-example-agent-injector\n    component: webhook\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault-example-agent-injector\n      component: webhook\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault-example-agent-injector\n        component: webhook\n    spec:\n      serviceAccountName: vault-example-agent-injector\n      securityContext:\n        runAsNonRoot: true\n        runAsGroup: 1000\n        runAsUser: 100\n      containers:\n      - name: sidecar-injector\n        image: hashicorp/vault-k8s:0.1.2\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: AGENT_INJECT_LISTEN\n          value: :8080\n        - name: AGENT_INJECT_LOG_LEVEL\n          value: info\n        - name: AGENT_INJECT_VAULT_ADDR\n          value: https://vault-example.vault-example.svc:8200\n        - name: AGENT_INJECT_VAULT_IMAGE\n          value: vault:1.3.1\n        - name: AGENT_INJECT_TLS_AUTO\n          value: vault-example-agent-injector-cfg\n        - name: AGENT_INJECT_TLS_AUTO_HOSTS\n          value: vault-example-agent-injector-svc,vault-example-agent-injector-svc.vault-example,vault-example-agent-injector-svc.vault-example.svc\n        args:\n        - agent-inject\n        - 2>&1\n        livenessProbe:\n          httpGet:\n            path: /health/ready\n            port: 8080\n            scheme: HTTPS\n          failureThreshold: 2\n          initialDelaySeconds: 1\n          periodSeconds: 2\n          successThreshold: 1\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /health/ready\n            port: 8080\n            scheme: HTTPS\n          failureThreshold: 2\n          initialDelaySeconds: 2\n          periodSeconds: 2\n          successThreshold: 1\n          timeoutSeconds: 5\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"sidecar-injector\" has memory limit 0"
+  }
+]

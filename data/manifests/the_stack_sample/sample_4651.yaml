@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyberark-sidecar-injector
+  namespace: ${namespace}
+  labels:
+    app: cyberark-sidecar-injector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cyberark-sidecar-injector
+  template:
+    metadata:
+      labels:
+        app: cyberark-sidecar-injector
+    spec:
+      containers:
+      - name: cyberark-sidecar-injector
+        image: ${sidecarInjectorImage}
+        imagePullPolicy: Always
+        args:
+        - -tlsCertFile=/etc/webhook/certs/tls.crt
+        - -tlsKeyFile=/etc/webhook/certs/tls.key
+        - -port=8080
+        - -authenticator-image=${authenticatorImage}
+        - -secretless-image=${secretlessImage}
+        ports:
+        - containerPort: 8080
+          name: https
+        volumeMounts:
+        - name: certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: ${serviceName}

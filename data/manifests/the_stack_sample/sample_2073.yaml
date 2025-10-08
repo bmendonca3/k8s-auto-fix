@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-dep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-app
+  template:
+    metadata:
+      labels:
+        app: project-app
+    spec:
+      volumes:
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: local-claim
+      - name: config
+        configMap:
+          name: project-app-config
+          items:
+          - key: app.properties
+            path: config.js
+      containers:
+      - name: project-app
+        image: robsondepaula/project:1_13
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data
+        - name: config
+          mountPath: /usr/share/nginx/html/config.js
+          subPath: config.js
+      - name: project-service
+        image: robsondepaula/project-service:1_13
+        ports:
+        - containerPort: 3001
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data

@@ -1,0 +1,22 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gitlab-unicorn-tests
+  namespace: gitlab
+  selfLink: /api/v1/namespaces/gitlab/configmaps/gitlab-unicorn-tests
+  uid: 98103e64-398b-11ea-b115-42010a8001d6
+  resourceVersion: '2016135'
+  creationTimestamp: '2020-01-18T00:43:50Z'
+data:
+  test_login: "set -e\necho 'Start Test'\nendpoint=\"https://gitlab.example.com\"\n\
+    cookie_read=\"-c /tmp/test_login.cookie\"\ncookie_readwrite=\"$cookie_read -b\
+    \ /tmp/test_login.cookie\"\n\nsignin_url=\"$endpoint/users/sign_in\"\necho \"\
+    Login to create a session: $signin_url\"\ncsrf=$(curl $signin_url --fail -s $cookie_read\
+    \ | grep -Po '<meta.*name=\"csrf-token\".*content=\"\\K[a-zA-Z0-9\\+=\\-\\/]*')\n\
+    curl --fail -X POST $signin_url -s $cookie_readwrite -F \"authenticity_token=$csrf\"\
+    \ -F 'user[login]=root' -F \"user[password]=$(cat /initial_root_password)\"\n\n\
+    profile_url=\"$endpoint/profile\"\necho \"Confirm session valid: $profile_url\"\
+    \nprofile_status=$(curl -s -o /tmp/profile_output -w \"%{http_code}\" $cookie_readwrite\
+    \ $profile_url)\n\nif [ \"$profile_status\" != \"200\" ]; then\n  echo \"Error:\
+    \ Session Invalid\"\n  cat /tmp/profile_output\n  exit 1\nfi\n\necho 'Test Passed'\n\
+    exit 0"

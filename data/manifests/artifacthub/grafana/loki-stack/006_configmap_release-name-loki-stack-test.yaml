@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-loki-stack-test
+  labels:
+    app: loki-stack
+    chart: loki-stack-2.10.2
+    release: release-name
+    heritage: Helm
+data:
+  test.sh: "#!/usr/bin/env bash\n\nLOKI_URI=\"http://${LOKI_SERVICE}:${LOKI_PORT}\"\
+    \n\nfunction setup() {\n  apk add -u curl jq\n  until (curl -s ${LOKI_URI}/loki/api/v1/label/app/values\
+    \ | jq -e '.data[] | select(. == \"loki\")'); do\n    sleep 1\n  done\n}\n\n@test\
+    \ \"Has labels\" {\n  curl -s ${LOKI_URI}/loki/api/v1/labels | \\\n  jq -e '.data[]\
+    \ | select(. == \"app\")'\n}\n\n@test \"Query log entry\" {\n  curl -sG ${LOKI_URI}/api/prom/query?limit=10\
+    \ --data-urlencode 'query={app=\"loki\"}' | \\\n  jq -e '.streams[].entries |\
+    \ length >=1'\n}\n\n@test \"Push log entry\" {\n  local timestamp=$(date +%s000000000)\n\
+    \  local data=$(jq -n --arg timestamp \"${timestamp}\" '{\"streams\": [{\"stream\"\
+    : {\"app\": \"loki-test\"}, \"values\": [[$timestamp, \"foobar\"]]}]}')\n\n  curl\
+    \ -s -X POST -H \"Content-Type: application/json\" ${LOKI_URI}/loki/api/v1/push\
+    \ --data-raw \"${data}\"\n\n  curl -sG ${LOKI_URI}/loki/api/v1/query_range?limit=1\
+    \ --data-urlencode 'query={app=\"loki-test\"}' | \\\n  jq -e '.data.result[].values[][1]\
+    \ == \"foobar\"'\n}\n"

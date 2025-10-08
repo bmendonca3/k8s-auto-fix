@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demojob2-workerpool
+  labels:
+    poolname: workerpool
+spec:
+  template:
+    metadata:
+      labels:
+        poolname: workerpool
+    spec:
+      containers:
+      - name: conbot
+        resources:
+          requests:
+            cpu: '6'
+        image: conbot/conbot:latest
+        imagePullPolicy: Always
+        args:
+        - convert
+        - -source
+        - gs://conbot-data/source/10m.csv.gz
+        - -target
+        - /output
+        - -consumer
+        - csv
+      nodeSelector:
+        poolname: workerpool
+      restartPolicy: OnFailure

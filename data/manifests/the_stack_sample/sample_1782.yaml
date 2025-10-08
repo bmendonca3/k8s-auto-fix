@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensordeploy
+  labels:
+    app: sensorapp
+spec:
+  selector:
+    matchLabels:
+      app: sensorapp
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: sensorapp
+    spec:
+      containers:
+      - name: sensorapp
+        image: 03021994/sensor:latest
+        command:
+        - python
+        - ./app/sensor-test.py
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        - containerPort: 8083
+        resources:
+          requests:
+            memory: 64Mi
+            cpu: 50m
+          limits:
+            memory: 256Mi
+            cpu: 500m

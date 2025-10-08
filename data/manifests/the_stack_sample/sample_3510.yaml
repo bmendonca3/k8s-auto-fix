@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: file-storage
+  name: file-storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-storage
+  template:
+    metadata:
+      labels:
+        app: file-storage
+    spec:
+      containers:
+      - image: 279559645400.dkr.ecr.us-west-1.amazonaws.com/solui/file-storage-service:G8R2i020
+        imagePullPolicy: Always
+        name: file-storage
+        ports:
+        - containerPort: 8000
+        resources: {}
+        volumeMounts:
+        - mountPath: /file-storage-service/.env.defaults
+          subPath: .env
+          name: file-storage-mount
+      volumes:
+      - name: file-storage-mount
+        configMap:
+          name: file-storage-cm
+          defaultMode: 420
+          items:
+          - key: file-storageConfig
+            path: .env
+      restartPolicy: Always
+status: {}

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hostpath-helper
+spec:
+  selector:
+    matchLabels:
+      name: hostpath-helper
+  template:
+    metadata:
+      labels:
+        name: hostpath-helper
+    spec:
+      containers:
+      - name: cleanup
+        image: ubuntu
+        command:
+        - bash
+        - -xc
+        - rm -rf /mnt/tmp/data-dir /mnt/tmp/data/fast-disks; install -m 777 -d /mnt/tmp/data-dir
+          /mnt/tmp/data/fast-disks && sleep 100500
+        volumeMounts:
+        - name: root
+          mountPath: /mnt
+        securityContext:
+          runAsUser: 0
+      volumes:
+      - name: root
+        hostPath:
+          path: /

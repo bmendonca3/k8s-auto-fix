@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubt
+  namespace: webhook-demo
+  labels:
+    app: ubt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ubt
+  template:
+    metadata:
+      labels:
+        app: ubt
+    spec:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      containers:
+      - name: server
+        image: ubuntu:latest
+        command:
+        - /bin/bash
+        - -c
+        - --
+        args:
+        - while true; do sleep 30; done;
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8443
+          name: webhook-api
+        volumeMounts:
+        - name: webhook-tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+      volumes:
+      - name: webhook-tls-certs
+        secret:
+          secretName: webhook-server-tls

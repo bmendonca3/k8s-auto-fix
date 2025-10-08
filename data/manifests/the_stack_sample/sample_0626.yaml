@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-recommender
+  namespace: kube-system
+  labels:
+    application: vpa-recommender
+    version: patched-0.5.1-master-16
+    component: vpa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      application: vpa-recommender
+  template:
+    metadata:
+      labels:
+        application: vpa-recommender
+        version: patched-0.5.1-master-16
+        component: vpa
+    spec:
+      serviceAccountName: system
+      priorityClassName: system-cluster-critical
+      containers:
+      - name: recommender
+        image: registry.opensource.zalan.do/teapot/vpa-recommender:patched-0.5.1-master-16
+        args:
+        - --stderrthreshold=info
+        - --v=5
+        - --memory-saver
+        - --pod-recommendation-min-memory-mb=50
+        command:
+        - /recommender
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 200m
+            memory: 500Mi
+        ports:
+        - containerPort: 8080

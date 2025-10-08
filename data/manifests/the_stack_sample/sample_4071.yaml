@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-operator
+  namespace: build-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: build-operator
+  template:
+    metadata:
+      labels:
+        name: build-operator
+    spec:
+      serviceAccountName: build-operator
+      containers:
+      - name: build-operator
+        image: quay.io/shipwright/shipwright-operator:latest
+        command:
+        - build-operator
+        imagePullPolicy: Always
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: BUILD_OPERATOR_LEADER_ELECTION_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: build-operator
+        livenessProbe:
+          exec:
+            command:
+            - stat
+            - /tmp/operator-sdk-ready
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - stat
+            - /tmp/operator-sdk-ready
+          initialDelaySeconds: 5
+          periodSeconds: 10

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-grpc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: echo-grpc
+  template:
+    metadata:
+      labels:
+        app: echo-grpc
+    spec:
+      containers:
+      - name: echo-grpc
+        image: gcr.io/GOOGLE_CLOUD_PROJECT/echo-grpc
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PORT
+          value: '8081'
+        ports:
+        - containerPort: 8081
+        readinessProbe:
+          exec:
+            command:
+            - /bin/grpc_health_probe
+            - -addr=:8081
+            - -service=Check
+          initialDelaySeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - /bin/grpc_health_probe
+            - -addr=:8081
+            - -service=Check
+          initialDelaySeconds: 10

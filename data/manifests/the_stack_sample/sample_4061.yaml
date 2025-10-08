@@ -1,0 +1,73 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mailman-core-utils
+  namespace: mail
+  labels:
+    component: mail-core-utils
+    app: mail-suit-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mail-core-utils
+      app: mail-suit-service
+  template:
+    metadata:
+      labels:
+        component: mail-core-utils
+        app: mail-suit-service
+    spec:
+      initContainers:
+      - name: mail-git-tools
+        image: swr.cn-north-4.myhuaweicloud.com/opensourceway/common/git-tools:3130dbea23dd51e5ccd373af860427b3ed730f14
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /opt/mailman-utils/data_source
+          name: mailman-core-utils
+        env:
+        - name: TEMPLATE_REPO
+          value: https://github.com/opensourceways/app-mailman.git
+        command:
+        - /bin/sh
+        - -c
+        - 'cd /opt/mailman-utils/data_source;
+
+          git clone ${TEMPLATE_REPO}
+
+          '
+      containers:
+      - name: mailman-core-utils
+        image: swr.cn-north-4.myhuaweicloud.com/opensourceway/common/mailman-core-utils:3130dbea23dd51e5ccd373af860427b3ed730f14
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /opt/mailman-utils/data_source
+          name: mailman-core-utils
+        env:
+        - name: MAILMAN_CORE_ENDPOINT
+          value: http://mailman-core-0.mail-suit-service.mail.svc.cluster.local:8001/3.1
+        - name: MAILMAN_CORE_USER
+          valueFrom:
+            secretKeyRef:
+              name: mailman-secrets
+              key: mailman_core_user
+        - name: MAILMAN_CORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mailman-secrets
+              key: mailman_core_password
+        - name: TEMPLATE_FOLDER_PATH
+          value: templates
+        command:
+        - /bin/sh
+        - -c
+        - 'cp -r /opt/mailman-utils/data_source/app-mailman/mail/templates  .;
+
+          docker-entrypoint.sh python -u mailman-core-utils.py
+
+          sleep infinity
+
+          '
+      volumes:
+      - name: mailman-core-utils
+        emptyDir: {}

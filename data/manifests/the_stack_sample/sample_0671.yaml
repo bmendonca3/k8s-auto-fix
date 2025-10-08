@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assisted-service
+  namespace: REPLACE_NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      app: assisted-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: assisted-service
+    spec:
+      containers:
+      - name: assisted-service
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 400Mi
+        image: REPLACE_IMAGE
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8090
+        envFrom:
+        - configMapRef:
+            name: assisted-service-config
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: assisted-installer-rds
+              key: db.host
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: assisted-installer-rds
+              key: db.name
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: assisted-installer-rds
+              key: db.password
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: assisted-installer-rds
+              key: db.port
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: assisted-installer-rds
+              key: db.user
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: aws_secret_access_key
+              name: assisted-installer-s3
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: aws_access_key_id
+              name: assisted-installer-s3
+        - name: S3_REGION
+          valueFrom:
+            secretKeyRef:
+              key: aws_region
+              name: assisted-installer-s3
+        - name: S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              key: bucket
+              name: assisted-installer-s3
+        - name: S3_ENDPOINT_URL
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: assisted-installer-s3
+        volumeMounts:
+        - name: route53-creds
+          mountPath: /.aws
+          readOnly: true
+      volumes:
+      - name: route53-creds
+        secret:
+          secretName: route53-creds
+          optional: true

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: templatebot
+  labels:
+    app: templatebot
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: templatebot
+  template:
+    metadata:
+      labels:
+        app: templatebot
+    spec:
+      containers:
+      - name: templatebot-app
+        env:
+        - name: TEMPLATEBOT_GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: templatebot
+              key: TEMPLATEBOT_GITHUB_TOKEN
+        - name: TEMPLATEBOT_GITHUB_USER
+          valueFrom:
+            secretKeyRef:
+              name: templatebot
+              key: TEMPLATEBOT_GITHUB_USER
+        - name: SLACK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: templatebot
+              key: SLACK_TOKEN
+        volumeMounts:
+        - name: client-tls
+          mountPath: /var/strimzi-client
+          readOnly: true
+        - name: broker-tls
+          mountPath: /var/strimzi-broker
+          readOnly: true
+      volumes:
+      - name: client-tls
+        secret:
+          secretName: kafkauser-templatebot
+      - name: broker-tls
+        secret:
+          secretName: events-cluster-ca-cert

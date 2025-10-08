@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: splunk-kubernetes-metrics
+  labels:
+    app: splunk-kubernetes-metrics
+    version: 1.4.1
+data:
+  fluent.conf: "# system wide configurations\n<system>\n  log_level info\n</system>\n\
+    <source>\n  @type kubernetes_metrics\n  tag kube.*\n  node_name \"#{ENV['NODE_NAME']}\"\
+    \n  use_rest_client_ssl true\n  cluster_name cluster_name\n  interval 15s\n</source>\n\
+    <filter kube.**>\n  @type record_modifier\n  <record>\n    metric_name ${tag}\n\
+    \    cluster_name cluster_name\n  </record>\n</filter>\n<filter kube.node.**>\n\
+    \  @type record_modifier\n  <record>\n    source ${record['node']}\n  </record>\n\
+    </filter>\n<filter kube.pod.**>\n  @type record_modifier\n  <record>\n    source\
+    \ ${record['node']}/${record['pod-name']}\n  </record>\n</filter>\n<filter kube.sys-container.**>\n\
+    \  @type record_modifier\n  <record>\n    source ${record['node']}/${record['pod-name']}/${record['name']}\n\
+    \  </record>\n</filter>\n<filter kube.container.**>\n  @type record_modifier\n\
+    \  <record>\n    source ${record['node']}/${record['pod-name']}/${record['container-name']}\n\
+    \  </record>\n</filter>\n# = custom filters specified by users =\n<match kube.**>\n\
+    \  @type splunk_hec\n  data_type metric\n  metric_name_key metric_name\n  metric_value_key\
+    \ value\n  protocol https\n  hec_host \"MY-SPLUNK-HOST\"\n  hec_port 8088\n  hec_token\
+    \ \"#{ENV['SPLUNK_HEC_TOKEN']}\"\n  host \"#{ENV['NODE_NAME']}\"\n  source ${tag}\n\
+    \  insecure_ssl true\n  <buffer>\n    @type memory\n    chunk_limit_records 10000\n\
+    \    chunk_limit_size 100m\n    flush_interval 5s\n    flush_thread_count 1\n\
+    \    overflow_action block\n    retry_max_times 3\n    total_limit_size 400m\n\
+    \  </buffer>\n</match>"

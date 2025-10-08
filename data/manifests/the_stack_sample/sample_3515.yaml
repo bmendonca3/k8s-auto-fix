@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    component: server
+    app: prometheus
+    release: prometheus
+    chart: prometheus-13.6.0
+    heritage: Helm
+    gitops.jenkins-x.io/pipeline: namespaces
+  name: prometheus-server
+  namespace: jx-observability
+  annotations:
+    meta.helm.sh/release-name: prometheus
+data:
+  alerting_rules.yml: "groups:\n- name: CertManager\n  rules:\n  - alert: CertManagerAbsent\n\
+    \    annotations:\n      description: |\n        New certificates will not be\
+    \ able to be minted, and existing ones can't\n        be renewed until cert-manager\
+    \ is back.\n      summary: Cert Manager has dissapeared from Prometheus service\
+    \ discovery.\n    expr: absent(up{app=\"cert-manager\"})\n    for: 10m\n    labels:\n\
+    \      severity: critical\n  - alert: CertManagerCertNotReady\n    annotations:\n\
+    \      description: |\n        This certificate has not been ready to serve traffic\
+    \ for at least 10m.\n        If the cert is being renewed or there is another\
+    \ valid cert, the ingress controller\n        _may_ be able to serve that instead.\n\
+    \      summary: The cert `{{ $labels.name }}` is not ready to serve traffic.\n\
+    \    expr: |\n      max by (name, exported_namespace, namespace, condition) (\n\
+    \        certmanager_certificate_ready_status{condition!=\"True\"} == 1\n    \
+    \  )\n    for: 10m\n    labels:\n      severity: critical\n  - alert: CertManagerCertExpirySoon\n\
+    \    annotations:\n      description: |\n        The domain that this cert covers\
+    \ will be unavailable after {{ $value | humanizeDuration }}.\n        Clients\
+    \ using endpoints that this cert protects will start to fail in {{ $value | humanizeDuration\
+    \ }}.\n      summary: |\n        The cert `{{ $labels.name }}` is {{ $value |\
+    \ humanizeDuration }} from expiry,\n        it should have renewed over a week\
+    \ ago.\n    expr: |\n      avg by (exported_namespace, namespace, name) (\n  \
+    \      certmanager_certificate_expiration_timestamp_seconds - time()\n      )\
+    \ < (21 * 24 * 3600) # 21 days in seconds\n    for: 1h\n    labels:\n      severity:\
+    \ warning\n"
+  alerts: '{}
+
+    '
+  prometheus.yml: "global:\n  evaluation_interval: 1m\n  scrape_interval: 1m\n  scrape_timeout:\
+    \ 10s\nrule_files:\n- /etc/config/recording_rules.yml\n- /etc/config/alerting_rules.yml\n\
+    - /etc/config/rules\n- /etc/config/alerts\nscrape_configs:\n- job_name: prometheus\n\
+    \  static_configs:\n  - targets:\n    - localhost:9090\n- bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \  job_name: kubernetes-apiservers\n  kubernetes_sd_configs:\n  - role: endpoints\n\
+    \  relabel_configs:\n  - action: keep\n    regex: default;kubernetes;https\n \
+    \   source_labels:\n    - __meta_kubernetes_namespace\n    - __meta_kubernetes_service_name\n\
+    \    - __meta_kubernetes_endpoint_port_name\n  scheme: https\n  tls_config:\n\
+    \    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n    insecure_skip_verify:\
+    \ true\n- bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \  job_name: kubernetes-nodes\n  kubernetes_sd_configs:\n  - role: node\n  relabel_configs:\n\
+    \  - action: labelmap\n    regex: __meta_kubernetes_node_label_(.+)\n  - replacement:\
+    \ kubernetes.default.svc:443\n    target_label: __address__\n  - regex: (.+)\n\
+    \    replacement: /api/v1/nodes/$1/proxy/metrics\n    source_labels:\n    - __meta_kubernetes_node_name\n\
+    \    target_label: __metrics_path__\n  scheme: https\n  tls_config:\n    ca_file:\
+    \ /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n    insecure_skip_verify:\
+    \ true\n- bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \  job_name: kubernetes-nodes-cadvisor\n  kubernetes_sd_configs:\n  - role: node\n\
+    \  relabel_configs:\n  - action: labelmap\n    regex: __meta_kubernetes_node_label_(.+)\n\
+    \  - replacement: kubernetes.default.svc:443\n    target_label: __address__\n\
+    \  - regex: (.+)\n    replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor\n \
+    \   source_labels:\n    - __meta_kubernetes_node_name\n    target_label: __metrics_path__\n\
+    \  scheme: https\n  tls_config:\n    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n\
+    \    insecure_skip_verify: true\n- job_name: kubernetes-service-endpoints\n  kubernetes_sd_configs:\n\
+    \  - role: endpoints\n  relabel_configs:\n  - action: keep\n    regex: true\n\
+    \    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_scrape\n\
+    \  - action: replace\n    regex: (https?)\n    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_scheme\n\
+    \    target_label: __scheme__\n  - action: replace\n    regex: (.+)\n    source_labels:\n\
+    \    - __meta_kubernetes_service_annotation_prometheus_io_path\n    target_label:\
+    \ __metrics_path__\n  - action: replace\n    regex: ([^:]+)(?::\\d+)?;(\\d+)\n\
+    \    replacement: $1:$2\n    source_labels:\n    - __address__\n    - __meta_kubernetes_service_annotation_prometheus_io_port\n\
+    \    target_label: __address__\n  - action: labelmap\n    regex: __meta_kubernetes_service_label_(.+)\n\
+    \  - action: replace\n    source_labels:\n    - __meta_kubernetes_namespace\n\
+    \    target_label: kubernetes_namespace\n  - action: replace\n    source_labels:\n\
+    \    - __meta_kubernetes_service_name\n    target_label: kubernetes_name\n  -\
+    \ action: replace\n    source_labels:\n    - __meta_kubernetes_pod_node_name\n\
+    \    target_label: kubernetes_node\n- job_name: kubernetes-service-endpoints-slow\n\
+    \  kubernetes_sd_configs:\n  - role: endpoints\n  relabel_configs:\n  - action:\
+    \ keep\n    regex: true\n    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_scrape_slow\n\
+    \  - action: replace\n    regex: (https?)\n    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_scheme\n\
+    \    target_label: __scheme__\n  - action: replace\n    regex: (.+)\n    source_labels:\n\
+    \    - __meta_kubernetes_service_annotation_prometheus_io_path\n    target_label:\
+    \ __metrics_path__\n  - action: replace\n    regex: ([^:]+)(?::\\d+)?;(\\d+)\n\
+    \    replacement: $1:$2\n    source_labels:\n    - __address__\n    - __meta_kubernetes_service_annotation_prometheus_io_port\n\
+    \    target_label: __address__\n  - action: labelmap\n    regex: __meta_kubernetes_service_label_(.+)\n\
+    \  - action: replace\n    source_labels:\n    - __meta_kubernetes_namespace\n\
+    \    target_label: kubernetes_namespace\n  - action: replace\n    source_labels:\n\
+    \    - __meta_kubernetes_service_name\n    target_label: kubernetes_name\n  -\
+    \ action: replace\n    source_labels:\n    - __meta_kubernetes_pod_node_name\n\
+    \    target_label: kubernetes_node\n  scrape_interval: 5m\n  scrape_timeout: 30s\n\
+    - honor_labels: true\n  job_name: prometheus-pushgateway\n  kubernetes_sd_configs:\n\
+    \  - role: service\n  relabel_configs:\n  - action: keep\n    regex: pushgateway\n\
+    \    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_probe\n\
+    - job_name: kubernetes-services\n  kubernetes_sd_configs:\n  - role: service\n\
+    \  metrics_path: /probe\n  params:\n    module:\n    - http_2xx\n  relabel_configs:\n\
+    \  - action: keep\n    regex: true\n    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_probe\n\
+    \  - source_labels:\n    - __address__\n    target_label: __param_target\n  -\
+    \ replacement: blackbox\n    target_label: __address__\n  - source_labels:\n \
+    \   - __param_target\n    target_label: instance\n  - action: labelmap\n    regex:\
+    \ __meta_kubernetes_service_label_(.+)\n  - source_labels:\n    - __meta_kubernetes_namespace\n\
+    \    target_label: kubernetes_namespace\n  - source_labels:\n    - __meta_kubernetes_service_name\n\
+    \    target_label: kubernetes_name\n- job_name: kubernetes-pods\n  kubernetes_sd_configs:\n\
+    \  - role: pod\n  relabel_configs:\n  - action: keep\n    regex: true\n    source_labels:\n\
+    \    - __meta_kubernetes_pod_annotation_prometheus_io_scrape\n  - action: replace\n\
+    \    regex: (https?)\n    source_labels:\n    - __meta_kubernetes_pod_annotation_prometheus_io_scheme\n\
+    \    target_label: __scheme__\n  - action: replace\n    regex: (.+)\n    source_labels:\n\
+    \    - __meta_kubernetes_pod_annotation_prometheus_io_path\n    target_label:\
+    \ __metrics_path__\n  - action: replace\n    regex: ([^:]+)(?::\\d+)?;(\\d+)\n\
+    \    replacement: $1:$2\n    source_labels:\n    - __address__\n    - __meta_kubernetes_pod_annotation_prometheus_io_port\n\
+    \    target_label: __address__\n  - action: labelmap\n    regex: __meta_kubernetes_pod_label_(.+)\n\
+    \  - action: replace\n    source_labels:\n    - __meta_kubernetes_namespace\n\
+    \    target_label: kubernetes_namespace\n  - action: replace\n    source_labels:\n\
+    \    - __meta_kubernetes_pod_name\n    target_label: kubernetes_pod_name\n  -\
+    \ action: drop\n    regex: Pending|Succeeded|Failed\n    source_labels:\n    -\
+    \ __meta_kubernetes_pod_phase\n- job_name: kubernetes-pods-slow\n  kubernetes_sd_configs:\n\
+    \  - role: pod\n  relabel_configs:\n  - action: keep\n    regex: true\n    source_labels:\n\
+    \    - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow\n  - action:\
+    \ replace\n    regex: (https?)\n    source_labels:\n    - __meta_kubernetes_pod_annotation_prometheus_io_scheme\n\
+    \    target_label: __scheme__\n  - action: replace\n    regex: (.+)\n    source_labels:\n\
+    \    - __meta_kubernetes_pod_annotation_prometheus_io_path\n    target_label:\
+    \ __metrics_path__\n  - action: replace\n    regex: ([^:]+)(?::\\d+)?;(\\d+)\n\
+    \    replacement: $1:$2\n    source_labels:\n    - __address__\n    - __meta_kubernetes_pod_annotation_prometheus_io_port\n\
+    \    target_label: __address__\n  - action: labelmap\n    regex: __meta_kubernetes_pod_label_(.+)\n\
+    \  - action: replace\n    source_labels:\n    - __meta_kubernetes_namespace\n\
+    \    target_label: kubernetes_namespace\n  - action: replace\n    source_labels:\n\
+    \    - __meta_kubernetes_pod_name\n    target_label: kubernetes_pod_name\n  -\
+    \ action: drop\n    regex: Pending|Succeeded|Failed\n    source_labels:\n    -\
+    \ __meta_kubernetes_pod_phase\n  scrape_interval: 5m\n  scrape_timeout: 30s\n\
+    alerting:\n  alertmanagers:\n  - kubernetes_sd_configs:\n      - role: pod\n \
+    \   tls_config:\n      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n\
+    \    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \    relabel_configs:\n    - source_labels: [__meta_kubernetes_namespace]\n  \
+    \    regex: jx-observability\n      action: keep\n    - source_labels: [__meta_kubernetes_pod_label_app]\n\
+    \      regex: prometheus\n      action: keep\n    - source_labels: [__meta_kubernetes_pod_label_component]\n\
+    \      regex: alertmanager\n      action: keep\n    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_probe]\n\
+    \      regex: .*\n      action: keep\n    - source_labels: [__meta_kubernetes_pod_container_port_number]\n\
+    \      regex: \"9093\"\n      action: keep\n"
+  recording_rules.yml: '{}
+
+    '
+  rules: '{}'

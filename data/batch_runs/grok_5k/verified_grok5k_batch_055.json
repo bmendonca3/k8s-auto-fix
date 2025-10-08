@@ -1,0 +1,464 @@
+[
+  {
+    "id": "02201",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cm-volume\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - name: config\n      mountPath: /mnt/config\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: config\n    configMap:\n      name: app-properties\n",
+    "errors": []
+  },
+  {
+    "id": "02202",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cm-volume\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - name: config\n      mountPath: /mnt/config\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: config\n    configMap:\n      name: app-properties\n",
+    "errors": []
+  },
+  {
+    "id": "02203",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cm-volume\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - name: config\n      mountPath: /mnt/config\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: config\n    configMap:\n      name: app-properties\n",
+    "errors": []
+  },
+  {
+    "id": "02204",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cm-volume\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - name: config\n      mountPath: /mnt/config\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: config\n    configMap:\n      name: app-properties\n",
+    "errors": []
+  },
+  {
+    "id": "02205",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02206",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02207",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02208",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02209",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02210",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02211",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02212",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n          requests:\n            cpu: 256m\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02213",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02214",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02215",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02216",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02217",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02218",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02219",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: crapi-community\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crapi-community\n  template:\n    metadata:\n      labels:\n        app: crapi-community\n    spec:\n      initContainers:\n      - name: wait-for-postgres\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - postgresdb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-mongo\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - mongodb\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: wait-for-java\n        image: groundnuty/k8s-wait-for:v1.3\n        imagePullPolicy: Always\n        args:\n        - service\n        - crapi-identity\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: crapi-community\n        image: crapi/crapi-community:v1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8087\n        envFrom:\n        - configMapRef:\n            name: crapi-community-configmap\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 256m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02220",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: helloworld-gke\n  labels:\n    app: hello\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app: hello\n  template:\n    metadata:\n      labels:\n        app: hello\n    spec:\n      containers:\n      - name: helloworld-gke\n        image: gcr.io/kpt-dev/helloworld-gke:0.1.0\n        ports:\n        - name: http\n          containerPort: 80\n        env:\n        - name: PORT\n          value: '80'\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02221",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: helloworld-gke\n  labels:\n    app: hello\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app: hello\n  template:\n    metadata:\n      labels:\n        app: hello\n    spec:\n      containers:\n      - name: helloworld-gke\n        image: gcr.io/kpt-dev/helloworld-gke:0.1.0\n        ports:\n        - name: http\n          containerPort: 80\n        env:\n        - name: PORT\n          value: '80'\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02222",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: helloworld-gke\n  labels:\n    app: hello\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app: hello\n  template:\n    metadata:\n      labels:\n        app: hello\n    spec:\n      containers:\n      - name: helloworld-gke\n        image: gcr.io/kpt-dev/helloworld-gke:0.1.0\n        ports:\n        - name: http\n          containerPort: 80\n        env:\n        - name: PORT\n          value: '80'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02223",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: helloworld-gke\n  labels:\n    app: hello\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app: hello\n  template:\n    metadata:\n      labels:\n        app: hello\n    spec:\n      containers:\n      - name: helloworld-gke\n        image: gcr.io/kpt-dev/helloworld-gke:0.1.0\n        ports:\n        - name: http\n          containerPort: 80\n        env:\n        - name: PORT\n          value: '80'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02224",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\n    tier: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      tier: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n        tier: paymentservice\n    spec:\n      containers:\n      - name: server\n        image: izhur85/pay-msdemo:v0.0.2\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02225",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\n    tier: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      tier: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n        tier: paymentservice\n    spec:\n      containers:\n      - name: server\n        image: izhur85/pay-msdemo:v0.0.2\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02226",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\n    tier: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      tier: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n        tier: paymentservice\n    spec:\n      containers:\n      - name: server\n        image: izhur85/pay-msdemo:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02227",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\n    tier: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      tier: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n        tier: paymentservice\n    spec:\n      containers:\n      - name: server\n        image: izhur85/pay-msdemo:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02228",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02229",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02230",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02231",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02232",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02233",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: atlasmap-operator\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      securityContext:\n        runAsNonRoot: true\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        image: controller:stable\n        name: manager\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 8081\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        resources:\n          limits:\n            cpu: 200m\n            memory: 100Mi\n          requests:\n            cpu: 100m\n            memory: 20Mi\n      serviceAccountName: atlasmap-operator\n",
+    "errors": []
+  },
+  {
+    "id": "02234",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: atlasmap-operator\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      securityContext:\n        runAsNonRoot: true\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        image: controller:stable\n        name: manager\n        securityContext:\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 8081\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        resources:\n          limits:\n            cpu: 200m\n            memory: 100Mi\n          requests:\n            cpu: 100m\n            memory: 20Mi\n      serviceAccountName: atlasmap-operator\n",
+    "errors": []
+  },
+  {
+    "id": "02235",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02236",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02237",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02238",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02239",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02240",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  }
+]

@@ -1,0 +1,282 @@
+[
+  {
+    "id": "01761",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0607.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-server\n  labels:\n    app: python\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: python\n      tier: mysql\n  template:\n    metadata:\n      labels:\n        app: python\n        tier: mysql\n    spec:\n      containers:\n      - image: mysql\n        name: mysql\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mysecret\n              key: key\n        ports:\n        - containerPort: 3306\n          name: mysql\n        volumeMounts:\n        - name: mysql-persistent-storage\n          mountPath: /var/lib/mysql\n      volumes:\n      - name: mysql-persistent-storage\n        persistentVolumeClaim:\n          claimName: mysql-pvc\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"mysql\" has cpu request 0"
+  },
+  {
+    "id": "01762",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0607.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-server\n  labels:\n    app: python\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: python\n      tier: mysql\n  template:\n    metadata:\n      labels:\n        app: python\n        tier: mysql\n    spec:\n      containers:\n      - image: mysql\n        name: mysql\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mysecret\n              key: key\n        ports:\n        - containerPort: 3306\n          name: mysql\n        volumeMounts:\n        - name: mysql-persistent-storage\n          mountPath: /var/lib/mysql\n      volumes:\n      - name: mysql-persistent-storage\n        persistentVolumeClaim:\n          claimName: mysql-pvc\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"mysql\" has memory limit 0"
+  },
+  {
+    "id": "01763",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0610.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: consul\n  namespace: consul-back\nspec:\n  selector:\n    matchLabels:\n      app: consul\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: consul\n        storageClassName: rook-ceph-block\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - consul\n            topologyKey: kubernetes.io/hostname\n      serviceAccountName: consul\n      securityContext:\n        fsGroup: 1000\n      containers:\n      - name: consul-exporter\n        args:\n        - --consul.server=127.0.0.1:8500\n        - --consul.ca-file=/etc/tls/ca.pem\n        - --consul.cert-file=/etc/tls/consul-back.pem\n        - --consul.key-file=/etc/tls/consul-back-key.pem\n        image: prom/consul-exporter:v0.4.0\n        ports:\n        - name: metrics\n          containerPort: 9107\n        volumeMounts:\n        - mountPath: /etc/tls\n          name: tls\n      - name: consul\n        image: consul:1.6.1\n        env:\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: GOSSIP_ENCRYPTION_KEY\n          valueFrom:\n            secretKeyRef:\n              name: consul\n              key: gossip-encryption-key\n        - name: CONSUL_HTTP_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: tokens\n              key: acl.tokens.agent\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        args:\n        - consul\n        - agent\n        - -advertise=$(POD_IP)\n        - -bind=0.0.0.0\n        - -bootstrap-expect=3\n        - -retry-join\n        - provider=k8s namespace=$(NAMESPACE) label_selector=\"app=consul\"\n        - -client=0.0.0.0\n        - -config-file=/consul/myconfig/config.json\n        - -datacenter=dc1\n        - -data-dir=/consul/data\n        - -domain=cluster.local\n        - -encrypt=$(GOSSIP_ENCRYPTION_KEY)\n        - -server\n        - -ui\n        - -disable-host-node-id\n        readinessProbe:\n          exec:\n            command:\n            - /bin/sh\n            - -ec\n            - 'curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \\\n\n              grep -E ''\".+\"''\n\n              '\n          failureThreshold: 2\n          initialDelaySeconds: 120\n          periodSeconds: 5\n          successThreshold: 2\n          timeoutSeconds: 5\n        livenessProbe:\n          exec:\n            command:\n            - consul\n            - members\n            - -http-addr=http://127.0.0.1:8500\n          initialDelaySeconds: 300\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: data\n          mountPath: /consul/data\n        - name: tls\n          mountPath: /etc/tls\n        - name: config\n          mountPath: /consul/myconfig\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 250m\n          limits:\n            memory: 256Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8500\n          name: ui-port\n        - containerPort: 8400\n          name: alt-port\n        - containerPort: 53\n          name: udp-port\n        - containerPort: 8443\n          name: https-port\n        - containerPort: 8080\n          name: http-port\n        - containerPort: 8301\n          name: serflan\n        - containerPort: 8302\n          name: serfwan\n        - containerPort: 8600\n          name: consuldns\n        - containerPort: 8300\n          name: server\n      volumes:\n      - name: tls\n        secret:\n          secretName: consul\n      - name: tokens\n        secret:\n          secretName: tokens\n      - name: config\n        configMap:\n          name: consul\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"consul\" does not have a read-only root file system"
+  },
+  {
+    "id": "01764",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0610.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: consul\n  namespace: consul-back\nspec:\n  selector:\n    matchLabels:\n      app: consul\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: consul\n        storageClassName: rook-ceph-block\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - consul\n            topologyKey: kubernetes.io/hostname\n      serviceAccountName: consul\n      securityContext:\n        fsGroup: 1000\n      containers:\n      - name: consul-exporter\n        args:\n        - --consul.server=127.0.0.1:8500\n        - --consul.ca-file=/etc/tls/ca.pem\n        - --consul.cert-file=/etc/tls/consul-back.pem\n        - --consul.key-file=/etc/tls/consul-back-key.pem\n        image: prom/consul-exporter:v0.4.0\n        ports:\n        - name: metrics\n          containerPort: 9107\n        volumeMounts:\n        - mountPath: /etc/tls\n          name: tls\n      - name: consul\n        image: consul:1.6.1\n        env:\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: GOSSIP_ENCRYPTION_KEY\n          valueFrom:\n            secretKeyRef:\n              name: consul\n              key: gossip-encryption-key\n        - name: CONSUL_HTTP_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: tokens\n              key: acl.tokens.agent\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        args:\n        - consul\n        - agent\n        - -advertise=$(POD_IP)\n        - -bind=0.0.0.0\n        - -bootstrap-expect=3\n        - -retry-join\n        - provider=k8s namespace=$(NAMESPACE) label_selector=\"app=consul\"\n        - -client=0.0.0.0\n        - -config-file=/consul/myconfig/config.json\n        - -datacenter=dc1\n        - -data-dir=/consul/data\n        - -domain=cluster.local\n        - -encrypt=$(GOSSIP_ENCRYPTION_KEY)\n        - -server\n        - -ui\n        - -disable-host-node-id\n        readinessProbe:\n          exec:\n            command:\n            - /bin/sh\n            - -ec\n            - 'curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \\\n\n              grep -E ''\".+\"''\n\n              '\n          failureThreshold: 2\n          initialDelaySeconds: 120\n          periodSeconds: 5\n          successThreshold: 2\n          timeoutSeconds: 5\n        livenessProbe:\n          exec:\n            command:\n            - consul\n            - members\n            - -http-addr=http://127.0.0.1:8500\n          initialDelaySeconds: 300\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: data\n          mountPath: /consul/data\n        - name: tls\n          mountPath: /etc/tls\n        - name: config\n          mountPath: /consul/myconfig\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 250m\n          limits:\n            memory: 256Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8500\n          name: ui-port\n        - containerPort: 8400\n          name: alt-port\n        - containerPort: 53\n          name: udp-port\n        - containerPort: 8443\n          name: https-port\n        - containerPort: 8080\n          name: http-port\n        - containerPort: 8301\n          name: serflan\n        - containerPort: 8302\n          name: serfwan\n        - containerPort: 8600\n          name: consuldns\n        - containerPort: 8300\n          name: server\n      volumes:\n      - name: tls\n        secret:\n          secretName: consul\n      - name: tokens\n        secret:\n          secretName: tokens\n      - name: config\n        configMap:\n          name: consul\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"consul-exporter\" does not have a read-only root file system"
+  },
+  {
+    "id": "01765",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0610.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: consul\n  namespace: consul-back\nspec:\n  selector:\n    matchLabels:\n      app: consul\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: consul\n        storageClassName: rook-ceph-block\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - consul\n            topologyKey: kubernetes.io/hostname\n      serviceAccountName: consul\n      securityContext:\n        fsGroup: 1000\n      containers:\n      - name: consul-exporter\n        args:\n        - --consul.server=127.0.0.1:8500\n        - --consul.ca-file=/etc/tls/ca.pem\n        - --consul.cert-file=/etc/tls/consul-back.pem\n        - --consul.key-file=/etc/tls/consul-back-key.pem\n        image: prom/consul-exporter:v0.4.0\n        ports:\n        - name: metrics\n          containerPort: 9107\n        volumeMounts:\n        - mountPath: /etc/tls\n          name: tls\n      - name: consul\n        image: consul:1.6.1\n        env:\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: GOSSIP_ENCRYPTION_KEY\n          valueFrom:\n            secretKeyRef:\n              name: consul\n              key: gossip-encryption-key\n        - name: CONSUL_HTTP_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: tokens\n              key: acl.tokens.agent\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        args:\n        - consul\n        - agent\n        - -advertise=$(POD_IP)\n        - -bind=0.0.0.0\n        - -bootstrap-expect=3\n        - -retry-join\n        - provider=k8s namespace=$(NAMESPACE) label_selector=\"app=consul\"\n        - -client=0.0.0.0\n        - -config-file=/consul/myconfig/config.json\n        - -datacenter=dc1\n        - -data-dir=/consul/data\n        - -domain=cluster.local\n        - -encrypt=$(GOSSIP_ENCRYPTION_KEY)\n        - -server\n        - -ui\n        - -disable-host-node-id\n        readinessProbe:\n          exec:\n            command:\n            - /bin/sh\n            - -ec\n            - 'curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \\\n\n              grep -E ''\".+\"''\n\n              '\n          failureThreshold: 2\n          initialDelaySeconds: 120\n          periodSeconds: 5\n          successThreshold: 2\n          timeoutSeconds: 5\n        livenessProbe:\n          exec:\n            command:\n            - consul\n            - members\n            - -http-addr=http://127.0.0.1:8500\n          initialDelaySeconds: 300\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: data\n          mountPath: /consul/data\n        - name: tls\n          mountPath: /etc/tls\n        - name: config\n          mountPath: /consul/myconfig\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 250m\n          limits:\n            memory: 256Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8500\n          name: ui-port\n        - containerPort: 8400\n          name: alt-port\n        - containerPort: 53\n          name: udp-port\n        - containerPort: 8443\n          name: https-port\n        - containerPort: 8080\n          name: http-port\n        - containerPort: 8301\n          name: serflan\n        - containerPort: 8302\n          name: serfwan\n        - containerPort: 8600\n          name: consuldns\n        - containerPort: 8300\n          name: server\n      volumes:\n      - name: tls\n        secret:\n          secretName: consul\n      - name: tokens\n        secret:\n          secretName: tokens\n      - name: config\n        configMap:\n          name: consul\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"consul\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01766",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0610.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: consul\n  namespace: consul-back\nspec:\n  selector:\n    matchLabels:\n      app: consul\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: consul\n        storageClassName: rook-ceph-block\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - consul\n            topologyKey: kubernetes.io/hostname\n      serviceAccountName: consul\n      securityContext:\n        fsGroup: 1000\n      containers:\n      - name: consul-exporter\n        args:\n        - --consul.server=127.0.0.1:8500\n        - --consul.ca-file=/etc/tls/ca.pem\n        - --consul.cert-file=/etc/tls/consul-back.pem\n        - --consul.key-file=/etc/tls/consul-back-key.pem\n        image: prom/consul-exporter:v0.4.0\n        ports:\n        - name: metrics\n          containerPort: 9107\n        volumeMounts:\n        - mountPath: /etc/tls\n          name: tls\n      - name: consul\n        image: consul:1.6.1\n        env:\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: GOSSIP_ENCRYPTION_KEY\n          valueFrom:\n            secretKeyRef:\n              name: consul\n              key: gossip-encryption-key\n        - name: CONSUL_HTTP_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: tokens\n              key: acl.tokens.agent\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        args:\n        - consul\n        - agent\n        - -advertise=$(POD_IP)\n        - -bind=0.0.0.0\n        - -bootstrap-expect=3\n        - -retry-join\n        - provider=k8s namespace=$(NAMESPACE) label_selector=\"app=consul\"\n        - -client=0.0.0.0\n        - -config-file=/consul/myconfig/config.json\n        - -datacenter=dc1\n        - -data-dir=/consul/data\n        - -domain=cluster.local\n        - -encrypt=$(GOSSIP_ENCRYPTION_KEY)\n        - -server\n        - -ui\n        - -disable-host-node-id\n        readinessProbe:\n          exec:\n            command:\n            - /bin/sh\n            - -ec\n            - 'curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \\\n\n              grep -E ''\".+\"''\n\n              '\n          failureThreshold: 2\n          initialDelaySeconds: 120\n          periodSeconds: 5\n          successThreshold: 2\n          timeoutSeconds: 5\n        livenessProbe:\n          exec:\n            command:\n            - consul\n            - members\n            - -http-addr=http://127.0.0.1:8500\n          initialDelaySeconds: 300\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: data\n          mountPath: /consul/data\n        - name: tls\n          mountPath: /etc/tls\n        - name: config\n          mountPath: /consul/myconfig\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 250m\n          limits:\n            memory: 256Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8500\n          name: ui-port\n        - containerPort: 8400\n          name: alt-port\n        - containerPort: 53\n          name: udp-port\n        - containerPort: 8443\n          name: https-port\n        - containerPort: 8080\n          name: http-port\n        - containerPort: 8301\n          name: serflan\n        - containerPort: 8302\n          name: serfwan\n        - containerPort: 8600\n          name: consuldns\n        - containerPort: 8300\n          name: server\n      volumes:\n      - name: tls\n        secret:\n          secretName: consul\n      - name: tokens\n        secret:\n          secretName: tokens\n      - name: config\n        configMap:\n          name: consul\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"consul-exporter\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01767",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0610.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: consul\n  namespace: consul-back\nspec:\n  selector:\n    matchLabels:\n      app: consul\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: consul\n        storageClassName: rook-ceph-block\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - consul\n            topologyKey: kubernetes.io/hostname\n      serviceAccountName: consul\n      securityContext:\n        fsGroup: 1000\n      containers:\n      - name: consul-exporter\n        args:\n        - --consul.server=127.0.0.1:8500\n        - --consul.ca-file=/etc/tls/ca.pem\n        - --consul.cert-file=/etc/tls/consul-back.pem\n        - --consul.key-file=/etc/tls/consul-back-key.pem\n        image: prom/consul-exporter:v0.4.0\n        ports:\n        - name: metrics\n          containerPort: 9107\n        volumeMounts:\n        - mountPath: /etc/tls\n          name: tls\n      - name: consul\n        image: consul:1.6.1\n        env:\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: GOSSIP_ENCRYPTION_KEY\n          valueFrom:\n            secretKeyRef:\n              name: consul\n              key: gossip-encryption-key\n        - name: CONSUL_HTTP_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: tokens\n              key: acl.tokens.agent\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        args:\n        - consul\n        - agent\n        - -advertise=$(POD_IP)\n        - -bind=0.0.0.0\n        - -bootstrap-expect=3\n        - -retry-join\n        - provider=k8s namespace=$(NAMESPACE) label_selector=\"app=consul\"\n        - -client=0.0.0.0\n        - -config-file=/consul/myconfig/config.json\n        - -datacenter=dc1\n        - -data-dir=/consul/data\n        - -domain=cluster.local\n        - -encrypt=$(GOSSIP_ENCRYPTION_KEY)\n        - -server\n        - -ui\n        - -disable-host-node-id\n        readinessProbe:\n          exec:\n            command:\n            - /bin/sh\n            - -ec\n            - 'curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \\\n\n              grep -E ''\".+\"''\n\n              '\n          failureThreshold: 2\n          initialDelaySeconds: 120\n          periodSeconds: 5\n          successThreshold: 2\n          timeoutSeconds: 5\n        livenessProbe:\n          exec:\n            command:\n            - consul\n            - members\n            - -http-addr=http://127.0.0.1:8500\n          initialDelaySeconds: 300\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: data\n          mountPath: /consul/data\n        - name: tls\n          mountPath: /etc/tls\n        - name: config\n          mountPath: /consul/myconfig\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 250m\n          limits:\n            memory: 256Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8500\n          name: ui-port\n        - containerPort: 8400\n          name: alt-port\n        - containerPort: 53\n          name: udp-port\n        - containerPort: 8443\n          name: https-port\n        - containerPort: 8080\n          name: http-port\n        - containerPort: 8301\n          name: serflan\n        - containerPort: 8302\n          name: serfwan\n        - containerPort: 8600\n          name: consuldns\n        - containerPort: 8300\n          name: server\n      volumes:\n      - name: tls\n        secret:\n          secretName: consul\n      - name: tokens\n        secret:\n          secretName: tokens\n      - name: config\n        configMap:\n          name: consul\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"consul-exporter\" has cpu request 0"
+  },
+  {
+    "id": "01768",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0610.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: consul\n  namespace: consul-back\nspec:\n  selector:\n    matchLabels:\n      app: consul\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: consul\n        storageClassName: rook-ceph-block\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - consul\n            topologyKey: kubernetes.io/hostname\n      serviceAccountName: consul\n      securityContext:\n        fsGroup: 1000\n      containers:\n      - name: consul-exporter\n        args:\n        - --consul.server=127.0.0.1:8500\n        - --consul.ca-file=/etc/tls/ca.pem\n        - --consul.cert-file=/etc/tls/consul-back.pem\n        - --consul.key-file=/etc/tls/consul-back-key.pem\n        image: prom/consul-exporter:v0.4.0\n        ports:\n        - name: metrics\n          containerPort: 9107\n        volumeMounts:\n        - mountPath: /etc/tls\n          name: tls\n      - name: consul\n        image: consul:1.6.1\n        env:\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: GOSSIP_ENCRYPTION_KEY\n          valueFrom:\n            secretKeyRef:\n              name: consul\n              key: gossip-encryption-key\n        - name: CONSUL_HTTP_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: tokens\n              key: acl.tokens.agent\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        args:\n        - consul\n        - agent\n        - -advertise=$(POD_IP)\n        - -bind=0.0.0.0\n        - -bootstrap-expect=3\n        - -retry-join\n        - provider=k8s namespace=$(NAMESPACE) label_selector=\"app=consul\"\n        - -client=0.0.0.0\n        - -config-file=/consul/myconfig/config.json\n        - -datacenter=dc1\n        - -data-dir=/consul/data\n        - -domain=cluster.local\n        - -encrypt=$(GOSSIP_ENCRYPTION_KEY)\n        - -server\n        - -ui\n        - -disable-host-node-id\n        readinessProbe:\n          exec:\n            command:\n            - /bin/sh\n            - -ec\n            - 'curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \\\n\n              grep -E ''\".+\"''\n\n              '\n          failureThreshold: 2\n          initialDelaySeconds: 120\n          periodSeconds: 5\n          successThreshold: 2\n          timeoutSeconds: 5\n        livenessProbe:\n          exec:\n            command:\n            - consul\n            - members\n            - -http-addr=http://127.0.0.1:8500\n          initialDelaySeconds: 300\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: data\n          mountPath: /consul/data\n        - name: tls\n          mountPath: /etc/tls\n        - name: config\n          mountPath: /consul/myconfig\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 250m\n          limits:\n            memory: 256Mi\n            cpu: 500m\n        ports:\n        - containerPort: 8500\n          name: ui-port\n        - containerPort: 8400\n          name: alt-port\n        - containerPort: 53\n          name: udp-port\n        - containerPort: 8443\n          name: https-port\n        - containerPort: 8080\n          name: http-port\n        - containerPort: 8301\n          name: serflan\n        - containerPort: 8302\n          name: serfwan\n        - containerPort: 8600\n          name: consuldns\n        - containerPort: 8300\n          name: server\n      volumes:\n      - name: tls\n        secret:\n          secretName: consul\n      - name: tokens\n        secret:\n          secretName: tokens\n      - name: config\n        configMap:\n          name: consul\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"consul-exporter\" has memory limit 0"
+  },
+  {
+    "id": "01769",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0611.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/component: knative-serving-install\n    app.kubernetes.io/instance: knative-serving-install-v0.11.1\n    app.kubernetes.io/managed-by: kfctl\n    app.kubernetes.io/name: knative-serving-install\n    app.kubernetes.io/part-of: kubeflow\n    app.kubernetes.io/version: v0.11.1\n    kustomize.component: knative\n    serving.knative.dev/release: v0.11.1\n  name: activator\n  namespace: knative-serving\nspec:\n  selector:\n    matchLabels:\n      app: activator\n      app.kubernetes.io/component: knative-serving-install\n      app.kubernetes.io/instance: knative-serving-install-v0.11.1\n      app.kubernetes.io/managed-by: kfctl\n      app.kubernetes.io/name: knative-serving-install\n      app.kubernetes.io/part-of: kubeflow\n      app.kubernetes.io/version: v0.11.1\n      kustomize.component: knative\n      role: activator\n  template:\n    metadata:\n      annotations:\n        cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'\n        sidecar.istio.io/inject: 'true'\n      labels:\n        app: activator\n        app.kubernetes.io/component: knative-serving-install\n        app.kubernetes.io/instance: knative-serving-install-v0.11.1\n        app.kubernetes.io/managed-by: kfctl\n        app.kubernetes.io/name: knative-serving-install\n        app.kubernetes.io/part-of: kubeflow\n        app.kubernetes.io/version: v0.11.1\n        kustomize.component: knative\n        role: activator\n        serving.knative.dev/release: v0.11.1\n    spec:\n      containers:\n      - env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: knative.dev/internal/serving\n        image: gcr.io/knative-releases/knative.dev/serving/cmd/activator@sha256:8e606671215cc029683e8cd633ec5de9eabeaa6e9a4392ff289883304be1f418\n        livenessProbe:\n          httpGet:\n            httpHeaders:\n            - name: k-kubelet-probe\n              value: activator\n            path: /healthz\n            port: 8012\n        name: activator\n        ports:\n        - containerPort: 8012\n          name: http1\n        - containerPort: 8013\n          name: h2c\n        - containerPort: 9090\n          name: metrics\n        - containerPort: 8008\n          name: profiling\n        readinessProbe:\n          httpGet:\n            httpHeaders:\n            - name: k-kubelet-probe\n              value: activator\n            path: /healthz\n            port: 8012\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 600Mi\n          requests:\n            cpu: 300m\n            memory: 60Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n      serviceAccountName: controller\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"activator\" does not have a read-only root file system"
+  },
+  {
+    "id": "01770",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0611.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/component: knative-serving-install\n    app.kubernetes.io/instance: knative-serving-install-v0.11.1\n    app.kubernetes.io/managed-by: kfctl\n    app.kubernetes.io/name: knative-serving-install\n    app.kubernetes.io/part-of: kubeflow\n    app.kubernetes.io/version: v0.11.1\n    kustomize.component: knative\n    serving.knative.dev/release: v0.11.1\n  name: activator\n  namespace: knative-serving\nspec:\n  selector:\n    matchLabels:\n      app: activator\n      app.kubernetes.io/component: knative-serving-install\n      app.kubernetes.io/instance: knative-serving-install-v0.11.1\n      app.kubernetes.io/managed-by: kfctl\n      app.kubernetes.io/name: knative-serving-install\n      app.kubernetes.io/part-of: kubeflow\n      app.kubernetes.io/version: v0.11.1\n      kustomize.component: knative\n      role: activator\n  template:\n    metadata:\n      annotations:\n        cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'\n        sidecar.istio.io/inject: 'true'\n      labels:\n        app: activator\n        app.kubernetes.io/component: knative-serving-install\n        app.kubernetes.io/instance: knative-serving-install-v0.11.1\n        app.kubernetes.io/managed-by: kfctl\n        app.kubernetes.io/name: knative-serving-install\n        app.kubernetes.io/part-of: kubeflow\n        app.kubernetes.io/version: v0.11.1\n        kustomize.component: knative\n        role: activator\n        serving.knative.dev/release: v0.11.1\n    spec:\n      containers:\n      - env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: knative.dev/internal/serving\n        image: gcr.io/knative-releases/knative.dev/serving/cmd/activator@sha256:8e606671215cc029683e8cd633ec5de9eabeaa6e9a4392ff289883304be1f418\n        livenessProbe:\n          httpGet:\n            httpHeaders:\n            - name: k-kubelet-probe\n              value: activator\n            path: /healthz\n            port: 8012\n        name: activator\n        ports:\n        - containerPort: 8012\n          name: http1\n        - containerPort: 8013\n          name: h2c\n        - containerPort: 9090\n          name: metrics\n        - containerPort: 8008\n          name: profiling\n        readinessProbe:\n          httpGet:\n            httpHeaders:\n            - name: k-kubelet-probe\n              value: activator\n            path: /healthz\n            port: 8012\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 600Mi\n          requests:\n            cpu: 300m\n            memory: 60Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n      serviceAccountName: controller\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"activator\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01771",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0612.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: demojob2-workerpool\n  labels:\n    poolname: workerpool\nspec:\n  template:\n    metadata:\n      labels:\n        poolname: workerpool\n    spec:\n      containers:\n      - name: conbot\n        resources:\n          requests:\n            cpu: '6'\n        image: conbot/conbot:latest\n        imagePullPolicy: Always\n        args:\n        - convert\n        - -source\n        - gs://conbot-data/source/10m.csv.gz\n        - -target\n        - /output\n        - -consumer\n        - csv\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"conbot\" is using an invalid container image, \"conbot/conbot:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01772",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0612.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: demojob2-workerpool\n  labels:\n    poolname: workerpool\nspec:\n  template:\n    metadata:\n      labels:\n        poolname: workerpool\n    spec:\n      containers:\n      - name: conbot\n        resources:\n          requests:\n            cpu: '6'\n        image: conbot/conbot:latest\n        imagePullPolicy: Always\n        args:\n        - convert\n        - -source\n        - gs://conbot-data/source/10m.csv.gz\n        - -target\n        - /output\n        - -consumer\n        - csv\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"conbot\" does not have a read-only root file system"
+  },
+  {
+    "id": "01773",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0612.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: demojob2-workerpool\n  labels:\n    poolname: workerpool\nspec:\n  template:\n    metadata:\n      labels:\n        poolname: workerpool\n    spec:\n      containers:\n      - name: conbot\n        resources:\n          requests:\n            cpu: '6'\n        image: conbot/conbot:latest\n        imagePullPolicy: Always\n        args:\n        - convert\n        - -source\n        - gs://conbot-data/source/10m.csv.gz\n        - -target\n        - /output\n        - -consumer\n        - csv\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"conbot\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01774",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0612.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: demojob2-workerpool\n  labels:\n    poolname: workerpool\nspec:\n  template:\n    metadata:\n      labels:\n        poolname: workerpool\n    spec:\n      containers:\n      - name: conbot\n        resources:\n          requests:\n            cpu: '6'\n        image: conbot/conbot:latest\n        imagePullPolicy: Always\n        args:\n        - convert\n        - -source\n        - gs://conbot-data/source/10m.csv.gz\n        - -target\n        - /output\n        - -consumer\n        - csv\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"conbot\" has memory limit 0"
+  },
+  {
+    "id": "01775",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0614.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: kube-state-metrics\n    app.kubernetes.io/version: 1.9.5\n  name: kube-state-metrics\n  namespace: kube-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: kube-state-metrics\n        app.kubernetes.io/version: 1.9.5\n    spec:\n      containers:\n      - image: quay.io/coreos/kube-state-metrics:v1.9.5\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        name: kube-state-metrics\n        ports:\n        - containerPort: 8080\n          name: http-metrics\n        - containerPort: 8081\n          name: telemetry\n        readinessProbe:\n          httpGet:\n            path: /\n            port: 8081\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        securityContext:\n          runAsUser: 65534\n      serviceAccountName: kube-state-metrics\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"kube-state-metrics\" does not have a read-only root file system"
+  },
+  {
+    "id": "01776",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0614.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: kube-state-metrics\n    app.kubernetes.io/version: 1.9.5\n  name: kube-state-metrics\n  namespace: kube-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: kube-state-metrics\n        app.kubernetes.io/version: 1.9.5\n    spec:\n      containers:\n      - image: quay.io/coreos/kube-state-metrics:v1.9.5\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        name: kube-state-metrics\n        ports:\n        - containerPort: 8080\n          name: http-metrics\n        - containerPort: 8081\n          name: telemetry\n        readinessProbe:\n          httpGet:\n            path: /\n            port: 8081\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        securityContext:\n          runAsUser: 65534\n      serviceAccountName: kube-state-metrics\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"kube-state-metrics\" has cpu request 0"
+  },
+  {
+    "id": "01777",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0614.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: kube-state-metrics\n    app.kubernetes.io/version: 1.9.5\n  name: kube-state-metrics\n  namespace: kube-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: kube-state-metrics\n        app.kubernetes.io/version: 1.9.5\n    spec:\n      containers:\n      - image: quay.io/coreos/kube-state-metrics:v1.9.5\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        name: kube-state-metrics\n        ports:\n        - containerPort: 8080\n          name: http-metrics\n        - containerPort: 8081\n          name: telemetry\n        readinessProbe:\n          httpGet:\n            path: /\n            port: 8081\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        securityContext:\n          runAsUser: 65534\n      serviceAccountName: kube-state-metrics\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"kube-state-metrics\" has memory limit 0"
+  },
+  {
+    "id": "01778",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod2\nspec:\n  containers:\n  - name: pod2\n    image: ubuntu:16.04\n    args:\n    - sh\n    - -c\n    - sleep 10; true\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"pod2\" does not have a read-only root file system"
+  },
+  {
+    "id": "01779",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod2\nspec:\n  containers:\n  - name: pod2\n    image: ubuntu:16.04\n    args:\n    - sh\n    - -c\n    - sleep 10; true\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"pod2\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01780",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod2\nspec:\n  containers:\n  - name: pod2\n    image: ubuntu:16.04\n    args:\n    - sh\n    - -c\n    - sleep 10; true\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"pod2\" has cpu request 0"
+  },
+  {
+    "id": "01781",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod2\nspec:\n  containers:\n  - name: pod2\n    image: ubuntu:16.04\n    args:\n    - sh\n    - -c\n    - sleep 10; true\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"pod2\" has memory limit 0"
+  },
+  {
+    "id": "01782",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0621.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    run: hello\n  name: hello\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      run: hello\n  template:\n    metadata:\n      labels:\n        run: hello\n    spec:\n      containers:\n      - image: k8s.gcr.io/echoserver:1.9\n        name: hello\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"hello\" does not have a read-only root file system"
+  },
+  {
+    "id": "01783",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0621.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    run: hello\n  name: hello\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      run: hello\n  template:\n    metadata:\n      labels:\n        run: hello\n    spec:\n      containers:\n      - image: k8s.gcr.io/echoserver:1.9\n        name: hello\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"hello\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01784",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0621.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    run: hello\n  name: hello\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      run: hello\n  template:\n    metadata:\n      labels:\n        run: hello\n    spec:\n      containers:\n      - image: k8s.gcr.io/echoserver:1.9\n        name: hello\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"hello\" has cpu request 0"
+  },
+  {
+    "id": "01785",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0621.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    run: hello\n  name: hello\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      run: hello\n  template:\n    metadata:\n      labels:\n        run: hello\n    spec:\n      containers:\n      - image: k8s.gcr.io/echoserver:1.9\n        name: hello\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"hello\" has memory limit 0"
+  },
+  {
+    "id": "01786",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kubeecho-folder\n  labels:\n    app: kubeecho-folder\nspec:\n  selector:\n    matchLabels:\n      app: kubeecho-folder\n  template:\n    metadata:\n      labels:\n        app: kubeecho-folder\n    spec:\n      containers:\n      - name: kubeecho-folder\n        image: emrahkk/kube-echo:latest\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 3000\n          name: http\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 3000\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 3000\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"kubeecho-folder\" is using an invalid container image, \"emrahkk/kube-echo:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01787",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kubeecho-folder\n  labels:\n    app: kubeecho-folder\nspec:\n  selector:\n    matchLabels:\n      app: kubeecho-folder\n  template:\n    metadata:\n      labels:\n        app: kubeecho-folder\n    spec:\n      containers:\n      - name: kubeecho-folder\n        image: emrahkk/kube-echo:latest\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 3000\n          name: http\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 3000\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 3000\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"kubeecho-folder\" does not have a read-only root file system"
+  },
+  {
+    "id": "01788",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kubeecho-folder\n  labels:\n    app: kubeecho-folder\nspec:\n  selector:\n    matchLabels:\n      app: kubeecho-folder\n  template:\n    metadata:\n      labels:\n        app: kubeecho-folder\n    spec:\n      containers:\n      - name: kubeecho-folder\n        image: emrahkk/kube-echo:latest\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 3000\n          name: http\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 3000\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 3000\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"kubeecho-folder\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01789",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0626.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vpa-recommender\n  namespace: kube-system\n  labels:\n    application: vpa-recommender\n    version: patched-0.5.1-master-16\n    component: vpa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      application: vpa-recommender\n  template:\n    metadata:\n      labels:\n        application: vpa-recommender\n        version: patched-0.5.1-master-16\n        component: vpa\n    spec:\n      serviceAccountName: system\n      containers:\n      - name: recommender\n        image: registry.opensource.zalan.do/teapot/vpa-recommender:patched-0.5.1-master-16\n        args:\n        - --stderrthreshold=info\n        - --v=5\n        - --memory-saver\n        - --pod-recommendation-min-memory-mb=50\n        command:\n        - /recommender\n        resources:\n          limits:\n            cpu: 200m\n            memory: 500Mi\n          requests:\n            cpu: 200m\n            memory: 500Mi\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"recommender\" does not have a read-only root file system"
+  },
+  {
+    "id": "01790",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0626.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vpa-recommender\n  namespace: kube-system\n  labels:\n    application: vpa-recommender\n    version: patched-0.5.1-master-16\n    component: vpa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      application: vpa-recommender\n  template:\n    metadata:\n      labels:\n        application: vpa-recommender\n        version: patched-0.5.1-master-16\n        component: vpa\n    spec:\n      serviceAccountName: system\n      containers:\n      - name: recommender\n        image: registry.opensource.zalan.do/teapot/vpa-recommender:patched-0.5.1-master-16\n        args:\n        - --stderrthreshold=info\n        - --v=5\n        - --memory-saver\n        - --pod-recommendation-min-memory-mb=50\n        command:\n        - /recommender\n        resources:\n          limits:\n            cpu: 200m\n            memory: 500Mi\n          requests:\n            cpu: 200m\n            memory: 500Mi\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"recommender\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01791",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: devopsgirls-pod\n  labels:\n    name: devopsgirls-pod\nspec:\n  containers:\n  - image: nginx:latest\n    name: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01792",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: devopsgirls-pod\n  labels:\n    name: devopsgirls-pod\nspec:\n  containers:\n  - image: nginx:latest\n    name: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "01793",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: devopsgirls-pod\n  labels:\n    name: devopsgirls-pod\nspec:\n  containers:\n  - image: nginx:latest\n    name: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01794",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: devopsgirls-pod\n  labels:\n    name: devopsgirls-pod\nspec:\n  containers:\n  - image: nginx:latest\n    name: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "01795",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: devopsgirls-pod\n  labels:\n    name: devopsgirls-pod\nspec:\n  containers:\n  - image: nginx:latest\n    name: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "01796",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0633.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: default-demo\nspec:\n  containers:\n  - name: default-demo-ctr\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"default-demo-ctr\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01797",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0633.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: default-demo\nspec:\n  containers:\n  - name: default-demo-ctr\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"default-demo-ctr\" does not have a read-only root file system"
+  },
+  {
+    "id": "01798",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0633.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: default-demo\nspec:\n  containers:\n  - name: default-demo-ctr\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"default-demo-ctr\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01799",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0633.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: default-demo\nspec:\n  containers:\n  - name: default-demo-ctr\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"default-demo-ctr\" has cpu request 0"
+  },
+  {
+    "id": "01800",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0633.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: default-demo\nspec:\n  containers:\n  - name: default-demo-ctr\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"default-demo-ctr\" has memory limit 0"
+  }
+]

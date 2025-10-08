@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity
+  labels:
+    service: identity
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: identity
+      tier: backend
+  minReadySeconds: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        service: identity
+        tier: backend
+    spec:
+      containers:
+      - name: identity
+        image: eu.gcr.io/chmsqrt2-truesparrow-common/identity:latest
+        ports:
+        - containerPort: 10001
+        livenessProbe:
+          httpGet:
+            path: /status/check
+            port: 10001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /status/check
+            port: 10001
+        envFrom:
+        - configMapRef:
+            name: identity
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: identity-secrets
+              key: POSTGRES_PASSWORD
+        - name: AUTH0_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: identity-secrets
+              key: AUTH0_CLIENT_SECRET
+      - name: cloudsql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.11
+        command:
+        - /cloud_sql_proxy
+        args:
+        - -instances=$(POSTGRES_CLOUDSQL_CONNECTION_NAME)=tcp:$(POSTGRES_PORT)
+        - -credential_file=/secrets/gcp-service-identity-key.json
+        envFrom:
+        - configMapRef:
+            name: identity
+        volumeMounts:
+        - name: secrets
+          mountPath: /secrets
+          readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+          secretName: identity-secrets
+          items:
+          - key: SERVICE_IDENTITY_SERVICE_KEY
+            path: gcp-service-identity-key.json

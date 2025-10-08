@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hadoop-namenode
+  labels:
+    app: hadoop
+    unit: namenode
+spec:
+  serviceName: hadoop
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hadoop
+      unit: namenode
+  template:
+    metadata:
+      labels:
+        app: hadoop
+        unit: namenode
+    spec:
+      initContainers:
+      - name: hadoop-init
+        image: mpolatcan/hadoop:3.2.1-java8
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        args:
+        - -c
+        - $(INIT_SCRIPT)
+        envFrom:
+        - configMapRef:
+            name: hadoop-init
+        volumeMounts:
+        - mountPath: /hadoop-state
+          name: hadoop-nn-volume
+      containers:
+      - name: hadoop-namenode
+        image: mpolatcan/hadoop:3.2.1-java8
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: hadoop-namenode
+        volumeMounts:
+        - mountPath: /home/hduser
+          name: hadoop-nn-volume
+        livenessProbe:
+          tcpSocket:
+            port: 9870
+          initialDelaySeconds: 15
+          periodSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 9870
+          initialDelaySeconds: 15
+          periodSeconds: 2
+          failureThreshold: 3
+      securityContext:
+        fsGroup: 1000
+      restartPolicy: Always
+  volumeClaimTemplates:
+  - metadata:
+      name: hadoop-nn-volume
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: gce-pd-hdd
+      resources:
+        requests:
+          storage: 50Gi

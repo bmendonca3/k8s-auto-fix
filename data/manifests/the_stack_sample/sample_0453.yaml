@@ -1,0 +1,46 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: ecr-refresh
+spec:
+  jobTemplate:
+    metadata:
+      name: ecr-refresh
+    spec:
+      template:
+        spec:
+          containers:
+          - image: public.ecr.aws/m3i7d4x6/ecr-refresh:latest
+            name: ecr-refresh
+            env:
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: ecr-refresh
+                  key: aws_region
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: ecr-refresh
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: ecr-refresh
+                  key: aws_secret_access_key
+            volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          imagePullSecrets:
+          - name: ecr-creds
+          restartPolicy: OnFailure
+          serviceAccountName: svc-ecr-refresh
+          volumes:
+          - name: config
+            configMap:
+              name: ecr-refresh
+              items:
+              - key: application.yml
+                path: application.yml
+  schedule: 0 */12 * * *

@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    funktion.fabric8.io/kind: Connector
+  name: flink
+data:
+  deployment.yml: "---\napiVersion: extensions/v1beta1\nkind: Deployment\nmetadata:\n\
+    \  labels:\n    funktion.fabric8.io/kind: Subscription\n    connector: flink\n\
+    spec:\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        funktion.fabric8.io/kind:\
+    \ Subscription\n        connector: flink\n    spec:\n      containers:\n     \
+    \ - image: funktion/connector-flink:${project.version}\n        name: connector\n"
+  schema.yml: "---\ncomponent:\n  kind: component\n  scheme: flink\n  syntax: flink:endpointType\n\
+    \  title: Apache Flink\n  description: The flink component can be used to send\
+    \ DataSet jobs to Apache Flink cluster.\n  label: hadoop\n  deprecated: false\n\
+    \  async: false\n  producerOnly: true\n  javaType: org.apache.camel.component.flink.FlinkComponent\n\
+    \  groupId: org.apache.camel\n  artifactId: camel-flink\n  version: 2.18.3\ncomponentProperties:\n\
+    \  dataSet:\n    kind: property\n    type: object\n    javaType: org.apache.flink.api.java.DataSet\n\
+    \    deprecated: false\n    secret: false\n    description: DataSet to compute\
+    \ against.\n    order: 0\n  dataStream:\n    kind: property\n    type: object\n\
+    \    javaType: org.apache.flink.streaming.api.datastream.DataStream\n    deprecated:\
+    \ false\n    secret: false\n    description: DataStream to compute against.\n\
+    \    order: 1\n  dataSetCallback:\n    kind: property\n    type: object\n    javaType:\
+    \ org.apache.camel.component.flink.DataSetCallback\n    deprecated: false\n  \
+    \  secret: false\n    description: Function performing action against a DataSet.\n\
+    \    order: 2\n  dataStreamCallback:\n    kind: property\n    type: object\n \
+    \   javaType: org.apache.camel.component.flink.DataStreamCallback\n    deprecated:\
+    \ false\n    secret: false\n    description: Function performing action against\
+    \ a DataStream.\n    order: 3\nproperties:\n  endpointType:\n    kind: path\n\
+    \    group: producer\n    required: true\n    type: string\n    javaType: org.apache.camel.component.flink.EndpointType\n\
+    \    enum:\n    - dataset\n    - datastream\n    deprecated: false\n    secret:\
+    \ false\n    description: Type of the endpoint (dataset datastream).\n    order:\
+    \ 0\n  collect:\n    kind: parameter\n    group: producer\n    type: boolean\n\
+    \    javaType: boolean\n    deprecated: false\n    secret: false\n    defaultValue:\
+    \ true\n    description: Indicates if results should be collected or counted.\n\
+    \    order: 1\n  dataSet:\n    kind: parameter\n    group: producer\n    type:\
+    \ object\n    javaType: org.apache.flink.api.java.DataSet\n    deprecated: false\n\
+    \    secret: false\n    description: DataSet to compute against.\n    order: 2\n\
+    \  dataSetCallback:\n    kind: parameter\n    group: producer\n    type: object\n\
+    \    javaType: org.apache.camel.component.flink.DataSetCallback\n    deprecated:\
+    \ false\n    secret: false\n    description: Function performing action against\
+    \ a DataSet.\n    order: 3\n  dataStream:\n    kind: parameter\n    group: producer\n\
+    \    type: object\n    javaType: org.apache.flink.streaming.api.datastream.DataStream\n\
+    \    deprecated: false\n    secret: false\n    description: DataStream to compute\
+    \ against.\n    order: 4\n  dataStreamCallback:\n    kind: parameter\n    group:\
+    \ producer\n    type: object\n    javaType: org.apache.camel.component.flink.DataStreamCallback\n\
+    \    deprecated: false\n    secret: false\n    description: Function performing\
+    \ action against a DataStream.\n    order: 5\n  synchronous:\n    kind: parameter\n\
+    \    group: advanced\n    label: advanced\n    type: boolean\n    javaType: boolean\n\
+    \    deprecated: false\n    secret: false\n    defaultValue: false\n    description:\
+    \ Sets whether synchronous processing should be strictly used or Camel is allowed\
+    \ to use asynchronous processing (if supported).\n    order: 6\n"
+  documentation.adoc: "[[camel-flink-CamelFlinkComponent]]\nCamel Flink Component\n\
+    ~~~~~~~~~~~~~~~~~~~~~\n\n*Available as of Camel 2.18*\n\nThis documentation page\
+    \ covers the https://flink.apache.org[Apache Flink]\ncomponent for the Apache\
+    \ Camel. The\_*camel-flink*\_component provides a\nbridge between Camel connectors\
+    \ and Flink tasks. +\nThis Camel Flink connector provides a way to route message\
+    \ from various\ntransports, dynamically choosing a flink task to execute, use\
+    \ incoming\nmessage as input data for the task and finally deliver the results\
+    \ back to\nthe Camel pipeline.\n\nMaven users will need to add the following dependency\
+    \ to\ntheir\_`pom.xml`\_for this component:\n\n[source,xml]\n------------------------------------------------------------\n\
+    <dependency>\n    <groupId>org.apache.camel</groupId>\n    <artifactId>camel-flink</artifactId>\n\
+    \    <version>x.x.x</version>\n    <!-- use the same version as your Camel core\
+    \ version -->\n</dependency>\n------------------------------------------------------------\n\
+    \n[[camel-flink-URIFormat]]\nURI Format\n^^^^^^^^^^\n\nCurrently, the Flink Component\
+    \ supports only Producers. One can create DataSet, DataStream jobs.\n\n[source,java]\n\
+    -------------------------------------------------\nflink:dataset?dataset=#myDataSet&dataSetCallback=#dataSetCallback\n\
+    flink:datastream?datastream=#myDataStream&dataStreamCallback=#dataStreamCallback\n\
+    -------------------------------------------------\n\n[[Flink-FlinkEndpointOptions]]\n\
+    FlinkEndpoint Options\n\n\n\n// endpoint options: START\nThe Apache Flink component\
+    \ supports 7 endpoint options which are listed below:\n\n{% raw %}\n[width=\"\
+    100%\",cols=\"2,1,1m,1m,5\",options=\"header\"]\n|=======================================================================\n\
+    | Name | Group | Default | Java Type | Description\n| endpointType | producer\
+    \ |  | EndpointType | *Required* Type of the endpoint (dataset datastream).\n\
+    | collect | producer | true | boolean | Indicates if results should be collected\
+    \ or counted.\n| dataSet | producer |  | DataSet | DataSet to compute against.\n\
+    | dataSetCallback | producer |  | DataSetCallback | Function performing action\
+    \ against a DataSet.\n| dataStream | producer |  | DataStream | DataStream to\
+    \ compute against.\n| dataStreamCallback | producer |  | DataStreamCallback |\
+    \ Function performing action against a DataStream.\n| synchronous | advanced |\
+    \ false | boolean | Sets whether synchronous processing should be strictly used\
+    \ or Camel is allowed to use asynchronous processing (if supported).\n|=======================================================================\n\
+    {% endraw %}\n// endpoint options: END\n\n\n\n[[Flink-FlinkComponentOptions]]\n\
+    FlinkComponent Options\n^^^^^^^^^^^^^^^^^^^^\n\n\n\n\n// component options: START\n\
+    The Apache Flink component supports 4 options which are listed below.\n\n\n\n\
+    {% raw %}\n[width=\"100%\",cols=\"2,1m,7\",options=\"header\"]\n|=======================================================================\n\
+    | Name | Java Type | Description\n| dataSet | DataSet | DataSet to compute against.\n\
+    | dataStream | DataStream | DataStream to compute against.\n| dataSetCallback\
+    \ | DataSetCallback | Function performing action against a DataSet.\n| dataStreamCallback\
+    \ | DataStreamCallback | Function performing action against a DataStream.\n|=======================================================================\n\
+    {% endraw %}\n// component options: END\n\n\n\n\n\nFlink DataSet Callback\n^^^^^^^^^^^^^^^^^^^^^^\n\
+    \n[source,java]\n-----------------------------------\n@Bean\npublic DataSetCallback<Long>\
+    \ dataSetCallback() {\n    return new DataSetCallback<Long>() {\n        public\
+    \ Long onDataSet(DataSet dataSet, Object... objects) {\n            try {\n  \
+    \               dataSet.print();\n                 return new Long(0);\n     \
+    \       } catch (Exception e) {\n                 return new Long(-1);\n     \
+    \       }\n        }\n    };\n}\n-----------------------------------\n\nFlink\
+    \ DataStream Callback\n^^^^^^^^^^^^^^^^^^^^^^^^^\n\n[source,java]\n---------------------------\n\
+    @Bean\npublic VoidDataStreamCallback dataStreamCallback() {\n    return new VoidDataStreamCallback()\
+    \ {\n        @Override\n        public void doOnDataStream(DataStream dataStream,\
+    \ Object... objects) throws Exception {\n            dataStream.flatMap(new Splitter()).print();\n\
+    \n            environment.execute(\"data stream test\");\n        }\n    };\n\
+    }\n---------------------------\n\nCamel-Flink Producer call\n^^^^^^^^^^^^^^^^^^^^^^^^^\n\
+    \n[source,java]\n-----------------------------------\nCamelContext camelContext\
+    \ = new SpringCamelContext(context);\n\nString pattern = \"foo\";\n\ntry {\n \
+    \   ProducerTemplate template = camelContext.createProducerTemplate();\n    camelContext.start();\n\
+    \    Long count = template.requestBody(\"flink:dataSet?dataSet=#myDataSet&dataSetCallback=#countLinesContaining\"\
+    , pattern, Long.class);\n    } finally {\n        camelContext.stop();\n    }\n\
+    -----------------------------------\n\nSee Also\n^^^^^^^^\n\n* link:configuring-camel.html[Configuring\
+    \ Camel]\n* link:component.html[Component]\n* link:endpoint.html[Endpoint]\n*\
+    \ link:getting-started.html[Getting Started]"

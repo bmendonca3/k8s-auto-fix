@@ -1,0 +1,47 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cron-unbherbarium-lib-unb-ca
+  namespace: dev
+  labels:
+    app: drupal
+    tier: cron
+spec:
+  schedule: 08,23,38,53 * * * *
+  startingDeadlineSeconds: 480
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      name: cron-unbherbarium-lib-unb-ca
+      labels:
+        app: drupal
+        tier: cron
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            deployenv: dev
+          containers:
+          - name: cron-unbherbarium-lib-unb-ca
+            command:
+            - /scripts/drupalCronEntry.sh
+            env:
+            - name: DEPLOY_ENV
+              value: dev
+            - name: MYSQL_HOSTNAME
+              value: drupal-mysql-lib-unb-ca
+            - name: MYSQL_PORT
+              value: '3306'
+            image: '||DEPLOYMENTIMAGE||'
+            imagePullPolicy: Always
+            volumeMounts:
+            - mountPath: /app/html/sites/default
+              name: drupal-persistent-storage
+          priorityClassName: cron-priority-services
+          imagePullSecrets:
+          - name: github-container-registry-auth
+          restartPolicy: Never
+          volumes:
+          - name: drupal-persistent-storage
+            persistentVolumeClaim:
+              claimName: unbherbarium-lib-unb-ca

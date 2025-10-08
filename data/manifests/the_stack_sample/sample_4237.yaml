@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    environment: prod
+spec:
+  selector:
+    matchLabels:
+      environment: prod
+  template:
+    metadata:
+      labels:
+        environment: prod
+    spec:
+      serviceAccountName: chart-verifier-admin
+      containers:
+      - name: token
+        image: quay.io/baijum/token:latest
+        ports:
+        - containerPort: 7080
+        volumeMounts:
+        - name: config
+          mountPath: /bindings
+      volumes:
+      - name: config
+        secret:
+          secretName: secret-github-repository

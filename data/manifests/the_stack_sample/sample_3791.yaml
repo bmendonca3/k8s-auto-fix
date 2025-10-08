@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opengauss-playground-backend
+  namespace: opengauss-playground-backend-test
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: opengauss-playground-backend
+  template:
+    metadata:
+      labels:
+        app: opengauss-playground-backend
+    spec:
+      imagePullSecrets:
+      - name: huawei-swr-image-pull-secret
+      containers:
+      - name: opengauss-playground-backend
+        image: swr.cn-north-4.myhuaweicloud.com/opensourceway/opengauss-playground-backend-test:8f05cabf3ff6b16520fc8d7a4365ac225961f5e0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: db-username
+        - name: DB_PWD
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: db-passwd
+        - name: DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: db-uri
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: db-name
+        - name: AES_KEY
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: aes-key
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: gitee-client-secret
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: gitee-client-id
+        - name: OAUTH2_CALLBACK
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: oauth2-callback
+        - name: USERPOOL_ID
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: userpool-id
+        - name: USERPOOL_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: userpool-secret
+        - name: CONTAINER_TIMEOUT
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: container-timeout
+        - name: TEMPLATE_PATH
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: template_path
+        - name: TZ
+          value: Asia/Shanghai
+        - name: COURSE_URL
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: course_url
+        - name: CHAPTER_URL
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: chapter_url
+        - name: CHAPTER_DETAIL_URL
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: chapter_detail_url
+        - name: CONTACT_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: opengauss-playground-backend-secrets
+              key: contact_email
+        - name: RUN_MODE
+          value: prod
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 1500m
+            memory: 3000Mi
+          limits:
+            cpu: 1500m
+            memory: 3000Mi
+        volumeMounts:
+        - mountPath: /opt/app/statisticslog
+          name: static-log-data
+      volumes:
+      - name: static-log-data
+        persistentVolumeClaim:
+          claimName: cce-obs-opengauss-playground-manager

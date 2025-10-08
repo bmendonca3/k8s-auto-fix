@@ -1,0 +1,460 @@
+[
+  {
+    "id": "01721",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "errors": []
+  },
+  {
+    "id": "01722",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "errors": []
+  },
+  {
+    "id": "01723",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "errors": []
+  },
+  {
+    "id": "01724",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01725",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01726",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01727",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01728",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mongo-posts\n  name: mongo-posts\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mongo-posts\n  template:\n    metadata:\n      labels:\n        app: mongo-posts\n    spec:\n      containers:\n      - image: mongo:4.4.6\n        name: mongo-posts\n        args:\n        - --dbpath\n        - /data/db\n        livenessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        readinessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        env:\n        - name: MONGO_INITDB_ROOT_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: username\n        - name: MONGO_INITDB_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: password\n        volumeMounts:\n        - name: mongo-data-dir-posts\n          mountPath: /data/db\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mongo-data-dir-posts\n        persistentVolumeClaim:\n          claimName: mongo-data-posts\n",
+    "errors": []
+  },
+  {
+    "id": "01729",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mongo-posts\n  name: mongo-posts\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mongo-posts\n  template:\n    metadata:\n      labels:\n        app: mongo-posts\n    spec:\n      containers:\n      - image: mongo:4.4.6\n        name: mongo-posts\n        args:\n        - --dbpath\n        - /data/db\n        livenessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        readinessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        env:\n        - name: MONGO_INITDB_ROOT_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: username\n        - name: MONGO_INITDB_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: password\n        volumeMounts:\n        - name: mongo-data-dir-posts\n          mountPath: /data/db\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mongo-data-dir-posts\n        persistentVolumeClaim:\n          claimName: mongo-data-posts\n",
+    "errors": []
+  },
+  {
+    "id": "01730",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mongo-posts\n  name: mongo-posts\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mongo-posts\n  template:\n    metadata:\n      labels:\n        app: mongo-posts\n    spec:\n      containers:\n      - image: mongo:4.4.6\n        name: mongo-posts\n        args:\n        - --dbpath\n        - /data/db\n        livenessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        readinessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        env:\n        - name: MONGO_INITDB_ROOT_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: username\n        - name: MONGO_INITDB_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: password\n        volumeMounts:\n        - name: mongo-data-dir-posts\n          mountPath: /data/db\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mongo-data-dir-posts\n        persistentVolumeClaim:\n          claimName: mongo-data-posts\n",
+    "errors": []
+  },
+  {
+    "id": "01731",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mongo-posts\n  name: mongo-posts\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mongo-posts\n  template:\n    metadata:\n      labels:\n        app: mongo-posts\n    spec:\n      containers:\n      - image: mongo:4.4.6\n        name: mongo-posts\n        args:\n        - --dbpath\n        - /data/db\n        livenessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        readinessProbe:\n          exec:\n            command:\n            - mongo\n            - --disableImplicitSessions\n            - --eval\n            - db.adminCommand('ping')\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          timeoutSeconds: 5\n          successThreshold: 1\n          failureThreshold: 6\n        env:\n        - name: MONGO_INITDB_ROOT_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: username\n        - name: MONGO_INITDB_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mongo-creds\n              key: password\n        volumeMounts:\n        - name: mongo-data-dir-posts\n          mountPath: /data/db\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mongo-data-dir-posts\n        persistentVolumeClaim:\n          claimName: mongo-data-posts\n",
+    "errors": []
+  },
+  {
+    "id": "01732",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: camel-k-operator\n  labels:\n    app: camel-k\n    camel.apache.org/component: operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: camel-k-operator\n  template:\n    metadata:\n      labels:\n        name: camel-k-operator\n        camel.apache.org/component: operator\n        app: camel-k\n    spec:\n      serviceAccountName: camel-k-operator\n      containers:\n      - name: camel-k-operator\n        image: docker.io/apache/camel-k:1.9.0-SNAPSHOT\n        imagePullPolicy: IfNotPresent\n        command:\n        - kamel\n        - operator\n        ports:\n        - containerPort: 8080\n          name: metrics\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: OPERATOR_NAME\n          value: camel-k\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 20\n          periodSeconds: 10\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01733",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: camel-k-operator\n  labels:\n    app: camel-k\n    camel.apache.org/component: operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: camel-k-operator\n  template:\n    metadata:\n      labels:\n        name: camel-k-operator\n        camel.apache.org/component: operator\n        app: camel-k\n    spec:\n      serviceAccountName: camel-k-operator\n      containers:\n      - name: camel-k-operator\n        image: docker.io/apache/camel-k:1.9.0-SNAPSHOT\n        imagePullPolicy: IfNotPresent\n        command:\n        - kamel\n        - operator\n        ports:\n        - containerPort: 8080\n          name: metrics\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: OPERATOR_NAME\n          value: camel-k\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 20\n          periodSeconds: 10\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01734",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: camel-k-operator\n  labels:\n    app: camel-k\n    camel.apache.org/component: operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: camel-k-operator\n  template:\n    metadata:\n      labels:\n        name: camel-k-operator\n        camel.apache.org/component: operator\n        app: camel-k\n    spec:\n      serviceAccountName: camel-k-operator\n      containers:\n      - name: camel-k-operator\n        image: docker.io/apache/camel-k:1.9.0-SNAPSHOT\n        imagePullPolicy: IfNotPresent\n        command:\n        - kamel\n        - operator\n        ports:\n        - containerPort: 8080\n          name: metrics\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: OPERATOR_NAME\n          value: camel-k\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 20\n          periodSeconds: 10\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01735",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: camel-k-operator\n  labels:\n    app: camel-k\n    camel.apache.org/component: operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: camel-k-operator\n  template:\n    metadata:\n      labels:\n        name: camel-k-operator\n        camel.apache.org/component: operator\n        app: camel-k\n    spec:\n      serviceAccountName: camel-k-operator\n      containers:\n      - name: camel-k-operator\n        image: docker.io/apache/camel-k:1.9.0-SNAPSHOT\n        imagePullPolicy: IfNotPresent\n        command:\n        - kamel\n        - operator\n        ports:\n        - containerPort: 8080\n          name: metrics\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: OPERATOR_NAME\n          value: camel-k\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 20\n          periodSeconds: 10\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01736",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-2987\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01737",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-2987\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01738",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-2987\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01739",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-2987\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01740",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-2987\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01741",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01742",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01743",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01744",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lhci-server\nspec:\n  selector:\n    matchLabels:\n      name: lhci-server\n  template:\n    metadata:\n      name: lhci-pod\n      labels:\n        name: lhci-server\n    spec:\n      containers:\n      - name: lhci-server\n        image: docker.io/patrickhulce/lhci-server:0.6.1\n        volumeMounts:\n        - mountPath: /data\n          name: lhci-data-volume\n        ports:\n        - containerPort: 9001\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 9001\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: lhci-data-volume\n        persistentVolumeClaim:\n          claimName: lhci-data-claim\n",
+    "errors": []
+  },
+  {
+    "id": "01745",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lhci-server\nspec:\n  selector:\n    matchLabels:\n      name: lhci-server\n  template:\n    metadata:\n      name: lhci-pod\n      labels:\n        name: lhci-server\n    spec:\n      containers:\n      - name: lhci-server\n        image: docker.io/patrickhulce/lhci-server:0.6.1\n        volumeMounts:\n        - mountPath: /data\n          name: lhci-data-volume\n        ports:\n        - containerPort: 9001\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 9001\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: lhci-data-volume\n        persistentVolumeClaim:\n          claimName: lhci-data-claim\n",
+    "errors": []
+  },
+  {
+    "id": "01746",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lhci-server\nspec:\n  selector:\n    matchLabels:\n      name: lhci-server\n  template:\n    metadata:\n      name: lhci-pod\n      labels:\n        name: lhci-server\n    spec:\n      containers:\n      - name: lhci-server\n        image: docker.io/patrickhulce/lhci-server:0.6.1\n        volumeMounts:\n        - mountPath: /data\n          name: lhci-data-volume\n        ports:\n        - containerPort: 9001\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 9001\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: lhci-data-volume\n        persistentVolumeClaim:\n          claimName: lhci-data-claim\n",
+    "errors": []
+  },
+  {
+    "id": "01747",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lhci-server\nspec:\n  selector:\n    matchLabels:\n      name: lhci-server\n  template:\n    metadata:\n      name: lhci-pod\n      labels:\n        name: lhci-server\n    spec:\n      containers:\n      - name: lhci-server\n        image: docker.io/patrickhulce/lhci-server:0.6.1\n        volumeMounts:\n        - mountPath: /data\n          name: lhci-data-volume\n        ports:\n        - containerPort: 9001\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 9001\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: lhci-data-volume\n        persistentVolumeClaim:\n          claimName: lhci-data-claim\n",
+    "errors": []
+  },
+  {
+    "id": "01748",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: still-deployment\n  labels:\n    app: still\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: still\n  template:\n    metadata:\n      labels:\n        app: still\n    spec:\n      containers:\n      - name: still\n        image: hdghg/still:stable\n        env:\n        - name: BOOTSTRAP_SERVERS\n          value: kafka-0.kafka-headless.default.svc.cluster.local:9092\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01749",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: still-deployment\n  labels:\n    app: still\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: still\n  template:\n    metadata:\n      labels:\n        app: still\n    spec:\n      containers:\n      - name: still\n        image: hdghg/still:stable\n        env:\n        - name: BOOTSTRAP_SERVERS\n          value: kafka-0.kafka-headless.default.svc.cluster.local:9092\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01750",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: still-deployment\n  labels:\n    app: still\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: still\n  template:\n    metadata:\n      labels:\n        app: still\n    spec:\n      containers:\n      - name: still\n        image: hdghg/still:stable\n        env:\n        - name: BOOTSTRAP_SERVERS\n          value: kafka-0.kafka-headless.default.svc.cluster.local:9092\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01751",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: still-deployment\n  labels:\n    app: still\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: still\n  template:\n    metadata:\n      labels:\n        app: still\n    spec:\n      containers:\n      - name: still\n        image: hdghg/still:stable\n        env:\n        - name: BOOTSTRAP_SERVERS\n          value: kafka-0.kafka-headless.default.svc.cluster.local:9092\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01752",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: still-deployment\n  labels:\n    app: still\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: still\n  template:\n    metadata:\n      labels:\n        app: still\n    spec:\n      containers:\n      - name: still\n        image: hdghg/still:stable\n        env:\n        - name: BOOTSTRAP_SERVERS\n          value: kafka-0.kafka-headless.default.svc.cluster.local:9092\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01753",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: rbac-permissions-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: rbac-permissions-operator\n  template:\n    metadata:\n      labels:\n        name: rbac-permissions-operator\n    spec:\n      serviceAccountName: rbac-permissions-operator\n      containers:\n      - name: rbac-permissions-operator\n        image: quay.io/app-sre/rbac-permissions-operator:stable\n        command:\n        - rbac-permissions-operator\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          value: ''\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: rbac-permissions-operator\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01754",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: rbac-permissions-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: rbac-permissions-operator\n  template:\n    metadata:\n      labels:\n        name: rbac-permissions-operator\n    spec:\n      serviceAccountName: rbac-permissions-operator\n      containers:\n      - name: rbac-permissions-operator\n        image: quay.io/app-sre/rbac-permissions-operator:stable\n        command:\n        - rbac-permissions-operator\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          value: ''\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: rbac-permissions-operator\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01755",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: rbac-permissions-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: rbac-permissions-operator\n  template:\n    metadata:\n      labels:\n        name: rbac-permissions-operator\n    spec:\n      serviceAccountName: rbac-permissions-operator\n      containers:\n      - name: rbac-permissions-operator\n        image: quay.io/app-sre/rbac-permissions-operator:stable\n        command:\n        - rbac-permissions-operator\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          value: ''\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: rbac-permissions-operator\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01756",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: rbac-permissions-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: rbac-permissions-operator\n  template:\n    metadata:\n      labels:\n        name: rbac-permissions-operator\n    spec:\n      serviceAccountName: rbac-permissions-operator\n      containers:\n      - name: rbac-permissions-operator\n        image: quay.io/app-sre/rbac-permissions-operator:stable\n        command:\n        - rbac-permissions-operator\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          value: ''\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: rbac-permissions-operator\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01757",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: rbac-permissions-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: rbac-permissions-operator\n  template:\n    metadata:\n      labels:\n        name: rbac-permissions-operator\n    spec:\n      serviceAccountName: rbac-permissions-operator\n      containers:\n      - name: rbac-permissions-operator\n        image: quay.io/app-sre/rbac-permissions-operator:stable\n        command:\n        - rbac-permissions-operator\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          value: ''\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: rbac-permissions-operator\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01758",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-server\n  labels:\n    app: python\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: python\n      tier: mysql\n  template:\n    metadata:\n      labels:\n        app: python\n        tier: mysql\n    spec:\n      containers:\n      - image: mysql:stable\n        name: mysql\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mysecret\n              key: key\n        ports:\n        - containerPort: 3306\n          name: mysql\n        volumeMounts:\n        - name: mysql-persistent-storage\n          mountPath: /var/lib/mysql\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mysql-persistent-storage\n        persistentVolumeClaim:\n          claimName: mysql-pvc\n",
+    "errors": []
+  },
+  {
+    "id": "01759",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-server\n  labels:\n    app: python\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: python\n      tier: mysql\n  template:\n    metadata:\n      labels:\n        app: python\n        tier: mysql\n    spec:\n      containers:\n      - image: mysql:stable\n        name: mysql\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mysecret\n              key: key\n        ports:\n        - containerPort: 3306\n          name: mysql\n        volumeMounts:\n        - name: mysql-persistent-storage\n          mountPath: /var/lib/mysql\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mysql-persistent-storage\n        persistentVolumeClaim:\n          claimName: mysql-pvc\n",
+    "errors": []
+  },
+  {
+    "id": "01760",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-server\n  labels:\n    app: python\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: python\n      tier: mysql\n  template:\n    metadata:\n      labels:\n        app: python\n        tier: mysql\n    spec:\n      containers:\n      - image: mysql:stable\n        name: mysql\n        env:\n        - name: MYSQL_ROOT_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: mysecret\n              key: key\n        ports:\n        - containerPort: 3306\n          name: mysql\n        volumeMounts:\n        - name: mysql-persistent-storage\n          mountPath: /var/lib/mysql\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: mysql-persistent-storage\n        persistentVolumeClaim:\n          claimName: mysql-pvc\n",
+    "errors": []
+  }
+]

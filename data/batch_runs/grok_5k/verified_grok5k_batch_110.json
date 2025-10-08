@@ -1,0 +1,496 @@
+[
+  {
+    "id": "04401",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    deployment.kubernetes.io/revision: '1'\n  labels:\n    crunchy-pgha-scope: some-name-required\n    deployment-name: some-name-required\n    name: some-name-required\n    pg-cluster: some-name-required\n    pgo-pg-database: 'true'\n    pgo-version: 1.2.0\n    pgouser: admin\n    service-name: some-name-required\n    vendor: crunchydata\n  name: some-name-required\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      deployment-name: some-name-required\n      pg-cluster: some-name-required\n      pgo-pg-database: 'true'\n      vendor: crunchydata\n  template:\n    metadata:\n      annotations:\n        keep-backups: 'false'\n        keep-data: 'false'\n      labels:\n        crunchy-pgha-scope: some-name-required\n        deployment-name: some-name-required\n        name: some-name-required\n        pg-cluster: some-name-required\n        pg-pod-anti-affinity: required\n        pgo-pg-database: 'true'\n        pgo-version: 1.2.0\n        pgouser: admin\n        vendor: crunchydata\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: vendor\n                operator: In\n                values:\n                - crunchydata\n              - key: pg-pod-anti-affinity\n                operator: In\n                values:\n                - required\n                - require\n              - key: pg-cluster\n                operator: In\n                values:\n                - some-name-required\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - env:\n        - name: MODE\n          value: postgres\n        - name: PGHA_PG_PORT\n          value: '5432'\n        - name: PGHA_USER\n          value: postgres\n        - name: PGHA_INIT\n          valueFrom:\n            configMapKeyRef:\n              key: init\n              name: some-name-required-pgha-config\n        - name: PATRONI_POSTGRESQL_DATA_DIR\n          value: /pgdata/some-name-required\n        - name: PGBACKREST_STANZA\n          value: db\n        - name: PGBACKREST_REPO1_HOST\n          value: some-name-required-backrest-shared-repo\n        - name: BACKREST_SKIP_CREATE_STANZA\n          value: 'true'\n        - name: PGHA_PGBACKREST\n          value: 'true'\n        - name: PGBACKREST_REPO1_PATH\n          value: /backrestrepo/some-name-required-backrest-shared-repo\n        - name: PGBACKREST_DB_PATH\n          value: /pgdata/some-name-required\n        - name: ENABLE_SSHD\n          value: 'true'\n        - name: PGBACKREST_LOG_PATH\n          value: /tmp\n        - name: PGBACKREST_PG1_SOCKET_PATH\n          value: /tmp\n        - name: PGBACKREST_PG1_PORT\n          value: '5432'\n        - name: PGBACKREST_REPO1_TYPE\n          value: posix\n        - name: PGHA_PGBACKREST_LOCAL_S3_STORAGE\n          value: 'false'\n        - name: PGHA_PGBACKREST_LOCAL_GCS_STORAGE\n          value: 'false'\n        - name: PGHA_DATABASE\n          value: some-name-required\n        - name: PGHA_REPLICA_REINIT_ON_START_FAIL\n          value: 'true'\n        - name: PGHA_SYNC_REPLICATION\n          value: 'false'\n        - name: PGHA_TLS_ENABLED\n          value: 'false'\n        - name: PGHA_TLS_ONLY\n          value: 'false'\n        - name: PGHA_PASSWORD_TYPE\n        - name: PGHA_STANDBY\n          value: 'false'\n        - name: PATRONI_KUBERNETES_NAMESPACE\n          valueFrom:\n            fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.namespace\n        - name: PATRONI_KUBERNETES_SCOPE_LABEL\n          value: crunchy-pgha-scope\n        - name: PATRONI_SCOPE\n          valueFrom:\n            fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.labels['crunchy-pgha-scope']\n        - name: PATRONI_KUBERNETES_LABELS\n          value: '{vendor: \"crunchydata\"}'\n        - name: PATRONI_LOG_LEVEL\n          value: INFO\n        - name: PGHOST\n          value: /tmp\n        - name: LD_PRELOAD\n          value: /usr/lib64/libnss_wrapper.so\n        - name: NSS_WRAPPER_PASSWD\n          value: /tmp/nss_wrapper/postgres/passwd\n        - name: NSS_WRAPPER_GROUP\n          value: /tmp/nss_wrapper/postgres/group\n        imagePullPolicy: IfNotPresent\n        livenessProbe:\n          exec:\n            command:\n            - /opt/crunchy/bin/postgres-ha/health/pgha-liveness.sh\n          failureThreshold: 3\n          initialDelaySeconds: 30\n          periodSeconds: 15\n          successThreshold: 1\n          timeoutSeconds: 10\n        name: database\n        ports:\n        - containerPort: 5432\n          name: postgres\n          protocol: TCP\n        - containerPort: 8009\n          name: patroni\n          protocol: TCP\n        readinessProbe:\n          exec:\n            command:\n            - /opt/crunchy/bin/postgres-ha/health/pgha-readiness.sh\n          failureThreshold: 3\n          initialDelaySeconds: 15\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        resources:\n          requests:\n            memory: 128Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n        volumeMounts:\n        - mountPath: /pgdata\n          name: pgdata\n        - mountPath: /pgconf/pguser\n          name: user-volume\n        - mountPath: /pgconf/pgreplicator\n          name: primary-volume\n        - mountPath: /pgconf/pgsuper\n          name: root-volume\n        - mountPath: /sshd\n          name: sshd\n          readOnly: true\n        - mountPath: /etc/ssh\n          name: ssh-config\n          readOnly: true\n        - mountPath: /pgconf\n          name: pgconf-volume\n        - mountPath: /dev/shm\n          name: dshm\n        - mountPath: /etc/pgbackrest/conf.d\n          name: pgbackrest-config\n        - mountPath: /etc/podinfo\n          name: podinfo\n        - mountPath: /tmp\n          name: tmp\n        image: busybox:stable\n      securityContext:\n        supplementalGroups:\n        - 1001\n      serviceAccount: pgo-pg\n      serviceAccountName: pgo-pg\n      volumes:\n      - name: pgdata\n        persistentVolumeClaim:\n          claimName: some-name-required\n      - name: user-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-some-name-secret\n      - name: primary-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-primaryuser-secret\n      - name: sshd\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-backrest-repo-config\n      - name: ssh-config\n        secret:\n          defaultMode: 420\n          items:\n          - key: config\n            path: ssh_config\n          secretName: some-name-required-backrest-repo-config\n      - name: root-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-postgres-secret\n      - emptyDir:\n          medium: Memory\n          sizeLimit: 64Mi\n        name: report\n      - emptyDir:\n          medium: Memory\n        name: dshm\n      - emptyDir:\n          medium: Memory\n          sizeLimit: 16Mi\n        name: tmp\n      - name: pgbackrest-config\n        projected:\n          defaultMode: 420\n          sources:\n          - configMap:\n              name: some-name-required-config-backrest\n              optional: true\n          - secret:\n              name: some-name-required-config-backrest\n              optional: true\n      - name: pgconf-volume\n        projected:\n          defaultMode: 420\n          sources:\n          - configMap:\n              name: some-name-required-pgha-config\n              optional: true\n      - downwardAPI:\n          defaultMode: 420\n          items:\n          - path: cpu_limit\n            resourceFieldRef:\n              containerName: database\n              divisor: 1m\n              resource: limits.cpu\n          - path: cpu_request\n            resourceFieldRef:\n              containerName: database\n              divisor: 1m\n              resource: requests.cpu\n          - path: mem_limit\n            resourceFieldRef:\n              containerName: database\n              divisor: '0'\n              resource: limits.memory\n          - path: mem_request\n            resourceFieldRef:\n              containerName: database\n              divisor: '0'\n              resource: requests.memory\n          - fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.labels\n            path: labels\n          - fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.annotations\n            path: annotations\n        name: podinfo\n",
+    "errors": []
+  },
+  {
+    "id": "04402",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    deployment.kubernetes.io/revision: '1'\n  labels:\n    crunchy-pgha-scope: some-name-required\n    deployment-name: some-name-required\n    name: some-name-required\n    pg-cluster: some-name-required\n    pgo-pg-database: 'true'\n    pgo-version: 1.2.0\n    pgouser: admin\n    service-name: some-name-required\n    vendor: crunchydata\n  name: some-name-required\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      deployment-name: some-name-required\n      pg-cluster: some-name-required\n      pgo-pg-database: 'true'\n      vendor: crunchydata\n  template:\n    metadata:\n      annotations:\n        keep-backups: 'false'\n        keep-data: 'false'\n      labels:\n        crunchy-pgha-scope: some-name-required\n        deployment-name: some-name-required\n        name: some-name-required\n        pg-cluster: some-name-required\n        pg-pod-anti-affinity: required\n        pgo-pg-database: 'true'\n        pgo-version: 1.2.0\n        pgouser: admin\n        vendor: crunchydata\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: vendor\n                operator: In\n                values:\n                - crunchydata\n              - key: pg-pod-anti-affinity\n                operator: In\n                values:\n                - required\n                - require\n              - key: pg-cluster\n                operator: In\n                values:\n                - some-name-required\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - env:\n        - name: MODE\n          value: postgres\n        - name: PGHA_PG_PORT\n          value: '5432'\n        - name: PGHA_USER\n          value: postgres\n        - name: PGHA_INIT\n          valueFrom:\n            configMapKeyRef:\n              key: init\n              name: some-name-required-pgha-config\n        - name: PATRONI_POSTGRESQL_DATA_DIR\n          value: /pgdata/some-name-required\n        - name: PGBACKREST_STANZA\n          value: db\n        - name: PGBACKREST_REPO1_HOST\n          value: some-name-required-backrest-shared-repo\n        - name: BACKREST_SKIP_CREATE_STANZA\n          value: 'true'\n        - name: PGHA_PGBACKREST\n          value: 'true'\n        - name: PGBACKREST_REPO1_PATH\n          value: /backrestrepo/some-name-required-backrest-shared-repo\n        - name: PGBACKREST_DB_PATH\n          value: /pgdata/some-name-required\n        - name: ENABLE_SSHD\n          value: 'true'\n        - name: PGBACKREST_LOG_PATH\n          value: /tmp\n        - name: PGBACKREST_PG1_SOCKET_PATH\n          value: /tmp\n        - name: PGBACKREST_PG1_PORT\n          value: '5432'\n        - name: PGBACKREST_REPO1_TYPE\n          value: posix\n        - name: PGHA_PGBACKREST_LOCAL_S3_STORAGE\n          value: 'false'\n        - name: PGHA_PGBACKREST_LOCAL_GCS_STORAGE\n          value: 'false'\n        - name: PGHA_DATABASE\n          value: some-name-required\n        - name: PGHA_REPLICA_REINIT_ON_START_FAIL\n          value: 'true'\n        - name: PGHA_SYNC_REPLICATION\n          value: 'false'\n        - name: PGHA_TLS_ENABLED\n          value: 'false'\n        - name: PGHA_TLS_ONLY\n          value: 'false'\n        - name: PGHA_PASSWORD_TYPE\n        - name: PGHA_STANDBY\n          value: 'false'\n        - name: PATRONI_KUBERNETES_NAMESPACE\n          valueFrom:\n            fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.namespace\n        - name: PATRONI_KUBERNETES_SCOPE_LABEL\n          value: crunchy-pgha-scope\n        - name: PATRONI_SCOPE\n          valueFrom:\n            fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.labels['crunchy-pgha-scope']\n        - name: PATRONI_KUBERNETES_LABELS\n          value: '{vendor: \"crunchydata\"}'\n        - name: PATRONI_LOG_LEVEL\n          value: INFO\n        - name: PGHOST\n          value: /tmp\n        - name: LD_PRELOAD\n          value: /usr/lib64/libnss_wrapper.so\n        - name: NSS_WRAPPER_PASSWD\n          value: /tmp/nss_wrapper/postgres/passwd\n        - name: NSS_WRAPPER_GROUP\n          value: /tmp/nss_wrapper/postgres/group\n        imagePullPolicy: IfNotPresent\n        livenessProbe:\n          exec:\n            command:\n            - /opt/crunchy/bin/postgres-ha/health/pgha-liveness.sh\n          failureThreshold: 3\n          initialDelaySeconds: 30\n          periodSeconds: 15\n          successThreshold: 1\n          timeoutSeconds: 10\n        name: database\n        ports:\n        - containerPort: 5432\n          name: postgres\n          protocol: TCP\n        - containerPort: 8009\n          name: patroni\n          protocol: TCP\n        readinessProbe:\n          exec:\n            command:\n            - /opt/crunchy/bin/postgres-ha/health/pgha-readiness.sh\n          failureThreshold: 3\n          initialDelaySeconds: 15\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 100m\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n        volumeMounts:\n        - mountPath: /pgdata\n          name: pgdata\n        - mountPath: /pgconf/pguser\n          name: user-volume\n        - mountPath: /pgconf/pgreplicator\n          name: primary-volume\n        - mountPath: /pgconf/pgsuper\n          name: root-volume\n        - mountPath: /sshd\n          name: sshd\n          readOnly: true\n        - mountPath: /etc/ssh\n          name: ssh-config\n          readOnly: true\n        - mountPath: /pgconf\n          name: pgconf-volume\n        - mountPath: /dev/shm\n          name: dshm\n        - mountPath: /etc/pgbackrest/conf.d\n          name: pgbackrest-config\n        - mountPath: /etc/podinfo\n          name: podinfo\n        - mountPath: /tmp\n          name: tmp\n        image: busybox:stable\n      securityContext:\n        supplementalGroups:\n        - 1001\n      serviceAccount: pgo-pg\n      serviceAccountName: pgo-pg\n      volumes:\n      - name: pgdata\n        persistentVolumeClaim:\n          claimName: some-name-required\n      - name: user-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-some-name-secret\n      - name: primary-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-primaryuser-secret\n      - name: sshd\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-backrest-repo-config\n      - name: ssh-config\n        secret:\n          defaultMode: 420\n          items:\n          - key: config\n            path: ssh_config\n          secretName: some-name-required-backrest-repo-config\n      - name: root-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-postgres-secret\n      - emptyDir:\n          medium: Memory\n          sizeLimit: 64Mi\n        name: report\n      - emptyDir:\n          medium: Memory\n        name: dshm\n      - emptyDir:\n          medium: Memory\n          sizeLimit: 16Mi\n        name: tmp\n      - name: pgbackrest-config\n        projected:\n          defaultMode: 420\n          sources:\n          - configMap:\n              name: some-name-required-config-backrest\n              optional: true\n          - secret:\n              name: some-name-required-config-backrest\n              optional: true\n      - name: pgconf-volume\n        projected:\n          defaultMode: 420\n          sources:\n          - configMap:\n              name: some-name-required-pgha-config\n              optional: true\n      - downwardAPI:\n          defaultMode: 420\n          items:\n          - path: cpu_limit\n            resourceFieldRef:\n              containerName: database\n              divisor: 1m\n              resource: limits.cpu\n          - path: cpu_request\n            resourceFieldRef:\n              containerName: database\n              divisor: 1m\n              resource: requests.cpu\n          - path: mem_limit\n            resourceFieldRef:\n              containerName: database\n              divisor: '0'\n              resource: limits.memory\n          - path: mem_request\n            resourceFieldRef:\n              containerName: database\n              divisor: '0'\n              resource: requests.memory\n          - fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.labels\n            path: labels\n          - fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.annotations\n            path: annotations\n        name: podinfo\n",
+    "errors": []
+  },
+  {
+    "id": "04403",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    deployment.kubernetes.io/revision: '1'\n  labels:\n    crunchy-pgha-scope: some-name-required\n    deployment-name: some-name-required\n    name: some-name-required\n    pg-cluster: some-name-required\n    pgo-pg-database: 'true'\n    pgo-version: 1.2.0\n    pgouser: admin\n    service-name: some-name-required\n    vendor: crunchydata\n  name: some-name-required\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      deployment-name: some-name-required\n      pg-cluster: some-name-required\n      pgo-pg-database: 'true'\n      vendor: crunchydata\n  template:\n    metadata:\n      annotations:\n        keep-backups: 'false'\n        keep-data: 'false'\n      labels:\n        crunchy-pgha-scope: some-name-required\n        deployment-name: some-name-required\n        name: some-name-required\n        pg-cluster: some-name-required\n        pg-pod-anti-affinity: required\n        pgo-pg-database: 'true'\n        pgo-version: 1.2.0\n        pgouser: admin\n        vendor: crunchydata\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: vendor\n                operator: In\n                values:\n                - crunchydata\n              - key: pg-pod-anti-affinity\n                operator: In\n                values:\n                - required\n                - require\n              - key: pg-cluster\n                operator: In\n                values:\n                - some-name-required\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - env:\n        - name: MODE\n          value: postgres\n        - name: PGHA_PG_PORT\n          value: '5432'\n        - name: PGHA_USER\n          value: postgres\n        - name: PGHA_INIT\n          valueFrom:\n            configMapKeyRef:\n              key: init\n              name: some-name-required-pgha-config\n        - name: PATRONI_POSTGRESQL_DATA_DIR\n          value: /pgdata/some-name-required\n        - name: PGBACKREST_STANZA\n          value: db\n        - name: PGBACKREST_REPO1_HOST\n          value: some-name-required-backrest-shared-repo\n        - name: BACKREST_SKIP_CREATE_STANZA\n          value: 'true'\n        - name: PGHA_PGBACKREST\n          value: 'true'\n        - name: PGBACKREST_REPO1_PATH\n          value: /backrestrepo/some-name-required-backrest-shared-repo\n        - name: PGBACKREST_DB_PATH\n          value: /pgdata/some-name-required\n        - name: ENABLE_SSHD\n          value: 'true'\n        - name: PGBACKREST_LOG_PATH\n          value: /tmp\n        - name: PGBACKREST_PG1_SOCKET_PATH\n          value: /tmp\n        - name: PGBACKREST_PG1_PORT\n          value: '5432'\n        - name: PGBACKREST_REPO1_TYPE\n          value: posix\n        - name: PGHA_PGBACKREST_LOCAL_S3_STORAGE\n          value: 'false'\n        - name: PGHA_PGBACKREST_LOCAL_GCS_STORAGE\n          value: 'false'\n        - name: PGHA_DATABASE\n          value: some-name-required\n        - name: PGHA_REPLICA_REINIT_ON_START_FAIL\n          value: 'true'\n        - name: PGHA_SYNC_REPLICATION\n          value: 'false'\n        - name: PGHA_TLS_ENABLED\n          value: 'false'\n        - name: PGHA_TLS_ONLY\n          value: 'false'\n        - name: PGHA_PASSWORD_TYPE\n        - name: PGHA_STANDBY\n          value: 'false'\n        - name: PATRONI_KUBERNETES_NAMESPACE\n          valueFrom:\n            fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.namespace\n        - name: PATRONI_KUBERNETES_SCOPE_LABEL\n          value: crunchy-pgha-scope\n        - name: PATRONI_SCOPE\n          valueFrom:\n            fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.labels['crunchy-pgha-scope']\n        - name: PATRONI_KUBERNETES_LABELS\n          value: '{vendor: \"crunchydata\"}'\n        - name: PATRONI_LOG_LEVEL\n          value: INFO\n        - name: PGHOST\n          value: /tmp\n        - name: LD_PRELOAD\n          value: /usr/lib64/libnss_wrapper.so\n        - name: NSS_WRAPPER_PASSWD\n          value: /tmp/nss_wrapper/postgres/passwd\n        - name: NSS_WRAPPER_GROUP\n          value: /tmp/nss_wrapper/postgres/group\n        imagePullPolicy: IfNotPresent\n        livenessProbe:\n          exec:\n            command:\n            - /opt/crunchy/bin/postgres-ha/health/pgha-liveness.sh\n          failureThreshold: 3\n          initialDelaySeconds: 30\n          periodSeconds: 15\n          successThreshold: 1\n          timeoutSeconds: 10\n        name: database\n        ports:\n        - containerPort: 5432\n          name: postgres\n          protocol: TCP\n        - containerPort: 8009\n          name: patroni\n          protocol: TCP\n        readinessProbe:\n          exec:\n            command:\n            - /opt/crunchy/bin/postgres-ha/health/pgha-readiness.sh\n          failureThreshold: 3\n          initialDelaySeconds: 15\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        resources:\n          requests:\n            memory: 128Mi\n            cpu: 100m\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n        volumeMounts:\n        - mountPath: /pgdata\n          name: pgdata\n        - mountPath: /pgconf/pguser\n          name: user-volume\n        - mountPath: /pgconf/pgreplicator\n          name: primary-volume\n        - mountPath: /pgconf/pgsuper\n          name: root-volume\n        - mountPath: /sshd\n          name: sshd\n          readOnly: true\n        - mountPath: /etc/ssh\n          name: ssh-config\n          readOnly: true\n        - mountPath: /pgconf\n          name: pgconf-volume\n        - mountPath: /dev/shm\n          name: dshm\n        - mountPath: /etc/pgbackrest/conf.d\n          name: pgbackrest-config\n        - mountPath: /etc/podinfo\n          name: podinfo\n        - mountPath: /tmp\n          name: tmp\n        image: busybox:stable\n      securityContext:\n        supplementalGroups:\n        - 1001\n      serviceAccount: pgo-pg\n      serviceAccountName: pgo-pg\n      volumes:\n      - name: pgdata\n        persistentVolumeClaim:\n          claimName: some-name-required\n      - name: user-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-some-name-secret\n      - name: primary-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-primaryuser-secret\n      - name: sshd\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-backrest-repo-config\n      - name: ssh-config\n        secret:\n          defaultMode: 420\n          items:\n          - key: config\n            path: ssh_config\n          secretName: some-name-required-backrest-repo-config\n      - name: root-volume\n        secret:\n          defaultMode: 420\n          secretName: some-name-required-postgres-secret\n      - emptyDir:\n          medium: Memory\n          sizeLimit: 64Mi\n        name: report\n      - emptyDir:\n          medium: Memory\n        name: dshm\n      - emptyDir:\n          medium: Memory\n          sizeLimit: 16Mi\n        name: tmp\n      - name: pgbackrest-config\n        projected:\n          defaultMode: 420\n          sources:\n          - configMap:\n              name: some-name-required-config-backrest\n              optional: true\n          - secret:\n              name: some-name-required-config-backrest\n              optional: true\n      - name: pgconf-volume\n        projected:\n          defaultMode: 420\n          sources:\n          - configMap:\n              name: some-name-required-pgha-config\n              optional: true\n      - downwardAPI:\n          defaultMode: 420\n          items:\n          - path: cpu_limit\n            resourceFieldRef:\n              containerName: database\n              divisor: 1m\n              resource: limits.cpu\n          - path: cpu_request\n            resourceFieldRef:\n              containerName: database\n              divisor: 1m\n              resource: requests.cpu\n          - path: mem_limit\n            resourceFieldRef:\n              containerName: database\n              divisor: '0'\n              resource: limits.memory\n          - path: mem_request\n            resourceFieldRef:\n              containerName: database\n              divisor: '0'\n              resource: requests.memory\n          - fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.labels\n            path: labels\n          - fieldRef:\n              apiVersion: v1\n              fieldPath: metadata.annotations\n            path: annotations\n        name: podinfo\n",
+    "errors": []
+  },
+  {
+    "id": "04404",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04405",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04406",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04407",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04408",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04409",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04410",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04411",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04412",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04413",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04414",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04415",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04416",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04417",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04418",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04419",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04420",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04421",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04422",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04423",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04424",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04425",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04426",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04427",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes6\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n  volumes:\n  - name: volume-rbd\n    rbd:\n      image: testing\n      monitors:\n      - testing\n",
+    "errors": []
+  },
+  {
+    "id": "04428",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04429",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04430",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04431",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04432",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04433",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04434",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04435",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04436",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04437",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5490\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04438",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5490\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04439",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5490\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04440",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5490\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  }
+]

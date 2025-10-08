@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: hotel-fahmi-server-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      framework: codeigniter-4
+      language: php
+      type: server
+      app: hotel-fahmi-server
+  template:
+    metadata:
+      name: hotel-fahmi-server
+      labels:
+        framework: codeigniter-4
+        language: php
+        type: server
+        app: hotel-fahmi-server
+      annotations:
+        description: merupakan aplikasi hotel fahmi yang bersifat server untuk berintaraksi
+          dengan user
+    spec:
+      containers:
+      - name: hotel-fahmi
+        image: localhost:5000/hotel-fahmi
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+      imagePullSecrets:
+      - name: regcred

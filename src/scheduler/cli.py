@@ -48,6 +48,11 @@ def _normalise_policy_id(policy: Optional[str]) -> str:
         "invalid-capabilities": "drop_capabilities",
         "cap-sys-admin": "drop_cap_sys_admin",
         "sys-admin-capability": "drop_cap_sys_admin",
+        "env-var-secret": "env_var_secret",
+        "envvar-secret": "env_var_secret",
+        "liveness-port": "liveness_port",
+        "readiness-port": "readiness_port",
+        "startup-port": "startup_port",
     }
     return mapping.get(key, key)
 
@@ -202,6 +207,10 @@ def _compute_metrics(patch_id: str, policy_id: Any, risk_map: Dict[str, Dict[str
         "enforce_seccomp": 75.0,
         "drop_capabilities": 85.0,
         "drop_cap_sys_admin": 85.0,
+        "env_var_secret": 78.0,
+        "liveness_port": 45.0,
+        "readiness_port": 50.0,
+        "startup_port": 35.0,
     }
     base_risk = risk_lookup.get(policy, 40.0)
     kev_flag = policy in {"no_privileged", "drop_capabilities", "drop_cap_sys_admin"}

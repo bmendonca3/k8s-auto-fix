@@ -1,0 +1,458 @@
+[
+  {
+    "id": "02681",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk:stable\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02682",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk:stable\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02683",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk:stable\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02684",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk:stable\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02685",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk:stable\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02686",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02687",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02688",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02689",
+    "policy_id": "drop_capabilities",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02690",
+    "policy_id": "no_privileged",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02691",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02692",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "errors": []
+  },
+  {
+    "id": "02693",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "02694",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "02695",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "02696",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:stable\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "02697",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: canary-demo\n  labels:\n    app: canary-demo\nspec:\n  selector:\n    matchLabels:\n      app: canary-demo\n  template:\n    metadata:\n      labels:\n        app: canary-demo\n    spec:\n      containers:\n      - name: container\n        image: canary-demo:1\n        imagePullPolicy: Never\n        ports:\n        - containerPort: 8080\n        resources:\n          limits:\n            memory: 128M\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02698",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: canary-demo\n  labels:\n    app: canary-demo\nspec:\n  selector:\n    matchLabels:\n      app: canary-demo\n  template:\n    metadata:\n      labels:\n        app: canary-demo\n    spec:\n      containers:\n      - name: container\n        image: canary-demo:1\n        imagePullPolicy: Never\n        ports:\n        - containerPort: 8080\n        resources:\n          limits:\n            memory: 128M\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02699",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02700",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02701",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02702",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02703",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02704",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02705",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02706",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: redis\nspec:\n  containers:\n  - name: redis\n    image: kubernetes/redis:v1\n    env:\n    - name: MASTER\n      value: 'true'\n    ports:\n    - containerPort: 6379\n    resources:\n      limits:\n        cpu: '0.1'\n    volumeMounts:\n    - mountPath: /redis-master-data\n      name: data\n    - mountPath: /redis-master\n      name: config\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: data\n    emptyDir: {}\n  - name: config\n    configMap:\n      name: example-redis-config\n      items:\n      - key: redis-config\n        path: redis.conf\n",
+    "errors": []
+  },
+  {
+    "id": "02707",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: redis\nspec:\n  containers:\n  - name: redis\n    image: kubernetes/redis:v1\n    env:\n    - name: MASTER\n      value: 'true'\n    ports:\n    - containerPort: 6379\n    resources:\n      limits:\n        cpu: '0.1'\n    volumeMounts:\n    - mountPath: /redis-master-data\n      name: data\n    - mountPath: /redis-master\n      name: config\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: data\n    emptyDir: {}\n  - name: config\n    configMap:\n      name: example-redis-config\n      items:\n      - key: redis-config\n        path: redis.conf\n",
+    "errors": []
+  },
+  {
+    "id": "02708",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: redis\nspec:\n  containers:\n  - name: redis\n    image: kubernetes/redis:v1\n    env:\n    - name: MASTER\n      value: 'true'\n    ports:\n    - containerPort: 6379\n    resources:\n      limits:\n        cpu: '0.1'\n        memory: 256Mi\n      requests:\n        cpu: 100m\n        memory: 128Mi\n    volumeMounts:\n    - mountPath: /redis-master-data\n      name: data\n    - mountPath: /redis-master\n      name: config\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: data\n    emptyDir: {}\n  - name: config\n    configMap:\n      name: example-redis-config\n      items:\n      - key: redis-config\n        path: redis.conf\n",
+    "errors": []
+  },
+  {
+    "id": "02709",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: redis\nspec:\n  containers:\n  - name: redis\n    image: kubernetes/redis:v1\n    env:\n    - name: MASTER\n      value: 'true'\n    ports:\n    - containerPort: 6379\n    resources:\n      limits:\n        cpu: '0.1'\n        memory: 256Mi\n      requests:\n        cpu: 100m\n        memory: 128Mi\n    volumeMounts:\n    - mountPath: /redis-master-data\n      name: data\n    - mountPath: /redis-master\n      name: config\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: data\n    emptyDir: {}\n  - name: config\n    configMap:\n      name: example-redis-config\n      items:\n      - key: redis-config\n        path: redis.conf\n",
+    "errors": []
+  },
+  {
+    "id": "02710",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jysinakscluster-dfd5\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: jysinakscluster-dfd5\n  template:\n    metadata:\n      labels:\n        app: jysinakscluster-dfd5\n    spec:\n      containers:\n      - name: jysinakscluster-dfd5\n        image: jysintestrigistry.azurecr.io/jysinakscluster:stable\n        ports:\n        - containerPort: 80\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02711",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jysinakscluster-dfd5\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: jysinakscluster-dfd5\n  template:\n    metadata:\n      labels:\n        app: jysinakscluster-dfd5\n    spec:\n      containers:\n      - name: jysinakscluster-dfd5\n        image: jysintestrigistry.azurecr.io/jysinakscluster:stable\n        ports:\n        - containerPort: 80\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02712",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jysinakscluster-dfd5\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: jysinakscluster-dfd5\n  template:\n    metadata:\n      labels:\n        app: jysinakscluster-dfd5\n    spec:\n      containers:\n      - name: jysinakscluster-dfd5\n        image: jysintestrigistry.azurecr.io/jysinakscluster:stable\n        ports:\n        - containerPort: 80\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02713",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jysinakscluster-dfd5\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: jysinakscluster-dfd5\n  template:\n    metadata:\n      labels:\n        app: jysinakscluster-dfd5\n    spec:\n      containers:\n      - name: jysinakscluster-dfd5\n        image: jysintestrigistry.azurecr.io/jysinakscluster:stable\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02714",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jysinakscluster-dfd5\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: jysinakscluster-dfd5\n  template:\n    metadata:\n      labels:\n        app: jysinakscluster-dfd5\n    spec:\n      containers:\n      - name: jysinakscluster-dfd5\n        image: jysintestrigistry.azurecr.io/jysinakscluster:stable\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02715",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ibmliberty-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: ibmliberty\n  template:\n    metadata:\n      labels:\n        app: ibmliberty\n    spec:\n      containers:\n      - name: ibmliberty\n        image: icr.io/ibmliberty:stable\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02716",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ibmliberty-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: ibmliberty\n  template:\n    metadata:\n      labels:\n        app: ibmliberty\n    spec:\n      containers:\n      - name: ibmliberty\n        image: icr.io/ibmliberty:stable\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02717",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ibmliberty-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: ibmliberty\n  template:\n    metadata:\n      labels:\n        app: ibmliberty\n    spec:\n      containers:\n      - name: ibmliberty\n        image: icr.io/ibmliberty:stable\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02718",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ibmliberty-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: ibmliberty\n  template:\n    metadata:\n      labels:\n        app: ibmliberty\n    spec:\n      containers:\n      - name: ibmliberty\n        image: icr.io/ibmliberty:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02719",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ibmliberty-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: ibmliberty\n  template:\n    metadata:\n      labels:\n        app: ibmliberty\n    spec:\n      containers:\n      - name: ibmliberty\n        image: icr.io/ibmliberty:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02720",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  }
+]

@@ -1,0 +1,25 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cronjob
+  namespace: kubernetes-starterkit
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cronjob
+        spec:
+          containers:
+          - name: cronjob
+            image: spotify/alpine:latest
+            imagePullPolicy: Always
+            command:
+            - curl
+            args:
+            - http://bootstorage-svc:5000/api/bootstorage/deletelru
+          restartPolicy: Never
+  schedule: '*/15 * * * *'
+  successfulJobsHistoryLimit: 3

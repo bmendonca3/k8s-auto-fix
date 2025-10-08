@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: addresses-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: addresses-service
+  template:
+    metadata:
+      labels:
+        app: addresses-service
+    spec:
+      imagePullSecrets:
+      - name: registry-credentials
+      containers:
+      - name: addresses-service
+        image: stokei/addresses-service:latest
+        resources: {}
+        imagePullPolicy: Always
+        env:
+        - name: DB_NAME
+          value: addresses
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-port
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-password
+        - name: DB_OPTIONS
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-options
+        - name: DB_PREFIX
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-prefix
+        - name: DB_TIMEOUT
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: db-timeout
+        - name: QUEUE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: queue-host
+        - name: QUEUE_PORT
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: queue-port
+        - name: QUEUE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: queue-password
+        - name: QUEUE_TIMEOUT
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: queue-timeout
+        - name: MICROSERVICE_URL
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: url

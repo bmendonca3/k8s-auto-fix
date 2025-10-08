@@ -1,0 +1,81 @@
+apiVersion: v1
+data:
+  apply_config.sh: 'cp -n /var/jenkins_config/config.xml /var/jenkins_home;
+
+    mkdir -p /var/jenkins_home/init.groovy.d/;
+
+    cp -n /var/jenkins_config/*.groovy /var/jenkins_home/init.groovy.d/'
+  config.xml: "<?xml version='1.0' encoding='UTF-8'?>\n<hudson>\n  <disabledAdministrativeMonitors/>\n\
+    \  <version>2.19.4</version>\n  <numExecutors>0</numExecutors>\n  <mode>NORMAL</mode>\n\
+    \  <useSecurity>false</useSecurity>\n  <authorizationStrategy class=\"hudson.security.FullControlOnceLoggedInAuthorizationStrategy\"\
+    >\n    <denyAnonymousReadAccess>true</denyAnonymousReadAccess>\n  </authorizationStrategy>\n\
+    \  <securityRealm class=\"hudson.security.LegacySecurityRealm\"/>\n  <disableRememberMe>false</disableRememberMe>\n\
+    \  <projectNamingStrategy class=\"jenkins.model.ProjectNamingStrategy$DefaultProjectNamingStrategy\"\
+    />\n  <workspaceDir>${JENKINS_HOME}/workspace/${ITEM_FULLNAME}</workspaceDir>\n\
+    \  <buildsDir>${ITEM_ROOTDIR}/builds</buildsDir>\n  <markupFormatter class=\"\
+    hudson.markup.EscapedMarkupFormatter\"/>\n  <jdks/>\n  <viewsTabBar class=\"hudson.views.DefaultViewsTabBar\"\
+    />\n  <myViewsTabBar class=\"hudson.views.DefaultMyViewsTabBar\"/>\n  <clouds>\n\
+    \    <org.csanchez.jenkins.plugins.kubernetes.KubernetesCloud plugin=\"kubernetes@0.10\"\
+    >\n      <name>kubernetes</name>\n      <templates>\n        <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>\n\
+    \          <inheritFrom></inheritFrom>\n          <name>default</name>\n     \
+    \     <instanceCap>2147483647</instanceCap>\n          <idleMinutes>0</idleMinutes>\n\
+    \          <label></label>\n          <nodeSelector></nodeSelector>\n        \
+    \  <volumes/>\n          <containers>\n            <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>\n\
+    \              <name>jnlp</name>\n              <image>jenkinsci/jnlp-slave:alpine</image>\n\
+    \              <privileged>false</privileged>\n              <alwaysPullImage>false</alwaysPullImage>\n\
+    \              <workingDir>/home/jenkins</workingDir>\n              <command></command>\n\
+    \              <args>${computer.jnlpmac} ${computer.name}</args>\n           \
+    \   <ttyEnabled>false</ttyEnabled>\n              <resourceRequestCpu>200m</resourceRequestCpu>\n\
+    \              <resourceRequestMemory>256Mi</resourceRequestMemory>\n        \
+    \      <resourceLimitCpu>200m</resourceLimitCpu>\n              <resourceLimitMemory>256Mi</resourceLimitMemory>\n\
+    \              <envVars/>\n            </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>\n\
+    \          </containers>\n          <envVars/>\n          <annotations/>\n   \
+    \       <imagePullSecrets/>\n          <nodeProperties/>\n        </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>\n\
+    \      </templates>\n      <serverUrl>https://kubernetes.default</serverUrl>\n\
+    \      <skipTlsVerify>false</skipTlsVerify>\n      <namespace>default</namespace>\n\
+    \      <jenkinsUrl>http://jenkins-jenkins:8080</jenkinsUrl>\n      <jenkinsTunnel>jenkins-jenkins:50000</jenkinsTunnel>\n\
+    \      <containerCap>10</containerCap>\n      <retentionTimeout>5</retentionTimeout>\n\
+    \      <connectTimeout>0</connectTimeout>\n      <readTimeout>0</readTimeout>\n\
+    \    </org.csanchez.jenkins.plugins.kubernetes.KubernetesCloud>\n  </clouds>\n\
+    \  <quietPeriod>5</quietPeriod>\n  <scmCheckoutRetryCount>0</scmCheckoutRetryCount>\n\
+    \  <views>\n    <hudson.model.AllView>\n      <owner class=\"hudson\" reference=\"\
+    ../../..\"/>\n      <name>All</name>\n      <filterExecutors>false</filterExecutors>\n\
+    \      <filterQueue>false</filterQueue>\n      <properties class=\"hudson.model.View$PropertyList\"\
+    />\n    </hudson.model.AllView>\n  </views>\n  <primaryView>All</primaryView>\n\
+    \  <slaveAgentPort>50000</slaveAgentPort>\n  <label></label>\n  <nodeProperties/>\n\
+    \  <globalNodeProperties/>\n  <noUsageStatistics>true</noUsageStatistics>\n</hudson>"
+  init0.groovy: "// set global parameters (please do not forget to change region if\
+    \ needed!!!)\n// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n\
+    def region = 'ap-northeast-1'\n\ndef params = [CLOUD: 'ec2', REGION: region, REGISTRY:\
+    \ \"006393696278.dkr.ecr.${region}.amazonaws.com\" as String, INT_DOMAIN: 'riglet',\
+    \ RIG_DOMAIN: 'ftorelli.rig3.riglet.io']\ndef nodeProps = jenkins.model.Jenkins.getInstance().getGlobalNodeProperties()\n\
+    def envVars = nodeProps.get(hudson.slaves.EnvironmentVariablesNodeProperty)\n\
+    if (envVars == null) {\n  envVars = new hudson.slaves.EnvironmentVariablesNodeProperty()\n\
+    \  nodeProps.add(envVars)\n}\nenvVars.envVars << params"
+  init1.groovy: "// register pipeline library\nimport jenkins.plugins.git.GitSCMSource\n\
+    import org.jenkinsci.plugins.workflow.libs.GlobalLibraries\nimport org.jenkinsci.plugins.workflow.libs.LibraryConfiguration\n\
+    import org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever\n\ndef buildit =\
+    \ new LibraryConfiguration(\"buildit\",\n                          new SCMSourceRetriever(\n\
+    \                                  new GitSCMSource(\n                       \
+    \                   \"git\", \"https://github.com/buildit/jenkins-pipeline-libraries.git\"\
+    ,\n                                          null, \"*\", null, true)))\nbuildit.defaultVersion\
+    \ = 'master'\nGlobalLibraries.get().setLibraries([buildit])"
+  init2.groovy: "// create seed job\nimport javaposse.jobdsl.dsl.DslScriptLoader\n\
+    import javaposse.jobdsl.plugin.JenkinsJobManagement\n\ndef seedJob = '''\njob('_create\
+    \ project') {\n  \tparameters {\n        stringParam('proj', '', 'proj name')\n\
+    \        stringParam('gitUrl', 'https://github.com/buildit/', 'proj name')\n \
+    \       stringParam('branchToBuild', 'master', 'branch(es) to build')\n      \
+    \  stringParam('stagingPipeline', 'k8s/pipelines/staging.groovy', 'staging pipeline\
+    \ defition path')\n        stringParam('prodPipeline', 'k8s/pipelines/prod.groovy',\
+    \ 'prod pipeline defition path')\n    }\n    steps {\n        dsl {\n        \
+    \  text(\"if(stagingPipeline) pipelineJob(proj+'-staging') {triggers {scm('H/5\
+    \ * * * *')}; definition {cpsScm {scm {git {branch(branchToBuild);remote {url(gitUrl)}}};\
+    \ scriptPath(stagingPipeline)}}}; \")\n        }\n        dsl {\n          text(\"\
+    if(prodPipeline) pipelineJob(proj+'-prod') { definition { cpsScm { scm {git {branch(branchToBuild);remote\
+    \ {url(gitUrl)}}}; scriptPath(prodPipeline)}}}; \")\n        }\n    }\n}\n'''\n\
+    def workspace = new File('.')\ndef jobManagement = new JenkinsJobManagement(System.out,\
+    \ [:], workspace)\nnew DslScriptLoader(jobManagement).runScript(seedJob)"
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins
+  namespace: default

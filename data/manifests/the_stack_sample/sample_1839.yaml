@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: RELEASE-NAME-sumologic-otelcol-logs-collector
+  labels:
+    app: RELEASE-NAME-sumologic-otelcol-logs-collector
+    chart: sumologic-%CURRENT_CHART_VERSION%
+    release: RELEASE-NAME
+    heritage: Helm
+data:
+  config.yaml: "\nexporters:\n  otlphttp:\n    endpoint: http://${LOGS_METADATA_SVC}.${NAMESPACE}.svc.cluster.local:4318\n\
+    extensions:\n  file_storage:\n    directory: /var/lib/storage/otc\n    timeout:\
+    \ 10s\n  health_check: {}\n  pprof: {}\nprocessors:\n  batch:\n    send_batch_size:\
+    \ 10240\n    timeout: 1s\nreceivers:\n  filelog/containers:\n    include:\n  \
+    \  - /var/log/pods/*/*/*.log\n    include_file_name: false\n    include_file_path:\
+    \ true\n    operators:\n    - id: get-format\n      routes:\n      - expr: $$body\
+    \ matches \"^\\\\{\"\n        output: parser-docker\n      - expr: $$body matches\
+    \ \"^[^ Z]+ \"\n        output: parser-crio\n      - expr: $$body matches \"^[^\
+    \ Z]+Z\"\n        output: parser-containerd\n      type: router\n    - id: parser-crio\n\
+    \      output: merge-cri-lines\n      regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr)\
+    \ (?P<logtag>[^ ]*) (?P<log>.*)$\n      timestamp:\n        layout: \"2006-01-02T15:04:05.000000000-07:00\"\
+    \n        layout_type: gotime\n        parse_from: time\n      type: regex_parser\n\
+    \    - id: parser-containerd\n      output: merge-cri-lines\n      regex: ^(?P<time>[^\
+    \ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) (?P<log>.*)$\n      timestamp:\n\
+    \        layout: '%Y-%m-%dT%H:%M:%S.%LZ'\n        parse_from: time\n      type:\
+    \ regex_parser\n    - id: parser-docker\n      output: merge-docker-lines\n  \
+    \    timestamp:\n        layout: '%Y-%m-%dT%H:%M:%S.%LZ'\n        parse_from:\
+    \ time\n      type: json_parser\n    - combine_field: log\n      id: merge-docker-lines\n\
+    \      is_last_entry: $$body.log matches \"\\n$\"\n      output: extract-metadata-from-filepath\n\
+    \      type: recombine\n    - combine_field: log\n      combine_with: \"\"\n \
+    \     id: merge-cri-lines\n      is_last_entry: $$body.logtag == \"F\"\n     \
+    \ output: extract-metadata-from-filepath\n      overwrite_with: newest\n     \
+    \ type: recombine\n    - id: extract-metadata-from-filepath\n      parse_from:\
+    \ $$attributes[\"file.path\"]\n      regex: ^.*\\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\\\
+    -]+)\\/(?P<container_name>[^\\._]+)\\/(?P<run_id>\\d+)\\.log$\n      type: regex_parser\n\
+    \    - attributes:\n        k8s.container.name: EXPR($.container_name)\n     \
+    \   k8s.namespace.name: EXPR($.namespace)\n        k8s.pod.name: EXPR($.pod_name)\n\
+    \        k8s.pod.uid: EXPR($.uid)\n        run_id: EXPR($.run_id)\n        stream:\
+    \ EXPR($.stream)\n      id: copy-attributes\n      type: metadata\n    - id: clean-up-log-body\n\
+    \      ops:\n      - move:\n          from: log\n          to: $\n      type:\
+    \ restructure\n    start_at: beginning\nservice:\n  extensions:\n  - health_check\n\
+    \  - file_storage\n  - pprof\n  pipelines:\n    logs/containers:\n      exporters:\n\
+    \      - otlphttp\n      processors:\n      - batch\n      receivers:\n      -\
+    \ filelog/containers\n  telemetry:\n    logs:\n      level: info"

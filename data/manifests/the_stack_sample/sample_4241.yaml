@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tb-http-transport-config
+  namespace: thingsboard
+  labels:
+    name: tb-http-transport-config
+data:
+  conf: 'export JAVA_OPTS="$JAVA_OPTS -Xloggc:/var/log/tb-http-transport/${TB_SERVICE_ID}/gc.log
+    -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tb-http-transport/${TB_SERVICE_ID}/heapdump.bin
+    -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
+
+    export JAVA_OPTS="$JAVA_OPTS -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution
+    -XX:+PrintGCApplicationStoppedTime -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10"
+
+    export JAVA_OPTS="$JAVA_OPTS -XX:GCLogFileSize=10M -XX:-UseBiasedLocking -XX:+UseTLAB
+    -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+
+    export JAVA_OPTS="$JAVA_OPTS -XX:CMSWaitDuration=10000 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC
+    -XX:+CMSParallelRemarkEnabled -XX:+CMSParallelInitialMarkEnabled"
+
+    export JAVA_OPTS="$JAVA_OPTS -XX:+CMSEdenChunksRecordAlways -XX:CMSInitiatingOccupancyFraction=75
+    -XX:+UseCMSInitiatingOccupancyOnly -XX:+ExitOnOutOfMemoryError"
+
+    export LOG_FILENAME=tb-http-transport.out
+
+    export LOADER_PATH=/usr/share/tb-http-transport/conf
+
+    '
+  logback: "<!DOCTYPE configuration>\n<configuration scan=\"true\" scanPeriod=\"10\
+    \ seconds\">\n\n    <appender name=\"fileLogAppender\"\n              class=\"\
+    ch.qos.logback.core.rolling.RollingFileAppender\">\n        <file>/var/log/tb-http-transport/${TB_SERVICE_ID}/tb-http-transport.log</file>\n\
+    \        <rollingPolicy\n                class=\"ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy\"\
+    >\n            <fileNamePattern>/var/log/tb-http-transport/${TB_SERVICE_ID}/tb-http-transport.%d{yyyy-MM-dd}.%i.log</fileNamePattern>\n\
+    \            <maxFileSize>100MB</maxFileSize>\n            <maxHistory>30</maxHistory>\n\
+    \            <totalSizeCap>3GB</totalSizeCap>\n        </rollingPolicy>\n    \
+    \    <encoder>\n            <pattern>%d{ISO8601} [%thread] %-5level %logger{36}\
+    \ - %msg%n</pattern>\n        </encoder>\n    </appender>\n\n    <appender name=\"\
+    STDOUT\" class=\"ch.qos.logback.core.ConsoleAppender\">\n        <encoder>\n \
+    \           <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>\n\
+    \        </encoder>\n    </appender>\n\n    <logger name=\"org.thingsboard.server\"\
+    \ level=\"INFO\" />\n\n    <root level=\"INFO\">\n        <appender-ref ref=\"\
+    fileLogAppender\"/>\n        <appender-ref ref=\"STDOUT\"/>\n    </root>\n\n</configuration>"

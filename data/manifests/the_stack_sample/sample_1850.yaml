@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: "# The peers section tells MetalLB what BGP routers to connect too. There\n\
+    # is one entry for each router you want to peer with.\npeers:\n- # The target\
+    \ IP address for the BGP session.\n  peer-address: 10.0.0.1\n  # The BGP AS number\
+    \ that MetalLB expects to see advertised by\n  # the router.\n  peer-asn: 64512\n\
+    \  # The BGP AS number that MetalLB should speak as.\n  my-asn: 64512\n  # (optional)\
+    \ the TCP port to talk to. Defaults to 179, you shouldn't\n  # need to set this\
+    \ in production.\n  peer-port: 179\n  # (optional) The proposed value of the BGP\
+    \ Hold Time timer. Refer to\n  # BGP reference material to understand what setting\
+    \ this implies.\n  hold-time: 120\n  # (optional) The router ID to use when connecting\
+    \ to this peer. Defaults\n  # to the node IP address. Generally only useful when\
+    \ you need to peer with\n  # another BGP router running on the same machine as\
+    \ MetalLB.\n  router-id: 1.2.3.4\n  # (optional) The nodes that should connect\
+    \ to this peer. A node\n  # matches if at least one of the node selectors matches.\
+    \ Within\n  # one selector, a node matches if all the matchers are\n  # satisfied.\
+    \ The semantics of each selector are the same as the\n  # label- and set-based\
+    \ selectors in Kubernetes, documented at\n  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/.\n\
+    \  # By default, all nodes are selected.\n  node-selectors:\n  - # Match by label=value\n\
+    \    match-labels:\n      kubernetes.io/hostname: prod-01\n    # Match by 'key\
+    \ OP values' expressions\n    match-expressions:\n    - key: beta.kubernetes.io/arch\n\
+    \      operator: In\n      values: [amd64, arm]\n\n# The address-pools section\
+    \ lists the IP addresses that MetalLB is\n# allowed to allocate, along with settings\
+    \ for how to advertise\n# those addresses over BGP once assigned. You can have\
+    \ as many\n# address pools as you want.\naddress-pools:\n- # A name for the address\
+    \ pool. Services can request allocation\n  # from a specific address pool using\
+    \ this name, by listing this\n  # name under the 'metallb.universe.tf/address-pool'\
+    \ annotation.\n  name: my-ip-space\n  # Protocol can be used to select how the\
+    \ announcement is done.\n  # Supported values are bgp and arp.\n  protocol: bgp\n\
+    \  # A list of IP address ranges over which MetalLB has authority,\n  # expressed\
+    \ as CIDR prefixes. You can list multiple prefixes in\n  # a single pool, they\
+    \ will all share the same BGP settings.\n  cidr:\n  - 198.51.100.0/24\n  - 192.168.0.0/16\n\
+    \  # (optional) If true, MetalLB will not allocate any address that\n  # ends\
+    \ in .0 or .255. Some old, buggy consumer devices\n  # mistakenly block traffic\
+    \ to such addresses under the guise of\n  # smurf protection. Such devices have\
+    \ become fairly rare, but\n  # the option is here if you encounter serving issues.\n\
+    \  avoid-buggy-ips: true\n  # (optional, default true) If false, MetalLB will\
+    \ not automatically\n  # allocate any address in this pool. Addresses can still\
+    \ explicitly\n  # be requested via loadBalancerIP or the address-pool annotation.\n\
+    \  auto-assign: false\n  # (optional) A list of BGP advertisements to make, when\n\
+    \  # protocol=bgp. Each address that gets assigned out of this pool\n  # will\
+    \ turn into this many advertisements. For most simple\n  # setups, you'll probably\
+    \ just want one.\n  #\n  # The default value for this field is a single advertisement\
+    \ with\n  # all parameters set to their respective defaults.\n  bgp-advertisements:\n\
+    \  - # (optional) How much you want to aggregate up the IP address\n    # before\
+    \ advertising. For example, advertising 1.2.3.4 with\n    # aggregation-length=24\
+    \ would end up advertising 1.2.3.0/24.\n    # For the majority of setups, you'll\
+    \ want to keep this at the\n    # default of 32, which advertises the entire IP\
+    \ address\n    # unmodified.\n    aggregation-length: 32\n    # (optional) The\
+    \ value of the BGP \"local preference\" attribute\n    # for this advertisement.\
+    \ Only used with IBGP peers,\n    # i.e. peers where peer-asn is the same as my-asn.\n\
+    \    localpref: 100\n    # (optional) BGP communities to attach to this\n    #\
+    \ advertisement. Communities are given in the standard\n    # two-part form <asn>:<community\
+    \ number>. You can also use\n    # alias names (see below).\n    communities:\n\
+    \    - 64512:1\n    - no-export\n  # (optional) The full network over which MetalLB\
+    \ is advertising\n  # with ARP. All CIDRs (above) in this address pool must be\n\
+    \  # contained in this network. MetalLB will not allocate the\n  # network and\
+    \ broadcast IPs of this network, even if they are\n  # contained in one of the\
+    \ available CIDR prefixes.\n  #\n  # The default value for this field is the /24\
+    \ network that\n  # contains all of this pool's CIDR prefixes. If no such /24\n\
+    \  # exists because the CIDRs span multiple /24s, arp-network must\n  # be explicitly\
+    \ specified.\n  arp-network: 192.168.0.0/24\n# (optional) BGP community aliases.\
+    \ Instead of using hard to\n# read BGP community numbers in address pool advertisement\n\
+    # configurations, you can define alias names here and use those\n# elsewhere in\
+    \ the configuration. The \"no-export\" community used\n# above is defined below.\n\
+    bgp-communities:\n  # no-export is a well-known BGP community that prevents\n\
+    \  # re-advertisement outside of the immediate autonomous system,\n  # but people\
+    \ don't usually recognize its numerical value. :)\n  no-export: 65535:65281"

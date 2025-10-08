@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+data:
+  logstash.yml: 'http.host: "0.0.0.0"
+
+    path.config: /usr/share/logstash/pipeline
+
+    '
+  logstash.conf: "input {\n  beats {\n    port => 5044\n  }\n}\nfilter {\n  grok {\n\
+    \      match => { \"message\" => \"%{COMBINEDAPACHELOG}\" }\n  }\n  date {\n \
+    \   match => [ \"timestamp\" , \"dd/MMM/yyyy:HH:mm:ss Z\" ]\n  }\n  geoip {\n\
+    \      source => \"clientip\"\n    }\n  }\n  output {\n    elasticsearch {\n \
+    \     hosts => [\"elasticsearch:9200\"]\n  }\n}"

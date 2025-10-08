@@ -1,0 +1,25 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: syntribos-cronjob
+spec:
+  schedule: '*/1 * * * *'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: daily-syntribos-cronjob
+            image: tonytan4ever/docker-openstack-syntribos:latest
+            env:
+            - name: config_file_location
+              value: /syntribos_tests_dir/syntribos_demo.conf
+            volumeMounts:
+            - mountPath: /syntribos_tests_dir
+              name: syntribos-test-volume
+          restartPolicy: OnFailure
+          volumes:
+          - name: syntribos-test-volume
+            hostPath:
+              path: /Users/tonytan4ever/projects/Mine/syntribos_test
+              type: Directory

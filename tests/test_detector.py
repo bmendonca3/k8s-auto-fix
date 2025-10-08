@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.detector.detector import Detector
+from src.detector.detector import Detector, DetectionResult
+import yaml
 
 
 class DetectorTests(unittest.TestCase):
@@ -99,9 +100,148 @@ spec:
         required_fields = {"id", "manifest_path", "manifest_yaml", "policy_id", "violation_text"}
         for entry in data:
             self.assertTrue(required_fields.issubset(entry.keys()))
-        manifest_contents = self.manifest_path.read_text()
-        self.assertTrue(any(entry["manifest_yaml"] == manifest_contents for entry in data))
+        manifest_obj = yaml.safe_load(self.manifest_path.read_text())
+        self.assertTrue(
+            any(yaml.safe_load(entry["manifest_yaml"]) == manifest_obj for entry in data)
+        )
         self.assertIn("no-privileged", {entry["policy_id"] for entry in data})
+
+    def test_targeted_manifest_selects_matching_document(self) -> None:
+        multi_path = Path(self.tmpdir.name) / "multi.yaml"
+        multi_path.write_text(
+            """
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shared-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deploy
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: nginx:latest
+""".strip()
+        )
+        detection = DetectionResult(
+            tool="kube-linter",
+            manifest=str(multi_path),
+            rule="no_latest_tag",
+            message="uses :latest",
+            resource="Deployment/default/demo-deploy",
+            extra=None,
+        )
+        manifest_yaml = self.detector._load_targeted_manifest(multi_path, detection)
+        manifest_obj = yaml.safe_load(manifest_yaml)
+        self.assertEqual(manifest_obj.get("kind"), "Deployment")
+        self.assertEqual(manifest_obj.get("metadata", {}).get("name"), "demo-deploy")
+        self.assertNotIn("shared-config", manifest_yaml)
+
+    def test_targeted_manifest_falls_back_to_first_mapping(self) -> None:
+        multi_path = Path(self.tmpdir.name) / "multi_no_match.yaml"
+        multi_path.write_text(
+            """
+kind: ConfigMap
+metadata:
+  name: shared-config
+---
+kind: Service
+metadata:
+  name: svc
+""".strip()
+        )
+        detection = DetectionResult(
+            tool="kube-linter",
+            manifest=str(multi_path),
+            rule="no_latest_tag",
+            message="uses :latest",
+            resource=None,
+            extra=None,
+        )
+        manifest_yaml = self.detector._load_targeted_manifest(multi_path, detection)
+        manifest_obj = yaml.safe_load(manifest_yaml)
+        self.assertEqual(manifest_obj.get("kind"), "ConfigMap")
+        self.assertEqual(manifest_obj.get("metadata", {}).get("name"), "shared-config")
+
+    def test_manifest_pruning_reduces_context(self) -> None:
+        large_path = Path(self.tmpdir.name) / "large.yaml"
+        large_path.write_text(
+            """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deploy
+  namespace: prod
+  labels:
+    app: demo
+  annotations:
+    trace: enabled
+  extra_meta: should_not_appear
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: demo
+      annotations:
+        trace: enabled
+      nested_extra: nope
+    spec:
+      containers:
+        - name: app
+          image: nginx:latest
+          imagePullPolicy: Always
+          env:
+            - name: PASSWORD
+              value: s3cr3t
+          envFrom:
+            - secretRef:
+                name: existing-secret
+          resources:
+            limits:
+              cpu: "0"
+            requests:
+              cpu: "0"
+          securityContext:
+            privileged: true
+          extra_field: remove_me
+      terminationGracePeriodSeconds: 30
+""".strip()
+        )
+
+        detection = DetectionResult(
+            tool="kube-linter",
+            manifest=str(large_path),
+            rule="unset-cpu-requirements",
+            message="missing cpu requests",
+            resource=None,
+            extra=None,
+        )
+        manifest_yaml = self.detector._load_targeted_manifest(large_path, detection)
+        pruned = yaml.safe_load(manifest_yaml)
+
+        self.assertEqual(pruned["kind"], "Deployment")
+        self.assertNotIn("extra_meta", pruned.get("metadata", {}))
+        spec = pruned.get("spec", {})
+        self.assertIn("replicas", spec)
+        self.assertNotIn("strategy", spec)
+
+        template_meta = spec.get("template", {}).get("metadata", {})
+        self.assertNotIn("nested_extra", template_meta)
+        container = spec.get("template", {}).get("spec", {}).get("containers", [])[0]
+        self.assertNotIn("extra_field", container)
+        self.assertIn("resources", container)
+        self.assertIn("envFrom", container)
 
 
 if __name__ == "__main__":  # pragma: no cover

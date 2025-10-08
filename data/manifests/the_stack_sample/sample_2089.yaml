@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imicros-users-deployment
+spec:
+  selector:
+    matchLabels:
+      app: imicros-users
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: imicros-users
+        version: '0.1'
+    spec:
+      containers:
+      - name: imicros-users
+        image: al66/imicros-backend:latest
+        imagePullPolicy: Always
+        env:
+        - name: SERVICES
+          value: master, user, groups, agents, acl
+        - name: MASTER_TOKEN
+          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+        - name: SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: service-token
+              key: token
+        - name: TRANSPORTER_NATS
+          value: nats://nats:4222
+        - name: CASSANDRA_CONTACTPOINTS
+          value: cassandra
+        - name: CASSANDRA_DATACENTER
+          value: datacenter1
+        - name: CASSANDRA_KEYSPACE_KEYS
+          value: imicros_keys
+        - name: CASSANDRA_PORT
+          value: '9042'
+        - name: CASSANDRA_USER
+          value: cassandra
+        - name: CASSANDRA_PASSWORD
+          value: cassandra
+        - name: NEO4J_URI
+          value: bolt://neo4j:7687
+        - name: NEO4J_USER
+          value: neo4j
+        - name: NEO4J_PASSWORD
+          value: neo4j
+        - name: JWT_SECRET
+          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+        - name: AGENTS_JWT_SECRET
+          value: my JWT secret - should be set as a Kubernetes secret
+        - name: EVENT_OWNER_ID
+          value: 096f1dff-681a-4746-b5cd-2228f69630c7

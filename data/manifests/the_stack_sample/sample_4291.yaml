@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: signalfx-agent-v5
+  labels:
+    app: signalfx-agent
+data:
+  agent.yaml: "signalFxAccessToken: ${SFX_ACCESS_TOKEN}\n\nsignalFxRealm: us0\n\n\
+    disableHostDimensions: true\n\netcPath: /hostfs/etc\nprocPath: /hostfs/proc\n\n\
+    enableBuiltInFiltering: true\n\nintervalSeconds: 10\n\ncluster: MY-CLUSTER\n\n\
+    writer:\n  signalFxEnabled: true\n\nlogging:\n  level: info\n  format: text\n\n\
+    globalDimensions:\n  kubernetes_cluster: MY-CLUSTER\n\nobservers:\n- type: k8s-api\n\
+    \  discoverAllPods: true\n  discoverNodes: true\n\nmonitors:\n\n\n- type: kubelet-metrics\n\
+    \  # Change 'fargate' part to something else if using another serverless K8s\n\
+    \  # platform.  We avoid scraping kubelet stats from the same node as the\n  #\
+    \ agent because EKS restricts connections between a pod and its own\n  # virtual\
+    \ kubelet, but not other kubelets.\n  discoveryRule: 'target == \"k8s-node\" &&\
+    \ name =~ \"fargate\" && name != Getenv(\"MY_NODE_NAME\")'\n  configEndpointMappings:\n\
+    \    kubeletAPI: |\n      {\n        url: Sprintf(\"https://%s:%d\", host, node_status.DaemonEndpoints.KubeletEndpoint.Port),\n\
+    \        authType: \"serviceAccount\"\n      }\n  kubeletAPI:\n    authType: serviceAccount\n\
+    \  usePodsEndpoint: true\n\n\n\n# Collects k8s cluster-level metrics\n- type:\
+    \ kubernetes-cluster\n  alwaysClusterReporter: true\n\n\n\n\n\ncollectd:\n\n \
+    \ readThreads: 5\n  writeQueueLimitHigh: 500000\n  writeQueueLimitLow: 400000\n\
+    \  timeout: 40\n  logLevel: info\n\nmetricsToExclude:\n  # The StackDriver metadata-agent\
+    \ pod on GKE restarts every few minutes so\n  # ignore its containers\n  - dimensions:\n\
+    \      container_spec_name: metadata-agent"

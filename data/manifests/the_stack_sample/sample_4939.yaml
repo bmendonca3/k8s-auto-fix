@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mobile-security-service-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: mobile-security-service-operator
+  template:
+    metadata:
+      labels:
+        name: mobile-security-service-operator
+    spec:
+      serviceAccountName: mobile-security-service-operator
+      containers:
+      - name: mobile-security-service-operator
+        image: quay.io/aerogear/mobile-security-service-operator:master
+        command:
+        - mobile-security-service-operator
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 60m
+            memory: 128Mi
+          requests:
+            cpu: 30m
+            memory: 64Mi
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: APP_NAMESPACES
+          value: mobile-security-service-apps
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: mobile-security-service-operator

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlir-nvidia-production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlir-nvidia-production
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: mlir-nvidia-production
+    spec:
+      containers:
+      - image: gcr.io/sanitizer-bots/buildbot-mlir-nvidia:14
+        name: mlir-nvidia-production
+        env:
+        - name: BUILDBOT_PORT
+          value: '9990'
+        resources:
+          limits:
+            cpu: '15'
+            memory: 10Gi
+            nvidia.com/gpu: '1'
+          requests:
+            cpu: '15'
+            memory: 10Gi
+            nvidia.com/gpu: '1'
+        volumeMounts:
+        - mountPath: /secrets
+          mountPropagation: None
+          name: buildbot-token
+      nodeSelector:
+        pool: nvidia-16core-pool
+      restartPolicy: Always
+      volumes:
+      - name: buildbot-token
+        secret:
+          optional: false
+          secretName: password-mlir-nvidia

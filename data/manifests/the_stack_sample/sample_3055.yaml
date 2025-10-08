@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-janitor
+  namespace: $(kubernetes-namespace)
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-janitor
+  template:
+    metadata:
+      labels:
+        app: k8s-janitor
+      annotations:
+        iam.amazonaws.com/role: eks-hellman-self-service
+        prometheus.io/port: '8080'
+        prometheus.io/scrape: 'true'
+        logging_dfds_cloud_format_json: 'true'
+    spec:
+      priorityClassName: selfservice
+      serviceAccountName: k8s-janitor-sa
+      containers:
+      - name: k8s-janitor
+        image: 579478677147.dkr.ecr.eu-central-1.amazonaws.com/ded/k8s-janitor:$(Build.BuildId)
+        ports:
+        - containerPort: 80
+          name: web
+        - containerPort: 8080
+          name: metrics
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 100m
+          limits:
+            memory: 400Mi
+            cpu: 200m
+        livenessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          httpGet:
+            port: web
+            path: /healthz
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          httpGet:
+            port: web
+            path: /healthz
+        env:
+        - name: AWS_S3_BUCKET_REGION
+          value: $(AWS_S3_BUCKET_REGION)
+        - name: AWS_S3_BUCKET_NAME_CONFIG_MAP
+          value: $(AWS_S3_BUCKET_NAME_CONFIG_MAP)
+        - name: CONFIG_MAP_FILE_NAME
+          value: $(CONFIG_MAP_FILE_NAME)
+        - name: KUBERNETES_SERVICE_KAFKA_BOOTSTRAP_SERVERS
+          value: $(KUBERNETES_SERVICE_KAFKA_BOOTSTRAP_SERVERS)
+        - name: KUBERNETES_SERVICE_KAFKA_BROKER_VERSION_FALLBACK
+          value: 0.10.0.0
+        - name: KUBERNETES_SERVICE_KAFKA_API_VERSION_FALLBACK_MS
+          value: '0'
+        - name: KUBERNETES_SERVICE_KAFKA_SASL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: k8s-janitor-kafka-credentials
+              key: username
+        - name: KUBERNETES_SERVICE_KAFKA_SASL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-janitor-kafka-credentials
+              key: password
+        - name: KUBERNETES_SERVICE_KAFKA_GROUP_ID
+          value: $(KUBERNETES_SERVICE_KAFKA_GROUP_ID)
+        - name: KUBERNETES_SERVICE_KAFKA_ENABLE_AUTO_COMMIT
+          value: 'false'
+        - name: KUBERNETES_SERVICE_KAFKA_SASL_MECHANISMS
+          value: PLAIN
+        - name: KUBERNETES_SERVICE_KAFKA_SECURITY_PROTOCOL
+          value: SASL_SSL

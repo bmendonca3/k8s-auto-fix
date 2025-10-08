@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventing-controller
+  namespace: knative-eventing
+  labels:
+    eventing.knative.dev/release: devel
+    knative.dev/high-availability: 'true'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventing-controller
+  template:
+    metadata:
+      labels:
+        app: eventing-controller
+        eventing.knative.dev/release: devel
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: eventing-controller
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      serviceAccountName: eventing-controller
+      containers:
+      - name: eventing-controller
+        terminationMessagePolicy: FallbackToLogsOnError
+        image: ko://knative.dev/eventing/cmd/controller
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONFIG_LOGGING_NAME
+          value: config-logging
+        - name: CONFIG_OBSERVABILITY_NAME
+          value: config-observability
+        - name: METRICS_DOMAIN
+          value: knative.dev/eventing
+        - name: PING_IMAGE
+          value: ko://knative.dev/eventing/cmd/ping
+        - name: MT_PING_IMAGE
+          value: ko://knative.dev/eventing/cmd/mtping
+        - name: APISERVER_RA_IMAGE
+          value: ko://knative.dev/eventing/cmd/apiserver_receive_adapter
+        securityContext:
+          allowPrivilegeEscalation: false
+        ports:
+        - name: metrics
+          containerPort: 9090
+        - name: profiling
+          containerPort: 8008

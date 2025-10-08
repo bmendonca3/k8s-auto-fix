@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: <ACUMOS_NAMESPACE>
+  name: license-rtu-editor
+  labels:
+    app: license-rtu-editor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: license-rtu-editor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: license-rtu-editor
+        <ACUMOS_SERVICE_LABEL_KEY>: <ACUMOS_LICENSE_MGT_SERVICE_LABEL>
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: <ACUMOS_SERVICE_LABEL_KEY>
+                operator: NotIn
+                values:
+                - <ACUMOS_LICENSE_MGT_SERVICE_LABEL>
+            topologyKey: kubernetes.io/node
+      imagePullSecrets:
+      - name: acumos-registry
+      containers:
+      - name: license-rtu-editor
+        image: <LICENSE_RTU_EDITOR_IMAGE>
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /maven/logs
+          name: logs
+      restartPolicy: Always
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: <ACUMOS_LICENSE_MGT_SERVICE_LABEL>

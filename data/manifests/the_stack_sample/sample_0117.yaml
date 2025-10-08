@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kube-ops-view-ingress
+  namespace: kube-ops-view
+  labels:
+    app: kube-ops-view-ingress-{{ .Values.spec.env }}
+    team: burnham
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cluster-autoscaler.kubernetes.io/safe-to-evict: 'true'
+spec:
+  rules:
+  - host: kube-ops-view.{{ .Values.spec.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ssp-addon-kube-ops-view
+            port:
+              number: 80

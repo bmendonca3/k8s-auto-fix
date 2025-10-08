@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: database
+        image: biarms/mysql
+        resources:
+          requests:
+            memory: 2Gi
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: raspberry
+        livenessProbe:
+          tcpSocket:
+            port: 3306
+        ports:
+        - containerPort: 3306
+      volumes:
+      - name: database
+        persistentVolumeClaim:
+          claimName: mysql-claim

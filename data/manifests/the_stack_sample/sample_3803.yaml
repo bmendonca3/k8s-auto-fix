@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-operator-config
+  namespace: '{{ .Release.Namespace }}'
+data:
+  config.yaml: "default_clickhouse_image: \"registry.sensetime.com/diamond/service-providers/clickhouse-server:v20.8.9.6\"\
+    \ndefault_clickhouse_init_image: \"{{ .Values.image.repository }}:{{ .Values.image.tag\
+    \ }}\"\ndefault_config:\n  - /etc/clickhouse-operator/01-clickhouse-listen.xml\n\
+    \  - /etc/clickhouse-operator/02-clickhouse-logger.xml\n  - /etc/clickhouse-operator/03-clickhouse-others.xml\n\
+    \  - /etc/clickhouse-operator/04-clickhouse-prometheus.xml\ndefault_shard_count:\
+    \ 1\ndefault_replicas_count: 1\ndefault_data_capacity: 10Gi"
+  01-clickhouse-listen.xml: "<yandex>\n    <!-- Listen wildcard address to allow accepting\
+    \ connections from other containers and host network. -->\n    <listen_host>0.0.0.0</listen_host>\n\
+    \    <listen_try>1</listen_try>\n</yandex>"
+  02-clickhouse-logger.xml: "<yandex>\n    <logger>\n        <!-- Possible levels:\
+    \ https://github.com/pocoproject/poco/blob/develop/Foundation/include/Poco/Logger.h#L105\
+    \ -->\n        <level>information</level>\n        <log>/var/log/clickhouse-server/clickhouse-server.log</log>\n\
+    \        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>\n\
+    \        <size>2048M</size>\n        <count>20</count>\n        <!-- Default behavior\
+    \ is autodetection (log to console if not daemon mode and is tty) -->\n      \
+    \  <console>1</console>\n    </logger>\n</yandex>"
+  03-clickhouse-others.xml: "<yandex>\n    <timezone>Asia/Shanghai</timezone>\n  \
+    \  <keep_alive_timeout>10</keep_alive_timeout>\n\n    <mark_cache_size>10737418240</mark_cache_size>\n\
+    \    <uncompressed_cache_size>8589934592</uncompressed_cache_size>\n\n    <max_concurrent_queries>2000</max_concurrent_queries>\n\
+    \    <max_connections>32768</max_connections>\n    <max_open_files>1048576</max_open_files>\n\
+    \n    <max_table_size_to_drop>0</max_table_size_to_drop>\n    <merge_tree>\n \
+    \      <max_suspicious_broken_parts>5</max_suspicious_broken_parts>\n    </merge_tree>\n\
+    \    <dictionaries_lazy_load>true</dictionaries_lazy_load>\n    <part_log>\n \
+    \       <database>system</database>\n        <table>part_log</table>\n       \
+    \ <partition_by>toYYYYMM(event_date)</partition_by>\n        <flush_interval_milliseconds>10000</flush_interval_milliseconds>\n\
+    \    </part_log>\n    <use_minimalistic_part_header_in_zookeeper>1</use_minimalistic_part_header_in_zookeeper>\n\
+    \    <disable_internal_dns_cache>1</disable_internal_dns_cache>\n</yandex>"
+  04-clickhouse-prometheus.xml: "<yandex>\n  <prometheus>\n    <endpoint>/metrics</endpoint>\n\
+    \    <port>9363</port>\n\n    <metrics>true</metrics>\n    <events>true</events>\n\
+    \    <asynchronous_metrics>true</asynchronous_metrics>\n    <status_info>true</status_info>\n\
+    \  </prometheus>\n</yandex>"

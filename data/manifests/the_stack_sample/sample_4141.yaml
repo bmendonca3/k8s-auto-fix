@@ -1,0 +1,36 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: player-csv
+  namespace: baseball
+  labels:
+    app: player-csv
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: player-csv
+  template:
+    metadata:
+      labels:
+        app: player-csv
+    spec:
+      containers:
+      - name: player-csv
+        image: nschultz/fantasy-baseball-player-csv:0.6.0
+        volumeMounts:
+        - name: player-csv-data-volume
+          mountPath: /app/data
+        ports:
+        - name: web
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: player-csv-data-volume
+        persistentVolumeClaim:
+          claimName: player-csv-data-claim

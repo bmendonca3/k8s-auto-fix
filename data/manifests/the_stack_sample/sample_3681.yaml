@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: log-generator
+  name: log-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-generator
+  template:
+    metadata:
+      labels:
+        app: log-generator
+    spec:
+      containers:
+      - name: log-generator
+        image: diebietse/log-generator:v0.1.0
+        imagePullPolicy: Always
+        env:
+        - name: LOG_SOURCE_FILE_PATH
+          value: /data/log-config
+        volumeMounts:
+        - name: log-config
+          mountPath: /data/log-config
+          subPath: log-config
+          readOnly: true
+        resources:
+          limits:
+            cpu: 150m
+            memory: 32Mi
+          requests:
+            cpu: 150m
+            memory: 32Mi
+      volumes:
+      - name: log-config
+        configMap:
+          name: log-config
+          items:
+          - key: log-config
+            path: log-config

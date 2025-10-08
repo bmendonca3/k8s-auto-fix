@@ -1,0 +1,19 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: local-path-config
+  namespace: local-path-storage
+data:
+  config.json: "{\n        \"nodePathMap\":[\n        {\n                \"node\"\
+    :\"DEFAULT_PATH_FOR_NON_LISTED_NODES\",\n                \"paths\":[\"/opt/local-path-provisioner\"\
+    ]\n        }\n        ]\n}"
+  setup: "#!/bin/sh\nwhile getopts \"m:s:p:\" opt\ndo\n    case $opt in\n        p)\n\
+    \        absolutePath=$OPTARG\n        ;;\n        s)\n        sizeInBytes=$OPTARG\n\
+    \        ;;\n        m)\n        volMode=$OPTARG\n        ;;\n    esac\ndone\n\
+    \nmkdir -m 0777 -p ${absolutePath}"
+  teardown: "#!/bin/sh\nwhile getopts \"m:s:p:\" opt\ndo\n    case $opt in\n     \
+    \   p)\n        absolutePath=$OPTARG\n        ;;\n        s)\n        sizeInBytes=$OPTARG\n\
+    \        ;;\n        m)\n        volMode=$OPTARG\n        ;;\n    esac\ndone\n\
+    \nrm -rf ${absolutePath}"
+  helperPod.yaml: "apiVersion: v1\nkind: Pod\nmetadata:\n  name: helper-pod\nspec:\n\
+    \  containers:\n  - name: helper-pod\n    image: {{ global.repository | default('docker.io/kubegems')}}/busybox:latest"

@@ -25,7 +25,7 @@ def _collect_from_directory(directory: Path) -> List[Path]:
     patterns = ("*.yml", "*.yaml")
     results: List[Path] = []
     for pattern in patterns:
-        results.extend(directory.glob(pattern))
+        results.extend(directory.rglob(pattern))
     return results
 
 

@@ -1,0 +1,480 @@
+[
+  {
+    "id": "02481",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: mysql-operator\n  template:\n    metadata:\n      labels:\n        name: mysql-operator\n    spec:\n      serviceAccountName: mysql-operator\n      containers:\n      - name: operator\n        image: atalabirchuk/otus:mysql-operator_v1\n        imagePullPolicy: Always\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02482",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: mysql-operator\n  template:\n    metadata:\n      labels:\n        name: mysql-operator\n    spec:\n      serviceAccountName: mysql-operator\n      containers:\n      - name: operator\n        image: atalabirchuk/otus:mysql-operator_v1\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02483",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mysql-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: mysql-operator\n  template:\n    metadata:\n      labels:\n        name: mysql-operator\n    spec:\n      serviceAccountName: mysql-operator\n      containers:\n      - name: operator\n        image: atalabirchuk/otus:mysql-operator_v1\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02484",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02485",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02486",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-allowed\n  labels:\n    app: nginx-allowed\nspec:\n  securityContext:\n    supplementalGroups:\n    - 101\n    fsGroup: 101\n  containers:\n  - name: nginx\n    image: nginxinc/nginx-unprivileged:1.19\n    resources:\n      limits:\n        cpu: 1\n        memory: 1Gi\n      requests:\n        cpu: 1\n        memory: 1Gi\n    ports:\n    - containerPort: 8080\n      protocol: TCP\n    securityContext:\n      runAsUser: 101\n      runAsGroup: 101\n      capabilities:\n        drop:\n        - ALL\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n    readinessProbe:\n      httpGet:\n        scheme: HTTP\n        path: /index.html\n        port: 8080\n    livenessProbe:\n      httpGet:\n        scheme: HTTP\n        path: /index.html\n        port: 8080\n",
+    "errors": []
+  },
+  {
+    "id": "02487",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: horologium\n  labels:\n    app: horologium\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: horologium\n  template:\n    metadata:\n      labels:\n        app: horologium\n    spec:\n      containers:\n      - name: horologium\n        image: gcr.io/k8s-prow/horologium:v20200116-52fe941d7\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        volumeMounts:\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "errors": []
+  },
+  {
+    "id": "02488",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: horologium\n  labels:\n    app: horologium\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: horologium\n  template:\n    metadata:\n      labels:\n        app: horologium\n    spec:\n      containers:\n      - name: horologium\n        image: gcr.io/k8s-prow/horologium:v20200116-52fe941d7\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        volumeMounts:\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "errors": []
+  },
+  {
+    "id": "02489",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: horologium\n  labels:\n    app: horologium\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: horologium\n  template:\n    metadata:\n      labels:\n        app: horologium\n    spec:\n      containers:\n      - name: horologium\n        image: gcr.io/k8s-prow/horologium:v20200116-52fe941d7\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        volumeMounts:\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "errors": []
+  },
+  {
+    "id": "02490",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: horologium\n  labels:\n    app: horologium\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: horologium\n  template:\n    metadata:\n      labels:\n        app: horologium\n    spec:\n      containers:\n      - name: horologium\n        image: gcr.io/k8s-prow/horologium:v20200116-52fe941d7\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        volumeMounts:\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "errors": []
+  },
+  {
+    "id": "02491",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ubuntuapp\n  labels:\n    app: ubuntuapp\n  annotations:\n    opencontrail.org/network: '{\"domain\":\"default-domain\", \"project\": \"admin\", \"name\":\"VN-01\"}'\nspec:\n  containers:\n  - name: ubuntuapp\n    image: ubuntu-upstart:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02492",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ubuntuapp\n  labels:\n    app: ubuntuapp\n  annotations:\n    opencontrail.org/network: '{\"domain\":\"default-domain\", \"project\": \"admin\", \"name\":\"VN-01\"}'\nspec:\n  containers:\n  - name: ubuntuapp\n    image: ubuntu-upstart:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02493",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ubuntuapp\n  labels:\n    app: ubuntuapp\n  annotations:\n    opencontrail.org/network: '{\"domain\":\"default-domain\", \"project\": \"admin\", \"name\":\"VN-01\"}'\nspec:\n  containers:\n  - name: ubuntuapp\n    image: ubuntu-upstart:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02494",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ubuntuapp\n  labels:\n    app: ubuntuapp\n  annotations:\n    opencontrail.org/network: '{\"domain\":\"default-domain\", \"project\": \"admin\", \"name\":\"VN-01\"}'\nspec:\n  containers:\n  - name: ubuntuapp\n    image: ubuntu-upstart:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02495",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ubuntuapp\n  labels:\n    app: ubuntuapp\n  annotations:\n    opencontrail.org/network: '{\"domain\":\"default-domain\", \"project\": \"admin\", \"name\":\"VN-01\"}'\nspec:\n  containers:\n  - name: ubuntuapp\n    image: ubuntu-upstart:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02496",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210902-02bdcbd6bf\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        - name: metrics\n          containerPort: 9090\n        args:\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "02497",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210902-02bdcbd6bf\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        - name: metrics\n          containerPort: 9090\n        args:\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "02498",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210902-02bdcbd6bf\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        - name: metrics\n          containerPort: 9090\n        args:\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "02499",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210902-02bdcbd6bf\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        - name: metrics\n          containerPort: 9090\n        args:\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=prow.k8s.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "02500",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: goapp-deployment\nspec:\n  selector:\n    matchLabels:\n      app: goapp\n  template:\n    metadata:\n      labels:\n        app: goapp\n    spec:\n      containers:\n      - name: goapp\n        image: docker.pkg.github.com/ynishi18/cicd-handson-2021-code/go-image:base\n        ports:\n        - containerPort: 9090\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02501",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: goapp-deployment\nspec:\n  selector:\n    matchLabels:\n      app: goapp\n  template:\n    metadata:\n      labels:\n        app: goapp\n    spec:\n      containers:\n      - name: goapp\n        image: docker.pkg.github.com/ynishi18/cicd-handson-2021-code/go-image:base\n        ports:\n        - containerPort: 9090\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02502",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: goapp-deployment\nspec:\n  selector:\n    matchLabels:\n      app: goapp\n  template:\n    metadata:\n      labels:\n        app: goapp\n    spec:\n      containers:\n      - name: goapp\n        image: docker.pkg.github.com/ynishi18/cicd-handson-2021-code/go-image:base\n        ports:\n        - containerPort: 9090\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02503",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: goapp-deployment\nspec:\n  selector:\n    matchLabels:\n      app: goapp\n  template:\n    metadata:\n      labels:\n        app: goapp\n    spec:\n      containers:\n      - name: goapp\n        image: docker.pkg.github.com/ynishi18/cicd-handson-2021-code/go-image:base\n        ports:\n        - containerPort: 9090\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02504",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02505",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02506",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02507",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02508",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02509",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02510",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02511",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02512",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02513",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02514",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02515",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02516",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02517",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02518",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02519",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02520",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  }
+]

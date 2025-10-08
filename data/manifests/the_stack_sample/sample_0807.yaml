@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: python
+spec:
+  selector:
+    matchLabels:
+      app: python
+      tier: app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: python
+        tier: app
+    spec:
+      containers:
+      - name: python
+        image: registry.cn-hangzhou.aliyuncs.com/dal/python:v1.0
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: GET_HOSTS_FROM
+          value: dns
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysecret
+              key: key
+        ports:
+        - containerPort: 80

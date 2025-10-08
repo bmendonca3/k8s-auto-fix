@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nsq-traefik-consumer
+  labels:
+    team: platform
+  namespace: prod
+data:
+  config.yaml: "LogLevel: warning\nNsq:\n  Addresses:\n      - http://prod.nsqlookupd.service.consul:4161\n\
+    \  Topic: logstash-k8s\n  Channel: logstash-k8s-influx-consumers\n  MaxInFlight:\
+    \ 200\nKubernetes:\n  AnnotationKey: wikia_com/keys\nInfluxDB:\n  Address: http://prod.app-metrics-db.service.sjc.consul:8086\n\
+    \  Database: ingress\n  SendInterval: 5s\n  Measurement: access_logs\n  RetentionPolicy:\
+    \ default\n  BatchSize: 100\nFields:\n  - duration\n  - backend_url.Host\n  -\
+    \ backend_url.Path\n  - backend_address\n  - client_address\n  - client_host\n\
+    \  - client_port\n  - client_username\n  - request_address\n  - request_host\n\
+    \  - request_port\n  - request_method\n  - request_path\n  - request_protocol\n\
+    #  - request_line\n  - request_content_size\n  - origin_duration\n  - origin_content_size\n\
+    \  - origin_status\n#  - origin_status_line\n  - downstream_status\n#  - downstream_status_line\n\
+    \  - downstream_content_size\n  - request_count\n  - gzip_ratio\n  - overhead\n\
+    \  - retry_attempts\n  - original_timestamp\n  - request__referer\n  - request__user-agent\n\
+    Rules:\n  - Id: helios\n    FrontendRegexp: ^prod\\.sjc\\.k8s\\.wikia\\.net/helios\n\
+    \    Sampling: 0.1\n  - Id: helios\n    FrontendRegexp: ^services\\.wikia\\.com/auth\n\
+    \    Sampling: 0.1\n  - Id: amp-services\n    FrontendRegexp: ^services\\.wikia\\\
+    .com/amp\n    Sampling: 0.5\n  - Id: amp\n    FrontendRegexp: ^amp\\.wikia\\.com\n\
+    \    Sampling: 0.5\n  - Id: services-all\n    FrontendRegexp: ^services\\.wikia\\\
+    .com\n    Sampling: 0.2\n  - Id: services-all-internal\n    FrontendRegexp: ^sjc\\\
+    .k8s\\.wikia\\.net\n    Sampling: 0.1\n  - Id: services-all-internal\n    FrontendRegexp:\
+    \ ^prod\\.sjc\\.k8s\\.wikia\\.net\n    Sampling: 0.1\n  - Id: liftigniter-metadata\n\
+    \    FrontendRegexp: ^liftigniter-metadata\\.prod\\.sjc\\.k8s\\.wikia\\.net\n\
+    \    Sampling: 0.05\n  - Id: mobile-wiki\n    FrontendRegexp: ^mobile-wiki-prod\\\
+    .prod\\.sjc\\.k8s\\.wikia\\.net\n    Sampling: 0.1\n  - Id: discussions-front-end\n\
+    \    FrontendRegexp: ^discussions-front-end-prod\\.prod\\.sjc\\.k8s\\.wikia\\\
+    .net\n    Sampling: 0.5"

@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-kube-promethe-admission-create
+  namespace: default
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app: kube-prometheus-stack-admission-create
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 77.14.0
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    chart: kube-prometheus-stack-77.14.0
+    release: release-name
+    heritage: Helm
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+    app.kubernetes.io/component: prometheus-operator-webhook
+spec:
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      name: release-name-kube-promethe-admission-create
+      labels:
+        app: kube-prometheus-stack-admission-create
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: 77.14.0
+        app.kubernetes.io/part-of: kube-prometheus-stack
+        chart: kube-prometheus-stack-77.14.0
+        release: release-name
+        heritage: Helm
+        app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+        app.kubernetes.io/component: prometheus-operator-webhook
+    spec:
+      containers:
+      - name: create
+        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.3
+        imagePullPolicy: IfNotPresent
+        args:
+        - create
+        - --host=release-name-kube-promethe-operator,release-name-kube-promethe-operator.default.svc
+        - --namespace=default
+        - --secret-name=release-name-kube-promethe-admission
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        resources: {}
+      restartPolicy: OnFailure
+      serviceAccountName: release-name-kube-promethe-admission
+      securityContext:
+        runAsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 2000
+        seccompProfile:
+          type: RuntimeDefault

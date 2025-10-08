@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lighthouse-tekton-controller
+  labels:
+    draft: draft-app
+    chart: lighthouse-0.0.930
+    app: lighthouse-tekton-controller
+    gitops.jenkins-x.io/pipeline: namespaces
+  namespace: jx
+  annotations:
+    wave.pusher.com/update-on-config-change: 'true'
+    jenkins-x.io/hash: a8141d0ba42268f48bcf14ccb178511350558b1ff17290469370a3d52c2404a6
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      draft: draft-app
+      app: lighthouse-tekton-controller
+  template:
+    metadata:
+      labels:
+        draft: draft-app
+        app: lighthouse-tekton-controller
+      annotations: {}
+    spec:
+      serviceAccountName: lighthouse-tekton-controller
+      containers:
+      - name: lighthouse-tekton-controller
+        image: gcr.io/jenkinsxio/lighthouse-tekton-controller:0.0.930
+        imagePullPolicy: IfNotPresent
+        args:
+        - --namespace=jx
+        - --dashboard-url=http://dashboard-jx.
+        - --dashboard-template=namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun
+          }}
+        ports:
+        - name: metrics
+          containerPort: 8080
+        env:
+        - name: LOGRUS_FORMAT
+          value: json
+        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT
+          value: tekton-bot
+        - name: DEFAULT_PIPELINE_RUN_TIMEOUT
+          value: 2h0m0s
+        - name: FILE_BROWSER
+          value: git
+        - name: JX_DEFAULT_IMAGE
+          value: gcr.io/jenkinsxio/builder-maven:2.1.142-761
+        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE
+          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}
+        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG
+          value: 76a4da94f008d065cdff34debcc52552675b60ee
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 80m
+            memory: 128Mi
+      terminationGracePeriodSeconds: 180
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []

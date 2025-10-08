@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lhci-server
+spec:
+  selector:
+    matchLabels:
+      name: lhci-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      name: lhci-pod
+      labels:
+        name: lhci-server
+    spec:
+      containers:
+      - name: lhci-server
+        image: docker.io/patrickhulce/lhci-server:0.6.1
+        volumeMounts:
+        - mountPath: /data
+          name: lhci-data-volume
+        ports:
+        - containerPort: 9001
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 9001
+      volumes:
+      - name: lhci-data-volume
+        persistentVolumeClaim:
+          claimName: lhci-data-claim

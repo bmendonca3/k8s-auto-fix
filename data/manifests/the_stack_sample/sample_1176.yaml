@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: RELEASE-NAME-sumologic-otelcol
+  labels:
+    app: RELEASE-NAME-sumologic-fluentd-metrics
+    chart: sumologic-%CURRENT_CHART_VERSION%
+    release: RELEASE-NAME
+    heritage: Helm
+data:
+  traces.otelcol.conf.yaml: "exporters:\n  otlphttp:\n    compression: gzip\n    traces_endpoint:\
+    \ ${SUMO_ENDPOINT_DEFAULT_TRACES_SOURCE}\n  sumologic:\n    compress_encoding:\
+    \ gzip\n    endpoint: ${SUMO_ENDPOINT_DEFAULT_METRICS_SOURCE}\n    log_format:\
+    \ text\n    max_request_body_size: 1048576\n    metadata_attributes:\n    - k8s.*\n\
+    \    - host.name\n    metric_format: prometheus\n    retry_on_failure:\n     \
+    \ enabled: true\n      initial_interval: 5s\n      max_elapsed_time: 120s\n  \
+    \    max_interval: 30s\n    sending_queue:\n      enabled: false\n      num_consumers:\
+    \ 10\n      queue_size: 5000\n    source_category: \"%{namespace}/%{pod_name}\"\
+    \n    source_host: '%{host.name}'\n    source_name: \"%{namespace}.%{pod}.%{container}\"\
+    \n    timeout: 5s\n  zipkin:\n    endpoint: ${SUMO_ENDPOINT_DEFAULT_TRACES_SOURCE}\n\
+    extensions:\n  health_check: {}\n  memory_ballast:\n    size_mib: 683\nprocessors:\n\
+    \  batch:\n    send_batch_max_size: 512\n    send_batch_size: 256\n    timeout:\
+    \ 5s\n  cascading_filter:\n    num_traces: 200000\n  k8s_tagger:\n    extract:\n\
+    \      annotations:\n      - key: '*'\n        tag_name: k8s.pod.annotation.%s\n\
+    \      labels:\n      - key: '*'\n        tag_name: k8s.pod.label.%s\n      metadata:\n\
+    \      - containerId\n      - containerName\n      - clusterName\n      - daemonSetName\n\
+    \      - deploymentName\n      - hostName\n      - namespace\n      - nodeName\n\
+    \      - podId\n      - podName\n      - replicaSetName\n      - serviceName\n\
+    \      - statefulSetName\n      namespace_labels:\n      - key: '*'\n        tag_name:\
+    \ k8s.namespace.label.%s\n    owner_lookup_enabled: true\n    passthrough: false\n\
+    \  memory_limiter:\n    check_interval: 5s\n    limit_mib: 1900\n  resource:\n\
+    \    attributes:\n    - action: upsert\n      key: k8s.cluster.name\n      value:\
+    \ kubernetes\n  resourcedetection:\n    detectors:\n    - system\n    override:\
+    \ false\n    timeout: 10s\n  source:\n    annotation_prefix: k8s.pod.annotation.\n\
+    \    collector: \"kubernetes\"\n    container_key: k8s.container.name\n    exclude_container_regex:\
+    \ \"\"\n    exclude_host_regex: \"\"\n    exclude_namespace_regex: \"sumologic|foo\"\
+    \n    exclude_pod_regex: \"\"\n    namespace_key: k8s.namespace.name\n    pod_key:\
+    \ k8s.pod.name\n    pod_name_key: k8s.pod.pod_name\n    pod_template_hash_key:\
+    \ k8s.pod.label.pod-template-hash\n    source_category: \"%{namespace}/%{pod_name}\"\
+    \n    source_category_prefix: \"kubernetes/\"\n    source_category_replace_dash:\
+    \ \"/\"\n    source_host_key: k8s.pod.hostname\n    source_name: \"%{namespace}.%{pod}.%{container}\"\
+    \nreceivers:\n  jaeger:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:14250\n\
+    \      thrift_binary:\n        endpoint: 0.0.0.0:6832\n      thrift_compact:\n\
+    \        endpoint: 0.0.0.0:6831\n      thrift_http:\n        endpoint: 0.0.0.0:14268\n\
+    \  opencensus:\n    endpoint: 0.0.0.0:55678\n  otlp:\n    protocols:\n      grpc:\n\
+    \        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n\
+    \  zipkin:\n    endpoint: 0.0.0.0:9411\nservice:\n  extensions:\n  - health_check\n\
+    \  - memory_ballast\n  pipelines:\n    metrics:\n      exporters:\n      - sumologic\n\
+    \      processors:\n      - memory_limiter\n      - k8s_tagger\n      - resourcedetection\n\
+    \      - resource\n      - batch\n      receivers:\n      - otlp\n    traces:\n\
+    \      exporters:\n      - otlphttp\n      processors:\n      - memory_limiter\n\
+    \      - k8s_tagger\n      - source\n      - resource\n      - cascading_filter\n\
+    \      - batch\n      receivers:\n      - jaeger\n      - opencensus\n      -\
+    \ otlp\n      - zipkin"

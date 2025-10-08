@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nblotti-pheidippides
+  labels:
+    app: nblotti_pheidippides
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nblotti_pheidippides
+  template:
+    metadata:
+      labels:
+        app: nblotti_pheidippides
+    spec:
+      containers:
+      - name: nblotti
+        image: nblotti/pheidippides:v2.0.1
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 8080
+          initialDelaySeconds: 10
+          failureThreshold: 1
+          periodSeconds: 30
+      imagePullSecrets:
+      - name: regcred

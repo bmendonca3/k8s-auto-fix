@@ -1,0 +1,23 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: curator
+spec:
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 1
+  startingDeadlineSeconds: 60
+  schedule: '@daily'
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 30
+      template:
+        spec:
+          containers:
+          - name: clear
+            env:
+            - name: LOG_LEVEL
+              value: DEBUG
+            image: ymian/curator:latest
+          restartPolicy: Never

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    flux.weave.works/automated: 'true'
+  name: core-app
+  namespace: k8s-demo
+spec:
+  selector:
+    matchLabels:
+      app: core-app
+  template:
+    metadata:
+      labels:
+        app: core-app
+    spec:
+      containers:
+      - name: core-app
+        image: core-app:demo
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+          name: http
+        volumeMounts:
+        - name: secrets
+          mountPath: /etc/secrets
+        env:
+        - name: REDIS_HOST
+          value: redis-primary
+        - name: REDIS_PORT
+          value: '6379'
+        - name: POSTGRES_HOST
+          value: postgres-primary
+        - name: POSTGRES_PORT
+          value: '5432'
+        - name: SECRET1_TEST
+          valueFrom:
+            secretKeyRef:
+              name: core-app
+              key: val1test
+        - name: CONFIGMAP_TEST
+          valueFrom:
+            configMapKeyRef:
+              name: core-app
+              key: test.config.key1
+        resources:
+          limits:
+            cpu: 200m
+            memory: 300Mi
+          requests:
+            cpu: 200m
+            memory: 300Mi
+      volumes:
+      - name: secrets
+        secret:
+          secretName: core-app
+          items:
+          - key: val2test
+            path: secret_file
+            mode: 511

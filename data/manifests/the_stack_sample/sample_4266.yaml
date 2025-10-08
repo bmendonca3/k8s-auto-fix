@@ -1,0 +1,42 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: arpa-downloader
+spec:
+  schedule: 0 9 * * *
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          name: arpa-rm
+        spec:
+          containers:
+          - name: arpa-downloader
+            image: nexus.daf.teamdigitale.it/arpa-downloader:0.0.1
+            env:
+            - name: sftp_host
+              value: daf.teamdigitale.it
+            - name: sftp_user
+              value: comune_roma_daf
+            - name: sftp_key_file
+              value: ./secret/comune_roma_sftp-key
+            - name: sftp_folder
+              value: ENVI/misurazioni/dati_chimici_roma/
+            volumeMounts:
+            - name: glusterfsvol
+              mountPath: /opt/arpa-downloader/logs
+              subPath: arpa-downloader/logs
+            - name: sftp-key
+              mountPath: /opt/arpa-downloader/secret
+              readOnly: true
+          volumes:
+          - name: glusterfsvol
+            persistentVolumeClaim:
+              claimName: gluster-claim
+          - name: sftp-key
+            secret:
+              secretName: pa-secret
+              items:
+              - key: comune_roma_sftp-key
+                path: comune_roma_sftp-key
+          restartPolicy: OnFailure

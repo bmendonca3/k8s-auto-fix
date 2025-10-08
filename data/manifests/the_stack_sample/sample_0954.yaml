@@ -1,0 +1,71 @@
+apiVersion: v1
+data:
+  template.rollout-completed: "message: Rollout {{.rollout.metadata.name}} has been\
+    \ completed.\nemail:\n  subject: Rollout {{.rollout.metadata.name}} has been completed.\n\
+    slack:\n  attachments: |\n      [{\n        \"title\": \"{{ .rollout.metadata.name}}\"\
+    ,\n        \"color\": \"#18be52\",\n        \"fields\": [\n        {\n       \
+    \   \"title\": \"Strategy\",\n          \"value\": \"{{if .rollout.spec.strategy.blueGreen}}BlueGreen{{end}}{{if\
+    \ .rollout.spec.strategy.canary}}Canary{{end}}\",\n          \"short\": true\n\
+    \        }\n        {{range $index, $c := .rollout.spec.template.spec.containers}}\n\
+    \          {{if not $index}},{{end}}\n          {{if $index}},{{end}}\n      \
+    \    {\n            \"title\": \"{{$c.name}}\",\n            \"value\": \"{{$c.image}}\"\
+    ,\n            \"short\": true\n          }\n        {{end}}\n        ]\n    \
+    \  }]\n"
+  template.rollout-step-completed: "message: Rollout {{.rollout.metadata.name}} step\
+    \ number {{ add .rollout.status.currentStepIndex 1}}/{{len .rollout.spec.strategy.canary.steps}}\
+    \ has been completed.\nemail:\n  subject: Rollout {{.rollout.metadata.name}} step\
+    \ number {{ add .rollout.status.currentStepIndex 1}}/{{len .rollout.spec.strategy.canary.steps}}\
+    \ has been completed.\nslack:\n  attachments: |\n      [{\n        \"title\":\
+    \ \"{{ .rollout.metadata.name}}\",\n        \"color\": \"#18be52\",\n        \"\
+    fields\": [\n        {\n          \"title\": \"Strategy\",\n          \"value\"\
+    : \"{{if .rollout.spec.strategy.blueGreen}}BlueGreen{{end}}{{if .rollout.spec.strategy.canary}}Canary{{end}}\"\
+    ,\n          \"short\": true\n        },\n        {\n          \"title\": \"Step\
+    \ completed\",\n          \"value\": \"{{add .rollout.status.currentStepIndex\
+    \ 1}}/{{len .rollout.spec.strategy.canary.steps}}\",\n          \"short\": true\n\
+    \        }\n        {{range $index, $c := .rollout.spec.template.spec.containers}}\n\
+    \          {{if not $index}},{{end}}\n          {{if $index}},{{end}}\n      \
+    \    {\n            \"title\": \"{{$c.name}}\",\n            \"value\": \"{{$c.image}}\"\
+    ,\n            \"short\": true\n          }\n        {{end}}\n        ]\n    \
+    \  }]\n"
+  template.rollout-updated: "message: Rollout {{.rollout.metadata.name}} has been\
+    \ updated.\nemail:\n  subject: Rollout {{.rollout.metadata.name}} has been updated.\n\
+    slack:\n  attachments: |\n      [{\n        \"title\": \"{{ .rollout.metadata.name}}\"\
+    ,\n        \"color\": \"#18be52\",\n        \"fields\": [\n        {\n       \
+    \   \"title\": \"Strategy\",\n          \"value\": \"{{if .rollout.spec.strategy.blueGreen}}BlueGreen{{end}}{{if\
+    \ .rollout.spec.strategy.canary}}Canary{{end}}\",\n          \"short\": true\n\
+    \        }\n        {{range $index, $c := .rollout.spec.template.spec.containers}}\n\
+    \          {{if not $index}},{{end}}\n          {{if $index}},{{end}}\n      \
+    \    {\n            \"title\": \"{{$c.name}}\",\n            \"value\": \"{{$c.image}}\"\
+    ,\n            \"short\": true\n          }\n        {{end}}\n        ]\n    \
+    \  }]\n"
+  template.scaling-replicaset: "message: Scaling Rollout {{.rollout.metadata.name}}'s\
+    \ replicaset to {{.rollout.spec.replicas}}.\nemail:\n  subject: Scaling Rollout\
+    \ {{.rollout.metadata.name}}'s replcaset to {{.rollout.spec.replicas}}.\nslack:\n\
+    \  attachments: |\n      [{\n        \"title\": \"{{ .rollout.metadata.name}}\"\
+    ,\n        \"color\": \"#18be52\",\n        \"fields\": [\n        {\n       \
+    \   \"title\": \"Strategy\",\n          \"value\": \"{{if .rollout.spec.strategy.blueGreen}}BlueGreen{{end}}{{if\
+    \ .rollout.spec.strategy.canary}}Canary{{end}}\",\n          \"short\": true\n\
+    \        },\n        {\n          \"title\": \"Desired replica\",\n          \"\
+    value\": \"{{.rollout.spec.replicas}}\",\n          \"short\": true\n        },\n\
+    \        {\n          \"title\": \"Updated replicas\",\n          \"value\": \"\
+    {{.rollout.status.updatedReplicas}}\",\n          \"short\": true\n        }\n\
+    \        {{range $index, $c := .rollout.spec.template.spec.containers}}\n    \
+    \      {{if not $index}},{{end}}\n          {{if $index}},{{end}}\n          {\n\
+    \            \"title\": \"{{$c.name}}\",\n            \"value\": \"{{$c.image}}\"\
+    ,\n            \"short\": true\n          }\n        {{end}}\n        ]\n    \
+    \  }]\n"
+  trigger.on-rollout-completed: '- send: [rollout-completed]
+
+    '
+  trigger.on-rollout-step-completed: '- send: [rollout-step-completed]
+
+    '
+  trigger.on-rollout-updated: '- send: [rollout-updated]
+
+    '
+  trigger.on-scaling-replica-set: '- send: [scaling-replicaset]
+
+    '
+kind: ConfigMap
+metadata:
+  name: argo-rollouts-notification-configmap

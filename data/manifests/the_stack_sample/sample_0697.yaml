@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-operator
+  labels:
+    app: jaeger-operator-app
+  namespace: K8s-Tracing-Namespace
+  annotations:
+    developer/name: "Mislav Jak\u0161i\u0107"
+    developer/email: jaksicmislav@gmail.com
+    developer/url: https://github.com/MislavJaksic
+    developer/role: technical lead
+    developer/timezone: Europe/Zagreb
+    developer/picUrl: https://images.app.goo.gl/PCHZgd8oattge1i96
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: jaeger-operator
+  template:
+    metadata:
+      labels:
+        name: jaeger-operator
+    spec:
+      serviceAccountName: jaeger-operator
+      containers:
+      - name: jaeger-operator
+        image: jaegertracing/jaeger-operator:1.16.0
+        ports:
+        - containerPort: 8383
+          name: metrics
+        args:
+        - start
+        imagePullPolicy: Always
+        env:
+        - name: WATCH_NAMESPACE
+          value: ''
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OPERATOR_NAME
+          value: jaeger-operator

@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: uninstall-aura-full
+  namespace: aura
+spec:
+  backoffLimit: 10
+  activeDeadlineSeconds: 6120
+  template:
+    spec:
+      serviceAccountName: aura-job
+      initContainers:
+      - name: events-broker-delete
+        image: phx.ocir.io/oraclepaasmicroservices/aura/events-broker-install:0.2.1-SNAPSHOT
+        command:
+        - sh
+        - -c
+        - delete-chart
+        imagePullPolicy: IfNotPresent
+      - name: fn-delete
+        image: phx.ocir.io/oraclepaasmicroservices/aura/fn-install:0.2.1-SNAPSHOT
+        command:
+        - sh
+        - -c
+        - delete-chart
+        imagePullPolicy: IfNotPresent
+      - name: kafka-delete
+        image: phx.ocir.io/oraclepaasmicroservices/aura/kafka-install:0.2.1-SNAPSHOT
+        command:
+        - sh
+        - -c
+        - delete-chart
+        imagePullPolicy: IfNotPresent
+      - name: observability-tools-delete
+        image: phx.ocir.io/oraclepaasmicroservices/aura/observability-tools-install:0.2.1-SNAPSHOT
+        command:
+        - sh
+        - -c
+        - delete-chart
+        imagePullPolicy: IfNotPresent
+      - name: api-registry-delete
+        image: phx.ocir.io/oraclepaasmicroservices/aura/api-registry-install:0.2.1-SNAPSHOT
+        command:
+        - sh
+        - -c
+        - delete-chart
+        imagePullPolicy: IfNotPresent
+      - name: istio-delete
+        image: phx.ocir.io/oraclepaasmicroservices/aura/istio-install:0.2.1-SNAPSHOT
+        command:
+        - sh
+        - -c
+        - delete-istio
+        imagePullPolicy: IfNotPresent
+      containers:
+      - name: installation-complete
+        image: busybox
+        command:
+        - sh
+        - -c
+        - echo "Helm, Istio, Aura, Kafka, Fn and Events Broker Uninstalled"
+        imagePullPolicy: IfNotPresent
+      restartPolicy: Never
+      imagePullSecrets:
+      - name: aura-install-job

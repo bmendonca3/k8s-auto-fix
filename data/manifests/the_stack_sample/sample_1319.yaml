@@ -1,0 +1,341 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: graphite-config
+  namespace: screeps
+data:
+  carbon.conf: "[cache]\n# Configure carbon directories.\n#\n# OS environment variables\
+    \ can be used to tell carbon where graphite is\n# installed, where to read configuration\
+    \ from and where to write data.\n#\n#   GRAPHITE_ROOT        - Root directory\
+    \ of the graphite installation.\n#                          Defaults to ../\n\
+    #   GRAPHITE_CONF_DIR    - Configuration directory (where this file lives).\n\
+    #                          Defaults to $GRAPHITE_ROOT/conf/\n#   GRAPHITE_STORAGE_DIR\
+    \ - Storage directory for whipser/rrd/log/pid files.\n#                      \
+    \    Defaults to $GRAPHITE_ROOT/storage/\n#\n# To change other directory paths,\
+    \ add settings to this file. The following\n# configuration variables are available\
+    \ with these default values:\n#\n\n# STORAGE_DIR    = /opt/graphite/storage/whisper/\n\
+    # CONF_DIR       = /opt/graphite/conf/\n# LOG_DIR        = /opt/graphite/storage/log/\n\
+    # PID_DIR        = /var/run/\n\nLOCAL_DATA_DIR = /opt/graphite/storage/whisper/\n\
+    \n# Enable daily log rotation. If disabled, a kill -HUP can be used after a manual\
+    \ rotate\nENABLE_LOGROTATION = True\n\n# Specify the user to drop privileges to\n\
+    # If this is blank carbon runs as the user that invokes it\n# This user must have\
+    \ write access to the local data directory\nUSER =\n#\n# NOTE: The above settings\
+    \ must be set under [relay] and [aggregator]\n#       to take effect for those\
+    \ daemons as well\n\n# Limit the size of the cache to avoid swapping or becoming\
+    \ CPU bound.\n# Sorts and serving cache queries gets more expensive as the cache\
+    \ grows.\n# Use the value \"inf\" (infinity) for an unlimited cache size.\nMAX_CACHE_SIZE\
+    \ = inf\n\n# Limits the number of whisper update_many() calls per second, which\
+    \ effectively\n# means the number of write requests sent to the disk. This is\
+    \ intended to\n# prevent over-utilizing the disk and thus starving the rest of\
+    \ the system.\n# When the rate of required updates exceeds this, then carbon's\
+    \ caching will\n# take effect and increase the overall throughput accordingly.\n\
+    MAX_UPDATES_PER_SECOND = 500\n\n# If defined, this changes the MAX_UPDATES_PER_SECOND\
+    \ in Carbon when a\n# stop/shutdown is initiated.  This helps when MAX_UPDATES_PER_SECOND\
+    \ is\n# relatively low and carbon has cached a lot of updates; it enables the\
+    \ carbon\n# daemon to shutdown more quickly. \n# MAX_UPDATES_PER_SECOND_ON_SHUTDOWN\
+    \ = 1000\n\n# Softly limits the number of whisper files that get created each\
+    \ minute.\n# Setting this value low (like at 50) is a good way to ensure your\
+    \ graphite\n# system will not be adversely impacted when a bunch of new metrics\
+    \ are\n# sent to it. The trade off is that it will take much longer for those\
+    \ metrics'\n# database files to all get created and thus longer until the data\
+    \ becomes usable.\n# Setting this value high (like \"inf\" for infinity) will\
+    \ cause graphite to create\n# the files quickly but at the risk of slowing I/O\
+    \ down considerably for a while.\nMAX_CREATES_PER_MINUTE = 50\n\nLINE_RECEIVER_INTERFACE\
+    \ = 0.0.0.0\nLINE_RECEIVER_PORT = 2003\n\n# Set this to True to enable the UDP\
+    \ listener. By default this is off\n# because it is very common to run multiple\
+    \ carbon daemons and managing\n# another (rarely used) port for every carbon instance\
+    \ is not fun.\nENABLE_UDP_LISTENER = True\nUDP_RECEIVER_INTERFACE = 0.0.0.0\n\
+    UDP_RECEIVER_PORT = 2003\n\nPICKLE_RECEIVER_INTERFACE = 0.0.0.0\nPICKLE_RECEIVER_PORT\
+    \ = 2004\n\n# Set to false to disable logging of successful connections\nLOG_LISTENER_CONNECTIONS\
+    \ = False\n\n# Per security concerns outlined in Bug #817247 the pickle receiver\n\
+    # will use a more secure and slightly less efficient unpickler.\n# Set this to\
+    \ True to revert to the old-fashioned insecure unpickler.\nUSE_INSECURE_UNPICKLER\
+    \ = False\n\nCACHE_QUERY_INTERFACE = 0.0.0.0\nCACHE_QUERY_PORT = 7002\n\n# Set\
+    \ this to False to drop datapoints received after the cache\n# reaches MAX_CACHE_SIZE.\
+    \ If this is True (the default) then sockets\n# over which metrics are received\
+    \ will temporarily stop accepting\n# data until the cache size falls below 95%\
+    \ MAX_CACHE_SIZE.\nUSE_FLOW_CONTROL = True\n\n# By default, carbon-cache will\
+    \ log every whisper update and cache hit. This can be excessive and\n# degrade\
+    \ performance if logging on the same volume as the whisper data is stored.\nLOG_UPDATES\
+    \ = False\nLOG_CACHE_HITS = False\nLOG_CACHE_QUEUE_SORTS = True\n\n# The thread\
+    \ that writes metrics to disk can use on of the following strategies\n# determining\
+    \ the order in which metrics are removed from cache and flushed to\n# disk. The\
+    \ default option preserves the same behavior as has been historically\n# available\
+    \ in version 0.9.10.\n#\n# sorted - All metrics in the cache will be counted and\
+    \ an ordered list of\n# them will be sorted according to the number of datapoints\
+    \ in the cache at the\n# moment of the list's creation. Metrics will then be flushed\
+    \ from the cache to\n# disk in that order.\n#\n# max - The writer thread will\
+    \ always pop and flush the metric from cache\n# that has the most datapoints.\
+    \ This will give a strong flush preference to\n# frequently updated metrics and\
+    \ will also reduce random file-io. Infrequently\n# updated metrics may only ever\
+    \ be persisted to disk at daemon shutdown if\n# there are a large number of metrics\
+    \ which receive very frequent updates OR if\n# disk i/o is very slow.\n#\n# naive\
+    \ - Metrics will be flushed from the cache to disk in an unordered\n# fashion.\
+    \ This strategy may be desirable in situations where the storage for\n# whisper\
+    \ files is solid state, CPU resources are very limited or deference to\n# the\
+    \ OS's i/o scheduler is expected to compensate for the random write\n# pattern.\n\
+    #\nCACHE_WRITE_STRATEGY = sorted\n\n# On some systems it is desirable for whisper\
+    \ to write synchronously.\n# Set this option to True if you'd like to try this.\
+    \ Basically it will\n# shift the onus of buffering writes from the kernel into\
+    \ carbon's cache.\nWHISPER_AUTOFLUSH = False\n\n# By default new Whisper files\
+    \ are created pre-allocated with the data region\n# filled with zeros to prevent\
+    \ fragmentation and speed up contiguous reads and\n# writes (which are common).\
+    \ Enabling this option will cause Whisper to create\n# the file sparsely instead.\
+    \ Enabling this option may allow a large increase of\n# MAX_CREATES_PER_MINUTE\
+    \ but may have longer term performance implications\n# depending on the underlying\
+    \ storage configuration.\n# WHISPER_SPARSE_CREATE = False\n\n# Only beneficial\
+    \ on linux filesystems that support the fallocate system call.\n# It maintains\
+    \ the benefits of contiguous reads/writes, but with a potentially\n# much faster\
+    \ creation speed, by allowing the kernel to handle the block\n# allocation and\
+    \ zero-ing. Enabling this option may allow a large increase of\n# MAX_CREATES_PER_MINUTE.\
+    \ If enabled on an OS or filesystem that is unsupported\n# this option will gracefully\
+    \ fallback to standard POSIX file access methods.\nWHISPER_FALLOCATE_CREATE =\
+    \ False\n\n# Enabling this option will cause Whisper to lock each Whisper file\
+    \ it writes\n# to with an exclusive lock (LOCK_EX, see: man 2 flock). This is\
+    \ useful when\n# multiple carbon-cache daemons are writing to the same files\n\
+    # WHISPER_LOCK_WRITES = False\n\n# Set this to True to enable whitelisting and\
+    \ blacklisting of metrics in\n# CONF_DIR/whitelist and CONF_DIR/blacklist. If\
+    \ the whitelist is missing or\n# empty, all metrics will pass through\n# USE_WHITELIST\
+    \ = False\n\n# By default, carbon itself will log statistics (such as a count,\n\
+    # metricsReceived) with the top level prefix of 'carbon' at an interval of 60\n\
+    # seconds. Set CARBON_METRIC_INTERVAL to 0 to disable instrumentation\n# CARBON_METRIC_PREFIX\
+    \ = carbon\n# CARBON_METRIC_INTERVAL = 60\n\n# Enable AMQP if you want to receve\
+    \ metrics using an amqp broker\n# ENABLE_AMQP = False\n\n# Verbose means a line\
+    \ will be logged for every metric received\n# useful for testing\n# AMQP_VERBOSE\
+    \ = False\n\n# AMQP_HOST = localhost\n# AMQP_PORT = 5672\n# AMQP_VHOST = /\n#\
+    \ AMQP_USER = guest\n# AMQP_PASSWORD = guest\n# AMQP_EXCHANGE = graphite\n# AMQP_METRIC_NAME_IN_BODY\
+    \ = False\n\n# The manhole interface allows you to SSH into the carbon daemon\n\
+    # and get a python interpreter. BE CAREFUL WITH THIS! If you do\n# something like\
+    \ time.sleep() in the interpreter, the whole process\n# will sleep! This is *extremely*\
+    \ helpful in debugging, assuming\n# you are familiar with the code. If you are\
+    \ not, please don't\n# mess with this, you are asking for trouble :)\n#\n# ENABLE_MANHOLE\
+    \ = False\n# MANHOLE_INTERFACE = 127.0.0.1\n# MANHOLE_PORT = 7222\n# MANHOLE_USER\
+    \ = admin\n# MANHOLE_PUBLIC_KEY = ssh-rsa AAAAB3NzaC1yc2EAAAABiwAaAIEAoxN0sv/e4eZCPpi3N3KYvyzRaBaMeS2RsOQ/cDuKv11dlNzVeiyc3RFmCv5Rjwn/lQ79y0zyHxw67qLyhQ/kDzINc4cY41ivuQXm2tPmgvexdrBv5nsfEpjs3gLZfJnyvlcVyWK/lId8WUvEWSWHTzsbtmXAF2raJMdgLTbQ8wE=\n\
+    \n# Patterns for all of the metrics this machine will store. Read more at\n# http://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol#Bindings\n\
+    #\n# Example: store all sales, linux servers, and utilization metrics\n# BIND_PATTERNS\
+    \ = sales.#, servers.linux.#, #.utilization\n#\n# Example: store everything\n\
+    # BIND_PATTERNS = #\n\n# To configure special settings for the carbon-cache instance\
+    \ 'b', uncomment this:\n#[cache:b]\n#LINE_RECEIVER_PORT = 2103\n#PICKLE_RECEIVER_PORT\
+    \ = 2104\n#CACHE_QUERY_PORT = 7102\n# and any other settings you want to customize,\
+    \ defaults are inherited\n# from [carbon] section.\n# You can then specify the\
+    \ --instance=b option to manage this instance\n\n\n\n[relay]\nLINE_RECEIVER_INTERFACE\
+    \ = 0.0.0.0\nLINE_RECEIVER_PORT = 2013\nPICKLE_RECEIVER_INTERFACE = 0.0.0.0\n\
+    PICKLE_RECEIVER_PORT = 2014\nUDP_RECEIVER_INTERFACE = 0.0.0.0\nUDP_RECEIVER_PORT\
+    \ = 2013\n\n\n# Set to false to disable logging of successful connections\nLOG_LISTENER_CONNECTIONS\
+    \ = True\n\n# Carbon-relay has several options for metric routing controlled by\
+    \ RELAY_METHOD\n#\n# Use relay-rules.conf to route metrics to destinations based\
+    \ on pattern rules\n#RELAY_METHOD = rules\n#\n# Use consistent-hashing for even\
+    \ distribution of metrics between destinations\n#RELAY_METHOD = consistent-hashing\n\
+    #\n# Use consistent-hashing but take into account an aggregation-rules.conf shared\n\
+    # by downstream carbon-aggregator daemons. This will ensure that all metrics\n\
+    # that map to a given aggregation rule are sent to the same carbon-aggregator\n\
+    # instance.\n# Enable this for carbon-relays that send to a group of carbon-aggregators\n\
+    #RELAY_METHOD = aggregated-consistent-hashing\nRELAY_METHOD = rules\n\n# If you\
+    \ use consistent-hashing you can add redundancy by replicating every\n# datapoint\
+    \ to more than one machine.\nREPLICATION_FACTOR = 1\n\n# This is a list of carbon\
+    \ daemons we will send any relayed or\n# generated metrics to. The default provided\
+    \ would send to a single\n# carbon-cache instance on the default port. However\
+    \ if you\n# use multiple carbon-cache instances then it would look like this:\n\
+    #\n# DESTINATIONS = 127.0.0.1:2004:a, 127.0.0.1:2104:b\n#\n# The general form\
+    \ is IP:PORT:INSTANCE where the :INSTANCE part is\n# optional and refers to the\
+    \ \"None\" instance if omitted.\n#\n# Note that if the destinations are all carbon-caches\
+    \ then this should\n# exactly match the webapp's CARBONLINK_HOSTS setting in terms\
+    \ of\n# instances listed (order matters!).\n#\n# If using RELAY_METHOD = rules,\
+    \ all destinations used in relay-rules.conf\n# must be defined in this list\n\
+    DESTINATIONS = 127.0.0.1:2004\n\n# This defines the maximum \"message size\" between\
+    \ carbon daemons.\n# You shouldn't need to tune this unless you really know what\
+    \ you're doing.\nMAX_DATAPOINTS_PER_MESSAGE = 500\nMAX_QUEUE_SIZE = 10000\n\n\
+    # Set this to False to drop datapoints when any send queue (sending datapoints\n\
+    # to a downstream carbon daemon) hits MAX_QUEUE_SIZE. If this is True (the\n#\
+    \ default) then sockets over which metrics are received will temporarily stop\
+    \ accepting\n# data until the send queues fall below 80% MAX_QUEUE_SIZE.\nUSE_FLOW_CONTROL\
+    \ = True\n\n# Set this to True to enable whitelisting and blacklisting of metrics\
+    \ in\n# CONF_DIR/whitelist and CONF_DIR/blacklist. If the whitelist is missing\
+    \ or\n# empty, all metrics will pass through\n# USE_WHITELIST = False\n\n# By\
+    \ default, carbon itself will log statistics (such as a count,\n# metricsReceived)\
+    \ with the top level prefix of 'carbon' at an interval of 60\n# seconds. Set CARBON_METRIC_INTERVAL\
+    \ to 0 to disable instrumentation\n# CARBON_METRIC_PREFIX = carbon\n# CARBON_METRIC_INTERVAL\
+    \ = 60\n\n\n[aggregator]\nLINE_RECEIVER_INTERFACE = 0.0.0.0\nLINE_RECEIVER_PORT\
+    \ = 2023\n\nPICKLE_RECEIVER_INTERFACE = 0.0.0.0\nPICKLE_RECEIVER_PORT = 2024\n\
+    \n# Set to false to disable logging of successful connections\nLOG_LISTENER_CONNECTIONS\
+    \ = False\n\n# If set true, metric received will be forwarded to DESTINATIONS\
+    \ in addition to\n# the output of the aggregation rules. If set false the carbon-aggregator\
+    \ will\n# only ever send the output of aggregation.\nFORWARD_ALL = True\n\n# This\
+    \ is a list of carbon daemons we will send any relayed or\n# generated metrics\
+    \ to. The default provided would send to a single\n# carbon-cache instance on\
+    \ the default port. However if you\n# use multiple carbon-cache instances then\
+    \ it would look like this:\n#\n# DESTINATIONS = 127.0.0.1:2004:a, 127.0.0.1:2104:b\n\
+    # \n# The format is comma-delimited IP:PORT:INSTANCE where the :INSTANCE part\
+    \ is\n# optional and refers to the \"None\" instance if omitted.\n#\n# Note that\
+    \ if the destinations are all carbon-caches then this should\n# exactly match\
+    \ the webapp's CARBONLINK_HOSTS setting in terms of\n# instances listed (order\
+    \ matters!).\nDESTINATIONS = 127.0.0.1:2004\n\n# If you want to add redundancy\
+    \ to your data by replicating every\n# datapoint to more than one machine, increase\
+    \ this.\nREPLICATION_FACTOR = 1\n\n# This is the maximum number of datapoints\
+    \ that can be queued up\n# for a single destination. Once this limit is hit, we\
+    \ will\n# stop accepting new data if USE_FLOW_CONTROL is True, otherwise\n# we\
+    \ will drop any subsequently received datapoints.\nMAX_QUEUE_SIZE = 10000\n\n\
+    # Set this to False to drop datapoints when any send queue (sending datapoints\n\
+    # to a downstream carbon daemon) hits MAX_QUEUE_SIZE. If this is True (the\n#\
+    \ default) then sockets over which metrics are received will temporarily stop\
+    \ accepting\n# data until the send queues fall below 80% MAX_QUEUE_SIZE.\nUSE_FLOW_CONTROL\
+    \ = True\n\n# This defines the maximum \"message size\" between carbon daemons.\n\
+    # You shouldn't need to tune this unless you really know what you're doing.\n\
+    MAX_DATAPOINTS_PER_MESSAGE = 500\n\n# This defines how many datapoints the aggregator\
+    \ remembers for\n# each metric. Aggregation only happens for datapoints that fall\
+    \ in\n# the past MAX_AGGREGATION_INTERVALS * intervalSize seconds.\nMAX_AGGREGATION_INTERVALS\
+    \ = 5\n\n# By default (WRITE_BACK_FREQUENCY = 0), carbon-aggregator will write\
+    \ back\n# aggregated data points once every rule.frequency seconds, on a per-rule\
+    \ basis.\n# Set this (WRITE_BACK_FREQUENCY = N) to write back all aggregated data\
+    \ points\n# every N seconds, independent of rule frequency. This is useful, for\
+    \ example,\n# to be able to query partially aggregated metrics from carbon-cache\
+    \ without\n# having to first wait rule.frequency seconds.\n# WRITE_BACK_FREQUENCY\
+    \ = 0\n\n# Set this to True to enable whitelisting and blacklisting of metrics\
+    \ in\n# CONF_DIR/whitelist and CONF_DIR/blacklist. If the whitelist is missing\
+    \ or\n# empty, all metrics will pass through\n# USE_WHITELIST = False\n\n# By\
+    \ default, carbon itself will log statistics (such as a count,\n# metricsReceived)\
+    \ with the top level prefix of 'carbon' at an interval of 60\n# seconds. Set CARBON_METRIC_INTERVAL\
+    \ to 0 to disable instrumentation\n# CARBON_METRIC_PREFIX = carbon\n# CARBON_METRIC_INTERVAL\
+    \ = 60"
+  storage-aggregation.conf: '# Aggregation methods for whisper files. Entries are
+    scanned in order,
+
+    # and first match wins. This file is scanned for changes every 60 seconds
+
+    #
+
+    #  [name]
+
+    #  pattern = <regex>
+
+    #  xFilesFactor = <float between 0 and 1>
+
+    #  aggregationMethod = <average|sum|last|max|min>
+
+    #
+
+    #  name: Arbitrary unique name for the rule
+
+    #  pattern: Regex pattern to match against the metric name
+
+    #  xFilesFactor: Ratio of valid data points required for aggregation to the next
+    retention to occur
+
+    #  aggregationMethod: function to apply to data points for aggregation
+
+    #
+
+    [min]
+
+    pattern = \.min$
+
+    xFilesFactor = 0.1
+
+    aggregationMethod = min
+
+
+    [max]
+
+    pattern = \.max$
+
+    xFilesFactor = 0.1
+
+    aggregationMethod = max
+
+
+    [count]
+
+    pattern = \.count$
+
+    xFilesFactor = 0
+
+    aggregationMethod = sum
+
+
+    [lower]
+
+    pattern = \.lower(_\d+)?$
+
+    xFilesFactor = 0.1
+
+    aggregationMethod = min
+
+
+    [upper]
+
+    pattern = \.upper(_\d+)?$
+
+    xFilesFactor = 0.1
+
+    aggregationMethod = max
+
+
+    [sum]
+
+    pattern = \.sum$
+
+    xFilesFactor = 0
+
+    aggregationMethod = sum
+
+
+    [gauges]
+
+    pattern = ^.*\.gauges\..*
+
+    xFilesFactor = 0
+
+    aggregationMethod = last
+
+
+    [default_average]
+
+    pattern = .*
+
+    xFilesFactor = 0.5
+
+    aggregationMethod = average'
+  storage-schemas.conf: '# Schema definitions for Whisper files. Entries are scanned
+    in order,
+
+    # and first match wins. This file is scanned for changes every 60 seconds.
+
+    #
+
+    #  [name]
+
+    #  pattern = regex
+
+    #  retentions = timePerPoint:timeToStore, timePerPoint:timeToStore, ...
+
+
+    # Carbon''s internal metrics. This entry should match what is specified in
+
+    # CARBON_METRIC_PREFIX and CARBON_METRIC_INTERVAL settings
+
+    [carbon]
+
+    pattern = ^carbon\.
+
+    retentions = 5s:1d,1m:90d
+
+
+    [collectd]
+
+    pattern = ^collectd.*
+
+    retentions = 10s:1d,1m:28d,10m:1y
+
+
+    [statsd]
+
+    pattern = ^stats.*
+
+    retentions = 10s:1d,1m:28d,10m:1y,1h:2y
+
+
+    [default_1min_for_1day]
+
+    pattern = .*
+
+    retentions = 5s:1d,1m:28d'

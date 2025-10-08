@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-test-aaa
+  namespace: aaa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vault
+        app: aaa
+      annotations:
+        vault.security.banzaicloud.io/vault-role: aaa
+        vault.security.banzaicloud.io/vault-skip-verify: 'true'
+        vault.security.banzaicloud.io/vault-path: kubernetes
+        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template
+    spec:
+      serviceAccountName: aaa
+      containers:
+      - name: alpine
+        image: alpine
+        command:
+        - sh
+        - -c
+        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env
+          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV
+          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)
+          && echo going to sleep... && sleep 10000'
+        env:
+        - name: AAA_SECRET_DATA_DIRECT_ENV
+          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV
+        - name: AAA_SECRET_DATA_WITH_CM_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: key-configmap
+              key: AAA_SECRET_DATA_WITH_CM_ENV
+        - name: AAA_SECRET_DATA_WITH_SECRET_ENV
+          valueFrom:
+            secretKeyRef:
+              name: key-secret
+              key: AAA_SECRET_DATA_WITH_SECRET_ENV

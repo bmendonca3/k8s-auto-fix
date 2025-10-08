@@ -1,0 +1,282 @@
+[
+  {
+    "id": "00641",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0069.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: heapster\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      task: monitoring\n      k8s-app: heapster\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        task: monitoring\n        k8s-app: heapster\n    spec:\n      serviceAccountName: heapster\n      containers:\n      - name: heapster\n        image: gcr.io/google_containers/heapster-amd64:v1.4.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - /heapster\n        - --source=kubernetes:https://kubernetes.default\n        - --sink=influxdb:http://monitoring-influxdb:8086\n        resources:\n          limits:\n            cpu: 100m\n            memory: 128Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"heapster\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00642",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0070.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: redis-master\n  namespace: default\n  labels:\n    name: redis-master\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis-master\n  template:\n    metadata:\n      labels:\n        app: redis-master\n        redis-master: 'true'\n      annotations:\n        sidecar.istio.io/inject: 'false'\n    spec:\n      securityContext:\n        sysctls:\n        - name: net.ipv4.tcp_syncookies\n          value: '0'\n        - name: net.ipv4.ip_local_port_range\n          value: 1024 65535\n        - name: net.core.somaxconn\n          value: '65535'\n        - name: net.ipv4.ip_unprivileged_port_start\n          value: '0'\n        - name: net.ipv4.tcp_tw_reuse\n          value: '1'\n        - name: net.ipv4.tcp_fin_timeout\n          value: '30'\n        - name: net.ipv4.tcp_keepalive_intvl\n          value: '10'\n        - name: net.ipv4.tcp_keepalive_probes\n          value: '2'\n        - name: net.ipv4.tcp_keepalive_time\n          value: '120'\n        - name: net.ipv4.tcp_ecn\n          value: '1'\n        - name: net.ipv4.tcp_max_syn_backlog\n          value: '65536'\n        - name: net.ipv4.tcp_rfc1337\n          value: '1'\n        - name: net.ipv4.tcp_slow_start_after_idle\n          value: '0'\n        - name: net.ipv4.tcp_fack\n          value: '1'\n        - name: net.ipv4.tcp_max_tw_buckets\n          value: '262144'\n        - name: net.ipv4.tcp_fastopen\n          value: '3'\n        - name: net.ipv4.icmp_ratelimit\n          value: '100'\n        - name: net.ipv4.tcp_abort_on_overflow\n          value: '1'\n        - name: net.ipv4.tcp_adv_win_scale\n          value: '2'\n        - name: net.ipv4.tcp_retries2\n          value: '8'\n        - name: net.ipv4.tcp_syn_retries\n          value: '3'\n        - name: net.ipv4.tcp_synack_retries\n          value: '2'\n        - name: net.unix.max_dgram_qlen\n          value: '512'\n        - name: net.ipv4.tcp_fwmark_accept\n          value: '1'\n        - name: net.ipv4.fwmark_reflect\n          value: '1'\n      containers:\n      - name: redis\n        image: redis:6.0\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 6379\n        env:\n        - name: MASTER\n          value: 'true'\n        resources:\n          requests:\n            memory: 256Mi\n            cpu: 250m\n          limits:\n            memory: 2Gi\n            cpu: 2000m\n        volumeMounts:\n        - name: redis-master-volume\n          mountPath: /data\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"redis\" does not have a read-only root file system"
+  },
+  {
+    "id": "00643",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0070.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: redis-master\n  namespace: default\n  labels:\n    name: redis-master\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis-master\n  template:\n    metadata:\n      labels:\n        app: redis-master\n        redis-master: 'true'\n      annotations:\n        sidecar.istio.io/inject: 'false'\n    spec:\n      securityContext:\n        sysctls:\n        - name: net.ipv4.tcp_syncookies\n          value: '0'\n        - name: net.ipv4.ip_local_port_range\n          value: 1024 65535\n        - name: net.core.somaxconn\n          value: '65535'\n        - name: net.ipv4.ip_unprivileged_port_start\n          value: '0'\n        - name: net.ipv4.tcp_tw_reuse\n          value: '1'\n        - name: net.ipv4.tcp_fin_timeout\n          value: '30'\n        - name: net.ipv4.tcp_keepalive_intvl\n          value: '10'\n        - name: net.ipv4.tcp_keepalive_probes\n          value: '2'\n        - name: net.ipv4.tcp_keepalive_time\n          value: '120'\n        - name: net.ipv4.tcp_ecn\n          value: '1'\n        - name: net.ipv4.tcp_max_syn_backlog\n          value: '65536'\n        - name: net.ipv4.tcp_rfc1337\n          value: '1'\n        - name: net.ipv4.tcp_slow_start_after_idle\n          value: '0'\n        - name: net.ipv4.tcp_fack\n          value: '1'\n        - name: net.ipv4.tcp_max_tw_buckets\n          value: '262144'\n        - name: net.ipv4.tcp_fastopen\n          value: '3'\n        - name: net.ipv4.icmp_ratelimit\n          value: '100'\n        - name: net.ipv4.tcp_abort_on_overflow\n          value: '1'\n        - name: net.ipv4.tcp_adv_win_scale\n          value: '2'\n        - name: net.ipv4.tcp_retries2\n          value: '8'\n        - name: net.ipv4.tcp_syn_retries\n          value: '3'\n        - name: net.ipv4.tcp_synack_retries\n          value: '2'\n        - name: net.unix.max_dgram_qlen\n          value: '512'\n        - name: net.ipv4.tcp_fwmark_accept\n          value: '1'\n        - name: net.ipv4.fwmark_reflect\n          value: '1'\n      containers:\n      - name: redis\n        image: redis:6.0\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 6379\n        env:\n        - name: MASTER\n          value: 'true'\n        resources:\n          requests:\n            memory: 256Mi\n            cpu: 250m\n          limits:\n            memory: 2Gi\n            cpu: 2000m\n        volumeMounts:\n        - name: redis-master-volume\n          mountPath: /data\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"redis\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00644",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0071.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: aplicacao\nspec:\n  containers:\n  - name: container-aplicacao-loja\n    image: rafanercessian/aplicacao-loja:v1\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"container-aplicacao-loja\" does not have a read-only root file system"
+  },
+  {
+    "id": "00645",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0071.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: aplicacao\nspec:\n  containers:\n  - name: container-aplicacao-loja\n    image: rafanercessian/aplicacao-loja:v1\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"container-aplicacao-loja\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00646",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0071.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: aplicacao\nspec:\n  containers:\n  - name: container-aplicacao-loja\n    image: rafanercessian/aplicacao-loja:v1\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"container-aplicacao-loja\" has cpu request 0"
+  },
+  {
+    "id": "00647",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0071.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: aplicacao\nspec:\n  containers:\n  - name: container-aplicacao-loja\n    image: rafanercessian/aplicacao-loja:v1\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"container-aplicacao-loja\" has memory limit 0"
+  },
+  {
+    "id": "00648",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        command:\n        - mongod\n        - --bind_ip_all\n        - --replSet\n        - rs0\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: mongo-volume\n          mountPath: /data/db\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"mongo\" is using an invalid container image, \"mongo\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00649",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        command:\n        - mongod\n        - --bind_ip_all\n        - --replSet\n        - rs0\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: mongo-volume\n          mountPath: /data/db\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"mongo\" does not have a read-only root file system"
+  },
+  {
+    "id": "00650",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        command:\n        - mongod\n        - --bind_ip_all\n        - --replSet\n        - rs0\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: mongo-volume\n          mountPath: /data/db\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"mongo\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00651",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        command:\n        - mongod\n        - --bind_ip_all\n        - --replSet\n        - rs0\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: mongo-volume\n          mountPath: /data/db\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"mongo\" has cpu request 0"
+  },
+  {
+    "id": "00652",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        command:\n        - mongod\n        - --bind_ip_all\n        - --replSet\n        - rs0\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: mongo-volume\n          mountPath: /data/db\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"mongo\" has memory limit 0"
+  },
+  {
+    "id": "00653",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0080.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: job-04-exec-limit\n  namespace: doit-lab-02-d\n  labels:\n    k8s-app: job-03-exec-limit\n    k8s-scope: gke-ws-doit-lab-02-d\nspec:\n  template:\n    metadata:\n      name: job-04-exec-limit-tpl\n    spec:\n      containers:\n      - name: job-04-exec-limit-c\n        image: busybox\n        command:\n        - /bin/sh\n        - -c\n        args:\n        - echo 'just running a (always failing) parallel-consumer job'; sleep 1; exit\n          1;\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"job-04-exec-limit-c\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00654",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0080.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: job-04-exec-limit\n  namespace: doit-lab-02-d\n  labels:\n    k8s-app: job-03-exec-limit\n    k8s-scope: gke-ws-doit-lab-02-d\nspec:\n  template:\n    metadata:\n      name: job-04-exec-limit-tpl\n    spec:\n      containers:\n      - name: job-04-exec-limit-c\n        image: busybox\n        command:\n        - /bin/sh\n        - -c\n        args:\n        - echo 'just running a (always failing) parallel-consumer job'; sleep 1; exit\n          1;\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"job-04-exec-limit-c\" does not have a read-only root file system"
+  },
+  {
+    "id": "00655",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0080.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: job-04-exec-limit\n  namespace: doit-lab-02-d\n  labels:\n    k8s-app: job-03-exec-limit\n    k8s-scope: gke-ws-doit-lab-02-d\nspec:\n  template:\n    metadata:\n      name: job-04-exec-limit-tpl\n    spec:\n      containers:\n      - name: job-04-exec-limit-c\n        image: busybox\n        command:\n        - /bin/sh\n        - -c\n        args:\n        - echo 'just running a (always failing) parallel-consumer job'; sleep 1; exit\n          1;\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"job-04-exec-limit-c\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00656",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0080.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: job-04-exec-limit\n  namespace: doit-lab-02-d\n  labels:\n    k8s-app: job-03-exec-limit\n    k8s-scope: gke-ws-doit-lab-02-d\nspec:\n  template:\n    metadata:\n      name: job-04-exec-limit-tpl\n    spec:\n      containers:\n      - name: job-04-exec-limit-c\n        image: busybox\n        command:\n        - /bin/sh\n        - -c\n        args:\n        - echo 'just running a (always failing) parallel-consumer job'; sleep 1; exit\n          1;\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"job-04-exec-limit-c\" has cpu request 0"
+  },
+  {
+    "id": "00657",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0080.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: job-04-exec-limit\n  namespace: doit-lab-02-d\n  labels:\n    k8s-app: job-03-exec-limit\n    k8s-scope: gke-ws-doit-lab-02-d\nspec:\n  template:\n    metadata:\n      name: job-04-exec-limit-tpl\n    spec:\n      containers:\n      - name: job-04-exec-limit-c\n        image: busybox\n        command:\n        - /bin/sh\n        - -c\n        args:\n        - echo 'just running a (always failing) parallel-consumer job'; sleep 1; exit\n          1;\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"job-04-exec-limit-c\" has memory limit 0"
+  },
+  {
+    "id": "00658",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0082.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-984\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00659",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0082.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-984\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "00660",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0082.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-984\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00661",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0082.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-984\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "00662",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0082.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-984\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "00663",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0084.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order\n  labels:\n    app: order\n    tier: frontend\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order\n      tier: frontend\n  template:\n    metadata:\n      labels:\n        app: order\n        tier: frontend\n    spec:\n      containers:\n      - name: order\n        image: aankitatiwari24/air-pg:order\n        ports:\n        - containerPort: 5000\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"order\" does not have a read-only root file system"
+  },
+  {
+    "id": "00664",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0084.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order\n  labels:\n    app: order\n    tier: frontend\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order\n      tier: frontend\n  template:\n    metadata:\n      labels:\n        app: order\n        tier: frontend\n    spec:\n      containers:\n      - name: order\n        image: aankitatiwari24/air-pg:order\n        ports:\n        - containerPort: 5000\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"order\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00665",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0084.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order\n  labels:\n    app: order\n    tier: frontend\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order\n      tier: frontend\n  template:\n    metadata:\n      labels:\n        app: order\n        tier: frontend\n    spec:\n      containers:\n      - name: order\n        image: aankitatiwari24/air-pg:order\n        ports:\n        - containerPort: 5000\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"order\" has cpu request 0"
+  },
+  {
+    "id": "00666",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0084.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order\n  labels:\n    app: order\n    tier: frontend\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: order\n      tier: frontend\n  template:\n    metadata:\n      labels:\n        app: order\n        tier: frontend\n    spec:\n      containers:\n      - name: order\n        image: aankitatiwari24/air-pg:order\n        ports:\n        - containerPort: 5000\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"order\" has memory limit 0"
+  },
+  {
+    "id": "00667",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0085.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: gateway-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: gateway-controller\n  template:\n    metadata:\n      labels:\n        app: gateway-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      containers:\n      - name: gateway-controller\n        image: argoproj/gateway-controller:v0.10-test\n        imagePullPolicy: Always\n        env:\n        - name: GATEWAY_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: GATEWAY_CONTROLLER_CONFIG_MAP\n          value: gateway-controller-configmap\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"gateway-controller\" does not have a read-only root file system"
+  },
+  {
+    "id": "00668",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0085.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: gateway-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: gateway-controller\n  template:\n    metadata:\n      labels:\n        app: gateway-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      containers:\n      - name: gateway-controller\n        image: argoproj/gateway-controller:v0.10-test\n        imagePullPolicy: Always\n        env:\n        - name: GATEWAY_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: GATEWAY_CONTROLLER_CONFIG_MAP\n          value: gateway-controller-configmap\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"gateway-controller\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00669",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0085.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: gateway-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: gateway-controller\n  template:\n    metadata:\n      labels:\n        app: gateway-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      containers:\n      - name: gateway-controller\n        image: argoproj/gateway-controller:v0.10-test\n        imagePullPolicy: Always\n        env:\n        - name: GATEWAY_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: GATEWAY_CONTROLLER_CONFIG_MAP\n          value: gateway-controller-configmap\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"gateway-controller\" has cpu request 0"
+  },
+  {
+    "id": "00670",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0085.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: gateway-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: gateway-controller\n  template:\n    metadata:\n      labels:\n        app: gateway-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      containers:\n      - name: gateway-controller\n        image: argoproj/gateway-controller:v0.10-test\n        imagePullPolicy: Always\n        env:\n        - name: GATEWAY_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: GATEWAY_CONTROLLER_CONFIG_MAP\n          value: gateway-controller-configmap\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"gateway-controller\" has memory limit 0"
+  },
+  {
+    "id": "00671",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0087.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: frontend\n    spec:\n      containers:\n      - name: server\n        ports:\n        - containerPort: 8080\n        image: gcr.io/wise-coyote-827/frontend-server\n        env:\n        - name: BACKEND_SERVICE_ADDR\n          value: backend-internal:8080\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"server\" is using an invalid container image, \"gcr.io/wise-coyote-827/frontend-server\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00672",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0087.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: frontend\n    spec:\n      containers:\n      - name: server\n        ports:\n        - containerPort: 8080\n        image: gcr.io/wise-coyote-827/frontend-server\n        env:\n        - name: BACKEND_SERVICE_ADDR\n          value: backend-internal:8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"server\" does not have a read-only root file system"
+  },
+  {
+    "id": "00673",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0087.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: frontend\n    spec:\n      containers:\n      - name: server\n        ports:\n        - containerPort: 8080\n        image: gcr.io/wise-coyote-827/frontend-server\n        env:\n        - name: BACKEND_SERVICE_ADDR\n          value: backend-internal:8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"server\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00674",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0087.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: frontend\n    spec:\n      containers:\n      - name: server\n        ports:\n        - containerPort: 8080\n        image: gcr.io/wise-coyote-827/frontend-server\n        env:\n        - name: BACKEND_SERVICE_ADDR\n          value: backend-internal:8080\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"server\" has cpu request 0"
+  },
+  {
+    "id": "00675",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0087.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: frontend\n    spec:\n      containers:\n      - name: server\n        ports:\n        - containerPort: 8080\n        image: gcr.io/wise-coyote-827/frontend-server\n        env:\n        - name: BACKEND_SERVICE_ADDR\n          value: backend-internal:8080\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"server\" has memory limit 0"
+  },
+  {
+    "id": "00676",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0088.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-keeper\n  labels:\n    chart: lighthouse-1.3.0\n    app: lighthouse-keeper\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-keeper\n  template:\n    metadata:\n      annotations:\n        ad.datadoghq.com/keeper.logs: '[{\"source\":\"lighthouse\",\"service\":\"keeper\"}]'\n        prometheus.io/port: '9090'\n        prometheus.io/scrape: 'true'\n        jenkins-x.io/hash: efaf2824743f262428efac87b577e83419a9d9c1f7600f4815a09c7177935a0a\n      labels:\n        app: lighthouse-keeper\n    spec:\n      serviceAccountName: lighthouse-keeper\n      containers:\n      - name: lighthouse-keeper\n        image: ghcr.io/jenkins-x/lighthouse-keeper:1.3.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        ports:\n        - name: http\n          containerPort: 8888\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /\n            port: http\n          initialDelaySeconds: 120\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            path: /\n            port: http\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        env:\n        - name: GIT_KIND\n          value: github\n        - name: GIT_SERVER\n          value: https://github.com\n        - name: GIT_USER\n          value: demonccc\n        - name: GIT_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-oauth-token\n              key: oauth\n        - name: JX_LOG_FORMAT\n          value: json\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.3.0\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: LIGHTHOUSE_KEEPER_STATUS_CONTEXT_LABEL\n          value: Lighthouse Merge Status\n        - name: LIGHTHOUSE_TRIGGER_ON_MISSING\n          value: enable\n        envFrom:\n        - secretRef:\n            name: jx-boot-job-env-vars\n            optional: true\n        resources:\n          limits:\n            cpu: 400m\n            memory: 512Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"lighthouse-keeper\" does not have a read-only root file system"
+  },
+  {
+    "id": "00677",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0088.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-keeper\n  labels:\n    chart: lighthouse-1.3.0\n    app: lighthouse-keeper\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-keeper\n  template:\n    metadata:\n      annotations:\n        ad.datadoghq.com/keeper.logs: '[{\"source\":\"lighthouse\",\"service\":\"keeper\"}]'\n        prometheus.io/port: '9090'\n        prometheus.io/scrape: 'true'\n        jenkins-x.io/hash: efaf2824743f262428efac87b577e83419a9d9c1f7600f4815a09c7177935a0a\n      labels:\n        app: lighthouse-keeper\n    spec:\n      serviceAccountName: lighthouse-keeper\n      containers:\n      - name: lighthouse-keeper\n        image: ghcr.io/jenkins-x/lighthouse-keeper:1.3.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        ports:\n        - name: http\n          containerPort: 8888\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /\n            port: http\n          initialDelaySeconds: 120\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            path: /\n            port: http\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 1\n        env:\n        - name: GIT_KIND\n          value: github\n        - name: GIT_SERVER\n          value: https://github.com\n        - name: GIT_USER\n          value: demonccc\n        - name: GIT_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-oauth-token\n              key: oauth\n        - name: JX_LOG_FORMAT\n          value: json\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.3.0\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: LIGHTHOUSE_KEEPER_STATUS_CONTEXT_LABEL\n          value: Lighthouse Merge Status\n        - name: LIGHTHOUSE_TRIGGER_ON_MISSING\n          value: enable\n        envFrom:\n        - secretRef:\n            name: jx-boot-job-env-vars\n            optional: true\n        resources:\n          limits:\n            cpu: 400m\n            memory: 512Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"lighthouse-keeper\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00678",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0093.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: metabase\n  namespace: metabase\nspec:\n  selector:\n    matchLabels:\n      app: metabase\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: metabase\n    spec:\n      containers:\n      - name: metabase\n        image: metabase/metabase:v0.30.3\n        env:\n        - name: MB_DB_TYPE\n          value: mysql\n        - name: MB_DB_DBNAME\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: dbname\n        - name: MB_DB_PORT\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: port\n        - name: MB_DB_USER\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: user\n        - name: MB_DB_PASS\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: pass\n        - name: MB_DB_HOST\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: host\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"metabase\" does not have a read-only root file system"
+  },
+  {
+    "id": "00679",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0093.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: metabase\n  namespace: metabase\nspec:\n  selector:\n    matchLabels:\n      app: metabase\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: metabase\n    spec:\n      containers:\n      - name: metabase\n        image: metabase/metabase:v0.30.3\n        env:\n        - name: MB_DB_TYPE\n          value: mysql\n        - name: MB_DB_DBNAME\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: dbname\n        - name: MB_DB_PORT\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: port\n        - name: MB_DB_USER\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: user\n        - name: MB_DB_PASS\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: pass\n        - name: MB_DB_HOST\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: host\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"metabase\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00680",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0093.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: metabase\n  namespace: metabase\nspec:\n  selector:\n    matchLabels:\n      app: metabase\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: metabase\n    spec:\n      containers:\n      - name: metabase\n        image: metabase/metabase:v0.30.3\n        env:\n        - name: MB_DB_TYPE\n          value: mysql\n        - name: MB_DB_DBNAME\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: dbname\n        - name: MB_DB_PORT\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: port\n        - name: MB_DB_USER\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: user\n        - name: MB_DB_PASS\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: pass\n        - name: MB_DB_HOST\n          valueFrom:\n            secretKeyRef:\n              name: metabase-db\n              key: host\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"metabase\" has cpu request 0"
+  }
+]

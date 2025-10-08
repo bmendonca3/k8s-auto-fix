@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lookit-rabbitmq-healthchecks
+data:
+  rabbitmq-health-check: "#!/bin/sh\nSTART_FLAG=/opt/bitnami/rabbitmq/var/lib/rabbitmq/.start\n\
+    if [ -f ${START_FLAG} ]; then\n    rabbitmqctl node_health_check\n    RESULT=$?\n\
+    \    if [ $RESULT -ne 0 ]; then\n      rabbitmqctl status\n      exit $?\n   \
+    \ fi\n    rm -f ${START_FLAG}\n    exit ${RESULT}\nfi\nrabbitmq-api-check $1 $2"
+  rabbitmq-api-check: '#!/bin/sh
+
+    set -e
+
+    URL=$1
+
+    EXPECTED=$2
+
+    ACTUAL=$(curl --silent --show-error --fail "${URL}")
+
+    echo "${ACTUAL}"
+
+    test "${EXPECTED}" = "${ACTUAL}"'

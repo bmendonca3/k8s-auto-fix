@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mysql-backup-onetime
+  namespace: fabricnlp
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql-backup-onetime
+        image: healthcatalyst/fabric.mysqlclient
+        imagePullPolicy: Always
+        args:
+        - backup
+        env:
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysqlpassword
+              key: password
+        - name: MYSQL_DATABASE
+          value: nlpmt
+        - name: MYSQL_USER
+          value: NLP_APP_USER
+        - name: MYSQL_SERVER
+          value: mysqlserver
+        - name: BACKUP_NAME_PREFIX
+          value: nlpsql
+        volumeMounts:
+        - name: mysql-persistent-storage-backup
+          mountPath: /var/lib/mysql
+          subPath: mysqlbackups
+      restartPolicy: Never
+      volumes:
+      - name: mysql-persistent-storage-backup
+        persistentVolumeClaim:
+          claimName: nlp.mysqlbackup
+  backoffLimit: 1

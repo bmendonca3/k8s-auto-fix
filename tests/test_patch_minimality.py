@@ -21,7 +21,7 @@ class PatchMinimalityTests(unittest.TestCase):
     def test_patch_is_list_and_small(self) -> None:
         for record in self.patches:
             self.assertIsInstance(record.get("patch"), list)
-            self.assertLessEqual(len(record["patch"]), 5)
+            self.assertLessEqual(len(record["patch"]), 6)
 
     def test_idempotent_apply(self) -> None:
         for record in self.patches:

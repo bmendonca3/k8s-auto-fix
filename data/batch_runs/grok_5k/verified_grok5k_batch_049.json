@@ -1,0 +1,462 @@
+[
+  {
+    "id": "01961",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nginx\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.14.2\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01962",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: contoso-website\nspec:\n  selector:\n    matchLabels:\n      app: contoso-website\n  template:\n    metadata:\n      labels:\n        app: contoso-website\n    spec:\n      containers:\n      - image: acrgh12949.azurecr.io/contoso-website:stable\n        name: contoso-website\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 250m\n            memory: 256Mi\n        ports:\n        - containerPort: 80\n          name: http\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01963",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: contoso-website\nspec:\n  selector:\n    matchLabels:\n      app: contoso-website\n  template:\n    metadata:\n      labels:\n        app: contoso-website\n    spec:\n      containers:\n      - image: acrgh12949.azurecr.io/contoso-website:stable\n        name: contoso-website\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 250m\n            memory: 256Mi\n        ports:\n        - containerPort: 80\n          name: http\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01964",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: contoso-website\nspec:\n  selector:\n    matchLabels:\n      app: contoso-website\n  template:\n    metadata:\n      labels:\n        app: contoso-website\n    spec:\n      containers:\n      - image: acrgh12949.azurecr.io/contoso-website:stable\n        name: contoso-website\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 250m\n            memory: 256Mi\n        ports:\n        - containerPort: 80\n          name: http\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01965",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20210616-1938066492\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --update-period=6h\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "01966",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20210616-1938066492\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --update-period=6h\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "01967",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20210616-1938066492\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --update-period=6h\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "01968",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20210616-1938066492\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --update-period=6h\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
+  },
+  {
+    "id": "01969",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01970",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01971",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01972",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01973",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: jenkins-slave\n  labels:\n    name: jenkins-slave\nspec:\n  containers:\n  - name: jenkins-slave\n    image: tjkemper/jnlp-slave:0.4\n    env:\n    - name: JENKINS_URL\n      value: http://100.68.13.101:80\n    volumeMounts:\n    - name: docker-sock\n      mountPath: /var/run/docker.sock\n    - name: config\n      mountPath: /home/jenkins/.kube/\n      readOnly: true\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: docker-sock\n    hostPath:\n      path: /var/run/docker.sock\n  - name: config\n    secret:\n      secretName: config\n",
+    "errors": []
+  },
+  {
+    "id": "01974",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: jenkins-slave\n  labels:\n    name: jenkins-slave\nspec:\n  containers:\n  - name: jenkins-slave\n    image: tjkemper/jnlp-slave:0.4\n    env:\n    - name: JENKINS_URL\n      value: http://100.68.13.101:80\n    volumeMounts:\n    - name: docker-sock\n      mountPath: /var/run/docker.sock\n    - name: config\n      mountPath: /home/jenkins/.kube/\n      readOnly: true\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: docker-sock\n    hostPath:\n      path: /var/run/docker.sock\n  - name: config\n    secret:\n      secretName: config\n",
+    "errors": []
+  },
+  {
+    "id": "01975",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: jenkins-slave\n  labels:\n    name: jenkins-slave\nspec:\n  containers:\n  - name: jenkins-slave\n    image: tjkemper/jnlp-slave:0.4\n    env:\n    - name: JENKINS_URL\n      value: http://100.68.13.101:80\n    volumeMounts:\n    - name: docker-sock\n      mountPath: /var/run/docker.sock\n    - name: config\n      mountPath: /home/jenkins/.kube/\n      readOnly: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: docker-sock\n    hostPath:\n      path: /var/run/docker.sock\n  - name: config\n    secret:\n      secretName: config\n",
+    "errors": []
+  },
+  {
+    "id": "01976",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: jenkins-slave\n  labels:\n    name: jenkins-slave\nspec:\n  containers:\n  - name: jenkins-slave\n    image: tjkemper/jnlp-slave:0.4\n    env:\n    - name: JENKINS_URL\n      value: http://100.68.13.101:80\n    volumeMounts:\n    - name: docker-sock\n      mountPath: /var/run/docker.sock\n    - name: config\n      mountPath: /home/jenkins/.kube/\n      readOnly: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: docker-sock\n    hostPath:\n      path: /var/run/docker.sock\n  - name: config\n    secret:\n      secretName: config\n",
+    "errors": []
+  },
+  {
+    "id": "01977",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01978",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01979",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01980",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01981",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01982",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "01983",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: demo-daemonset-prod\n  namespace: default\n  labels:\n    app: demo-daemon-prod\nspec:\n  selector:\n    matchLabels:\n      name: demo-daemon-prod\n  template:\n    metadata:\n      labels:\n        name: demo-daemon-prod\n    spec:\n      containers:\n      - name: demo-daemon-prod\n        image: busybox:stable\n        args:\n        - /bin/sh\n        - -c\n        - date; sleep 500\n        resources:\n          limits:\n            memory: 200Mi\n          requests:\n            cpu: 100m\n            memory: 200Mi\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01984",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: demo-daemonset-prod\n  namespace: default\n  labels:\n    app: demo-daemon-prod\nspec:\n  selector:\n    matchLabels:\n      name: demo-daemon-prod\n  template:\n    metadata:\n      labels:\n        name: demo-daemon-prod\n    spec:\n      containers:\n      - name: demo-daemon-prod\n        image: busybox:stable\n        args:\n        - /bin/sh\n        - -c\n        - date; sleep 500\n        resources:\n          limits:\n            memory: 200Mi\n          requests:\n            cpu: 100m\n            memory: 200Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01985",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: demo-daemonset-prod\n  namespace: default\n  labels:\n    app: demo-daemon-prod\nspec:\n  selector:\n    matchLabels:\n      name: demo-daemon-prod\n  template:\n    metadata:\n      labels:\n        name: demo-daemon-prod\n    spec:\n      containers:\n      - name: demo-daemon-prod\n        image: busybox:stable\n        args:\n        - /bin/sh\n        - -c\n        - date; sleep 500\n        resources:\n          limits:\n            memory: 200Mi\n          requests:\n            cpu: 100m\n            memory: 200Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01986",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: postgress-pod\n  labels:\n    name: postress-pod\n    app: demo-voting-app\nspec:\n  containers:\n  - name: postgres\n    image: postgres:9.4\n    ports:\n    - containerPort: 5492\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01987",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: postgress-pod\n  labels:\n    name: postress-pod\n    app: demo-voting-app\nspec:\n  containers:\n  - name: postgres\n    image: postgres:9.4\n    ports:\n    - containerPort: 5492\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01988",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: postgress-pod\n  labels:\n    name: postress-pod\n    app: demo-voting-app\nspec:\n  containers:\n  - name: postgres\n    image: postgres:9.4\n    ports:\n    - containerPort: 5492\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01989",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: postgress-pod\n  labels:\n    name: postress-pod\n    app: demo-voting-app\nspec:\n  containers:\n  - name: postgres\n    image: postgres:9.4\n    ports:\n    - containerPort: 5492\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01990",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: artifact-tracker-server\n  labels:\n    db: pgsql\nspec:\n  selector:\n    matchLabels:\n      name: artifact-tracker-server\n  template:\n    metadata:\n      labels:\n        name: artifact-tracker-server\n    spec:\n      containers:\n      - name: artifact-tracker-server\n        image: gcr.io/pl-dev-infra/cloud/artifact_tracker_server_image:stable\n        ports:\n        - containerPort: 50750\n        readinessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        envFrom:\n        - configMapRef:\n            name: pl-db-config\n        - configMapRef:\n            name: pl-tls-config\n        - configMapRef:\n            name: pl-artifact-config\n        - configMapRef:\n            name: pl-domain-config\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloud-auth-secrets\n              key: jwt-signing-key\n        - name: PL_POSTGRES_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_USERNAME\n        - name: PL_POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_PASSWORD\n        - name: PL_VIZIER_VERSION\n          value: ''\n        - name: PL_CLI_VERSION\n          value: ''\n        volumeMounts:\n        - name: certs\n          mountPath: /certs\n        - name: artifact-access-sa\n          mountPath: /creds\n          readOnly: true\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: artifact-access-sa\n        secret:\n          secretName: artifact-access-sa\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "01991",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: artifact-tracker-server\n  labels:\n    db: pgsql\nspec:\n  selector:\n    matchLabels:\n      name: artifact-tracker-server\n  template:\n    metadata:\n      labels:\n        name: artifact-tracker-server\n    spec:\n      containers:\n      - name: artifact-tracker-server\n        image: gcr.io/pl-dev-infra/cloud/artifact_tracker_server_image:stable\n        ports:\n        - containerPort: 50750\n        readinessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        envFrom:\n        - configMapRef:\n            name: pl-db-config\n        - configMapRef:\n            name: pl-tls-config\n        - configMapRef:\n            name: pl-artifact-config\n        - configMapRef:\n            name: pl-domain-config\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloud-auth-secrets\n              key: jwt-signing-key\n        - name: PL_POSTGRES_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_USERNAME\n        - name: PL_POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_PASSWORD\n        - name: PL_VIZIER_VERSION\n          value: ''\n        - name: PL_CLI_VERSION\n          value: ''\n        volumeMounts:\n        - name: certs\n          mountPath: /certs\n        - name: artifact-access-sa\n          mountPath: /creds\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: artifact-access-sa\n        secret:\n          secretName: artifact-access-sa\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "01992",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: artifact-tracker-server\n  labels:\n    db: pgsql\nspec:\n  selector:\n    matchLabels:\n      name: artifact-tracker-server\n  template:\n    metadata:\n      labels:\n        name: artifact-tracker-server\n    spec:\n      containers:\n      - name: artifact-tracker-server\n        image: gcr.io/pl-dev-infra/cloud/artifact_tracker_server_image:stable\n        ports:\n        - containerPort: 50750\n        readinessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        envFrom:\n        - configMapRef:\n            name: pl-db-config\n        - configMapRef:\n            name: pl-tls-config\n        - configMapRef:\n            name: pl-artifact-config\n        - configMapRef:\n            name: pl-domain-config\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloud-auth-secrets\n              key: jwt-signing-key\n        - name: PL_POSTGRES_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_USERNAME\n        - name: PL_POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_PASSWORD\n        - name: PL_VIZIER_VERSION\n          value: ''\n        - name: PL_CLI_VERSION\n          value: ''\n        volumeMounts:\n        - name: certs\n          mountPath: /certs\n        - name: artifact-access-sa\n          mountPath: /creds\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: artifact-access-sa\n        secret:\n          secretName: artifact-access-sa\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "01993",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: artifact-tracker-server\n  labels:\n    db: pgsql\nspec:\n  selector:\n    matchLabels:\n      name: artifact-tracker-server\n  template:\n    metadata:\n      labels:\n        name: artifact-tracker-server\n    spec:\n      containers:\n      - name: artifact-tracker-server\n        image: gcr.io/pl-dev-infra/cloud/artifact_tracker_server_image:stable\n        ports:\n        - containerPort: 50750\n        readinessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        envFrom:\n        - configMapRef:\n            name: pl-db-config\n        - configMapRef:\n            name: pl-tls-config\n        - configMapRef:\n            name: pl-artifact-config\n        - configMapRef:\n            name: pl-domain-config\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloud-auth-secrets\n              key: jwt-signing-key\n        - name: PL_POSTGRES_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_USERNAME\n        - name: PL_POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_PASSWORD\n        - name: PL_VIZIER_VERSION\n          value: ''\n        - name: PL_CLI_VERSION\n          value: ''\n        volumeMounts:\n        - name: certs\n          mountPath: /certs\n        - name: artifact-access-sa\n          mountPath: /creds\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: artifact-access-sa\n        secret:\n          secretName: artifact-access-sa\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "01994",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: artifact-tracker-server\n  labels:\n    db: pgsql\nspec:\n  selector:\n    matchLabels:\n      name: artifact-tracker-server\n  template:\n    metadata:\n      labels:\n        name: artifact-tracker-server\n    spec:\n      containers:\n      - name: artifact-tracker-server\n        image: gcr.io/pl-dev-infra/cloud/artifact_tracker_server_image:stable\n        ports:\n        - containerPort: 50750\n        readinessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        livenessProbe:\n          httpGet:\n            scheme: HTTPS\n            path: /healthz\n            port: 50750\n        envFrom:\n        - configMapRef:\n            name: pl-db-config\n        - configMapRef:\n            name: pl-tls-config\n        - configMapRef:\n            name: pl-artifact-config\n        - configMapRef:\n            name: pl-domain-config\n        env:\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloud-auth-secrets\n              key: jwt-signing-key\n        - name: PL_POSTGRES_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_USERNAME\n        - name: PL_POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: pl-db-secrets\n              key: PL_POSTGRES_PASSWORD\n        - name: PL_VIZIER_VERSION\n          value: ''\n        - name: PL_CLI_VERSION\n          value: ''\n        volumeMounts:\n        - name: certs\n          mountPath: /certs\n        - name: artifact-access-sa\n          mountPath: /creds\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: artifact-access-sa\n        secret:\n          secretName: artifact-access-sa\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "01995",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventsource-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventsource-controller\n  template:\n    metadata:\n      labels:\n        app: eventsource-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      securityContext:\n        runAsNonRoot: true\n        runAsUser: 9731\n      containers:\n      - name: eventsource-controller\n        image: quay.io/argoproj/argo-events:stable\n        imagePullPolicy: Always\n        args:\n        - eventsource-controller\n        env:\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: EVENTSOURCE_IMAGE\n          value: quay.io/argoproj/argo-events:latest\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01996",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventsource-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventsource-controller\n  template:\n    metadata:\n      labels:\n        app: eventsource-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      securityContext:\n        runAsNonRoot: true\n        runAsUser: 9731\n      containers:\n      - name: eventsource-controller\n        image: quay.io/argoproj/argo-events:stable\n        imagePullPolicy: Always\n        args:\n        - eventsource-controller\n        env:\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: EVENTSOURCE_IMAGE\n          value: quay.io/argoproj/argo-events:latest\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01997",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventsource-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventsource-controller\n  template:\n    metadata:\n      labels:\n        app: eventsource-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      securityContext:\n        runAsNonRoot: true\n        runAsUser: 9731\n      containers:\n      - name: eventsource-controller\n        image: quay.io/argoproj/argo-events:stable\n        imagePullPolicy: Always\n        args:\n        - eventsource-controller\n        env:\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: EVENTSOURCE_IMAGE\n          value: quay.io/argoproj/argo-events:latest\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01998",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventsource-controller\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventsource-controller\n  template:\n    metadata:\n      labels:\n        app: eventsource-controller\n    spec:\n      serviceAccountName: argo-events-sa\n      securityContext:\n        runAsNonRoot: true\n        runAsUser: 9731\n      containers:\n      - name: eventsource-controller\n        image: quay.io/argoproj/argo-events:stable\n        imagePullPolicy: Always\n        args:\n        - eventsource-controller\n        env:\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: EVENTSOURCE_IMAGE\n          value: quay.io/argoproj/argo-events:latest\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "01999",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: sample-app\n  name: sample-app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: sample-app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: sample-app\n    spec:\n      containers:\n      - image: quay.io/mpeters/sample-app:stable\n        imagePullPolicy: Always\n        name: sample-app\n        ports:\n        - containerPort: 8080\n        env:\n        - name: NODE_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.hostIP\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02000",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: sample-app\n  name: sample-app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: sample-app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: sample-app\n    spec:\n      containers:\n      - image: quay.io/mpeters/sample-app:stable\n        imagePullPolicy: Always\n        name: sample-app\n        ports:\n        - containerPort: 8080\n        env:\n        - name: NODE_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.hostIP\n        - name: POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  }
+]

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: connector
+    group: linker
+  name: connector-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connector
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: connector
+        group: linker
+    spec:
+      containers:
+      - name: connector
+        image: eu.gcr.io/linker-246119/connector:2.4.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8088
+        - containerPort: 8080
+        env:
+        - name: JAVA_OPTS
+          value: -Xms128m -Xmx1024m
+        - name: spring.profiles.active
+          value: sandbox
+        - name: server.port
+          value: '8080'
+        - name: wsPort
+          value: '8088'
+        - name: domainName
+          value: domain-01
+        - name: connectorName
+          value: connector-01
+        - name: kafkaHosts
+          value: infra-kafka:29092
+        - name: natsHosts
+          value: nats://nats:4222
+        readinessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 30
+          failureThreshold: 3
+          successThreshold: 1
+        livenessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 30
+          failureThreshold: 5
+          successThreshold: 1
+      restartPolicy: Always

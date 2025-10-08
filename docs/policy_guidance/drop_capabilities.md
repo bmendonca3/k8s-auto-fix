@@ -1,0 +1,1 @@
+Drop every dangerous Linux capability and turn off privilege escalation. For each container ensure securityContext exists, set allowPrivilegeEscalation: false, privileged: false, and include a capabilities.drop list that contains NET_RAW, NET_ADMIN, SYS_ADMIN, SYS_MODULE, SYS_PTRACE, SYS_CHROOT. Remove those entries from capabilities.add if present.

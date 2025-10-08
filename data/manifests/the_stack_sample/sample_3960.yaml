@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: node-red
+  name: node-red
+  namespace: nodered
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-red
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: node-red
+    spec:
+      containers:
+      - image: nodered/node-red:latest
+        imagePullPolicy: Always
+        name: node-red
+        ports:
+        - containerPort: 1880
+          name: nodered-tcp
+          protocol: TCP
+        resources: {}
+        env:
+        - name: TZ
+          value: Europe/Rome
+        - name: PGID
+          value: '1000'
+        - name: PUID
+          value: '1000'
+        - name: process.env.PORT
+          value: '10880'
+        volumeMounts:
+        - mountPath: /data
+          name: node-red-pvc
+          subPath: _nodered
+      volumes:
+      - name: node-red-pvc
+        persistentVolumeClaim:
+          claimName: node-red-pvc

@@ -1,0 +1,498 @@
+[
+  {
+    "id": "03161",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kelvin\nspec:\n  selector:\n    matchLabels:\n      name: kelvin\n  template:\n    metadata:\n      labels:\n        name: kelvin\n        plane: data\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: qb-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-query-broker\n        - name: SERVICE_PORT\n          value: '50300'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/kelvin_image:stable\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        env:\n        - name: PL_HOST_PATH\n          value: /host\n        - name: PL_POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: PL_POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_HOST_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.hostIP\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: TCMALLOC_SAMPLE_PARAMETER\n          value: '1048576'\n        ports:\n        - containerPort: 59300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        - name: sys\n          mountPath: /sys\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: sys\n        hostPath:\n          path: /sys\n          type: Directory\n",
+    "errors": []
+  },
+  {
+    "id": "03162",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kelvin\nspec:\n  selector:\n    matchLabels:\n      name: kelvin\n  template:\n    metadata:\n      labels:\n        name: kelvin\n        plane: data\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: qb-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-query-broker\n        - name: SERVICE_PORT\n          value: '50300'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/kelvin_image:stable\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        env:\n        - name: PL_HOST_PATH\n          value: /host\n        - name: PL_POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: PL_POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_HOST_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.hostIP\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: TCMALLOC_SAMPLE_PARAMETER\n          value: '1048576'\n        ports:\n        - containerPort: 59300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        - name: sys\n          mountPath: /sys\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: sys\n        hostPath:\n          path: /sys\n          type: Directory\n",
+    "errors": []
+  },
+  {
+    "id": "03163",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kelvin\nspec:\n  selector:\n    matchLabels:\n      name: kelvin\n  template:\n    metadata:\n      labels:\n        name: kelvin\n        plane: data\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: qb-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-query-broker\n        - name: SERVICE_PORT\n          value: '50300'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/kelvin_image:stable\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        env:\n        - name: PL_HOST_PATH\n          value: /host\n        - name: PL_POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: PL_POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_HOST_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.hostIP\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: TCMALLOC_SAMPLE_PARAMETER\n          value: '1048576'\n        ports:\n        - containerPort: 59300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        - name: sys\n          mountPath: /sys\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: sys\n        hostPath:\n          path: /sys\n          type: Directory\n",
+    "errors": []
+  },
+  {
+    "id": "03164",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kelvin\nspec:\n  selector:\n    matchLabels:\n      name: kelvin\n  template:\n    metadata:\n      labels:\n        name: kelvin\n        plane: data\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: kubernetes.io/os\n                operator: Exists\n              - key: kubernetes.io/os\n                operator: In\n                values:\n                - linux\n            - matchExpressions:\n              - key: beta.kubernetes.io/os\n                operator: Exists\n              - key: beta.kubernetes.io/os\n                operator: In\n                values:\n                - linux\n      initContainers:\n      - name: qb-wait\n        image: gcr.io/pixie-prod/pixie-prod-artifacts/curl:1.0\n        command:\n        - sh\n        - -c\n        - 'set -x; URL=\"https://${SERVICE_NAME}:${SERVICE_PORT}/healthz\"; until [\n          $(curl -m 0.5 -s -o /dev/null -w \"%{http_code}\" -k ${URL}) -eq 200 ]; do\n          echo \"waiting for ${URL}\" sleep 2; done; '\n        env:\n        - name: SERVICE_NAME\n          value: vizier-query-broker\n        - name: SERVICE_PORT\n          value: '50300'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: app\n        image: gcr.io/pixie-oss/pixie-dev/vizier/kelvin_image:stable\n        envFrom:\n        - configMapRef:\n            name: pl-tls-config\n        env:\n        - name: PL_HOST_PATH\n          value: /host\n        - name: PL_POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: PL_POD_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: PL_HOST_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.hostIP\n        - name: PL_JWT_SIGNING_KEY\n          valueFrom:\n            secretKeyRef:\n              key: jwt-signing-key\n              name: pl-cluster-secrets\n        - name: PL_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: TCMALLOC_SAMPLE_PARAMETER\n          value: '1048576'\n        ports:\n        - containerPort: 59300\n        volumeMounts:\n        - mountPath: /certs\n          name: certs\n        - name: sys\n          mountPath: /sys\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: certs\n        secret:\n          secretName: service-tls-certs\n      - name: sys\n        hostPath:\n          path: /sys\n          type: Directory\n",
+    "errors": []
+  },
+  {
+    "id": "03165",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03166",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03167",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03168",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03169",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03170",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03171",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03172",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03173",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03174",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03175",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03176",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03177",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03178",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03179",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03180",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03181",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03182",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03183",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03184",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03185",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03186",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03187",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03188",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03189",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03190",
+    "policy_id": "no_privileged",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03191",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03192",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03193",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03194",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03195",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03196",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03197",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: hsds-bucket-watch\n  name: hsds-bucket-watch\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: hsds-bucket-watch\n  template:\n    metadata:\n      labels:\n        app: hsds-bucket-watch\n    spec:\n      serviceAccountName: hsds-eks-policy\n      containers:\n      - name: watch\n        image: hdfgroup/bucket_loader:v0.3\n        imagePullPolicy: IfNotPresent\n        resources:\n          requests:\n            memory: 128M\n          limits:\n            memory: 256M\n        volumeMounts:\n        - name: bucket-config\n          mountPath: /config/config.yml\n          subPath: config.yml\n        env:\n        - name: RUN_COMMAND\n          value: watch\n        - name: PASSWORD_FILE\n          value: /config/passwd.txt\n        - name: HS_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: hs-loader-keys\n              key: hs_username\n        - name: HS_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: hs-loader-keys\n              key: hs_password\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: accounts\n        secret:\n          secretName: user-password\n      - name: bucket-config\n        configMap:\n          name: hsds-bucket-loader-config\n      - name: hsds-config\n        configMap:\n          name: hsds-config\n      - name: hsds-override\n        configMap:\n          name: hsds-override\n",
+    "errors": []
+  },
+  {
+    "id": "03198",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: hsds-bucket-watch\n  name: hsds-bucket-watch\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: hsds-bucket-watch\n  template:\n    metadata:\n      labels:\n        app: hsds-bucket-watch\n    spec:\n      serviceAccountName: hsds-eks-policy\n      containers:\n      - name: watch\n        image: hdfgroup/bucket_loader:v0.3\n        imagePullPolicy: IfNotPresent\n        resources:\n          requests:\n            memory: 128M\n          limits:\n            memory: 256M\n        volumeMounts:\n        - name: bucket-config\n          mountPath: /config/config.yml\n          subPath: config.yml\n        env:\n        - name: RUN_COMMAND\n          value: watch\n        - name: PASSWORD_FILE\n          value: /config/passwd.txt\n        - name: HS_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: hs-loader-keys\n              key: hs_username\n        - name: HS_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: hs-loader-keys\n              key: hs_password\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: accounts\n        secret:\n          secretName: user-password\n      - name: bucket-config\n        configMap:\n          name: hsds-bucket-loader-config\n      - name: hsds-config\n        configMap:\n          name: hsds-config\n      - name: hsds-override\n        configMap:\n          name: hsds-override\n",
+    "errors": []
+  },
+  {
+    "id": "03199",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: hsds-bucket-watch\n  name: hsds-bucket-watch\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: hsds-bucket-watch\n  template:\n    metadata:\n      labels:\n        app: hsds-bucket-watch\n    spec:\n      serviceAccountName: hsds-eks-policy\n      containers:\n      - name: watch\n        image: hdfgroup/bucket_loader:v0.3\n        imagePullPolicy: IfNotPresent\n        resources:\n          requests:\n            memory: 128M\n            cpu: 100m\n          limits:\n            memory: 256M\n            cpu: 500m\n        volumeMounts:\n        - name: bucket-config\n          mountPath: /config/config.yml\n          subPath: config.yml\n        env:\n        - name: RUN_COMMAND\n          value: watch\n        - name: PASSWORD_FILE\n          value: /config/passwd.txt\n        - name: HS_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: hs-loader-keys\n              key: hs_username\n        - name: HS_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: hs-loader-keys\n              key: hs_password\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: accounts\n        secret:\n          secretName: user-password\n      - name: bucket-config\n        configMap:\n          name: hsds-bucket-loader-config\n      - name: hsds-config\n        configMap:\n          name: hsds-config\n      - name: hsds-override\n        configMap:\n          name: hsds-override\n",
+    "errors": []
+  },
+  {
+    "id": "03200",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: red\n  labels:\n    app: red\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: red\n  template:\n    metadata:\n      labels:\n        app: red\n    spec:\n      containers:\n      - name: red\n        image: nginx:1.19.2\n        volumeMounts:\n        - name: html\n          mountPath: /usr/share/nginx/html\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n          limits:\n            cpu: 100m\n            memory: 100Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: html\n        configMap:\n          name: red\n          items:\n          - key: body\n            path: index.html\n",
+    "errors": []
+  }
+]

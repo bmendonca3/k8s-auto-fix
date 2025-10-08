@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+  labels:
+    k8s-app: fluent-bit
+data:
+  fluent-bit.conf: "[SERVICE]\n    Flush         1\n    Log_Level     info\n    Daemon\
+    \        off\n    Parsers_File  parsers.conf\n    HTTP_Server   On\n    HTTP_Listen\
+    \   0.0.0.0\n    HTTP_Port     2020\n\n@INCLUDE input-kubernetes.conf\n@INCLUDE\
+    \ filter-kubernetes.conf\n@INCLUDE output-elasticsearch.conf\n"
+  input-kubernetes.conf: "[INPUT]\n    Name              tail\n    Tag           \
+    \    kube.*\n    Path              /var/log/containers/*.log\n    Parser     \
+    \       docker\n    DB                /var/log/flb_kube.db\n    Mem_Buf_Limit\
+    \     5MB\n    Skip_Long_Lines   On\n    Refresh_Interval  10\n"
+  filter-kubernetes.conf: "[FILTER]\n    Name                kubernetes\n    Match\
+    \               kube.*\n    Kube_URL            https://kubernetes.default.svc:443\n\
+    \    Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n\
+    \    Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token\n\
+    \    Kube_Tag_Prefix     kube.var.log.containers.\n    Merge_Log           On\n\
+    \    Merge_Log_Key       log_processed\n    K8S-Logging.Parser  On\n    K8S-Logging.Exclude\
+    \ Off\n"
+  output-elasticsearch.conf: "[OUTPUT]\n    Name            es\n    Match        \
+    \   *\n    Host            ${FLUENT_ELASTICSEARCH_HOST}\n    Port            ${FLUENT_ELASTICSEARCH_PORT}\n\
+    \    Logstash_Format On\n    Replace_Dots    On\n    Retry_Limit     False\n"
+  parsers.conf: "[PARSER]\n    Name   apache\n    Format regex\n    Regex  ^(?<host>[^\
+    \ ]*) [^ ]* (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\S+)(?: +(?<path>[^\\\
+    \"]*?)(?: +\\S*)?)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"(?<referer>[^\\\"]*)\"\
+    \ \"(?<agent>[^\\\"]*)\")?$\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S\
+    \ %z\n\n[PARSER]\n    Name   apache2\n    Format regex\n    Regex  ^(?<host>[^\
+    \ ]*) [^ ]* (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\S+)(?: +(?<path>[^\
+    \ ]*) +\\S*)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"(?<referer>[^\\\"]*)\" \"(?<agent>[^\\\
+    \"]*)\")?$\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S %z\n\n[PARSER]\n\
+    \    Name   apache_error\n    Format regex\n    Regex  ^\\[[^ ]* (?<time>[^\\\
+    ]]*)\\] \\[(?<level>[^\\]]*)\\](?: \\[pid (?<pid>[^\\]]*)\\])?( \\[client (?<client>[^\\\
+    ]]*)\\])? (?<message>.*)$\n\n[PARSER]\n    Name   nginx\n    Format regex\n  \
+    \  Regex ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\\
+    ] \"(?<method>\\S+)(?: +(?<path>[^\\\"]*?)(?: +\\S*)?)?\" (?<code>[^ ]*) (?<size>[^\
+    \ ]*)(?: \"(?<referer>[^\\\"]*)\" \"(?<agent>[^\\\"]*)\")?$\n    Time_Key time\n\
+    \    Time_Format %d/%b/%Y:%H:%M:%S %z\n\n[PARSER]\n    Name   json\n    Format\
+    \ json\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S %z\n\n[PARSER]\n\
+    \    Name        docker\n    Format      json\n    Time_Key    time\n    Time_Format\
+    \ %Y-%m-%dT%H:%M:%S.%L\n    Time_Keep   On\n\n[PARSER]\n    Name        syslog\n\
+    \    Format      regex\n    Regex       ^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^\
+    \ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\\
+    ])?(?:[^\\:]*\\:)? *(?<message>.*)$\n    Time_Key    time\n    Time_Format %b\
+    \ %d %H:%M:%S"

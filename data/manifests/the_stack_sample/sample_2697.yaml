@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: premerge-debian
+  namespace: buildkite
+spec:
+  replicas: 4
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: agent-premerge-debian
+  template:
+    metadata:
+      labels:
+        app: agent-premerge-debian
+    spec:
+      containers:
+      - name: buildkite-premerge-debian
+        image: gcr.io/llvm-premerge-checks/buildkite-premerge-debian
+        resources:
+          limits:
+            cpu: 30
+            memory: 80Gi
+          requests:
+            cpu: 30
+            memory: 80Gi
+        volumeMounts:
+        - name: ssd
+          mountPath: /mnt/disks/ssd0
+        - name: github-ssh
+          mountPath: /mnt/ssh
+        env:
+        - name: BUILDKITE_AGENT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: buildkite-agent-token
+              key: token
+        - name: BUILDKITE_AGENT_TAGS
+          value: queue=linux
+        - name: BUILDKITE_BUILD_PATH
+          value: /mnt/disks/ssd0/agent
+        - name: CONDUIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: conduit-api-token
+              key: token
+      volumes:
+      - name: ssd
+        hostPath:
+          path: /mnt/disks/ssd0
+          type: Directory
+      - name: github-ssh
+        secret:
+          secretName: github-ssh
+      nodeSelector:
+        cloud.google.com/gke-nodepool: jenkins-agents

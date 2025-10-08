@@ -1,0 +1,282 @@
+[
+  {
+    "id": "03641",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1611.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: busybox\n  labels:\n    appname: busybox\nspec:\n  containers:\n  - name: busybox\n    image: quay.io/vcppds7878/busybox:latest\n    imagePullPolicy: IfNotPresent\n    command:\n    - sh\n    - -c\n    - while true; do echo $(date) | tee -a /mnt/test/outfile; sync; sleep 1; done\n    volumeMounts:\n    - name: mypvc\n      mountPath: /mnt/test\n  volumes:\n  - name: mypvc\n    persistentVolumeClaim:\n      claimName: busybox-pvc\n      readOnly: false\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"busybox\" is using an invalid container image, \"quay.io/vcppds7878/busybox:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03642",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1611.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: busybox\n  labels:\n    appname: busybox\nspec:\n  containers:\n  - name: busybox\n    image: quay.io/vcppds7878/busybox:latest\n    imagePullPolicy: IfNotPresent\n    command:\n    - sh\n    - -c\n    - while true; do echo $(date) | tee -a /mnt/test/outfile; sync; sleep 1; done\n    volumeMounts:\n    - name: mypvc\n      mountPath: /mnt/test\n  volumes:\n  - name: mypvc\n    persistentVolumeClaim:\n      claimName: busybox-pvc\n      readOnly: false\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"busybox\" does not have a read-only root file system"
+  },
+  {
+    "id": "03643",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1611.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: busybox\n  labels:\n    appname: busybox\nspec:\n  containers:\n  - name: busybox\n    image: quay.io/vcppds7878/busybox:latest\n    imagePullPolicy: IfNotPresent\n    command:\n    - sh\n    - -c\n    - while true; do echo $(date) | tee -a /mnt/test/outfile; sync; sleep 1; done\n    volumeMounts:\n    - name: mypvc\n      mountPath: /mnt/test\n  volumes:\n  - name: mypvc\n    persistentVolumeClaim:\n      claimName: busybox-pvc\n      readOnly: false\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"busybox\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03644",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1611.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: busybox\n  labels:\n    appname: busybox\nspec:\n  containers:\n  - name: busybox\n    image: quay.io/vcppds7878/busybox:latest\n    imagePullPolicy: IfNotPresent\n    command:\n    - sh\n    - -c\n    - while true; do echo $(date) | tee -a /mnt/test/outfile; sync; sleep 1; done\n    volumeMounts:\n    - name: mypvc\n      mountPath: /mnt/test\n  volumes:\n  - name: mypvc\n    persistentVolumeClaim:\n      claimName: busybox-pvc\n      readOnly: false\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"busybox\" has cpu request 0"
+  },
+  {
+    "id": "03645",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1611.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: busybox\n  labels:\n    appname: busybox\nspec:\n  containers:\n  - name: busybox\n    image: quay.io/vcppds7878/busybox:latest\n    imagePullPolicy: IfNotPresent\n    command:\n    - sh\n    - -c\n    - while true; do echo $(date) | tee -a /mnt/test/outfile; sync; sleep 1; done\n    volumeMounts:\n    - name: mypvc\n      mountPath: /mnt/test\n  volumes:\n  - name: mypvc\n    persistentVolumeClaim:\n      claimName: busybox-pvc\n      readOnly: false\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"busybox\" has memory limit 0"
+  },
+  {
+    "id": "03646",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1613.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: podinfo\n  namespace: demo\n  labels:\n    app: podinfo\n  annotations:\n    flux.weave.works/automated: 'true'\n    flux.weave.works/tag.init: regex:^3.10.*\n    flux.weave.works/tag.podinfod: semver:~2.1\nspec:\n  selector:\n    matchLabels:\n      app: podinfo\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n      labels:\n        app: podinfo\n    spec:\n      initContainers:\n      - name: init\n        image: alpine:3.10\n        command:\n        - sleep\n        - '1'\n      containers:\n      - name: podinfod\n        image: stefanprodan/podinfo:2.1.3\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 9898\n          name: http\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        env:\n        - name: PODINFO_UI_MESSAGE\n          value: Greetings benji!\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 9898\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 9898\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"init\" does not have a read-only root file system"
+  },
+  {
+    "id": "03647",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1613.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: podinfo\n  namespace: demo\n  labels:\n    app: podinfo\n  annotations:\n    flux.weave.works/automated: 'true'\n    flux.weave.works/tag.init: regex:^3.10.*\n    flux.weave.works/tag.podinfod: semver:~2.1\nspec:\n  selector:\n    matchLabels:\n      app: podinfo\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n      labels:\n        app: podinfo\n    spec:\n      initContainers:\n      - name: init\n        image: alpine:3.10\n        command:\n        - sleep\n        - '1'\n      containers:\n      - name: podinfod\n        image: stefanprodan/podinfo:2.1.3\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 9898\n          name: http\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        env:\n        - name: PODINFO_UI_MESSAGE\n          value: Greetings benji!\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 9898\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 9898\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"podinfod\" does not have a read-only root file system"
+  },
+  {
+    "id": "03648",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1613.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: podinfo\n  namespace: demo\n  labels:\n    app: podinfo\n  annotations:\n    flux.weave.works/automated: 'true'\n    flux.weave.works/tag.init: regex:^3.10.*\n    flux.weave.works/tag.podinfod: semver:~2.1\nspec:\n  selector:\n    matchLabels:\n      app: podinfo\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n      labels:\n        app: podinfo\n    spec:\n      initContainers:\n      - name: init\n        image: alpine:3.10\n        command:\n        - sleep\n        - '1'\n      containers:\n      - name: podinfod\n        image: stefanprodan/podinfo:2.1.3\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 9898\n          name: http\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        env:\n        - name: PODINFO_UI_MESSAGE\n          value: Greetings benji!\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 9898\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 9898\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"init\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03649",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1613.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: podinfo\n  namespace: demo\n  labels:\n    app: podinfo\n  annotations:\n    flux.weave.works/automated: 'true'\n    flux.weave.works/tag.init: regex:^3.10.*\n    flux.weave.works/tag.podinfod: semver:~2.1\nspec:\n  selector:\n    matchLabels:\n      app: podinfo\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n      labels:\n        app: podinfo\n    spec:\n      initContainers:\n      - name: init\n        image: alpine:3.10\n        command:\n        - sleep\n        - '1'\n      containers:\n      - name: podinfod\n        image: stefanprodan/podinfo:2.1.3\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 9898\n          name: http\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        env:\n        - name: PODINFO_UI_MESSAGE\n          value: Greetings benji!\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 9898\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 9898\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"podinfod\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03650",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1613.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: podinfo\n  namespace: demo\n  labels:\n    app: podinfo\n  annotations:\n    flux.weave.works/automated: 'true'\n    flux.weave.works/tag.init: regex:^3.10.*\n    flux.weave.works/tag.podinfod: semver:~2.1\nspec:\n  selector:\n    matchLabels:\n      app: podinfo\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n      labels:\n        app: podinfo\n    spec:\n      initContainers:\n      - name: init\n        image: alpine:3.10\n        command:\n        - sleep\n        - '1'\n      containers:\n      - name: podinfod\n        image: stefanprodan/podinfo:2.1.3\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 9898\n          name: http\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        env:\n        - name: PODINFO_UI_MESSAGE\n          value: Greetings benji!\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 9898\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 9898\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"init\" has cpu request 0"
+  },
+  {
+    "id": "03651",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1613.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: podinfo\n  namespace: demo\n  labels:\n    app: podinfo\n  annotations:\n    flux.weave.works/automated: 'true'\n    flux.weave.works/tag.init: regex:^3.10.*\n    flux.weave.works/tag.podinfod: semver:~2.1\nspec:\n  selector:\n    matchLabels:\n      app: podinfo\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n      labels:\n        app: podinfo\n    spec:\n      initContainers:\n      - name: init\n        image: alpine:3.10\n        command:\n        - sleep\n        - '1'\n      containers:\n      - name: podinfod\n        image: stefanprodan/podinfo:2.1.3\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 9898\n          name: http\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        env:\n        - name: PODINFO_UI_MESSAGE\n          value: Greetings benji!\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 9898\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: 9898\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 10m\n            memory: 64Mi\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"init\" has memory limit 0"
+  },
+  {
+    "id": "03652",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: wp\n  labels:\n    app: wp\nspec:\n  containers:\n  - name: wp\n    image: wordpress:5.8.1\n    ports:\n    - containerPort: 80\n    env:\n    - name: WORDPRESS_DB_HOST\n      value: mysql\n    - name: WORDPRESS_DB_USER\n      value: eduwp\n    - name: WORDPRESS_DB_PASSWORD\n      value: Passw0rd!\n    - name: WORDPRESS_DB_NAME\n      value: wpdata\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"wp\" does not have a read-only root file system"
+  },
+  {
+    "id": "03653",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: wp\n  labels:\n    app: wp\nspec:\n  containers:\n  - name: wp\n    image: wordpress:5.8.1\n    ports:\n    - containerPort: 80\n    env:\n    - name: WORDPRESS_DB_HOST\n      value: mysql\n    - name: WORDPRESS_DB_USER\n      value: eduwp\n    - name: WORDPRESS_DB_PASSWORD\n      value: Passw0rd!\n    - name: WORDPRESS_DB_NAME\n      value: wpdata\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"wp\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03654",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: wp\n  labels:\n    app: wp\nspec:\n  containers:\n  - name: wp\n    image: wordpress:5.8.1\n    ports:\n    - containerPort: 80\n    env:\n    - name: WORDPRESS_DB_HOST\n      value: mysql\n    - name: WORDPRESS_DB_USER\n      value: eduwp\n    - name: WORDPRESS_DB_PASSWORD\n      value: Passw0rd!\n    - name: WORDPRESS_DB_NAME\n      value: wpdata\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"wp\" has cpu request 0"
+  },
+  {
+    "id": "03655",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1616.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: wp\n  labels:\n    app: wp\nspec:\n  containers:\n  - name: wp\n    image: wordpress:5.8.1\n    ports:\n    - containerPort: 80\n    env:\n    - name: WORDPRESS_DB_HOST\n      value: mysql\n    - name: WORDPRESS_DB_USER\n      value: eduwp\n    - name: WORDPRESS_DB_PASSWORD\n      value: Passw0rd!\n    - name: WORDPRESS_DB_NAME\n      value: wpdata\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"wp\" has memory limit 0"
+  },
+  {
+    "id": "03656",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1617.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4440\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03657",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1617.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4440\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03658",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1617.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4440\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03659",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1617.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4440\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "03660",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1617.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4440\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "03661",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventing-controller\n  namespace: knative-eventing\n  labels:\n    eventing.knative.dev/release: devel\n    knative.dev/high-availability: 'true'\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventing-controller\n  template:\n    metadata:\n      labels:\n        app: eventing-controller\n        eventing.knative.dev/release: devel\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app: eventing-controller\n              topologyKey: kubernetes.io/hostname\n            weight: 100\n      serviceAccountName: eventing-controller\n      containers:\n      - name: eventing-controller\n        image: ko://knative.dev/eventing/cmd/controller\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: knative.dev/eventing\n        - name: PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/ping\n        - name: MT_PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/mtping\n        - name: APISERVER_RA_IMAGE\n          value: ko://knative.dev/eventing/cmd/apiserver_receive_adapter\n        securityContext:\n          allowPrivilegeEscalation: false\n        ports:\n        - name: metrics\n          containerPort: 9090\n        - name: profiling\n          containerPort: 8008\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"eventing-controller\" is using an invalid container image, \"ko://knative.dev/eventing/cmd/controller\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03662",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventing-controller\n  namespace: knative-eventing\n  labels:\n    eventing.knative.dev/release: devel\n    knative.dev/high-availability: 'true'\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventing-controller\n  template:\n    metadata:\n      labels:\n        app: eventing-controller\n        eventing.knative.dev/release: devel\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app: eventing-controller\n              topologyKey: kubernetes.io/hostname\n            weight: 100\n      serviceAccountName: eventing-controller\n      containers:\n      - name: eventing-controller\n        image: ko://knative.dev/eventing/cmd/controller\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: knative.dev/eventing\n        - name: PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/ping\n        - name: MT_PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/mtping\n        - name: APISERVER_RA_IMAGE\n          value: ko://knative.dev/eventing/cmd/apiserver_receive_adapter\n        securityContext:\n          allowPrivilegeEscalation: false\n        ports:\n        - name: metrics\n          containerPort: 9090\n        - name: profiling\n          containerPort: 8008\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"eventing-controller\" does not have a read-only root file system"
+  },
+  {
+    "id": "03663",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventing-controller\n  namespace: knative-eventing\n  labels:\n    eventing.knative.dev/release: devel\n    knative.dev/high-availability: 'true'\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventing-controller\n  template:\n    metadata:\n      labels:\n        app: eventing-controller\n        eventing.knative.dev/release: devel\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app: eventing-controller\n              topologyKey: kubernetes.io/hostname\n            weight: 100\n      serviceAccountName: eventing-controller\n      containers:\n      - name: eventing-controller\n        image: ko://knative.dev/eventing/cmd/controller\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: knative.dev/eventing\n        - name: PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/ping\n        - name: MT_PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/mtping\n        - name: APISERVER_RA_IMAGE\n          value: ko://knative.dev/eventing/cmd/apiserver_receive_adapter\n        securityContext:\n          allowPrivilegeEscalation: false\n        ports:\n        - name: metrics\n          containerPort: 9090\n        - name: profiling\n          containerPort: 8008\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"eventing-controller\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03664",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1623.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: eventing-controller\n  namespace: knative-eventing\n  labels:\n    eventing.knative.dev/release: devel\n    knative.dev/high-availability: 'true'\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: eventing-controller\n  template:\n    metadata:\n      labels:\n        app: eventing-controller\n        eventing.knative.dev/release: devel\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app: eventing-controller\n              topologyKey: kubernetes.io/hostname\n            weight: 100\n      serviceAccountName: eventing-controller\n      containers:\n      - name: eventing-controller\n        image: ko://knative.dev/eventing/cmd/controller\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: knative.dev/eventing\n        - name: PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/ping\n        - name: MT_PING_IMAGE\n          value: ko://knative.dev/eventing/cmd/mtping\n        - name: APISERVER_RA_IMAGE\n          value: ko://knative.dev/eventing/cmd/apiserver_receive_adapter\n        securityContext:\n          allowPrivilegeEscalation: false\n        ports:\n        - name: metrics\n          containerPort: 9090\n        - name: profiling\n          containerPort: 8008\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"eventing-controller\" has memory limit 0"
+  },
+  {
+    "id": "03665",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1624.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: jx-gcactivities\n  annotations:\n    meta.helm.sh/release-name: jxboot-helmfile-resources\n  namespace: jx\n  labels:\n    gitops.jenkins-x.io/pipeline: namespaces\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        labels:\n          app: gcactivities\n          release: jxboot-helmfile-resources\n      spec:\n        serviceAccountName: jx-gcactivities\n        containers:\n        - name: gcactivities\n          command:\n          - jx\n          args:\n          - gitops\n          - gc\n          - activities\n          imagePullPolicy: IfNotPresent\n          image: ghcr.io/jenkins-x/jx-boot:3.2.222\n          env:\n          - name: JX_LOG_FORMAT\n            value: json\n          - name: JX_LOG_LEVEL\n            value: info\n          - name: PIPELINE_KIND\n            value: dummy\n          resources: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"gcactivities\" does not have a read-only root file system"
+  },
+  {
+    "id": "03666",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1624.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: jx-gcactivities\n  annotations:\n    meta.helm.sh/release-name: jxboot-helmfile-resources\n  namespace: jx\n  labels:\n    gitops.jenkins-x.io/pipeline: namespaces\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        labels:\n          app: gcactivities\n          release: jxboot-helmfile-resources\n      spec:\n        serviceAccountName: jx-gcactivities\n        containers:\n        - name: gcactivities\n          command:\n          - jx\n          args:\n          - gitops\n          - gc\n          - activities\n          imagePullPolicy: IfNotPresent\n          image: ghcr.io/jenkins-x/jx-boot:3.2.222\n          env:\n          - name: JX_LOG_FORMAT\n            value: json\n          - name: JX_LOG_LEVEL\n            value: info\n          - name: PIPELINE_KIND\n            value: dummy\n          resources: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"gcactivities\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03667",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1624.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: jx-gcactivities\n  annotations:\n    meta.helm.sh/release-name: jxboot-helmfile-resources\n  namespace: jx\n  labels:\n    gitops.jenkins-x.io/pipeline: namespaces\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        labels:\n          app: gcactivities\n          release: jxboot-helmfile-resources\n      spec:\n        serviceAccountName: jx-gcactivities\n        containers:\n        - name: gcactivities\n          command:\n          - jx\n          args:\n          - gitops\n          - gc\n          - activities\n          imagePullPolicy: IfNotPresent\n          image: ghcr.io/jenkins-x/jx-boot:3.2.222\n          env:\n          - name: JX_LOG_FORMAT\n            value: json\n          - name: JX_LOG_LEVEL\n            value: info\n          - name: PIPELINE_KIND\n            value: dummy\n          resources: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"gcactivities\" has cpu request 0"
+  },
+  {
+    "id": "03668",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1624.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: jx-gcactivities\n  annotations:\n    meta.helm.sh/release-name: jxboot-helmfile-resources\n  namespace: jx\n  labels:\n    gitops.jenkins-x.io/pipeline: namespaces\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        labels:\n          app: gcactivities\n          release: jxboot-helmfile-resources\n      spec:\n        serviceAccountName: jx-gcactivities\n        containers:\n        - name: gcactivities\n          command:\n          - jx\n          args:\n          - gitops\n          - gc\n          - activities\n          imagePullPolicy: IfNotPresent\n          image: ghcr.io/jenkins-x/jx-boot:3.2.222\n          env:\n          - name: JX_LOG_FORMAT\n            value: json\n          - name: JX_LOG_LEVEL\n            value: info\n          - name: PIPELINE_KIND\n            value: dummy\n          resources: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"gcactivities\" has memory limit 0"
+  },
+  {
+    "id": "03669",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1628.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: spring-petclinic\n  name: spring-petclinic\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: spring-petclinic\n  template:\n    metadata:\n      labels:\n        app: spring-petclinic\n    spec:\n      containers:\n      - image: quay.io/deepaked/spring-petclinic:v0.0.14\n        imagePullPolicy: Always\n        name: spring-petclinic\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"spring-petclinic\" does not have a read-only root file system"
+  },
+  {
+    "id": "03670",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1628.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: spring-petclinic\n  name: spring-petclinic\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: spring-petclinic\n  template:\n    metadata:\n      labels:\n        app: spring-petclinic\n    spec:\n      containers:\n      - image: quay.io/deepaked/spring-petclinic:v0.0.14\n        imagePullPolicy: Always\n        name: spring-petclinic\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"spring-petclinic\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03671",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1628.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: spring-petclinic\n  name: spring-petclinic\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: spring-petclinic\n  template:\n    metadata:\n      labels:\n        app: spring-petclinic\n    spec:\n      containers:\n      - image: quay.io/deepaked/spring-petclinic:v0.0.14\n        imagePullPolicy: Always\n        name: spring-petclinic\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"spring-petclinic\" has cpu request 0"
+  },
+  {
+    "id": "03672",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1628.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: spring-petclinic\n  name: spring-petclinic\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: spring-petclinic\n  template:\n    metadata:\n      labels:\n        app: spring-petclinic\n    spec:\n      containers:\n      - image: quay.io/deepaked/spring-petclinic:v0.0.14\n        imagePullPolicy: Always\n        name: spring-petclinic\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"spring-petclinic\" has memory limit 0"
+  },
+  {
+    "id": "03673",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1629.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: registry\n  labels:\n    app: registry\nspec:\n  selector:\n    matchLabels:\n      app: registry\n  template:\n    metadata:\n      labels:\n        app: registry\n        spiffe.io/spiffe-id: 'true'\n    spec:\n      containers:\n      - image: ghcr.io/networkservicemesh/ci/cmd-registry-memory:75c22d7\n        env:\n        - name: SPIFFE_ENDPOINT_SOCKET\n          value: unix:///run/spire/sockets/agent.sock\n        - name: REGISTRY_MEMORY_LISTEN_ON\n          value: tcp://:5002\n        - name: REGISTRY_MEMORY_LOG_LEVEL\n          value: TRACE\n        - name: REGISTRY_MEMORY_PROXY_REGISTRY_URL\n          value: nsmgr-proxy:5004\n        imagePullPolicy: IfNotPresent\n        name: registry\n        ports:\n        - containerPort: 5002\n          hostPort: 5002\n        volumeMounts:\n        - name: spire-agent-socket\n          mountPath: /run/spire/sockets\n        resources:\n          requests:\n            cpu: 100m\n          limits:\n            memory: 40Mi\n            cpu: 200m\n      volumes:\n      - name: spire-agent-socket\n        hostPath:\n          path: /run/spire/sockets\n          type: Directory\n      - name: nsm-socket\n        hostPath:\n          path: /var/lib/networkservicemesh\n          type: DirectoryOrCreate\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"registry\" does not have a read-only root file system"
+  },
+  {
+    "id": "03674",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1629.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: registry\n  labels:\n    app: registry\nspec:\n  selector:\n    matchLabels:\n      app: registry\n  template:\n    metadata:\n      labels:\n        app: registry\n        spiffe.io/spiffe-id: 'true'\n    spec:\n      containers:\n      - image: ghcr.io/networkservicemesh/ci/cmd-registry-memory:75c22d7\n        env:\n        - name: SPIFFE_ENDPOINT_SOCKET\n          value: unix:///run/spire/sockets/agent.sock\n        - name: REGISTRY_MEMORY_LISTEN_ON\n          value: tcp://:5002\n        - name: REGISTRY_MEMORY_LOG_LEVEL\n          value: TRACE\n        - name: REGISTRY_MEMORY_PROXY_REGISTRY_URL\n          value: nsmgr-proxy:5004\n        imagePullPolicy: IfNotPresent\n        name: registry\n        ports:\n        - containerPort: 5002\n          hostPort: 5002\n        volumeMounts:\n        - name: spire-agent-socket\n          mountPath: /run/spire/sockets\n        resources:\n          requests:\n            cpu: 100m\n          limits:\n            memory: 40Mi\n            cpu: 200m\n      volumes:\n      - name: spire-agent-socket\n        hostPath:\n          path: /run/spire/sockets\n          type: Directory\n      - name: nsm-socket\n        hostPath:\n          path: /var/lib/networkservicemesh\n          type: DirectoryOrCreate\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"registry\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03675",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: aws-cli\n  namespace: default\n  labels:\n    name: aws-cli\nspec:\n  serviceAccount: pod-iam-identity\n  serviceAccountName: pod-iam-identity\n  containers:\n  - name: aws-cli\n    image: cloudkats/ci-tools:2019.12\n    command:\n    - sleep\n    - '999'\n    resources:\n      limits:\n        cpu: 100m\n        memory: 100Mi\n      requests:\n        cpu: 100m\n        memory: 100Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"aws-cli\" does not have a read-only root file system"
+  },
+  {
+    "id": "03676",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1630.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: aws-cli\n  namespace: default\n  labels:\n    name: aws-cli\nspec:\n  serviceAccount: pod-iam-identity\n  serviceAccountName: pod-iam-identity\n  containers:\n  - name: aws-cli\n    image: cloudkats/ci-tools:2019.12\n    command:\n    - sleep\n    - '999'\n    resources:\n      limits:\n        cpu: 100m\n        memory: 100Mi\n      requests:\n        cpu: 100m\n        memory: 100Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"aws-cli\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03677",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1631.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: storage\n          mountPath: /data/db\n      volumes:\n      - name: storage\n        persistentVolumeClaim:\n          claimName: mongo-pvc\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"mongo\" is using an invalid container image, \"mongo\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03678",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1631.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: storage\n          mountPath: /data/db\n      volumes:\n      - name: storage\n        persistentVolumeClaim:\n          claimName: mongo-pvc\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"mongo\" does not have a read-only root file system"
+  },
+  {
+    "id": "03679",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1631.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: storage\n          mountPath: /data/db\n      volumes:\n      - name: storage\n        persistentVolumeClaim:\n          claimName: mongo-pvc\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"mongo\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03680",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1631.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mongo\nspec:\n  selector:\n    matchLabels:\n      app: mongo\n  template:\n    metadata:\n      labels:\n        app: mongo\n    spec:\n      containers:\n      - name: mongo\n        image: mongo\n        ports:\n        - containerPort: 27017\n        volumeMounts:\n        - name: storage\n          mountPath: /data/db\n      volumes:\n      - name: storage\n        persistentVolumeClaim:\n          claimName: mongo-pvc\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"mongo\" has cpu request 0"
+  }
+]

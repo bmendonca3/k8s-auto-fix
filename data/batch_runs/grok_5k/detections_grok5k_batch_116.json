@@ -1,0 +1,282 @@
+[
+  {
+    "id": "04641",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2132.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\n  namespace: workshop-303\nspec:\n  containers:\n  - name: first-container\n    image: fedora:29\n    command:\n    - sleep\n    - '36000'\n    env:\n    - name: SECRET_USERNAME\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: username\n    - name: SECRET_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: password\n    volumeMounts:\n    - name: my-configmap\n      mountPath: /config\n  volumes:\n  - name: my-configmap\n    configMap:\n      name: my-configmap\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"first-container\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04642",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2132.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\n  namespace: workshop-303\nspec:\n  containers:\n  - name: first-container\n    image: fedora:29\n    command:\n    - sleep\n    - '36000'\n    env:\n    - name: SECRET_USERNAME\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: username\n    - name: SECRET_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: password\n    volumeMounts:\n    - name: my-configmap\n      mountPath: /config\n  volumes:\n  - name: my-configmap\n    configMap:\n      name: my-configmap\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"first-container\" has cpu request 0"
+  },
+  {
+    "id": "04643",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2132.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\n  namespace: workshop-303\nspec:\n  containers:\n  - name: first-container\n    image: fedora:29\n    command:\n    - sleep\n    - '36000'\n    env:\n    - name: SECRET_USERNAME\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: username\n    - name: SECRET_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: password\n    volumeMounts:\n    - name: my-configmap\n      mountPath: /config\n  volumes:\n  - name: my-configmap\n    configMap:\n      name: my-configmap\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"first-container\" has memory limit 0"
+  },
+  {
+    "id": "04644",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2133.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: selenium-node-chrome\n  namespace: selenium\n  labels:\n    app: selenium-node\n    browser: chrome\nspec:\n  selector:\n    matchLabels:\n      app: selenium-node\n      browser: chrome\n  template:\n    metadata:\n      labels:\n        app: selenium-node\n        browser: chrome\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-preemptible\n                operator: DoesNotExist\n              - key: eks.amazonaws.com/capacityType\n                operator: NotIn\n                values:\n                - SPOT\n              - key: kubernetes.azure.com/scalesetpriority\n                operator: NotIn\n                values:\n                - spot\n      securityContext:\n        runAsNonRoot: true\n      containers:\n      - name: selenium-node-chrome\n        image: selenium/node-chrome:90.0\n        ports:\n        - containerPort: 5555\n        - containerPort: 5900\n        - containerPort: 7900\n        env:\n        - name: JAVA_OPTS\n          value: -Xmx512m -Dselenium.LOGGER.level=WARNING\n        - name: SE_OPTS\n          value: ''\n        - name: SE_EVENT_BUS_HOST\n          value: selenium-hub\n        - name: SE_EVENT_BUS_PUBLISH_PORT\n          value: '4442'\n        - name: SE_EVENT_BUS_SUBSCRIBE_PORT\n          value: '4443'\n        - name: VNC_NO_PASSWORD\n          value: '1'\n        readinessProbe:\n          httpGet:\n            path: /status\n            port: 5555\n          initialDelaySeconds: 10\n        livenessProbe:\n          httpGet:\n            path: /status\n            port: 5555\n          initialDelaySeconds: 30\n        resources:\n          limits:\n            cpu: 2\n            memory: 1Gi\n          requests:\n            cpu: 300m\n            memory: 615Mi\n        volumeMounts:\n        - name: dshm\n          mountPath: /dev/shm\n      volumes:\n      - name: dshm\n        emptyDir:\n          medium: Memory\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"selenium-node-chrome\" does not have a read-only root file system"
+  },
+  {
+    "id": "04645",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2134.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"crier\" does not have a read-only root file system"
+  },
+  {
+    "id": "04646",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2134.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"crier\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04647",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2134.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"crier\" has cpu request 0"
+  },
+  {
+    "id": "04648",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2134.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"crier\" has memory limit 0"
+  },
+  {
+    "id": "04649",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2135.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"kube2iam\" does not have a read-only root file system"
+  },
+  {
+    "id": "04650",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2135.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"kube2iam\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "04651",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2135.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"kube2iam\" is privileged"
+  },
+  {
+    "id": "04652",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2135.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"kube2iam\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04653",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2136.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-app\n  labels:\n    app: web-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nodejs\n  template:\n    metadata:\n      labels:\n        app: myapp\n    spec:\n      containers:\n      - name: web-app\n        image: bmuschko/nodejs-hello-world:1.0.0\n        ports:\n        - containerPort: 3000\n          protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"web-app\" does not have a read-only root file system"
+  },
+  {
+    "id": "04654",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2136.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-app\n  labels:\n    app: web-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nodejs\n  template:\n    metadata:\n      labels:\n        app: myapp\n    spec:\n      containers:\n      - name: web-app\n        image: bmuschko/nodejs-hello-world:1.0.0\n        ports:\n        - containerPort: 3000\n          protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"web-app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04655",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2136.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-app\n  labels:\n    app: web-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nodejs\n  template:\n    metadata:\n      labels:\n        app: myapp\n    spec:\n      containers:\n      - name: web-app\n        image: bmuschko/nodejs-hello-world:1.0.0\n        ports:\n        - containerPort: 3000\n          protocol: TCP\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"web-app\" has cpu request 0"
+  },
+  {
+    "id": "04656",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2136.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-app\n  labels:\n    app: web-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nodejs\n  template:\n    metadata:\n      labels:\n        app: myapp\n    spec:\n      containers:\n      - name: web-app\n        image: bmuschko/nodejs-hello-world:1.0.0\n        ports:\n        - containerPort: 3000\n          protocol: TCP\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"web-app\" has memory limit 0"
+  },
+  {
+    "id": "04657",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nvidiaheartbeat\" does not have a read-only root file system"
+  },
+  {
+    "id": "04658",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"nvidiaheartbeat\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "04659",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"nvidiaheartbeat\" is privileged"
+  },
+  {
+    "id": "04660",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nvidiaheartbeat\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04661",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nvidiaheartbeat\" has cpu request 0"
+  },
+  {
+    "id": "04662",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nvidiaheartbeat\" has memory limit 0"
+  },
+  {
+    "id": "04663",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2140.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04664",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2140.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "04665",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2140.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04666",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2140.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "04667",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2140.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "04668",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2141.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"kube-state-metrics\" does not have a read-only root file system"
+  },
+  {
+    "id": "04669",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2141.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"kube-state-metrics\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04670",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2141.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"kube-state-metrics\" has cpu request 0"
+  },
+  {
+    "id": "04671",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2141.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"kube-state-metrics\" has memory limit 0"
+  },
+  {
+    "id": "04672",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2142.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        image: controller:latest\n        name: manager\n      affinity:\n        nodeAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: ${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\n                operator: Exists\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: node-role.kubernetes.io/master\n                operator: Exists\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"manager\" is using an invalid container image, \"controller:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04673",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2142.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        image: controller:latest\n        name: manager\n      affinity:\n        nodeAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: ${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\n                operator: Exists\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: node-role.kubernetes.io/master\n                operator: Exists\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"manager\" does not have a read-only root file system"
+  },
+  {
+    "id": "04674",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2142.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        image: controller:latest\n        name: manager\n      affinity:\n        nodeAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: ${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\n                operator: Exists\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: node-role.kubernetes.io/master\n                operator: Exists\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"manager\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04675",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2142.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        image: controller:latest\n        name: manager\n      affinity:\n        nodeAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: ${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\n                operator: Exists\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: node-role.kubernetes.io/master\n                operator: Exists\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"manager\" has cpu request 0"
+  },
+  {
+    "id": "04676",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2142.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        image: controller:latest\n        name: manager\n      affinity:\n        nodeAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: ${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\n                operator: Exists\n          - weight: 10\n            preference:\n              matchExpressions:\n              - key: node-role.kubernetes.io/master\n                operator: Exists\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"manager\" has memory limit 0"
+  },
+  {
+    "id": "04677",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2143.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"echoheaders-https\" does not have a read-only root file system"
+  },
+  {
+    "id": "04678",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2143.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"echoheaders-https\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04679",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2143.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"echoheaders-https\" has cpu request 0"
+  },
+  {
+    "id": "04680",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2143.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"echoheaders-https\" has memory limit 0"
+  }
+]

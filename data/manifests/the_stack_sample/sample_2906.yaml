@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: initdbd-deploy
+  labels:
+    app: initdbd
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: initdbd
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: initdbd
+        version: v1
+    spec:
+      containers:
+      - name: initdbd
+        image: mysql:8.0
+        imagePullPolicy: Always
+        env:
+        - name: MYSQL_SVC
+          value: $(MYSQL_SVC)
+        command:
+        - bash
+        - -c
+        - "while true;do\n  echo \"${MYSQL_SVC}\"\n\n  if [[ $(mysql -h \"${MYSQL_SVC}\"\
+          \ -uroot -e \"use test_db;show tables;\") ]]; then\n    sleep 100s\n   \
+          \ continue\n  fi\n\n  if [ -d /initdbd ]; then\n    cd /initdbd\n    mysql\
+          \ -h \"${MYSQL_SVC}\" -uroot < ping_table.sql\n    mysql -h \"${MYSQL_SVC}\"\
+          \ -uroot < user_table.sql\n    mysql -h \"${MYSQL_SVC}\" -uroot -e \"use\
+          \ test_db;show tables;\"\n  fi\n\n  sleep 1s\ndone\n"
+        volumeMounts:
+        - name: initdbd-vol
+          mountPath: /initdbd
+      volumes:
+      - name: initdbd-vol
+        hostPath:
+          path: /var/lib/mysqlx/initdbd-debug
+          type: Directory

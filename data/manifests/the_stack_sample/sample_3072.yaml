@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+      - name: app
+        image: bhcosta90/dockerfile-app
+        command:
+        - /bin/sh
+        - -c
+        - ln -s /var/www /usr/share/nginx; /var/www/k8s/app/entrypoint.sh; php-fpm
+          -D;nginx -g "daemon off;"
+        ports:
+        - containerPort: 80
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        envFrom:
+        - configMapRef:
+            name: app-conf
+        volumeMounts:
+        - name: app-conf
+          mountPath: /var/www/.env
+          subPath: .env
+      volumes:
+      - name: app-conf
+        configMap:
+          name: app-conf
+          items:
+          - key: env
+            path: .env

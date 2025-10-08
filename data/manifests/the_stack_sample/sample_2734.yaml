@@ -1,0 +1,156 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  labels:
+    accelerator: v3-32
+    benchmarkId: tf-nightly-transformer-perfzero-v3-32
+    frameworkVersion: tf-nightly
+    mode: perfzero
+    model: transformer
+  name: tf-nightly-transformer-perfzero-v3-32
+  namespace: automated
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      annotations:
+        ml-testing-accelerators/gcs-subdir: tf-nightly/transformer/perfzero/v3-32
+        ml-testing-accelerators/metric-config: "{\n  \"sources\": [\n    {\n     \
+          \ \"perfzero\": {\n        \"assertions\": {\n          \"exp_per_second\"\
+          : {\n            \"inclusive_bounds\": true,\n            \"std_devs_from_mean\"\
+          : {\n              \"comparison\": \"GREATER\",\n              \"std_devs\"\
+          : 3\n            },\n            \"wait_for_n_data_points\": 10\n      \
+          \    }\n        }\n      }\n    },\n    {\n      \"tensorboard\": {\n  \
+          \      \"aggregate_assertions\": [\n\n        ],\n        \"exclude_tags\"\
+          : [\n\n        ],\n        \"include_tags\": [\n          {\n          \
+          \  \"strategies\": [\n              \"FINAL\"\n            ],\n        \
+          \    \"tag_pattern\": \"*\"\n          }\n        ],\n        \"merge_runs\"\
+          : false\n      }\n    }\n  ]\n}\n"
+      labels:
+        accelerator: v3-32
+        benchmarkId: tf-nightly-transformer-perfzero-v3-32
+        frameworkVersion: tf-nightly
+        mode: perfzero
+        model: transformer
+    spec:
+      activeDeadlineSeconds: 10800
+      backoffLimit: 1
+      template:
+        metadata:
+          annotations:
+            reserved.cloud-tpus.google.com: 'false'
+            tf-version.cloud-tpus.google.com: nightly
+        spec:
+          activeDeadlineSeconds: 3600
+          containers:
+          - env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            image: gcr.io/xl-ml-test/health-monitor:stable
+            imagePullPolicy: Always
+            name: monitor
+          - args:
+            - /bin/bash
+            - -c
+            - "set -u\nset -e\nset -x\n\nsed -i 's_gs://tf-perfzero-data/bert_$(PERFZERO_DATA_DIR)_g'\
+              \ /garden/official/benchmark/bert_squad_benchmark.py\nsed -i 's_gs://tf-perfzero-data_$(PERFZERO_DATA_DIR)_g'\
+              \ /garden/official/benchmark/retinanet_benchmark.py\nsed -i 's_gs://mlcompass-data/transformer_$(PERFZERO_DATA_DIR)_g'\
+              \ /garden/official/benchmark/transformer_benchmark.py\nsed -i 's_gs://mlcompass-data/imagenet/imagenet-2012-tfrecord_$(PERFZERO_DATA_DIR)/imagenet_g'\
+              \ /garden/official/benchmark/resnet_ctl_imagenet_benchmark.py\nsed -i\
+              \ 's/wmt32k-en2de-official/transformer/g' /garden/official/benchmark/transformer_benchmark.py\n\
+              \nif [ -v TPU_NAME ]; then\n  export BENCHMARK_TPU=${TPU_NAME#*/}\n\
+              fi\n\npython3 /benchmarks/perfzero/lib/benchmark.py --gcloud_key_file=\
+              \ --bigquery_project_name=xl-ml-test --bigquery_dataset_table_name=perfzero_dataset.perfzero_table\
+              \ --benchmark_methods=official.benchmark.transformer_benchmark.TransformerBigKerasBenchmarkReal.benchmark_4x4_tpu\
+              \ --output_gcs_url=$(MODEL_DIR) --root_data_dir=$(PERFZERO_DATA_DIR)\n"
+            env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['job-name']
+            - name: MODEL_DIR
+              value: $(OUTPUT_BUCKET)/tf-nightly/transformer/perfzero/v3-32/$(JOB_NAME)
+            - name: BENCHMARK_OUTPUT_DIR
+              value: $(MODEL_DIR)
+            envFrom:
+            - configMapRef:
+                name: gcs-buckets
+            image: gcr.io/xl-ml-test/tensorflow:nightly
+            imagePullPolicy: Always
+            name: train
+            resources:
+              limits:
+                cloud-tpus.google.com/v3: 32
+              requests:
+                cpu: 2
+                memory: 20G
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+              readOnly: false
+          initContainers:
+          - env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['job-name']
+            - name: MODEL_DIR
+              value: $(OUTPUT_BUCKET)/tf-nightly/transformer/perfzero/v3-32/$(JOB_NAME)
+            - name: METRIC_CONFIG
+              value: "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\"\
+                : [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n\
+                \   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"\
+                use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n\
+                \ \"regression_test_config\": {\n  \"metric_success_conditions\":\
+                \ {\n   \"exp_per_second\": {\n    \"comparison\": \"greater_or_equal\"\
+                ,\n    \"success_threshold\": {\n     \"stddevs_from_mean\": 3\n \
+                \   },\n    \"wait_for_n_points_of_history\": 10\n   },\n   \"startup_time\"\
+                : {\n    \"comparison\": \"less\",\n    \"success_threshold\": {\n\
+                \     \"stddevs_from_mean\": 4\n    },\n    \"wait_for_n_points_of_history\"\
+                : 10\n   }\n  }\n },\n \"test_name\": \"tf-nightly-transformer-perfzero-v3-32\"\
+                \n}\n"
+            envFrom:
+            - configMapRef:
+                name: gcs-buckets
+            image: gcr.io/xl-ml-test/publisher:stable
+            imagePullPolicy: Always
+            name: publisher
+          nodeSelector:
+            tpu-available: 'true'
+          restartPolicy: Never
+          volumes:
+          - emptyDir:
+              medium: Memory
+            name: dshm
+  schedule: 0 8 * * *
+  successfulJobsHistoryLimit: 1

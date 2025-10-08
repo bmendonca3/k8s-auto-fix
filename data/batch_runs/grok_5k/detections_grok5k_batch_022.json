@@ -1,0 +1,282 @@
+[
+  {
+    "id": "00881",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0195.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: sabnzbd\n  namespace: usenet\n  annotations:\n    reloader.stakater.com/auto: 'true'\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: sabnzbd\n  template:\n    metadata:\n      labels:\n        app: sabnzbd\n    spec:\n      containers:\n      - name: sabnzbd\n        image: lscr.io/linuxserver/sabnzbd:3.4.2-ls51\n        env:\n        - name: PGID\n          value: '2000'\n        - name: PUID\n          value: '2000'\n        - name: TZ\n          value: Europe/Zurich\n        - name: DOCKER_MODS\n          value: containeroo/docker-mods:sabnzbd-mkvtoolnix|containeroo/docker-mods:sabnzbd-nzbnotify\n        ports:\n        - containerPort: 8080\n        volumeMounts:\n        - mountPath: /config\n          name: data\n        - mountPath: /incomplete-downloads\n          name: incomplete-downloads\n        - mountPath: /downloads\n          name: downloads\n        - mountPath: /app/sabnzbd/scripts/merge_subtitles.sh\n          name: merge-subtitles\n          subPath: merge_subtitles.sh\n        - mountPath: /tmp/startup_probe.sh\n          name: sabnzbd-startup\n          subPath: startup_probe.sh\n        startupProbe:\n          exec:\n            command:\n            - bash\n            - -c\n            - /tmp/startup_probe.sh\n          initialDelaySeconds: 30\n          failureThreshold: 30\n          timeoutSeconds: 10\n          periodSeconds: 5\n        livenessProbe:\n          tcpSocket:\n            port: 8080\n          failureThreshold: 2\n          timeoutSeconds: 5\n          periodSeconds: 30\n        resources: {}\n      volumes:\n      - name: data\n        persistentVolumeClaim:\n          claimName: sabnzbd-data\n      - name: merge-subtitles\n        configMap:\n          name: merge-subtitles\n          items:\n          - key: merge_subtitles.sh\n            path: merge_subtitles.sh\n          defaultMode: 511\n      - name: sabnzbd-startup\n        configMap:\n          name: sabnzbd-startup\n          items:\n          - key: startup_probe.sh\n            path: startup_probe.sh\n          defaultMode: 511\n      - name: incomplete-downloads\n        hostPath:\n          path: /mnt/disk06/downloads/incomplete\n          type: Directory\n      - name: downloads\n        hostPath:\n          path: /mnt/disk06/downloads/complete\n          type: Directory\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"sabnzbd\" has memory limit 0"
+  },
+  {
+    "id": "00882",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"myapp-container\" is using an invalid container image, \"cewuandy/nextepc-base\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00883",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"init-network-client\" does not have a read-only root file system"
+  },
+  {
+    "id": "00884",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"myapp-container\" does not have a read-only root file system"
+  },
+  {
+    "id": "00885",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"init-network-client\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00886",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"myapp-container\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00887",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"init-network-client\" has cpu request 0"
+  },
+  {
+    "id": "00888",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"myapp-container\" has cpu request 0"
+  },
+  {
+    "id": "00889",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"init-network-client\" has memory limit 0"
+  },
+  {
+    "id": "00890",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nextepc-mme-deployment\nspec:\n  selector:\n    matchLabels:\n      app: nextepc-mme\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: nextepc-mme\n    spec:\n      containers:\n      - name: myapp-container\n        image: cewuandy/nextepc-base\n        imagePullPolicy: Always\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - /root/nextepc/nextepc-mmed\n        volumeMounts:\n        - name: nextepc-conf\n          mountPath: /root/nextepc/install/etc/nextepc/\n      initContainers:\n      - name: init-network-client\n        image: sdnvortex/network-controller:v0.4.9\n        command:\n        - /go/bin/client\n        args:\n        - -s=unix:///tmp/vortex.sock\n        - -b=br0\n        - -n=eth1\n        - -i=192.188.2.2/24\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_UUID\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.uid\n        volumeMounts:\n        - mountPath: /tmp/\n          name: grpc-sock\n      volumes:\n      - name: grpc-sock\n        hostPath:\n          path: /tmp/vortex/\n      - name: nextepc-conf\n        configMap:\n          name: nextepc-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"myapp-container\" has memory limit 0"
+  },
+  {
+    "id": "00891",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20200710-7fa016752a\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"needs-rebase\" does not have a read-only root file system"
+  },
+  {
+    "id": "00892",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20200710-7fa016752a\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"needs-rebase\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00893",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20200710-7fa016752a\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"needs-rebase\" has cpu request 0"
+  },
+  {
+    "id": "00894",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: needs-rebase\n  labels:\n    app: needs-rebase\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: needs-rebase\n  template:\n    metadata:\n      labels:\n        app: needs-rebase\n    spec:\n      containers:\n      - name: needs-rebase\n        image: gcr.io/k8s-prow/needs-rebase:v20200710-7fa016752a\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"needs-rebase\" has memory limit 0"
+  },
+  {
+    "id": "00895",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0204.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: linkis-mdm-server-deployment\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: linkis-mdm-server\n  template:\n    metadata:\n      labels:\n        app: linkis-mdm-server\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - linkis-mdm-server\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - name: linkis-mdm-server\n        image: zhangrong1027/linkis:linkis-mdm-server-0.10.0\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 22001\n        livenessProbe:\n          tcpSocket:\n            port: 22001\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        env:\n        - name: eurekaurl\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: EUREKA_URL\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: SERVER_HEAP_SIZE\n          value: 1024M\n        - name: START_PORT\n          value: '22001'\n        volumeMounts:\n        - name: linkis-mdm-server-config\n          mountPath: /opt/ihome/conf\n        - name: varlog\n          mountPath: /opt/ihome/linkis-mdm-server/logs\n      volumes:\n      - name: linkis-mdm-server-config\n        configMap:\n          name: linkis-mdm-server-config\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: eureka-config\n        configMap:\n          name: eureka-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"linkis-mdm-server\" does not have a read-only root file system"
+  },
+  {
+    "id": "00896",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0204.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: linkis-mdm-server-deployment\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: linkis-mdm-server\n  template:\n    metadata:\n      labels:\n        app: linkis-mdm-server\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - linkis-mdm-server\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - name: linkis-mdm-server\n        image: zhangrong1027/linkis:linkis-mdm-server-0.10.0\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 22001\n        livenessProbe:\n          tcpSocket:\n            port: 22001\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        env:\n        - name: eurekaurl\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: EUREKA_URL\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: SERVER_HEAP_SIZE\n          value: 1024M\n        - name: START_PORT\n          value: '22001'\n        volumeMounts:\n        - name: linkis-mdm-server-config\n          mountPath: /opt/ihome/conf\n        - name: varlog\n          mountPath: /opt/ihome/linkis-mdm-server/logs\n      volumes:\n      - name: linkis-mdm-server-config\n        configMap:\n          name: linkis-mdm-server-config\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: eureka-config\n        configMap:\n          name: eureka-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"linkis-mdm-server\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00897",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0204.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: linkis-mdm-server-deployment\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: linkis-mdm-server\n  template:\n    metadata:\n      labels:\n        app: linkis-mdm-server\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - linkis-mdm-server\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - name: linkis-mdm-server\n        image: zhangrong1027/linkis:linkis-mdm-server-0.10.0\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 22001\n        livenessProbe:\n          tcpSocket:\n            port: 22001\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        env:\n        - name: eurekaurl\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: EUREKA_URL\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: SERVER_HEAP_SIZE\n          value: 1024M\n        - name: START_PORT\n          value: '22001'\n        volumeMounts:\n        - name: linkis-mdm-server-config\n          mountPath: /opt/ihome/conf\n        - name: varlog\n          mountPath: /opt/ihome/linkis-mdm-server/logs\n      volumes:\n      - name: linkis-mdm-server-config\n        configMap:\n          name: linkis-mdm-server-config\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: eureka-config\n        configMap:\n          name: eureka-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"linkis-mdm-server\" has cpu request 0"
+  },
+  {
+    "id": "00898",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0204.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: linkis-mdm-server-deployment\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: linkis-mdm-server\n  template:\n    metadata:\n      labels:\n        app: linkis-mdm-server\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n          - labelSelector:\n              matchExpressions:\n              - key: app\n                operator: In\n                values:\n                - linkis-mdm-server\n            topologyKey: kubernetes.io/hostname\n      containers:\n      - name: linkis-mdm-server\n        image: zhangrong1027/linkis:linkis-mdm-server-0.10.0\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 22001\n        livenessProbe:\n          tcpSocket:\n            port: 22001\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        env:\n        - name: eurekaurl\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: EUREKA_URL\n          valueFrom:\n            configMapKeyRef:\n              name: eureka-config\n              key: eurekaUrl\n        - name: SERVER_HEAP_SIZE\n          value: 1024M\n        - name: START_PORT\n          value: '22001'\n        volumeMounts:\n        - name: linkis-mdm-server-config\n          mountPath: /opt/ihome/conf\n        - name: varlog\n          mountPath: /opt/ihome/linkis-mdm-server/logs\n      volumes:\n      - name: linkis-mdm-server-config\n        configMap:\n          name: linkis-mdm-server-config\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: eureka-config\n        configMap:\n          name: eureka-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"linkis-mdm-server\" has memory limit 0"
+  },
+  {
+    "id": "00899",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0207.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: flog\n  labels:\n    app: flog\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: flog\n  template:\n    metadata:\n      labels:\n        app: flog\n    spec:\n      containers:\n      - name: flog-load\n        image: scalyr/flog:v1\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            memory: 100Mi\n          requests:\n            cpu: 300m\n        command:\n        - /bin/flog\n        args:\n        - --loop\n        - --format\n        - apache_combined\n        - -m\n        - ''\n        - -r\n        - /tmp/flog_telemetry.log\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"flog-load\" does not have a read-only root file system"
+  },
+  {
+    "id": "00900",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0207.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: flog\n  labels:\n    app: flog\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: flog\n  template:\n    metadata:\n      labels:\n        app: flog\n    spec:\n      containers:\n      - name: flog-load\n        image: scalyr/flog:v1\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            memory: 100Mi\n          requests:\n            cpu: 300m\n        command:\n        - /bin/flog\n        args:\n        - --loop\n        - --format\n        - apache_combined\n        - -m\n        - ''\n        - -r\n        - /tmp/flog_telemetry.log\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"flog-load\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00901",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0208.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nfs-provisioner\nspec:\n  containers:\n  - name: nfs-provisioner\n    image: quay.io/kubernetes_incubator/nfs-provisioner:v1.0.5\n    ports:\n    - name: nfs\n      containerPort: 2049\n    - name: mountd\n      containerPort: 20048\n    - name: rpcbind\n      containerPort: 111\n    - name: rpcbind-udp\n      containerPort: 111\n      protocol: UDP\n    securityContext:\n      capabilities:\n        add:\n        - DAC_READ_SEARCH\n    args:\n    - -provisioner=example.com/nfs\n    - -grace-period=0\n    env:\n    - name: POD_IP\n      valueFrom:\n        fieldRef:\n          fieldPath: status.podIP\n    imagePullPolicy: IfNotPresent\n    volumeMounts:\n    - name: export-volume\n      mountPath: /export\n  volumes:\n  - name: export-volume\n    emptyDir: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nfs-provisioner\" does not have a read-only root file system"
+  },
+  {
+    "id": "00902",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0208.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nfs-provisioner\nspec:\n  containers:\n  - name: nfs-provisioner\n    image: quay.io/kubernetes_incubator/nfs-provisioner:v1.0.5\n    ports:\n    - name: nfs\n      containerPort: 2049\n    - name: mountd\n      containerPort: 20048\n    - name: rpcbind\n      containerPort: 111\n    - name: rpcbind-udp\n      containerPort: 111\n      protocol: UDP\n    securityContext:\n      capabilities:\n        add:\n        - DAC_READ_SEARCH\n    args:\n    - -provisioner=example.com/nfs\n    - -grace-period=0\n    env:\n    - name: POD_IP\n      valueFrom:\n        fieldRef:\n          fieldPath: status.podIP\n    imagePullPolicy: IfNotPresent\n    volumeMounts:\n    - name: export-volume\n      mountPath: /export\n  volumes:\n  - name: export-volume\n    emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nfs-provisioner\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00903",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0208.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nfs-provisioner\nspec:\n  containers:\n  - name: nfs-provisioner\n    image: quay.io/kubernetes_incubator/nfs-provisioner:v1.0.5\n    ports:\n    - name: nfs\n      containerPort: 2049\n    - name: mountd\n      containerPort: 20048\n    - name: rpcbind\n      containerPort: 111\n    - name: rpcbind-udp\n      containerPort: 111\n      protocol: UDP\n    securityContext:\n      capabilities:\n        add:\n        - DAC_READ_SEARCH\n    args:\n    - -provisioner=example.com/nfs\n    - -grace-period=0\n    env:\n    - name: POD_IP\n      valueFrom:\n        fieldRef:\n          fieldPath: status.podIP\n    imagePullPolicy: IfNotPresent\n    volumeMounts:\n    - name: export-volume\n      mountPath: /export\n  volumes:\n  - name: export-volume\n    emptyDir: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nfs-provisioner\" has cpu request 0"
+  },
+  {
+    "id": "00904",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0208.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nfs-provisioner\nspec:\n  containers:\n  - name: nfs-provisioner\n    image: quay.io/kubernetes_incubator/nfs-provisioner:v1.0.5\n    ports:\n    - name: nfs\n      containerPort: 2049\n    - name: mountd\n      containerPort: 20048\n    - name: rpcbind\n      containerPort: 111\n    - name: rpcbind-udp\n      containerPort: 111\n      protocol: UDP\n    securityContext:\n      capabilities:\n        add:\n        - DAC_READ_SEARCH\n    args:\n    - -provisioner=example.com/nfs\n    - -grace-period=0\n    env:\n    - name: POD_IP\n      valueFrom:\n        fieldRef:\n          fieldPath: status.podIP\n    imagePullPolicy: IfNotPresent\n    volumeMounts:\n    - name: export-volume\n      mountPath: /export\n  volumes:\n  - name: export-volume\n    emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nfs-provisioner\" has memory limit 0"
+  },
+  {
+    "id": "00905",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0210.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-pod\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00906",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0210.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-pod\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "00907",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0210.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-pod\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00908",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0210.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-pod\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "00909",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0210.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-pod\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "00910",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0212.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: webhook-server\n  labels:\n    app: webhook-server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: webhook-server\n  template:\n    metadata:\n      labels:\n        app: webhook-server\n    spec:\n      containers:\n      - name: server\n        image: quay.io/masood_faisal/webhooks:0.0.1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8443\n          name: webhook-api\n        volumeMounts:\n        - name: webhook-tls-certs\n          mountPath: /etc/secrets/tls\n          readOnly: true\n      volumes:\n      - name: webhook-tls-certs\n        secret:\n          secretName: webhook-server-tls\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"server\" does not have a read-only root file system"
+  },
+  {
+    "id": "00911",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0212.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: webhook-server\n  labels:\n    app: webhook-server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: webhook-server\n  template:\n    metadata:\n      labels:\n        app: webhook-server\n    spec:\n      containers:\n      - name: server\n        image: quay.io/masood_faisal/webhooks:0.0.1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8443\n          name: webhook-api\n        volumeMounts:\n        - name: webhook-tls-certs\n          mountPath: /etc/secrets/tls\n          readOnly: true\n      volumes:\n      - name: webhook-tls-certs\n        secret:\n          secretName: webhook-server-tls\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"server\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00912",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0212.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: webhook-server\n  labels:\n    app: webhook-server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: webhook-server\n  template:\n    metadata:\n      labels:\n        app: webhook-server\n    spec:\n      containers:\n      - name: server\n        image: quay.io/masood_faisal/webhooks:0.0.1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8443\n          name: webhook-api\n        volumeMounts:\n        - name: webhook-tls-certs\n          mountPath: /etc/secrets/tls\n          readOnly: true\n      volumes:\n      - name: webhook-tls-certs\n        secret:\n          secretName: webhook-server-tls\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"server\" has cpu request 0"
+  },
+  {
+    "id": "00913",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0212.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: webhook-server\n  labels:\n    app: webhook-server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: webhook-server\n  template:\n    metadata:\n      labels:\n        app: webhook-server\n    spec:\n      containers:\n      - name: server\n        image: quay.io/masood_faisal/webhooks:0.0.1\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8443\n          name: webhook-api\n        volumeMounts:\n        - name: webhook-tls-certs\n          mountPath: /etc/secrets/tls\n          readOnly: true\n      volumes:\n      - name: webhook-tls-certs\n        secret:\n          secretName: webhook-server-tls\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"server\" has memory limit 0"
+  },
+  {
+    "id": "00914",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0214.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: get-started-node\n  labels:\n    app: get-started-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: get-started-node\n  template:\n    metadata:\n      labels:\n        app: get-started-node\n    spec:\n      containers:\n      - name: get-started-node\n        image: <REGISTRY>/<NAMESPACE>/myapp:v1.1.0\n        ports:\n        - containerPort: 8080\n        imagePullPolicy: Always\n        env:\n        - name: CLOUDANT_URL\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: url\n              optional: true\n        - name: CLOUDANT_IAM_API_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: iamApiKey\n              optional: true\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"get-started-node\" does not have a read-only root file system"
+  },
+  {
+    "id": "00915",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0214.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: get-started-node\n  labels:\n    app: get-started-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: get-started-node\n  template:\n    metadata:\n      labels:\n        app: get-started-node\n    spec:\n      containers:\n      - name: get-started-node\n        image: <REGISTRY>/<NAMESPACE>/myapp:v1.1.0\n        ports:\n        - containerPort: 8080\n        imagePullPolicy: Always\n        env:\n        - name: CLOUDANT_URL\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: url\n              optional: true\n        - name: CLOUDANT_IAM_API_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: iamApiKey\n              optional: true\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"get-started-node\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00916",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0214.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: get-started-node\n  labels:\n    app: get-started-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: get-started-node\n  template:\n    metadata:\n      labels:\n        app: get-started-node\n    spec:\n      containers:\n      - name: get-started-node\n        image: <REGISTRY>/<NAMESPACE>/myapp:v1.1.0\n        ports:\n        - containerPort: 8080\n        imagePullPolicy: Always\n        env:\n        - name: CLOUDANT_URL\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: url\n              optional: true\n        - name: CLOUDANT_IAM_API_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: iamApiKey\n              optional: true\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"get-started-node\" has cpu request 0"
+  },
+  {
+    "id": "00917",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0214.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: get-started-node\n  labels:\n    app: get-started-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: get-started-node\n  template:\n    metadata:\n      labels:\n        app: get-started-node\n    spec:\n      containers:\n      - name: get-started-node\n        image: <REGISTRY>/<NAMESPACE>/myapp:v1.1.0\n        ports:\n        - containerPort: 8080\n        imagePullPolicy: Always\n        env:\n        - name: CLOUDANT_URL\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: url\n              optional: true\n        - name: CLOUDANT_IAM_API_KEY\n          valueFrom:\n            secretKeyRef:\n              name: cloudant\n              key: iamApiKey\n              optional: true\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"get-started-node\" has memory limit 0"
+  },
+  {
+    "id": "00918",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0222.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: quobyte\nspec:\n  containers:\n  - name: quobyte\n    image: kubernetes/pause\n    volumeMounts:\n    - mountPath: /mnt\n      name: quobytevolume\n  volumes:\n  - name: quobytevolume\n    quobyte:\n      registry: registry:7861\n      volume: testVolume\n      readOnly: false\n      user: root\n      group: root\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"quobyte\" is using an invalid container image, \"kubernetes/pause\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00919",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0222.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: quobyte\nspec:\n  containers:\n  - name: quobyte\n    image: kubernetes/pause\n    volumeMounts:\n    - mountPath: /mnt\n      name: quobytevolume\n  volumes:\n  - name: quobytevolume\n    quobyte:\n      registry: registry:7861\n      volume: testVolume\n      readOnly: false\n      user: root\n      group: root\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"quobyte\" does not have a read-only root file system"
+  },
+  {
+    "id": "00920",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0222.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: quobyte\nspec:\n  containers:\n  - name: quobyte\n    image: kubernetes/pause\n    volumeMounts:\n    - mountPath: /mnt\n      name: quobytevolume\n  volumes:\n  - name: quobytevolume\n    quobyte:\n      registry: registry:7861\n      volume: testVolume\n      readOnly: false\n      user: root\n      group: root\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"quobyte\" is not set to runAsNonRoot"
+  }
+]

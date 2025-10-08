@@ -1,0 +1,506 @@
+[
+  {
+    "id": "00161",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-wordpress\n  namespace: default\n  labels:\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: wordpress\n    app.kubernetes.io/version: 6.8.3\n    helm.sh/chart: wordpress-27.0.7\nspec:\n  selector:\n    matchLabels:\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/name: wordpress\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/name: wordpress\n        app.kubernetes.io/version: 6.8.3\n        helm.sh/chart: wordpress-27.0.7\n    spec:\n      affinity:\n        podAffinity: null\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/instance: release-name\n                  app.kubernetes.io/name: wordpress\n              topologyKey: kubernetes.io/hostname\n            weight: 1\n        nodeAffinity: null\n      securityContext:\n        fsGroup: 1001\n        fsGroupChangePolicy: Always\n        supplementalGroups: []\n        sysctls: []\n      serviceAccountName: release-name-wordpress\n      initContainers:\n      - name: prepare-base-dir\n        image: registry-1.docker.io/bitnami/wordpress:stable\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            cpu: 375m\n            ephemeral-storage: 2Gi\n            memory: 384Mi\n          requests:\n            cpu: 250m\n            ephemeral-storage: 50Mi\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        command:\n        - /bin/bash\n        args:\n        - -ec\n        - \"#!/bin/bash\\n\\n. /opt/bitnami/scripts/liblog.sh\\n. /opt/bitnami/scripts/libfs.sh\\n\\\n          \\ninfo \\\"Copying base dir to empty dir\\\"\\n# In order to not break the application\\\n          \\ functionality (such as upgrades or plugins) we need\\n# to make the base\\\n          \\ directory writable, so we need to copy it to an empty dir volume\\ncp -r\\\n          \\ --preserve=mode /opt/bitnami/wordpress /emptydir/app-base-dir\\n\\ninfo\\\n          \\ \\\"Copying symlinks to stdout/stderr\\\"\\n# We copy the logs folder because\\\n          \\ it has symlinks to stdout and stderr\\nif ! is_dir_empty /opt/bitnami/apache/logs;\\\n          \\ then\\n  cp -r /opt/bitnami/apache/logs /emptydir/apache-logs-dir\\nfi\\n\\\n          \\ninfo \\\"Copying default PHP config\\\"\\ncp -r --preserve=mode /opt/bitnami/php/etc\\\n          \\ /emptydir/php-conf-dir\\n\\ninfo \\\"Copying php var directory\\\"\\nif ! is_dir_empty\\\n          \\ /opt/bitnami/php/var; then\\n  cp -r /opt/bitnami/php/var /emptydir/php-var-dir\\n\\\n          fi\\n\\ninfo \\\"Copy operation completed\\\"\\n\"\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /emptydir\n      containers:\n      - name: wordpress\n        image: registry-1.docker.io/bitnami/wordpress:stable\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        env:\n        - name: BITNAMI_DEBUG\n          value: 'false'\n        - name: ALLOW_EMPTY_PASSWORD\n          value: 'yes'\n        - name: WORDPRESS_SKIP_BOOTSTRAP\n          value: 'no'\n        - name: MARIADB_HOST\n          value: release-name-mariadb\n        - name: MARIADB_PORT_NUMBER\n          value: '3306'\n        - name: WORDPRESS_DATABASE_NAME\n          value: bitnami_wordpress\n        - name: WORDPRESS_DATABASE_USER\n          value: bn_wordpress\n        - name: WORDPRESS_DATABASE_PASSWORD_FILE\n          value: /secrets/mariadb-password\n        - name: WORDPRESS_USERNAME\n          value: user\n        - name: WORDPRESS_PASSWORD_FILE\n          value: /secrets/wordpress-password\n        - name: WORDPRESS_EMAIL\n          value: user@example.com\n        - name: WORDPRESS_FIRST_NAME\n          value: FirstName\n        - name: WORDPRESS_LAST_NAME\n          value: LastName\n        - name: WORDPRESS_HTACCESS_OVERRIDE_NONE\n          value: 'no'\n        - name: WORDPRESS_ENABLE_HTACCESS_PERSISTENCE\n          value: 'no'\n        - name: WORDPRESS_BLOG_NAME\n          value: User's Blog!\n        - name: WORDPRESS_TABLE_PREFIX\n          value: wp_\n        - name: WORDPRESS_SCHEME\n          value: http\n        - name: WORDPRESS_EXTRA_WP_CONFIG_CONTENT\n          value: ''\n        - name: WORDPRESS_PLUGINS\n          value: none\n        - name: WORDPRESS_OVERRIDE_DATABASE_SETTINGS\n          value: 'no'\n        - name: APACHE_HTTP_PORT_NUMBER\n          value: '8080'\n        - name: APACHE_HTTPS_PORT_NUMBER\n          value: '8443'\n        ports:\n        - name: http\n          containerPort: 8080\n        - name: https\n          containerPort: 8443\n        livenessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 120\n          periodSeconds: 10\n          successThreshold: 1\n          tcpSocket:\n            port: http\n          timeoutSeconds: 5\n        readinessProbe:\n          failureThreshold: 6\n          httpGet:\n            httpHeaders: []\n            path: /wp-login.php\n            port: http\n            scheme: HTTP\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 5\n        resources:\n          limits:\n            cpu: 375m\n            ephemeral-storage: 2Gi\n            memory: 384Mi\n          requests:\n            cpu: 250m\n            ephemeral-storage: 50Mi\n            memory: 256Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /opt/bitnami/apache/conf\n          subPath: apache-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/apache/logs\n          subPath: apache-logs-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/apache/var/run\n          subPath: apache-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/php/etc\n          subPath: php-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/php/tmp\n          subPath: php-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/php/var\n          subPath: php-var-dir\n        - name: empty-dir\n          mountPath: /tmp\n          subPath: tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/wordpress\n          subPath: app-base-dir\n        - mountPath: /bitnami/wordpress\n          name: wordpress-data\n          subPath: wordpress\n        - name: wordpress-secrets\n          mountPath: /secrets\n      volumes:\n      - name: empty-dir\n        emptyDir: {}\n      - name: wordpress-secrets\n        projected:\n          sources:\n          - secret:\n              name: release-name-wordpress\n          - secret:\n              name: release-name-mariadb\n      - name: wordpress-data\n        persistentVolumeClaim:\n          claimName: release-name-wordpress\n",
+    "errors": []
+  },
+  {
+    "id": "00162",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-wordpress\n  namespace: default\n  labels:\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: wordpress\n    app.kubernetes.io/version: 6.8.3\n    helm.sh/chart: wordpress-27.0.7\nspec:\n  selector:\n    matchLabels:\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/name: wordpress\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/name: wordpress\n        app.kubernetes.io/version: 6.8.3\n        helm.sh/chart: wordpress-27.0.7\n    spec:\n      affinity:\n        podAffinity: null\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/instance: release-name\n                  app.kubernetes.io/name: wordpress\n              topologyKey: kubernetes.io/hostname\n            weight: 1\n        nodeAffinity: null\n      securityContext:\n        fsGroup: 1001\n        fsGroupChangePolicy: Always\n        supplementalGroups: []\n        sysctls: []\n      serviceAccountName: release-name-wordpress\n      initContainers:\n      - name: prepare-base-dir\n        image: registry-1.docker.io/bitnami/wordpress:stable\n        imagePullPolicy: IfNotPresent\n        resources:\n          limits:\n            cpu: 375m\n            ephemeral-storage: 2Gi\n            memory: 384Mi\n          requests:\n            cpu: 250m\n            ephemeral-storage: 50Mi\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        command:\n        - /bin/bash\n        args:\n        - -ec\n        - \"#!/bin/bash\\n\\n. /opt/bitnami/scripts/liblog.sh\\n. /opt/bitnami/scripts/libfs.sh\\n\\\n          \\ninfo \\\"Copying base dir to empty dir\\\"\\n# In order to not break the application\\\n          \\ functionality (such as upgrades or plugins) we need\\n# to make the base\\\n          \\ directory writable, so we need to copy it to an empty dir volume\\ncp -r\\\n          \\ --preserve=mode /opt/bitnami/wordpress /emptydir/app-base-dir\\n\\ninfo\\\n          \\ \\\"Copying symlinks to stdout/stderr\\\"\\n# We copy the logs folder because\\\n          \\ it has symlinks to stdout and stderr\\nif ! is_dir_empty /opt/bitnami/apache/logs;\\\n          \\ then\\n  cp -r /opt/bitnami/apache/logs /emptydir/apache-logs-dir\\nfi\\n\\\n          \\ninfo \\\"Copying default PHP config\\\"\\ncp -r --preserve=mode /opt/bitnami/php/etc\\\n          \\ /emptydir/php-conf-dir\\n\\ninfo \\\"Copying php var directory\\\"\\nif ! is_dir_empty\\\n          \\ /opt/bitnami/php/var; then\\n  cp -r /opt/bitnami/php/var /emptydir/php-var-dir\\n\\\n          fi\\n\\ninfo \\\"Copy operation completed\\\"\\n\"\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /emptydir\n      containers:\n      - name: wordpress\n        image: registry-1.docker.io/bitnami/wordpress:stable\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        env:\n        - name: BITNAMI_DEBUG\n          value: 'false'\n        - name: ALLOW_EMPTY_PASSWORD\n          value: 'yes'\n        - name: WORDPRESS_SKIP_BOOTSTRAP\n          value: 'no'\n        - name: MARIADB_HOST\n          value: release-name-mariadb\n        - name: MARIADB_PORT_NUMBER\n          value: '3306'\n        - name: WORDPRESS_DATABASE_NAME\n          value: bitnami_wordpress\n        - name: WORDPRESS_DATABASE_USER\n          value: bn_wordpress\n        - name: WORDPRESS_DATABASE_PASSWORD_FILE\n          value: /secrets/mariadb-password\n        - name: WORDPRESS_USERNAME\n          value: user\n        - name: WORDPRESS_PASSWORD_FILE\n          value: /secrets/wordpress-password\n        - name: WORDPRESS_EMAIL\n          value: user@example.com\n        - name: WORDPRESS_FIRST_NAME\n          value: FirstName\n        - name: WORDPRESS_LAST_NAME\n          value: LastName\n        - name: WORDPRESS_HTACCESS_OVERRIDE_NONE\n          value: 'no'\n        - name: WORDPRESS_ENABLE_HTACCESS_PERSISTENCE\n          value: 'no'\n        - name: WORDPRESS_BLOG_NAME\n          value: User's Blog!\n        - name: WORDPRESS_TABLE_PREFIX\n          value: wp_\n        - name: WORDPRESS_SCHEME\n          value: http\n        - name: WORDPRESS_EXTRA_WP_CONFIG_CONTENT\n          value: ''\n        - name: WORDPRESS_PLUGINS\n          value: none\n        - name: WORDPRESS_OVERRIDE_DATABASE_SETTINGS\n          value: 'no'\n        - name: APACHE_HTTP_PORT_NUMBER\n          value: '8080'\n        - name: APACHE_HTTPS_PORT_NUMBER\n          value: '8443'\n        ports:\n        - name: http\n          containerPort: 8080\n        - name: https\n          containerPort: 8443\n        livenessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 120\n          periodSeconds: 10\n          successThreshold: 1\n          tcpSocket:\n            port: http\n          timeoutSeconds: 5\n        readinessProbe:\n          failureThreshold: 6\n          httpGet:\n            httpHeaders: []\n            path: /wp-login.php\n            port: http\n            scheme: HTTP\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 5\n        resources:\n          limits:\n            cpu: 375m\n            ephemeral-storage: 2Gi\n            memory: 384Mi\n          requests:\n            cpu: 250m\n            ephemeral-storage: 50Mi\n            memory: 256Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /opt/bitnami/apache/conf\n          subPath: apache-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/apache/logs\n          subPath: apache-logs-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/apache/var/run\n          subPath: apache-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/php/etc\n          subPath: php-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/php/tmp\n          subPath: php-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/php/var\n          subPath: php-var-dir\n        - name: empty-dir\n          mountPath: /tmp\n          subPath: tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/wordpress\n          subPath: app-base-dir\n        - mountPath: /bitnami/wordpress\n          name: wordpress-data\n          subPath: wordpress\n        - name: wordpress-secrets\n          mountPath: /secrets\n      volumes:\n      - name: empty-dir\n        emptyDir: {}\n      - name: wordpress-secrets\n        projected:\n          sources:\n          - secret:\n              name: release-name-wordpress\n          - secret:\n              name: release-name-mariadb\n      - name: wordpress-data\n        persistentVolumeClaim:\n          claimName: release-name-wordpress\n",
+    "errors": []
+  },
+  {
+    "id": "00163",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00164",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00165",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-cert-manager-cainjector\n  namespace: default\n  labels:\n    app: cainjector\n    app.kubernetes.io/name: cainjector\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: cainjector\n    app.kubernetes.io/version: v1.19.0\n    app.kubernetes.io/managed-by: Helm\n    helm.sh/chart: cert-manager-v1.19.0\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: cainjector\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/component: cainjector\n  template:\n    metadata:\n      labels:\n        app: cainjector\n        app.kubernetes.io/name: cainjector\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: cainjector\n        app.kubernetes.io/version: v1.19.0\n        app.kubernetes.io/managed-by: Helm\n        helm.sh/chart: cert-manager-v1.19.0\n      annotations:\n        prometheus.io/path: /metrics\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9402'\n    spec:\n      serviceAccountName: release-name-cert-manager-cainjector\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: cert-manager-cainjector\n        image: quay.io/jetstack/cert-manager-cainjector:v1.19.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --v=2\n        - --leader-election-namespace=kube-system\n        ports:\n        - containerPort: 9402\n          name: http-metrics\n          protocol: TCP\n        env:\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "00166",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-cert-manager-cainjector\n  namespace: default\n  labels:\n    app: cainjector\n    app.kubernetes.io/name: cainjector\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: cainjector\n    app.kubernetes.io/version: v1.19.0\n    app.kubernetes.io/managed-by: Helm\n    helm.sh/chart: cert-manager-v1.19.0\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: cainjector\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/component: cainjector\n  template:\n    metadata:\n      labels:\n        app: cainjector\n        app.kubernetes.io/name: cainjector\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: cainjector\n        app.kubernetes.io/version: v1.19.0\n        app.kubernetes.io/managed-by: Helm\n        helm.sh/chart: cert-manager-v1.19.0\n      annotations:\n        prometheus.io/path: /metrics\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9402'\n    spec:\n      serviceAccountName: release-name-cert-manager-cainjector\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: cert-manager-cainjector\n        image: quay.io/jetstack/cert-manager-cainjector:v1.19.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --v=2\n        - --leader-election-namespace=kube-system\n        ports:\n        - containerPort: 9402\n          name: http-metrics\n          protocol: TCP\n        env:\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "00167",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-cert-manager\n  namespace: default\n  labels:\n    app: cert-manager\n    app.kubernetes.io/name: cert-manager\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: controller\n    app.kubernetes.io/version: v1.19.0\n    app.kubernetes.io/managed-by: Helm\n    helm.sh/chart: cert-manager-v1.19.0\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: cert-manager\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/component: controller\n  template:\n    metadata:\n      labels:\n        app: cert-manager\n        app.kubernetes.io/name: cert-manager\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: controller\n        app.kubernetes.io/version: v1.19.0\n        app.kubernetes.io/managed-by: Helm\n        helm.sh/chart: cert-manager-v1.19.0\n      annotations:\n        prometheus.io/path: /metrics\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9402'\n    spec:\n      serviceAccountName: release-name-cert-manager\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: cert-manager-controller\n        image: quay.io/jetstack/cert-manager-controller:v1.19.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --v=2\n        - --cluster-resource-namespace=$(POD_NAMESPACE)\n        - --leader-election-namespace=kube-system\n        - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.19.0\n        - --max-concurrent-challenges=60\n        ports:\n        - containerPort: 9402\n          name: http-metrics\n          protocol: TCP\n        - containerPort: 9403\n          name: http-healthz\n          protocol: TCP\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        env:\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        livenessProbe:\n          httpGet:\n            port: http-healthz\n            path: /livez\n            scheme: HTTP\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 15\n          successThreshold: 1\n          failureThreshold: 8\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "00168",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-cert-manager\n  namespace: default\n  labels:\n    app: cert-manager\n    app.kubernetes.io/name: cert-manager\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: controller\n    app.kubernetes.io/version: v1.19.0\n    app.kubernetes.io/managed-by: Helm\n    helm.sh/chart: cert-manager-v1.19.0\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: cert-manager\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/component: controller\n  template:\n    metadata:\n      labels:\n        app: cert-manager\n        app.kubernetes.io/name: cert-manager\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: controller\n        app.kubernetes.io/version: v1.19.0\n        app.kubernetes.io/managed-by: Helm\n        helm.sh/chart: cert-manager-v1.19.0\n      annotations:\n        prometheus.io/path: /metrics\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9402'\n    spec:\n      serviceAccountName: release-name-cert-manager\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: cert-manager-controller\n        image: quay.io/jetstack/cert-manager-controller:v1.19.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --v=2\n        - --cluster-resource-namespace=$(POD_NAMESPACE)\n        - --leader-election-namespace=kube-system\n        - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.19.0\n        - --max-concurrent-challenges=60\n        ports:\n        - containerPort: 9402\n          name: http-metrics\n          protocol: TCP\n        - containerPort: 9403\n          name: http-healthz\n          protocol: TCP\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        env:\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        livenessProbe:\n          httpGet:\n            port: http-healthz\n            path: /livez\n            scheme: HTTP\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 15\n          successThreshold: 1\n          failureThreshold: 8\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "00169",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-cert-manager-webhook\n  namespace: default\n  labels:\n    app: webhook\n    app.kubernetes.io/name: webhook\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: webhook\n    app.kubernetes.io/version: v1.19.0\n    app.kubernetes.io/managed-by: Helm\n    helm.sh/chart: cert-manager-v1.19.0\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: webhook\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/component: webhook\n  template:\n    metadata:\n      labels:\n        app: webhook\n        app.kubernetes.io/name: webhook\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: webhook\n        app.kubernetes.io/version: v1.19.0\n        app.kubernetes.io/managed-by: Helm\n        helm.sh/chart: cert-manager-v1.19.0\n      annotations:\n        prometheus.io/path: /metrics\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9402'\n    spec:\n      serviceAccountName: release-name-cert-manager-webhook\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: cert-manager-webhook\n        image: quay.io/jetstack/cert-manager-webhook:v1.19.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --v=2\n        - --secure-port=10250\n        - --dynamic-serving-ca-secret-namespace=$(POD_NAMESPACE)\n        - --dynamic-serving-ca-secret-name=release-name-cert-manager-webhook-ca\n        - --dynamic-serving-dns-names=release-name-cert-manager-webhook\n        - --dynamic-serving-dns-names=release-name-cert-manager-webhook.$(POD_NAMESPACE)\n        - --dynamic-serving-dns-names=release-name-cert-manager-webhook.$(POD_NAMESPACE).svc\n        ports:\n        - name: https\n          protocol: TCP\n          containerPort: 10250\n        - name: healthcheck\n          protocol: TCP\n          containerPort: 6080\n        - containerPort: 9402\n          name: http-metrics\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /livez\n            port: healthcheck\n            scheme: HTTP\n          initialDelaySeconds: 60\n          periodSeconds: 10\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: healthcheck\n            scheme: HTTP\n          initialDelaySeconds: 5\n          periodSeconds: 5\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        env:\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "00170",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-cert-manager-webhook\n  namespace: default\n  labels:\n    app: webhook\n    app.kubernetes.io/name: webhook\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: webhook\n    app.kubernetes.io/version: v1.19.0\n    app.kubernetes.io/managed-by: Helm\n    helm.sh/chart: cert-manager-v1.19.0\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: webhook\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/component: webhook\n  template:\n    metadata:\n      labels:\n        app: webhook\n        app.kubernetes.io/name: webhook\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: webhook\n        app.kubernetes.io/version: v1.19.0\n        app.kubernetes.io/managed-by: Helm\n        helm.sh/chart: cert-manager-v1.19.0\n      annotations:\n        prometheus.io/path: /metrics\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9402'\n    spec:\n      serviceAccountName: release-name-cert-manager-webhook\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: cert-manager-webhook\n        image: quay.io/jetstack/cert-manager-webhook:v1.19.0\n        imagePullPolicy: IfNotPresent\n        args:\n        - --v=2\n        - --secure-port=10250\n        - --dynamic-serving-ca-secret-namespace=$(POD_NAMESPACE)\n        - --dynamic-serving-ca-secret-name=release-name-cert-manager-webhook-ca\n        - --dynamic-serving-dns-names=release-name-cert-manager-webhook\n        - --dynamic-serving-dns-names=release-name-cert-manager-webhook.$(POD_NAMESPACE)\n        - --dynamic-serving-dns-names=release-name-cert-manager-webhook.$(POD_NAMESPACE).svc\n        ports:\n        - name: https\n          protocol: TCP\n          containerPort: 10250\n        - name: healthcheck\n          protocol: TCP\n          containerPort: 6080\n        - containerPort: 9402\n          name: http-metrics\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /livez\n            port: healthcheck\n            scheme: HTTP\n          initialDelaySeconds: 60\n          periodSeconds: 10\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: healthcheck\n            scheme: HTTP\n          initialDelaySeconds: 5\n          periodSeconds: 5\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        env:\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
+  },
+  {
+    "id": "00171",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00172",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00173",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00174",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00175",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00176",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00177",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00178",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00179",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00180",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00181",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00182",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00183",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00184",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00185",
+    "policy_id": "no_privileged",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00186",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00187",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00188",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00189",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00190",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00191",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00192",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00193",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00194",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00195",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00196",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00197",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00198",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00199",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00200",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  }
+]

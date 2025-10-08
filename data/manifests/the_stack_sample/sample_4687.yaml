@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: process-item-$ITEM
+  labels:
+    jobgroup: pretrain
+spec:
+  template:
+    metadata:
+      name: pretrain-job
+      labels:
+        jobgroup: pretrain
+    spec:
+      containers:
+      - name: c
+        image: gcr.io/blueface/bert
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/run/secret/cloud.google.com/service-account.json
+        command:
+        - /usr/bin/python3
+        - create_pretraining_data.py
+        - --input_file=gs://koursaros/enwiki-feb-doc-split/wiki_$ITEM.txt.doc.train
+        - --output_file=gs://koursaros/bert_pretrain_data/wiki_$ITEM.tf_record
+        - --vocab_file=vocab.txt
+        resources:
+          requests:
+            memory: 3Gi
+        volumeMounts:
+        - name: service-account
+          mountPath: /var/run/secret/cloud.google.com
+      volumes:
+      - name: service-account
+        secret:
+          secretName: my-app-sa-key
+      restartPolicy: Never

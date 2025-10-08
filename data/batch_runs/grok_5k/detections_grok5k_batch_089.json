@@ -1,0 +1,282 @@
+[
+  {
+    "id": "03561",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1571.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-ingress-controller\n  labels:\n    k8s-app: nginx-ingress-lb\nspec:\n  replicas: 1\n  selector:\n    k8s-app: nginx-ingress-lb\n  template:\n    metadata:\n      labels:\n        k8s-app: nginx-ingress-lb\n        name: nginx-ingress-lb\n    spec:\n      containers:\n      - image: gcr.io/google_containers/nginx-ingress-controller:0.62\n        name: nginx-ingress-lb\n        imagePullPolicy: Always\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 10249\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        ports:\n        - containerPort: 80\n          hostPort: 80\n        - containerPort: 443\n          hostPort: 443\n        args:\n        - /nginx-ingress-controller\n        - --default-backend-service=default/default-http-backend\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx-ingress-lb\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03562",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1571.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-ingress-controller\n  labels:\n    k8s-app: nginx-ingress-lb\nspec:\n  replicas: 1\n  selector:\n    k8s-app: nginx-ingress-lb\n  template:\n    metadata:\n      labels:\n        k8s-app: nginx-ingress-lb\n        name: nginx-ingress-lb\n    spec:\n      containers:\n      - image: gcr.io/google_containers/nginx-ingress-controller:0.62\n        name: nginx-ingress-lb\n        imagePullPolicy: Always\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 10249\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        ports:\n        - containerPort: 80\n          hostPort: 80\n        - containerPort: 443\n          hostPort: 443\n        args:\n        - /nginx-ingress-controller\n        - --default-backend-service=default/default-http-backend\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx-ingress-lb\" has cpu request 0"
+  },
+  {
+    "id": "03563",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1571.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-ingress-controller\n  labels:\n    k8s-app: nginx-ingress-lb\nspec:\n  replicas: 1\n  selector:\n    k8s-app: nginx-ingress-lb\n  template:\n    metadata:\n      labels:\n        k8s-app: nginx-ingress-lb\n        name: nginx-ingress-lb\n    spec:\n      containers:\n      - image: gcr.io/google_containers/nginx-ingress-controller:0.62\n        name: nginx-ingress-lb\n        imagePullPolicy: Always\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 10249\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        ports:\n        - containerPort: 80\n          hostPort: 80\n        - containerPort: 443\n          hostPort: 443\n        args:\n        - /nginx-ingress-controller\n        - --default-backend-service=default/default-http-backend\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx-ingress-lb\" has memory limit 0"
+  },
+  {
+    "id": "03564",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1574.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20201204-d90be1ef6b\n        args:\n        - --dry-run=false\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-graphql-endpoint=http://ghproxy/graphql\n        - --gcs-credentials-file=/etc/gcs-credentials/service-account.json\n        - --status-path=gs://prow-tidb-logs/tide-status\n        - --history-uri=gs://prow-tidb-logs/tide-history.json\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: gcs-credentials\n          mountPath: /etc/gcs-credentials\n          readOnly: true\n      volumes:\n      - name: github-token\n        secret:\n          secretName: github-token\n      - name: config\n        configMap:\n          name: config\n      - name: gcs-credentials\n        secret:\n          secretName: gcs-credentials\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"tide\" does not have a read-only root file system"
+  },
+  {
+    "id": "03565",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1574.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20201204-d90be1ef6b\n        args:\n        - --dry-run=false\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-graphql-endpoint=http://ghproxy/graphql\n        - --gcs-credentials-file=/etc/gcs-credentials/service-account.json\n        - --status-path=gs://prow-tidb-logs/tide-status\n        - --history-uri=gs://prow-tidb-logs/tide-history.json\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: gcs-credentials\n          mountPath: /etc/gcs-credentials\n          readOnly: true\n      volumes:\n      - name: github-token\n        secret:\n          secretName: github-token\n      - name: config\n        configMap:\n          name: config\n      - name: gcs-credentials\n        secret:\n          secretName: gcs-credentials\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"tide\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03566",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1574.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20201204-d90be1ef6b\n        args:\n        - --dry-run=false\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-graphql-endpoint=http://ghproxy/graphql\n        - --gcs-credentials-file=/etc/gcs-credentials/service-account.json\n        - --status-path=gs://prow-tidb-logs/tide-status\n        - --history-uri=gs://prow-tidb-logs/tide-history.json\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: gcs-credentials\n          mountPath: /etc/gcs-credentials\n          readOnly: true\n      volumes:\n      - name: github-token\n        secret:\n          secretName: github-token\n      - name: config\n        configMap:\n          name: config\n      - name: gcs-credentials\n        secret:\n          secretName: gcs-credentials\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"tide\" has cpu request 0"
+  },
+  {
+    "id": "03567",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1574.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20201204-d90be1ef6b\n        args:\n        - --dry-run=false\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-graphql-endpoint=http://ghproxy/graphql\n        - --gcs-credentials-file=/etc/gcs-credentials/service-account.json\n        - --status-path=gs://prow-tidb-logs/tide-status\n        - --history-uri=gs://prow-tidb-logs/tide-history.json\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: gcs-credentials\n          mountPath: /etc/gcs-credentials\n          readOnly: true\n      volumes:\n      - name: github-token\n        secret:\n          secretName: github-token\n      - name: config\n        configMap:\n          name: config\n      - name: gcs-credentials\n        secret:\n          secretName: gcs-credentials\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"tide\" has memory limit 0"
+  },
+  {
+    "id": "03568",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1575.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube-rdma-cni-ds\n  namespace: kube-system\n  labels:\n    tier: node\n    app: rdma-cni\n    name: rdma-cni\nspec:\n  selector:\n    matchLabels:\n      name: rdma-cni\n  template:\n    metadata:\n      labels:\n        tier: node\n        app: rdma-cni\n        name: rdma-cni\n    spec:\n      containers:\n      - name: rdma-cni\n        image: mellanox/rdma-cni\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 50Mi\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        volumeMounts:\n        - name: cnibin\n          mountPath: /host/opt/cni/bin\n      volumes:\n      - name: cnibin\n        hostPath:\n          path: /opt/cni/bin\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"rdma-cni\" is using an invalid container image, \"mellanox/rdma-cni\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03569",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1575.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube-rdma-cni-ds\n  namespace: kube-system\n  labels:\n    tier: node\n    app: rdma-cni\n    name: rdma-cni\nspec:\n  selector:\n    matchLabels:\n      name: rdma-cni\n  template:\n    metadata:\n      labels:\n        tier: node\n        app: rdma-cni\n        name: rdma-cni\n    spec:\n      containers:\n      - name: rdma-cni\n        image: mellanox/rdma-cni\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 50Mi\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        volumeMounts:\n        - name: cnibin\n          mountPath: /host/opt/cni/bin\n      volumes:\n      - name: cnibin\n        hostPath:\n          path: /opt/cni/bin\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"rdma-cni\" does not have a read-only root file system"
+  },
+  {
+    "id": "03570",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1575.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube-rdma-cni-ds\n  namespace: kube-system\n  labels:\n    tier: node\n    app: rdma-cni\n    name: rdma-cni\nspec:\n  selector:\n    matchLabels:\n      name: rdma-cni\n  template:\n    metadata:\n      labels:\n        tier: node\n        app: rdma-cni\n        name: rdma-cni\n    spec:\n      containers:\n      - name: rdma-cni\n        image: mellanox/rdma-cni\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 50Mi\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        volumeMounts:\n        - name: cnibin\n          mountPath: /host/opt/cni/bin\n      volumes:\n      - name: cnibin\n        hostPath:\n          path: /opt/cni/bin\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"rdma-cni\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "03571",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1575.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube-rdma-cni-ds\n  namespace: kube-system\n  labels:\n    tier: node\n    app: rdma-cni\n    name: rdma-cni\nspec:\n  selector:\n    matchLabels:\n      name: rdma-cni\n  template:\n    metadata:\n      labels:\n        tier: node\n        app: rdma-cni\n        name: rdma-cni\n    spec:\n      containers:\n      - name: rdma-cni\n        image: mellanox/rdma-cni\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 50Mi\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        volumeMounts:\n        - name: cnibin\n          mountPath: /host/opt/cni/bin\n      volumes:\n      - name: cnibin\n        hostPath:\n          path: /opt/cni/bin\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"rdma-cni\" is privileged"
+  },
+  {
+    "id": "03572",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1575.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube-rdma-cni-ds\n  namespace: kube-system\n  labels:\n    tier: node\n    app: rdma-cni\n    name: rdma-cni\nspec:\n  selector:\n    matchLabels:\n      name: rdma-cni\n  template:\n    metadata:\n      labels:\n        tier: node\n        app: rdma-cni\n        name: rdma-cni\n    spec:\n      containers:\n      - name: rdma-cni\n        image: mellanox/rdma-cni\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 50Mi\n          limits:\n            cpu: 100m\n            memory: 50Mi\n        volumeMounts:\n        - name: cnibin\n          mountPath: /host/opt/cni/bin\n      volumes:\n      - name: cnibin\n        hostPath:\n          path: /opt/cni/bin\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"rdma-cni\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03573",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1578.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20211020-68b4c3bc47\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"cherrypicker\" does not have a read-only root file system"
+  },
+  {
+    "id": "03574",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1578.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20211020-68b4c3bc47\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"cherrypicker\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03575",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1578.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20211020-68b4c3bc47\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"cherrypicker\" has cpu request 0"
+  },
+  {
+    "id": "03576",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1578.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20211020-68b4c3bc47\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"cherrypicker\" has memory limit 0"
+  },
+  {
+    "id": "03577",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"container1\" is using an invalid container image, \"k8s.gcr.io/pause\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03578",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"initcontainer1\" is using an invalid container image, \"k8s.gcr.io/pause\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03579",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"container1\" does not have a read-only root file system"
+  },
+  {
+    "id": "03580",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"initcontainer1\" does not have a read-only root file system"
+  },
+  {
+    "id": "03581",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"container1\" has cpu request 0"
+  },
+  {
+    "id": "03582",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"initcontainer1\" has cpu request 0"
+  },
+  {
+    "id": "03583",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"container1\" has memory limit 0"
+  },
+  {
+    "id": "03584",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1580.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: capabilities_baseline3\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        add:\n        - CAP_CHOWN\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities: {}\n  securityContext:\n    runAsNonRoot: true\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"initcontainer1\" has memory limit 0"
+  },
+  {
+    "id": "03585",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1584.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx:1.19.1\n    ports:\n    - containerPort: 80\n    volumeMounts:\n    - name: config-volume\n      mountPath: /etc/nginx\n    - name: htpasswd-volume\n      mountPath: /etc/nginx/conf\n  volumes:\n  - name: config-volume\n    configMap:\n      name: nginx-config\n  - name: htpasswd-volume\n    secret:\n      secretName: nginx-htpasswd\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03586",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1584.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx:1.19.1\n    ports:\n    - containerPort: 80\n    volumeMounts:\n    - name: config-volume\n      mountPath: /etc/nginx\n    - name: htpasswd-volume\n      mountPath: /etc/nginx/conf\n  volumes:\n  - name: config-volume\n    configMap:\n      name: nginx-config\n  - name: htpasswd-volume\n    secret:\n      secretName: nginx-htpasswd\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03587",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1584.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx:1.19.1\n    ports:\n    - containerPort: 80\n    volumeMounts:\n    - name: config-volume\n      mountPath: /etc/nginx\n    - name: htpasswd-volume\n      mountPath: /etc/nginx/conf\n  volumes:\n  - name: config-volume\n    configMap:\n      name: nginx-config\n  - name: htpasswd-volume\n    secret:\n      secretName: nginx-htpasswd\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "03588",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1584.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx:1.19.1\n    ports:\n    - containerPort: 80\n    volumeMounts:\n    - name: config-volume\n      mountPath: /etc/nginx\n    - name: htpasswd-volume\n      mountPath: /etc/nginx/conf\n  volumes:\n  - name: config-volume\n    configMap:\n      name: nginx-config\n  - name: htpasswd-volume\n    secret:\n      secretName: nginx-htpasswd\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "03589",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1585.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: echoheaders\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: echoheaders\n  template:\n    metadata:\n      labels:\n        app: echoheaders\n    spec:\n      containers:\n      - name: echoheaders\n        image: registry.k8s.io/e2e-test-images/echoserver:2.3\n        ports:\n        - containerPort: 8443\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"echoheaders\" does not have a read-only root file system"
+  },
+  {
+    "id": "03590",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1585.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: echoheaders\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: echoheaders\n  template:\n    metadata:\n      labels:\n        app: echoheaders\n    spec:\n      containers:\n      - name: echoheaders\n        image: registry.k8s.io/e2e-test-images/echoserver:2.3\n        ports:\n        - containerPort: 8443\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"echoheaders\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03591",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1585.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: echoheaders\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: echoheaders\n  template:\n    metadata:\n      labels:\n        app: echoheaders\n    spec:\n      containers:\n      - name: echoheaders\n        image: registry.k8s.io/e2e-test-images/echoserver:2.3\n        ports:\n        - containerPort: 8443\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"echoheaders\" has cpu request 0"
+  },
+  {
+    "id": "03592",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1585.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: echoheaders\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: echoheaders\n  template:\n    metadata:\n      labels:\n        app: echoheaders\n    spec:\n      containers:\n      - name: echoheaders\n        image: registry.k8s.io/e2e-test-images/echoserver:2.3\n        ports:\n        - containerPort: 8443\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"echoheaders\" has memory limit 0"
+  },
+  {
+    "id": "03593",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1587.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notion-gtdls\nspec:\n  selector:\n    matchLabels:\n      app: notion-gtdls\n  template:\n    metadata:\n      labels:\n        app: notion-gtdls\n    spec:\n      containers:\n      - name: notion-gtdls\n        image: notion-gtdls\n        envFrom:\n        - secretRef:\n            name: notion-gtdls-env\n        resources:\n          limits:\n            memory: 64Mi\n            cpu: 100m\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"notion-gtdls\" is using an invalid container image, \"notion-gtdls\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03594",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1587.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notion-gtdls\nspec:\n  selector:\n    matchLabels:\n      app: notion-gtdls\n  template:\n    metadata:\n      labels:\n        app: notion-gtdls\n    spec:\n      containers:\n      - name: notion-gtdls\n        image: notion-gtdls\n        envFrom:\n        - secretRef:\n            name: notion-gtdls-env\n        resources:\n          limits:\n            memory: 64Mi\n            cpu: 100m\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"notion-gtdls\" does not have a read-only root file system"
+  },
+  {
+    "id": "03595",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1587.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notion-gtdls\nspec:\n  selector:\n    matchLabels:\n      app: notion-gtdls\n  template:\n    metadata:\n      labels:\n        app: notion-gtdls\n    spec:\n      containers:\n      - name: notion-gtdls\n        image: notion-gtdls\n        envFrom:\n        - secretRef:\n            name: notion-gtdls-env\n        resources:\n          limits:\n            memory: 64Mi\n            cpu: 100m\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"notion-gtdls\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03596",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1587.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notion-gtdls\nspec:\n  selector:\n    matchLabels:\n      app: notion-gtdls\n  template:\n    metadata:\n      labels:\n        app: notion-gtdls\n    spec:\n      containers:\n      - name: notion-gtdls\n        image: notion-gtdls\n        envFrom:\n        - secretRef:\n            name: notion-gtdls-env\n        resources:\n          limits:\n            memory: 64Mi\n            cpu: 100m\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"notion-gtdls\" has cpu request 0"
+  },
+  {
+    "id": "03597",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1588.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: workflows-controller\n  namespace: workflows-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: workflows-controller\n  template:\n    metadata:\n      labels:\n        app: workflows-controller\n    spec:\n      serviceAccountName: controller\n      containers:\n      - name: controller\n        image: ko://github.com/nubank/workflows/cmd/controller\n        resources:\n          requests:\n            cpu: 500m\n            memory: 512Mi\n          limits:\n            cpu: 500m\n            memory: 512Mi\n        ports:\n        - name: metrics\n          containerPort: 9090\n        env:\n        - name: GITHUB_APP_ID\n          valueFrom:\n            configMapKeyRef:\n              name: config-github-app\n              key: app-id\n        - name: GITHUB_INSTALLATION_ID\n          valueFrom:\n            configMapKeyRef:\n              name: config-github-app\n              key: installation-id\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: workflows.dev/workflows\n        volumeMounts:\n        - name: github-app-private-key\n          mountPath: /var/run/secrets/github\n      volumes:\n      - name: github-app-private-key\n        secret:\n          secretName: github-app-private-key\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"controller\" is using an invalid container image, \"ko://github.com/nubank/workflows/cmd/controller\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03598",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1588.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: workflows-controller\n  namespace: workflows-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: workflows-controller\n  template:\n    metadata:\n      labels:\n        app: workflows-controller\n    spec:\n      serviceAccountName: controller\n      containers:\n      - name: controller\n        image: ko://github.com/nubank/workflows/cmd/controller\n        resources:\n          requests:\n            cpu: 500m\n            memory: 512Mi\n          limits:\n            cpu: 500m\n            memory: 512Mi\n        ports:\n        - name: metrics\n          containerPort: 9090\n        env:\n        - name: GITHUB_APP_ID\n          valueFrom:\n            configMapKeyRef:\n              name: config-github-app\n              key: app-id\n        - name: GITHUB_INSTALLATION_ID\n          valueFrom:\n            configMapKeyRef:\n              name: config-github-app\n              key: installation-id\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: workflows.dev/workflows\n        volumeMounts:\n        - name: github-app-private-key\n          mountPath: /var/run/secrets/github\n      volumes:\n      - name: github-app-private-key\n        secret:\n          secretName: github-app-private-key\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"controller\" does not have a read-only root file system"
+  },
+  {
+    "id": "03599",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1588.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: workflows-controller\n  namespace: workflows-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: workflows-controller\n  template:\n    metadata:\n      labels:\n        app: workflows-controller\n    spec:\n      serviceAccountName: controller\n      containers:\n      - name: controller\n        image: ko://github.com/nubank/workflows/cmd/controller\n        resources:\n          requests:\n            cpu: 500m\n            memory: 512Mi\n          limits:\n            cpu: 500m\n            memory: 512Mi\n        ports:\n        - name: metrics\n          containerPort: 9090\n        env:\n        - name: GITHUB_APP_ID\n          valueFrom:\n            configMapKeyRef:\n              name: config-github-app\n              key: app-id\n        - name: GITHUB_INSTALLATION_ID\n          valueFrom:\n            configMapKeyRef:\n              name: config-github-app\n              key: installation-id\n        - name: SYSTEM_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: CONFIG_LOGGING_NAME\n          value: config-logging\n        - name: CONFIG_OBSERVABILITY_NAME\n          value: config-observability\n        - name: METRICS_DOMAIN\n          value: workflows.dev/workflows\n        volumeMounts:\n        - name: github-app-private-key\n          mountPath: /var/run/secrets/github\n      volumes:\n      - name: github-app-private-key\n        secret:\n          secretName: github-app-private-key\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"controller\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03600",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1598.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  namespace: default\n  name: contacts1-migration\nspec:\n  initContainers:\n  - name: tmp-container\n    image: contacts1-server:latest\n    imagePullPolicy: Always\n    volumeMounts:\n    - mountPath: /atlas-migrations\n      name: migrations\n    command:\n    - cp\n    - -r\n    - /db/migrations\n    - /atlas-migrations\n  containers:\n  - name: migration\n    env:\n    - name: CONFIG_FILE\n      value: defaults\n    image: infoblox/migrate:latest\n    imagePullPolicy: Always\n    volumeMounts:\n    - mountPath: /atlas-migrations\n      name: migrations\n    command:\n    - /migrate\n    args:\n    - --verbose\n    - --source\n    - file://atlas-migrations/migrations\n    - --database.address\n    - postgres.default:5432\n    - --database.name\n    - contacts1\n    - --database.user\n    - postgres\n    - --database.password\n    - postgres\n    - up\n  volumes:\n  - name: migrations\n    emptyDir: {}\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"migration\" is using an invalid container image, \"infoblox/migrate:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  }
+]

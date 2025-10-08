@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upstream
+spec:
+  selector:
+    matchLabels:
+      app: upstream
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: upstream
+    spec:
+      nodeSelector:
+        agentpool: captain
+      containers:
+      - name: upstream
+        image: signalrbenchmark/perf:1.4.4
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1024Mi
+          limits:
+            cpu: 150m
+            memory: 1024Mi
+        volumeMounts:
+        - mountPath: /mnt/perf
+          name: volume
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - cp /mnt/perf/manifest/SignalRUpstream/SignalRUpstream.zip /home ; cd /home
+          ; unzip SignalRUpstream.zip ; exec ./SignalRUpstream
+      volumes:
+      - name: volume
+        azureFile:
+          secretName: azure-secret
+          shareName: perf
+          readOnly: false

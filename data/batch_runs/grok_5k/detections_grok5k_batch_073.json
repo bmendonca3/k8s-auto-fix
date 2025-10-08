@@ -1,0 +1,282 @@
+[
+  {
+    "id": "02921",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1188.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: kube-dns-v10\n  namespace: kube-system\n  labels:\n    k8s-app: kube-dns\n    version: v10\n    kubernetes.io/cluster-service: 'true'\nspec:\n  replicas: 1\n  selector:\n    k8s-app: kube-dns\n    version: v10\n  template:\n    metadata:\n      labels:\n        k8s-app: kube-dns\n        version: v10\n        kubernetes.io/cluster-service: 'true'\n    spec:\n      containers:\n      - name: etcd\n        image: gcr.io/google_containers/etcd:2.0.9\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        command:\n        - /usr/local/bin/etcd\n        - -data-dir\n        - /var/etcd/data\n        - -listen-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -advertise-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -initial-cluster-token\n        - skydns-etcd\n        volumeMounts:\n        - name: etcd-storage\n          mountPath: /var/etcd/data\n      - name: kube2sky\n        image: gcr.io/google_containers/kube2sky:1.12\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - --domain=cluster.local\n      - name: skydns\n        image: gcr.io/google_containers/skydns:2015-10-13-8c72f8c\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - -machines=http://127.0.0.1:4001\n        - -addr=0.0.0.0:53\n        - -ns-rotate=false\n        - -domain=cluster.local.\n        ports:\n        - containerPort: 53\n          name: dns\n          protocol: UDP\n        - containerPort: 53\n          name: dns-tcp\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 1\n          timeoutSeconds: 5\n      - name: healthz\n        image: gcr.io/google_containers/exechealthz:1.0\n        resources:\n          limits:\n            cpu: 10m\n            memory: 20Mi\n          requests:\n            cpu: 10m\n            memory: 20Mi\n        args:\n        - -cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null\n        - -port=8080\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n      volumes:\n      - name: etcd-storage\n        emptyDir: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"skydns\" does not have a read-only root file system"
+  },
+  {
+    "id": "02922",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1188.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: kube-dns-v10\n  namespace: kube-system\n  labels:\n    k8s-app: kube-dns\n    version: v10\n    kubernetes.io/cluster-service: 'true'\nspec:\n  replicas: 1\n  selector:\n    k8s-app: kube-dns\n    version: v10\n  template:\n    metadata:\n      labels:\n        k8s-app: kube-dns\n        version: v10\n        kubernetes.io/cluster-service: 'true'\n    spec:\n      containers:\n      - name: etcd\n        image: gcr.io/google_containers/etcd:2.0.9\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        command:\n        - /usr/local/bin/etcd\n        - -data-dir\n        - /var/etcd/data\n        - -listen-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -advertise-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -initial-cluster-token\n        - skydns-etcd\n        volumeMounts:\n        - name: etcd-storage\n          mountPath: /var/etcd/data\n      - name: kube2sky\n        image: gcr.io/google_containers/kube2sky:1.12\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - --domain=cluster.local\n      - name: skydns\n        image: gcr.io/google_containers/skydns:2015-10-13-8c72f8c\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - -machines=http://127.0.0.1:4001\n        - -addr=0.0.0.0:53\n        - -ns-rotate=false\n        - -domain=cluster.local.\n        ports:\n        - containerPort: 53\n          name: dns\n          protocol: UDP\n        - containerPort: 53\n          name: dns-tcp\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 1\n          timeoutSeconds: 5\n      - name: healthz\n        image: gcr.io/google_containers/exechealthz:1.0\n        resources:\n          limits:\n            cpu: 10m\n            memory: 20Mi\n          requests:\n            cpu: 10m\n            memory: 20Mi\n        args:\n        - -cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null\n        - -port=8080\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n      volumes:\n      - name: etcd-storage\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"etcd\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02923",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1188.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: kube-dns-v10\n  namespace: kube-system\n  labels:\n    k8s-app: kube-dns\n    version: v10\n    kubernetes.io/cluster-service: 'true'\nspec:\n  replicas: 1\n  selector:\n    k8s-app: kube-dns\n    version: v10\n  template:\n    metadata:\n      labels:\n        k8s-app: kube-dns\n        version: v10\n        kubernetes.io/cluster-service: 'true'\n    spec:\n      containers:\n      - name: etcd\n        image: gcr.io/google_containers/etcd:2.0.9\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        command:\n        - /usr/local/bin/etcd\n        - -data-dir\n        - /var/etcd/data\n        - -listen-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -advertise-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -initial-cluster-token\n        - skydns-etcd\n        volumeMounts:\n        - name: etcd-storage\n          mountPath: /var/etcd/data\n      - name: kube2sky\n        image: gcr.io/google_containers/kube2sky:1.12\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - --domain=cluster.local\n      - name: skydns\n        image: gcr.io/google_containers/skydns:2015-10-13-8c72f8c\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - -machines=http://127.0.0.1:4001\n        - -addr=0.0.0.0:53\n        - -ns-rotate=false\n        - -domain=cluster.local.\n        ports:\n        - containerPort: 53\n          name: dns\n          protocol: UDP\n        - containerPort: 53\n          name: dns-tcp\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 1\n          timeoutSeconds: 5\n      - name: healthz\n        image: gcr.io/google_containers/exechealthz:1.0\n        resources:\n          limits:\n            cpu: 10m\n            memory: 20Mi\n          requests:\n            cpu: 10m\n            memory: 20Mi\n        args:\n        - -cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null\n        - -port=8080\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n      volumes:\n      - name: etcd-storage\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"healthz\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02924",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1188.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: kube-dns-v10\n  namespace: kube-system\n  labels:\n    k8s-app: kube-dns\n    version: v10\n    kubernetes.io/cluster-service: 'true'\nspec:\n  replicas: 1\n  selector:\n    k8s-app: kube-dns\n    version: v10\n  template:\n    metadata:\n      labels:\n        k8s-app: kube-dns\n        version: v10\n        kubernetes.io/cluster-service: 'true'\n    spec:\n      containers:\n      - name: etcd\n        image: gcr.io/google_containers/etcd:2.0.9\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        command:\n        - /usr/local/bin/etcd\n        - -data-dir\n        - /var/etcd/data\n        - -listen-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -advertise-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -initial-cluster-token\n        - skydns-etcd\n        volumeMounts:\n        - name: etcd-storage\n          mountPath: /var/etcd/data\n      - name: kube2sky\n        image: gcr.io/google_containers/kube2sky:1.12\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - --domain=cluster.local\n      - name: skydns\n        image: gcr.io/google_containers/skydns:2015-10-13-8c72f8c\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - -machines=http://127.0.0.1:4001\n        - -addr=0.0.0.0:53\n        - -ns-rotate=false\n        - -domain=cluster.local.\n        ports:\n        - containerPort: 53\n          name: dns\n          protocol: UDP\n        - containerPort: 53\n          name: dns-tcp\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 1\n          timeoutSeconds: 5\n      - name: healthz\n        image: gcr.io/google_containers/exechealthz:1.0\n        resources:\n          limits:\n            cpu: 10m\n            memory: 20Mi\n          requests:\n            cpu: 10m\n            memory: 20Mi\n        args:\n        - -cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null\n        - -port=8080\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n      volumes:\n      - name: etcd-storage\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"kube2sky\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02925",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1188.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: kube-dns-v10\n  namespace: kube-system\n  labels:\n    k8s-app: kube-dns\n    version: v10\n    kubernetes.io/cluster-service: 'true'\nspec:\n  replicas: 1\n  selector:\n    k8s-app: kube-dns\n    version: v10\n  template:\n    metadata:\n      labels:\n        k8s-app: kube-dns\n        version: v10\n        kubernetes.io/cluster-service: 'true'\n    spec:\n      containers:\n      - name: etcd\n        image: gcr.io/google_containers/etcd:2.0.9\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        command:\n        - /usr/local/bin/etcd\n        - -data-dir\n        - /var/etcd/data\n        - -listen-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -advertise-client-urls\n        - http://127.0.0.1:2379,http://127.0.0.1:4001\n        - -initial-cluster-token\n        - skydns-etcd\n        volumeMounts:\n        - name: etcd-storage\n          mountPath: /var/etcd/data\n      - name: kube2sky\n        image: gcr.io/google_containers/kube2sky:1.12\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - --domain=cluster.local\n      - name: skydns\n        image: gcr.io/google_containers/skydns:2015-10-13-8c72f8c\n        resources:\n          limits:\n            cpu: 100m\n            memory: 50Mi\n          requests:\n            cpu: 100m\n            memory: 50Mi\n        args:\n        - -machines=http://127.0.0.1:4001\n        - -addr=0.0.0.0:53\n        - -ns-rotate=false\n        - -domain=cluster.local.\n        ports:\n        - containerPort: 53\n          name: dns\n          protocol: UDP\n        - containerPort: 53\n          name: dns-tcp\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n            scheme: HTTP\n          initialDelaySeconds: 1\n          timeoutSeconds: 5\n      - name: healthz\n        image: gcr.io/google_containers/exechealthz:1.0\n        resources:\n          limits:\n            cpu: 10m\n            memory: 20Mi\n          requests:\n            cpu: 10m\n            memory: 20Mi\n        args:\n        - -cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null\n        - -port=8080\n        ports:\n        - containerPort: 8080\n          protocol: TCP\n      volumes:\n      - name: etcd-storage\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"skydns\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02926",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1195.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: v2ray\nspec:\n  selector:\n    matchLabels:\n      app: v2ray\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: v2ray\n    spec:\n      containers:\n      - name: v2ray\n        image: jaskon139/kubesail2:latest\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 5m\n            memory: 64Mi\n          limits:\n            cpu: 100m\n            memory: 512Mi\n        ports:\n        - containerPort: 8080\n        env:\n        - name: CONFIG_JSON\n          value: '{\"inbounds\":[{\"port\":8080,\"protocol\":\"vmess\",\"settings\":{\"clients\":[{\"id\":\"852217f3-b83d-412e-b8b7-93706a6dd4e9\",\"alterId\":64}]},\"streamSettings\":{\"network\":\"ws\",\"wsSettings\":{\"path\":\"/ws\"}}}],\"outbounds\":[{\"protocol\":\"freedom\",\"settings\":{}}]}'\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"v2ray\" is using an invalid container image, \"jaskon139/kubesail2:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "02927",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1195.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: v2ray\nspec:\n  selector:\n    matchLabels:\n      app: v2ray\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: v2ray\n    spec:\n      containers:\n      - name: v2ray\n        image: jaskon139/kubesail2:latest\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 5m\n            memory: 64Mi\n          limits:\n            cpu: 100m\n            memory: 512Mi\n        ports:\n        - containerPort: 8080\n        env:\n        - name: CONFIG_JSON\n          value: '{\"inbounds\":[{\"port\":8080,\"protocol\":\"vmess\",\"settings\":{\"clients\":[{\"id\":\"852217f3-b83d-412e-b8b7-93706a6dd4e9\",\"alterId\":64}]},\"streamSettings\":{\"network\":\"ws\",\"wsSettings\":{\"path\":\"/ws\"}}}],\"outbounds\":[{\"protocol\":\"freedom\",\"settings\":{}}]}'\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"v2ray\" does not have a read-only root file system"
+  },
+  {
+    "id": "02928",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1195.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: v2ray\nspec:\n  selector:\n    matchLabels:\n      app: v2ray\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: v2ray\n    spec:\n      containers:\n      - name: v2ray\n        image: jaskon139/kubesail2:latest\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 5m\n            memory: 64Mi\n          limits:\n            cpu: 100m\n            memory: 512Mi\n        ports:\n        - containerPort: 8080\n        env:\n        - name: CONFIG_JSON\n          value: '{\"inbounds\":[{\"port\":8080,\"protocol\":\"vmess\",\"settings\":{\"clients\":[{\"id\":\"852217f3-b83d-412e-b8b7-93706a6dd4e9\",\"alterId\":64}]},\"streamSettings\":{\"network\":\"ws\",\"wsSettings\":{\"path\":\"/ws\"}}}],\"outbounds\":[{\"protocol\":\"freedom\",\"settings\":{}}]}'\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"v2ray\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02929",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\n  labels:\n    app: nginx\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.12.2\n        ports:\n        - containerPort: 80\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "02930",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\n  labels:\n    app: nginx\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.12.2\n        ports:\n        - containerPort: 80\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02931",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\n  labels:\n    app: nginx\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.12.2\n        ports:\n        - containerPort: 80\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "02932",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1196.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\n  labels:\n    app: nginx\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.12.2\n        ports:\n        - containerPort: 80\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "02933",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1200.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pvc-cleaner\n  namespace: $PVC_CLEANER_NAMESPACE\nspec:\n  containers:\n  - name: pvc-cleaner\n    image: ubuntu:20.10\n    command:\n    - /bin/sh\n    - -c\n    args:\n    - rm -rf $PVC_CLEANER_RM_PATH/*\n    volumeMounts:\n    - mountPath: $PVC_CLEANER_RM_PATH\n      name: pvc-cleaner-m-vol\n  volumes:\n  - name: pvc-cleaner-m-vol\n    persistentVolumeClaim:\n      claimName: $PVC_CLEANER_CLAIMNAME\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"pvc-cleaner\" does not have a read-only root file system"
+  },
+  {
+    "id": "02934",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1200.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pvc-cleaner\n  namespace: $PVC_CLEANER_NAMESPACE\nspec:\n  containers:\n  - name: pvc-cleaner\n    image: ubuntu:20.10\n    command:\n    - /bin/sh\n    - -c\n    args:\n    - rm -rf $PVC_CLEANER_RM_PATH/*\n    volumeMounts:\n    - mountPath: $PVC_CLEANER_RM_PATH\n      name: pvc-cleaner-m-vol\n  volumes:\n  - name: pvc-cleaner-m-vol\n    persistentVolumeClaim:\n      claimName: $PVC_CLEANER_CLAIMNAME\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"pvc-cleaner\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02935",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1200.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pvc-cleaner\n  namespace: $PVC_CLEANER_NAMESPACE\nspec:\n  containers:\n  - name: pvc-cleaner\n    image: ubuntu:20.10\n    command:\n    - /bin/sh\n    - -c\n    args:\n    - rm -rf $PVC_CLEANER_RM_PATH/*\n    volumeMounts:\n    - mountPath: $PVC_CLEANER_RM_PATH\n      name: pvc-cleaner-m-vol\n  volumes:\n  - name: pvc-cleaner-m-vol\n    persistentVolumeClaim:\n      claimName: $PVC_CLEANER_CLAIMNAME\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"pvc-cleaner\" has cpu request 0"
+  },
+  {
+    "id": "02936",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1200.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pvc-cleaner\n  namespace: $PVC_CLEANER_NAMESPACE\nspec:\n  containers:\n  - name: pvc-cleaner\n    image: ubuntu:20.10\n    command:\n    - /bin/sh\n    - -c\n    args:\n    - rm -rf $PVC_CLEANER_RM_PATH/*\n    volumeMounts:\n    - mountPath: $PVC_CLEANER_RM_PATH\n      name: pvc-cleaner-m-vol\n  volumes:\n  - name: pvc-cleaner-m-vol\n    persistentVolumeClaim:\n      claimName: $PVC_CLEANER_CLAIMNAME\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"pvc-cleaner\" has memory limit 0"
+  },
+  {
+    "id": "02937",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"network-joiner\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "02938",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"network-joiner\" does not have a read-only root file system"
+  },
+  {
+    "id": "02939",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"zerotier\" does not have a read-only root file system"
+  },
+  {
+    "id": "02940",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"zerotier\" has SYS_ADMIN capability hence allows privilege escalation."
+  },
+  {
+    "id": "02941",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"network-joiner\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02942",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"zerotier\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02943",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"network-joiner\" has cpu request 0"
+  },
+  {
+    "id": "02944",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"zerotier\" has cpu request 0"
+  },
+  {
+    "id": "02945",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1202.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: zerotier\nspec:\n  selector:\n    matchLabels:\n      app: zerotier\n  template:\n    metadata:\n      labels:\n        app: zerotier\n    spec:\n      initContainers:\n      - name: network-joiner\n        image: busybox\n        env:\n        - name: NETWORK_ID\n          value: <replace with network id>\n        command:\n        - sh\n        - -c\n        - mkdir -p /mnt/networks.d && touch /mnt/networks.d/$(NETWORK_ID).conf\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /mnt\n      containers:\n      - name: zerotier\n        image: zyclonite/zerotier:bridge\n        resources:\n          limits:\n            memory: 128Mi\n            cpu: 500m\n        ports:\n        - name: net\n          containerPort: 9993\n        volumeMounts:\n        - name: vol\n          subPath: config\n          mountPath: /var/lib/zerotier-one\n        - name: tun\n          readOnly: true\n          mountPath: /dev/net/tun\n        securityContext:\n          capabilities:\n            add:\n            - NET_ADMIN\n            - SYS_ADMIN\n      volumes:\n      - name: vol\n        persistentVolumeClaim:\n          claimName: zerotier\n      - name: tun\n        hostPath:\n          path: /dev/net/tun\n          type: ''\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"network-joiner\" has memory limit 0"
+  },
+  {
+    "id": "02946",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1203.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: httpd-b\n  labels:\n    function: serves-http\n    affiliation: b\nspec:\n  containers:\n  - name: httpd\n    image: docker.io/ovidiufeodorov/httpd\n    ports:\n    - containerPort: 80\n      protocol: TCP\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"httpd\" is using an invalid container image, \"docker.io/ovidiufeodorov/httpd\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "02947",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1203.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: httpd-b\n  labels:\n    function: serves-http\n    affiliation: b\nspec:\n  containers:\n  - name: httpd\n    image: docker.io/ovidiufeodorov/httpd\n    ports:\n    - containerPort: 80\n      protocol: TCP\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"httpd\" does not have a read-only root file system"
+  },
+  {
+    "id": "02948",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1203.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: httpd-b\n  labels:\n    function: serves-http\n    affiliation: b\nspec:\n  containers:\n  - name: httpd\n    image: docker.io/ovidiufeodorov/httpd\n    ports:\n    - containerPort: 80\n      protocol: TCP\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"httpd\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02949",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1203.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: httpd-b\n  labels:\n    function: serves-http\n    affiliation: b\nspec:\n  containers:\n  - name: httpd\n    image: docker.io/ovidiufeodorov/httpd\n    ports:\n    - containerPort: 80\n      protocol: TCP\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"httpd\" has cpu request 0"
+  },
+  {
+    "id": "02950",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1203.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: httpd-b\n  labels:\n    function: serves-http\n    affiliation: b\nspec:\n  containers:\n  - name: httpd\n    image: docker.io/ovidiufeodorov/httpd\n    ports:\n    - containerPort: 80\n      protocol: TCP\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"httpd\" has memory limit 0"
+  },
+  {
+    "id": "02951",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1204.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3878\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "02952",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1204.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3878\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "02953",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1204.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3878\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02954",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1204.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3878\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "02955",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1204.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3878\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "02956",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1205.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: pt-1.5-mnist-convergence-v3-8\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: pytorch-1.5\n      spec:\n        containers:\n        - args:\n          - python3\n          - pytorch/xla/test/test_train_mp_mnist.py\n          - --logdir=$(MODEL_DIR)\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"tags_to_ignore\\\": [\\n   \\\"LearningRate\\\"\\\n              \\n  ],\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"metric_subset_to_alert\\\": [\\n   \\\"ExecuteTime__Percentile_99_sec_final\\\"\\\n              ,\\n   \\\"CompileTime__Percentile_99_sec_final\\\",\\n   \\\"total_wall_time\\\"\\\n              ,\\n   \\\"Accuracy/test_final\\\",\\n   \\\"aten_ops_sum_final\\\"\\n  ],\\n  \\\"\\\n              metric_success_conditions\\\": {\\n   \\\"Accuracy/test_final\\\": {\\n    \\\"\\\n              comparison\\\": \\\"greater\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"fixed_value\\\"\\\n              : 98\\n    }\\n   },\\n   \\\"CompileTime__Percentile_99_sec_final\\\": {\\n\\\n              \\    \\\"comparison\\\": \\\"less\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"\\\n              stddevs_from_mean\\\": 5\\n    },\\n    \\\"wait_for_n_points_of_history\\\"\\\n              : 10\\n   },\\n   \\\"ExecuteTime__Percentile_99_sec_final\\\": {\\n    \\\"\\\n              comparison\\\": \\\"less\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\"\\\n              : 5\\n    },\\n    \\\"wait_for_n_points_of_history\\\": 10\\n   },\\n   \\\"\\\n              aten_ops_sum_final\\\": {\\n    \\\"comparison\\\": \\\"less_or_equal\\\",\\n  \\\n              \\  \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\": 0\\n    }\\n\\\n              \\   },\\n   \\\"total_wall_time\\\": {\\n    \\\"comparison\\\": \\\"less\\\",\\n \\\n              \\   \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\": 5\\n    },\\n\\\n              \\    \\\"wait_for_n_points_of_history\\\": 10\\n   }\\n  },\\n  \\\"write_to_error_reporting\\\"\\\n              : true\\n },\\n \\\"test_name\\\": \\\"pt-1.5-mnist-convergence-v3-8\\\"\\n}\\n\"\n          - name: MODEL_DIR\n            value: gs://xl-ml-test-us-central1/k8s/mnist/convergence/v3-8/$(JOB_NAME)\n          - name: XLA_USE_BF16\n            value: '0'\n          image: gcr.io/xl-ml-test/pytorch-xla:r1.5\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v3: 8\n            requests:\n              cpu: '4.5'\n              memory: 8Gi\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"train\" does not have a read-only root file system"
+  },
+  {
+    "id": "02957",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1205.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: pt-1.5-mnist-convergence-v3-8\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: pytorch-1.5\n      spec:\n        containers:\n        - args:\n          - python3\n          - pytorch/xla/test/test_train_mp_mnist.py\n          - --logdir=$(MODEL_DIR)\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"tags_to_ignore\\\": [\\n   \\\"LearningRate\\\"\\\n              \\n  ],\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"metric_subset_to_alert\\\": [\\n   \\\"ExecuteTime__Percentile_99_sec_final\\\"\\\n              ,\\n   \\\"CompileTime__Percentile_99_sec_final\\\",\\n   \\\"total_wall_time\\\"\\\n              ,\\n   \\\"Accuracy/test_final\\\",\\n   \\\"aten_ops_sum_final\\\"\\n  ],\\n  \\\"\\\n              metric_success_conditions\\\": {\\n   \\\"Accuracy/test_final\\\": {\\n    \\\"\\\n              comparison\\\": \\\"greater\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"fixed_value\\\"\\\n              : 98\\n    }\\n   },\\n   \\\"CompileTime__Percentile_99_sec_final\\\": {\\n\\\n              \\    \\\"comparison\\\": \\\"less\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"\\\n              stddevs_from_mean\\\": 5\\n    },\\n    \\\"wait_for_n_points_of_history\\\"\\\n              : 10\\n   },\\n   \\\"ExecuteTime__Percentile_99_sec_final\\\": {\\n    \\\"\\\n              comparison\\\": \\\"less\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\"\\\n              : 5\\n    },\\n    \\\"wait_for_n_points_of_history\\\": 10\\n   },\\n   \\\"\\\n              aten_ops_sum_final\\\": {\\n    \\\"comparison\\\": \\\"less_or_equal\\\",\\n  \\\n              \\  \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\": 0\\n    }\\n\\\n              \\   },\\n   \\\"total_wall_time\\\": {\\n    \\\"comparison\\\": \\\"less\\\",\\n \\\n              \\   \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\": 5\\n    },\\n\\\n              \\    \\\"wait_for_n_points_of_history\\\": 10\\n   }\\n  },\\n  \\\"write_to_error_reporting\\\"\\\n              : true\\n },\\n \\\"test_name\\\": \\\"pt-1.5-mnist-convergence-v3-8\\\"\\n}\\n\"\n          - name: MODEL_DIR\n            value: gs://xl-ml-test-us-central1/k8s/mnist/convergence/v3-8/$(JOB_NAME)\n          - name: XLA_USE_BF16\n            value: '0'\n          image: gcr.io/xl-ml-test/pytorch-xla:r1.5\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v3: 8\n            requests:\n              cpu: '4.5'\n              memory: 8Gi\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"train\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02958",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1205.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: pt-1.5-mnist-convergence-v3-8\n  namespace: automated\nspec:\n  jobTemplate:\n    template:\n      metadata:\n        annotations:\n          tf-version.cloud-tpus.google.com: pytorch-1.5\n      spec:\n        containers:\n        - args:\n          - python3\n          - pytorch/xla/test/test_train_mp_mnist.py\n          - --logdir=$(MODEL_DIR)\n          env:\n          - name: POD_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.name\n          - name: POD_UID\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.uid\n          - name: POD_NAMESPACE\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n          - name: JOB_NAME\n            valueFrom:\n              fieldRef:\n                fieldPath: metadata.labels['job-name']\n          - name: METRIC_CONFIG\n            value: \"{\\n \\\"metric_collection_config\\\": {\\n  \\\"default_aggregation_strategies\\\"\\\n              : [\\n   \\\"final\\\"\\n  ],\\n  \\\"tags_to_ignore\\\": [\\n   \\\"LearningRate\\\"\\\n              \\n  ],\\n  \\\"write_to_bigquery\\\": true\\n },\\n \\\"regression_test_config\\\"\\\n              : {\\n  \\\"metric_subset_to_alert\\\": [\\n   \\\"ExecuteTime__Percentile_99_sec_final\\\"\\\n              ,\\n   \\\"CompileTime__Percentile_99_sec_final\\\",\\n   \\\"total_wall_time\\\"\\\n              ,\\n   \\\"Accuracy/test_final\\\",\\n   \\\"aten_ops_sum_final\\\"\\n  ],\\n  \\\"\\\n              metric_success_conditions\\\": {\\n   \\\"Accuracy/test_final\\\": {\\n    \\\"\\\n              comparison\\\": \\\"greater\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"fixed_value\\\"\\\n              : 98\\n    }\\n   },\\n   \\\"CompileTime__Percentile_99_sec_final\\\": {\\n\\\n              \\    \\\"comparison\\\": \\\"less\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"\\\n              stddevs_from_mean\\\": 5\\n    },\\n    \\\"wait_for_n_points_of_history\\\"\\\n              : 10\\n   },\\n   \\\"ExecuteTime__Percentile_99_sec_final\\\": {\\n    \\\"\\\n              comparison\\\": \\\"less\\\",\\n    \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\"\\\n              : 5\\n    },\\n    \\\"wait_for_n_points_of_history\\\": 10\\n   },\\n   \\\"\\\n              aten_ops_sum_final\\\": {\\n    \\\"comparison\\\": \\\"less_or_equal\\\",\\n  \\\n              \\  \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\": 0\\n    }\\n\\\n              \\   },\\n   \\\"total_wall_time\\\": {\\n    \\\"comparison\\\": \\\"less\\\",\\n \\\n              \\   \\\"success_threshold\\\": {\\n     \\\"stddevs_from_mean\\\": 5\\n    },\\n\\\n              \\    \\\"wait_for_n_points_of_history\\\": 10\\n   }\\n  },\\n  \\\"write_to_error_reporting\\\"\\\n              : true\\n },\\n \\\"test_name\\\": \\\"pt-1.5-mnist-convergence-v3-8\\\"\\n}\\n\"\n          - name: MODEL_DIR\n            value: gs://xl-ml-test-us-central1/k8s/mnist/convergence/v3-8/$(JOB_NAME)\n          - name: XLA_USE_BF16\n            value: '0'\n          image: gcr.io/xl-ml-test/pytorch-xla:r1.5\n          imagePullPolicy: Always\n          name: train\n          resources:\n            limits:\n              cloud-tpus.google.com/preemptible-v3: 8\n            requests:\n              cpu: '4.5'\n              memory: 8Gi\n          volumeMounts:\n          - mountPath: /dev/shm\n            name: dshm\n        volumes:\n        - emptyDir:\n            medium: Memory\n          name: dshm\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"train\" has memory limit 0"
+  },
+  {
+    "id": "02959",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1208.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: server\n        image: gidmaster/hipster-paymentservice:v0.0.2\n        ports:\n        - containerPort: 50051\n        env:\n        - name: PORT\n          value: '50051'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 64Mi\n          limits:\n            cpu: 200m\n            memory: 128Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"server\" does not have a read-only root file system"
+  },
+  {
+    "id": "02960",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1208.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: server\n        image: gidmaster/hipster-paymentservice:v0.0.2\n        ports:\n        - containerPort: 50051\n        env:\n        - name: PORT\n          value: '50051'\n        resources:\n          requests:\n            cpu: 100m\n            memory: 64Mi\n          limits:\n            cpu: 200m\n            memory: 128Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"server\" is not set to runAsNonRoot"
+  }
+]

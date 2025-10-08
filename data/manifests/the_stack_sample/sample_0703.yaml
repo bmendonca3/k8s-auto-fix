@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etherpad-lite
+  labels:
+    service: etherpad-lite
+spec:
+  selector:
+    matchLabels:
+      service: etherpad-lite
+  template:
+    metadata:
+      labels:
+        service: etherpad-lite
+    spec:
+      containers:
+      - name: etherpad-lite
+        image: etherpad/etherpad:1.8.6
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SKIN_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: skin
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: env
+        - name: DB_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: db_type
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: db_host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: db_port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: db_name
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: db_user
+        - name: DB_CHARSET
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: db_charset
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ether-config
+              key: port
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: ether-secret
+              key: db_password
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ether-secret
+              key: admin_password
+        ports:
+        - containerPort: 9001
+          name: https
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /opt/etherpad-lite/var
+          name: data-volume
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: ether-data-vol

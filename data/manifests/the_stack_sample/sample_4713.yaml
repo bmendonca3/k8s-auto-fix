@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      com.ovai.application: test-app3
+      com.ovai.service: test-app3-svc
+  template:
+    metadata:
+      annotations:
+        ovai.asaintsever.org/inject: 'true'
+        ovai.asaintsever.org/role: test
+        ovai.asaintsever.org/secrets-path: secret/test/test-app-svc
+        ovai.asaintsever.org/secrets-destination: supersecrets.properties
+      labels:
+        com.ovai.application: test-app3
+        com.ovai.service: test-app3-svc
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: app3-container
+        image: busybox:1.28
+        command:
+        - sh
+        - -c
+        - 'while true;do echo "My secrets are: $(cat /opt/ovai/secrets/supersecrets.properties)";
+          sleep 5; done'

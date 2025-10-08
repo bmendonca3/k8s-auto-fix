@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  labels:
+    app: fluent-bit
+    chart: fluent-bit-2.4.2
+    heritage: Helm
+data:
+  fluent-bit-service.conf: "[SERVICE]\n    Flush        1\n    Daemon       Off\n\
+    \    Log_Level    info\n    Parsers_File parsers.conf\n    Parsers_File parsers_custom.conf"
+  fluent-bit-input.conf: "[INPUT]\n    Name             tail\n    Path           \
+    \  /var/log/containers/sm-*NAMESPACE*.log\n    Parser           docker\n    Tag\
+    \              kube.*\n    Refresh_Interval 5\n    Mem_Buf_Limit    128MB\n  \
+    \  Skip_Long_Lines  On"
+  fluent-bit-filter.conf: "[FILTER]\n    Name                kubernetes\n    Match\
+    \               kube.*\n    Kube_Tag_Prefix     kube.var.log.containers.\n   \
+    \ Kube_URL            https://kubernetes.default.svc:443\n    Kube_CA_File   \
+    \     /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n    Kube_Token_File\
+    \     /var/run/secrets/kubernetes.io/serviceaccount/token\n    Keep_Log      \
+    \      On\n    Merge_Log           On\n    K8S-Logging.Parser  On\n    K8S-Logging.Exclude\
+    \ On\n\n[FILTER]\n    Name        record_modifier\n    Match       kube.*\n  \
+    \  Remove_key  log"
+  fluent-bit-output.conf: "\n[OUTPUT]\n    Name            es\n    Match         \
+    \  kube.*\n    Host            elasticsearch-master\n    Port            9200\n\
+    \    Retry_Limit     False\n    HTTP_User       REP_ES_USER\n    HTTP_Passwd \
+    \    REP_ES_PASS\n    Logstash_Format True\n    Logstash_Prefix fluent-bit-NAMESPACE"
+  fluent-bit.conf: '@INCLUDE fluent-bit-service.conf
+
+    @INCLUDE fluent-bit-input.conf
+
+    @INCLUDE fluent-bit-filter.conf
+
+    @INCLUDE fluent-bit-output.conf'
+  parsers.conf: "[PARSER]\n    Name        panic\n    Format      regex\n    Regex\
+    \       panic*\n    Time_Key    time"

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swift-drive-autopilot
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+data:
+  config.yaml: "chroot: /coreos\nmetrics-listen-address: \":9102\"\n\ndrives:\n{{-\
+    \ if .Values.drives }}\n  {{- range $drives := .Values.drives }}\n  - {{ $drives\
+    \ }}\n  {{- end -}}\n{{ else }}\n  - /dev/sd[a-z]\n  - /dev/sd[a-z][a-z]\n{{ end\
+    \ }}\n\n# the Swift user and group is UID/GID 1000 in the Kolla containers\nchown:\n\
+    \  user: \"1000\"\n  group: \"1000\"\n\n{{ if .Values.encryption_key -}}\nkeys:\n\
+    \  - secret: {{.Values.encryption_key}}\n{{ end }}\n\nswift-id-pool: {{ range\
+    \ $idx := until 99 }}\n  - swift-{{ printf \"%02d\" (add1 $idx) }}\n  {{- if eq\
+    \ 0 (mod (add1 $idx) $.Values.one_spare_disk_every) }}\n  - spare\n  {{- end -}}\n\
+    {{ end -}}"

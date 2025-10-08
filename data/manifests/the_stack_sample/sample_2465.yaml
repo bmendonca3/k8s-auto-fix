@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    service: smartbch
+    version: 0.3.5
+    deploy: smartbch-1
+  name: smartbch
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      service: smartbch
+      deploy: smartbch-1
+  template:
+    metadata:
+      labels:
+        service: smartbch
+        deploy: smartbch-1
+    spec:
+      containers:
+      - args:
+        - start
+        - --mainnet-genesis-height=698502
+        - --https.addr=off
+        - --wss.addr=off
+        command:
+        - ./smartbchd
+        image: zquestz/smartbch:0.3.5
+        imagePullPolicy: Always
+        name: smartbch
+        volumeMounts:
+        - mountPath: /root/.smartbchd
+          name: smartbch-data
+        resources:
+          requests:
+            memory: 9Gi
+          limits:
+            memory: 9Gi
+        ports:
+        - name: api
+          containerPort: 8545
+        - name: websocket
+          containerPort: 8546
+        - name: peer
+          containerPort: 26656
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 600
+      volumes:
+      - name: smartbch-data
+        gcePersistentDisk:
+          pdName: smartbch-data
+          fsType: ext4

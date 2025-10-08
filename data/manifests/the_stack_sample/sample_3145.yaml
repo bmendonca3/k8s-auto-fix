@@ -1,0 +1,217 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-config
+  namespace: nginx-ingress
+data:
+  main-template: "worker_processes  {{.WorkerProcesses}};\n{{- if .WorkerRlimitNofile}}\n\
+    worker_rlimit_nofile {{.WorkerRlimitNofile}};{{end}}\n{{- if .WorkerCPUAffinity}}\n\
+    worker_cpu_affinity {{.WorkerCPUAffinity}};{{end}}\n{{- if .WorkerShutdownTimeout}}\n\
+    worker_shutdown_timeout {{.WorkerShutdownTimeout}};{{end}}\n\ndaemon off;\n\n\
+    error_log  /var/log/nginx/error.log {{.ErrorLogLevel}};\npid        /var/lib/nginx/nginx.pid;\n\
+    \n{{- if .OpenTracingLoadModule}}\nload_module modules/ngx_http_opentracing_module.so;\n\
+    {{- end}}\n\n{{- if .MainSnippets}}\n{{range $value := .MainSnippets}}\n{{$value}}{{end}}\n\
+    {{- end}}\n\nevents {\n    worker_connections  {{.WorkerConnections}};\n}\n\n\
+    http {\n    include       /etc/nginx/mime.types;\n    default_type  application/octet-stream;\n\
+    \n    {{- if .HTTPSnippets}}\n    {{range $value := .HTTPSnippets}}\n    {{$value}}{{end}}\n\
+    \    {{- end}}\n\n    {{if .LogFormat -}}\n    log_format  main {{if .LogFormatEscaping}}escape={{\
+    \ .LogFormatEscaping }} {{end}}\n                     {{range $i, $value := .LogFormat\
+    \ -}}\n                     {{with $value}}'{{if $i}} {{end}}{{$value}}'\n   \
+    \                  {{end}}{{end}};\n    {{- else -}}\n    log_format  main  '$remote_addr\
+    \ - $remote_user [$time_local] \"$request\" '\n                      '$status\
+    \ $body_bytes_sent \"$http_referer\" '\n                      '\"$http_user_agent\"\
+    \ \"$http_x_forwarded_for\"';\n    {{- end}}\n\n    {{if .AccessLogOff}}\n   \
+    \ access_log off;\n    {{else}}\n    access_log  /var/log/nginx/access.log  main;\n\
+    \    {{end}}\n\n    sendfile        on;\n\n    keepalive_timeout {{.KeepaliveTimeout}};\n\
+    \    keepalive_requests {{.KeepaliveRequests}};\n\n    server_names_hash_max_size\
+    \ {{.ServerNamesHashMaxSize}};\n    {{if .ServerNamesHashBucketSize}}server_names_hash_bucket_size\
+    \ {{.ServerNamesHashBucketSize}};{{end}}\n\n    variables_hash_bucket_size {{.VariablesHashBucketSize}};\n\
+    \    variables_hash_max_size {{.VariablesHashMaxSize}};\n\n    map $http_upgrade\
+    \ $connection_upgrade {\n        default upgrade;\n        ''      close;\n  \
+    \  }\n    map $http_upgrade $vs_connection_header {\n        default upgrade;\n\
+    \        ''      $default_connection_header;\n    }\n    {{if .SSLProtocols}}ssl_protocols\
+    \ {{.SSLProtocols}};{{end}}\n    {{if .SSLCiphers}}ssl_ciphers \"{{.SSLCiphers}}\"\
+    ;{{end}}\n    {{if .SSLPreferServerCiphers}}ssl_prefer_server_ciphers on;{{end}}\n\
+    \    {{if .SSLDHParam}}ssl_dhparam {{.SSLDHParam}};{{end}}\n\n    {{if .OpenTracingEnabled}}\n\
+    \    opentracing on;\n    {{end}}\n    {{if .OpenTracingLoadModule}}\n    opentracing_load_tracer\
+    \ {{ .OpenTracingTracer }} /var/lib/nginx/tracer-config.json;\n    {{end}}\n\n\
+    \    {{if .ResolverAddresses}}\n    resolver {{range $resolver := .ResolverAddresses}}{{$resolver}}{{end}}{{if\
+    \ .ResolverValid}} valid={{.ResolverValid}}{{end}}{{if not .ResolverIPV6}} ipv6=off{{end}};\n\
+    \    {{if .ResolverTimeout}}resolver_timeout {{.ResolverTimeout}};{{end}}\n  \
+    \  {{end}}\n\n    server {\n        set $default_connection_header \"\";\n\n \
+    \       listen 80 default_server{{if .ProxyProtocol}} proxy_protocol{{end}};\n\
+    \n        {{if .TLSPassthrough}}\n        listen unix:/var/lib/nginx/passthrough-https.sock\
+    \ ssl default_server{{if .HTTP2}} http2{{end}} proxy_protocol;\n        set_real_ip_from\
+    \ unix:;\n        real_ip_header proxy_protocol;\n        {{else}}\n        listen\
+    \ 443 ssl default_server{{if .HTTP2}} http2{{end}}{{if .ProxyProtocol}} proxy_protocol{{end}};\n\
+    \        {{end}}\n\n        ssl_certificate /etc/nginx/secrets/default;\n    \
+    \    ssl_certificate_key /etc/nginx/secrets/default;\n\n        server_name _;\n\
+    \        server_tokens \"{{.ServerTokens}}\";\n        {{if .DefaultServerAccessLogOff}}\n\
+    \        access_log off;\n        {{end}}\n\n        {{if .OpenTracingEnabled}}\n\
+    \        opentracing off;\n        {{end}}\n\n        {{if .HealthStatus}}\n \
+    \       location {{.HealthStatusURI}} {\n            default_type text/plain;\n\
+    \            return 200 \"healthy\\n\";\n        }\n        {{end}}\n\n      \
+    \  location / {\n           return 404;\n        }\n    }\n\n    {{- if .NginxStatus}}\n\
+    \    server {\n        listen {{.NginxStatusPort}};\n\n        root /usr/share/nginx/html;\n\
+    \n        access_log off;\n\n        {{if .OpenTracingEnabled}}\n        opentracing\
+    \ off;\n        {{end}}\n\n        location  = /dashboard.html {\n        }\n\
+    \        {{range $value := .NginxStatusAllowCIDRs}}\n        allow {{$value}};{{end}}\n\
+    \n        deny all;\n        location /api {\n            api write=off;\n   \
+    \     }\n    }\n    {{- end}}\n\n    server {\n        listen unix:/var/lib/nginx/nginx-plus-api.sock;\n\
+    \        access_log off;\n\n        {{if .OpenTracingEnabled}}\n        opentracing\
+    \ off;\n        {{end}}\n        location /configVersionCheck {\n            if\
+    \ ($config_version_mismatch) {\n                return 503;\n            }\n \
+    \           return 200;\n        }\n\n        location /api {\n            api\
+    \ write=on;\n        }\n    }\n\n    include /etc/nginx/config-version.conf;\n\
+    \    include /etc/nginx/conf.d/*.conf;\n}\n\nstream {\n    {{if .StreamLogFormat\
+    \ -}}\n    log_format  stream-main {{if .StreamLogFormatEscaping}}escape={{ .StreamLogFormatEscaping\
+    \ }} {{end}}\n                            {{range $i, $value := .StreamLogFormat\
+    \ -}}\n                            {{with $value}}'{{if $i}} {{end}}{{$value}}'\n\
+    \                            {{end}}{{end}};\n    {{- else -}}\n    log_format\
+    \  stream-main  '$remote_addr [$time_local] '\n                      '$protocol\
+    \ $status $bytes_sent $bytes_received '\n                      '$session_time\
+    \ \"$ssl_preread_server_name\"';\n    {{- end}}\n\n    access_log  /var/log/nginx/stream-access.log\
+    \  stream-main;\n\n    {{range $value := .StreamSnippets}}\n    {{$value}}{{end}}\n\
+    \n    {{if .TLSPassthrough}}\n    map $ssl_preread_server_name $dest_internal_passthrough\
+    \  {\n        default unix:/var/lib/nginx/passthrough-https.sock;\n        include\
+    \ /etc/nginx/tls-passthrough-hosts.conf;\n    }\n\n    server {\n        listen\
+    \ 443;\n\n        ssl_preread on;\n\n        proxy_protocol on;\n        proxy_pass\
+    \ $dest_internal_passthrough;\n    }\n    {{end}}\n\n    include /etc/nginx/stream-conf.d/*.conf;\n\
+    }\n"
+  ingress-template: "{{range $upstream := .Upstreams}}\nupstream {{$upstream.Name}}\
+    \ {\n        zone {{$upstream.Name}} {{if ne $upstream.UpstreamZoneSize \"0\"\
+    }}{{$upstream.UpstreamZoneSize}}{{else}}256k{{end}};\n        {{if $upstream.LBMethod\
+    \ }}{{$upstream.LBMethod}};{{end}}\n        {{range $server := $upstream.UpstreamServers}}\n\
+    \        server {{$server.Address}}:{{$server.Port}} max_fails={{$server.MaxFails}}\
+    \ fail_timeout={{$server.FailTimeout}} max_conns={{$server.MaxConns}}\n      \
+    \      {{- if $server.SlowStart}} slow_start={{$server.SlowStart}}{{end}}{{if\
+    \ $server.Resolve}} resolve{{end}};{{end}}\n        {{if $upstream.StickyCookie}}\n\
+    \        sticky cookie {{$upstream.StickyCookie}};\n        {{end}}\n        {{if\
+    \ $.Keepalive}}keepalive {{$.Keepalive}};{{end}}\n        {{- if $upstream.UpstreamServers\
+    \ -}}\n        {{- if $upstream.Queue}}\n        queue {{$upstream.Queue}} timeout={{$upstream.QueueTimeout}}s;\n\
+    \        {{- end -}}\n        {{- end}}\n}\n{{- end}}\n\n{{range $server := .Servers}}\n\
+    server {\n        {{if not $server.GRPCOnly}}\n        {{range $port := $server.Ports}}\n\
+    \        listen {{$port}}{{if $server.ProxyProtocol}} proxy_protocol{{end}};\n\
+    \        {{- end}}\n        {{end}}\n\n        {{if $server.SSL}}\n        {{if\
+    \ $server.TLSPassthrough}}\n        listen unix:/var/lib/nginx/passthrough-https.sock\
+    \ ssl{{if $server.HTTP2}} http2{{end}} proxy_protocol;\n        set_real_ip_from\
+    \ unix:;\n        real_ip_header proxy_protocol;\n        {{else}}\n        {{-\
+    \ range $port := $server.SSLPorts}}\n        listen {{$port}} ssl{{if $server.HTTP2}}\
+    \ http2{{end}}{{if $server.ProxyProtocol}} proxy_protocol{{end}};\n        {{-\
+    \ end}}\n        {{end}}\n        ssl_certificate {{$server.SSLCertificate}};\n\
+    \        ssl_certificate_key {{$server.SSLCertificateKey}};\n        {{if $server.SSLCiphers}}\n\
+    \        ssl_ciphers {{$server.SSLCiphers}};\n        {{end}}\n        {{end}}\n\
+    \n        {{range $setRealIPFrom := $server.SetRealIPFrom}}\n        set_real_ip_from\
+    \ {{$setRealIPFrom}};{{end}}\n        {{if $server.RealIPHeader}}real_ip_header\
+    \ {{$server.RealIPHeader}};{{end}}\n        {{if $server.RealIPRecursive}}real_ip_recursive\
+    \ on;{{end}}\n\n        server_tokens \"{{$server.ServerTokens}}\";\n\n      \
+    \  server_name {{$server.Name}};\n\n        status_zone {{$server.StatusZone}};\n\
+    \n        {{if not $server.GRPCOnly}}\n        {{range $proxyHideHeader := $server.ProxyHideHeaders}}\n\
+    \        proxy_hide_header {{$proxyHideHeader}};{{end}}\n        {{range $proxyPassHeader\
+    \ := $server.ProxyPassHeaders}}\n        proxy_pass_header {{$proxyPassHeader}};{{end}}\n\
+    \        {{end}}\n\n        {{- if and $server.HSTS (or $server.SSL $server.HSTSBehindProxy)}}\n\
+    \        set $hsts_header_val \"\";\n        proxy_hide_header Strict-Transport-Security;\n\
+    \        {{- if $server.HSTSBehindProxy}}\n        if ($http_x_forwarded_proto\
+    \ = 'https') {\n        {{else}}\n        if ($https = on) {\n        {{- end}}\n\
+    \                set $hsts_header_val \"max-age={{$server.HSTSMaxAge}}; {{if $server.HSTSIncludeSubdomains}}includeSubDomains;\
+    \ {{end}}preload\";\n        }\n\n        add_header Strict-Transport-Security\
+    \ \"$hsts_header_val\" always;\n        {{end}}\n\n        {{if $server.SSL}}\n\
+    \        {{if not $server.GRPCOnly}}\n        {{- if $server.SSLRedirect}}\n \
+    \       if ($scheme = http) {\n                return 301 https://$host:{{index\
+    \ $server.SSLPorts 0}}$request_uri;\n        }\n        {{- end}}\n        {{end}}\n\
+    \        {{- end}}\n\n        {{- if $server.RedirectToHTTPS}}\n        if ($http_x_forwarded_proto\
+    \ = 'http') {\n                return 301 https://$host$request_uri;\n       \
+    \ }\n        {{- end}}\n\n        {{with $jwt := $server.JWTAuth}}\n        auth_jwt_key_file\
+    \ {{$jwt.Key}};\n        auth_jwt \"{{.Realm}}\"{{if $jwt.Token}} token={{$jwt.Token}}{{end}};\n\
+    \n        {{- if $jwt.RedirectLocationName}}\n        error_page 401 {{$jwt.RedirectLocationName}};\n\
+    \        {{end}}\n        {{end}}\n\n        {{- if $server.ServerSnippets}}\n\
+    \        {{range $value := $server.ServerSnippets}}\n        {{$value}}{{end}}\n\
+    \        {{- end}}\n\n        {{- range $healthCheck := $server.HealthChecks}}\n\
+    \        location @hc-{{$healthCheck.UpstreamName}} {\n                {{- range\
+    \ $name, $header := $healthCheck.Headers}}\n                proxy_set_header {{$name}}\
+    \ \"{{$header}}\";\n                {{- end }}\n                proxy_connect_timeout\
+    \ {{$healthCheck.TimeoutSeconds}}s;\n                proxy_read_timeout {{$healthCheck.TimeoutSeconds}}s;\n\
+    \                proxy_send_timeout {{$healthCheck.TimeoutSeconds}}s;\n      \
+    \          proxy_pass {{$healthCheck.Scheme}}://{{$healthCheck.UpstreamName}};\n\
+    \                health_check {{if $healthCheck.Mandatory}}mandatory {{end}}uri={{$healthCheck.URI}}\
+    \ interval=\n                        {{- $healthCheck.Interval}}s fails={{$healthCheck.Fails}}\
+    \ passes={{$healthCheck.Passes}};\n        }\n        {{end -}}\n\n        {{-\
+    \ range $location := $server.JWTRedirectLocations}}\n        location {{$location.Name}}\
+    \ {\n                internal;\n                return 302 {{$location.LoginURL}};\n\
+    \        }\n        {{end -}}\n\n        {{range $location := $server.Locations}}\n\
+    \        location {{$location.Path}} {\n                {{with $location.MinionIngress}}\n\
+    \                {{end}}\n                {{if $location.GRPC}}\n            \
+    \    {{if not $server.GRPCOnly}}\n                error_page 400 @grpcerror400;\n\
+    \                error_page 401 @grpcerror401;\n                error_page 403\
+    \ @grpcerror403;\n                error_page 404 @grpcerror404;\n            \
+    \    error_page 405 @grpcerror405;\n                error_page 408 @grpcerror408;\n\
+    \                error_page 414 @grpcerror414;\n                error_page 426\
+    \ @grpcerror426;\n                error_page 500 @grpcerror500;\n            \
+    \    error_page 501 @grpcerror501;\n                error_page 502 @grpcerror502;\n\
+    \                error_page 503 @grpcerror503;\n                error_page 504\
+    \ @grpcerror504;\n                {{end}}\n\n                {{- if $location.LocationSnippets}}\n\
+    \                {{range $value := $location.LocationSnippets}}\n            \
+    \    {{$value}}{{end}}\n                {{- end}}\n\n                {{with $jwt\
+    \ := $location.JWTAuth}}\n                auth_jwt_key_file {{$jwt.Key}};\n  \
+    \              auth_jwt \"{{.Realm}}\"{{if $jwt.Token}} token={{$jwt.Token}}{{end}};\n\
+    \                {{end}}\n\n                grpc_connect_timeout {{$location.ProxyConnectTimeout}};\n\
+    \                grpc_read_timeout {{$location.ProxyReadTimeout}};\n         \
+    \       grpc_send_timeout {{$location.ProxySendTimeout}};\n                grpc_set_header\
+    \ Host $host;\n                grpc_set_header X-Real-IP $remote_addr;\n     \
+    \           grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    \
+    \            grpc_set_header X-Forwarded-Host $host;\n                grpc_set_header\
+    \ X-Forwarded-Port $server_port;\n                grpc_set_header X-Forwarded-Proto\
+    \ $scheme;\n\n                {{- if $location.ProxyBufferSize}}\n           \
+    \     grpc_buffer_size {{$location.ProxyBufferSize}};\n                {{- end}}\n\
+    \n                {{if $location.SSL}}\n                grpc_pass grpcs://{{$location.Upstream.Name}}\n\
+    \                {{else}}\n                grpc_pass grpc://{{$location.Upstream.Name}};\n\
+    \                {{end}}\n                {{else}}\n                proxy_http_version\
+    \ 1.1;\n                {{if $location.Websocket}}\n                proxy_set_header\
+    \ Upgrade $http_upgrade;\n                proxy_set_header Connection $connection_upgrade;\n\
+    \                {{- else}}\n                {{- if $.Keepalive}}proxy_set_header\
+    \ Connection \"\";{{end}}\n                {{- end}}\n\n                {{- if\
+    \ $location.LocationSnippets}}\n                {{range $value := $location.LocationSnippets}}\n\
+    \                {{$value}}{{end}}\n                {{- end}}\n\n            \
+    \    {{ with $jwt := $location.JWTAuth }}\n                auth_jwt_key_file {{$jwt.Key}};\n\
+    \                auth_jwt \"{{.Realm}}\"{{if $jwt.Token}} token={{$jwt.Token}}{{end}};\n\
+    \                {{if $jwt.RedirectLocationName}}\n                error_page\
+    \ 401 {{$jwt.RedirectLocationName}};\n                {{end}}\n              \
+    \  {{end}}\n\n                proxy_connect_timeout {{$location.ProxyConnectTimeout}};\n\
+    \                proxy_read_timeout {{$location.ProxyReadTimeout}};\n        \
+    \        proxy_send_timeout {{$location.ProxySendTimeout}};\n                client_max_body_size\
+    \ {{$location.ClientMaxBodySize}};\n                proxy_set_header Host $host;\n\
+    \                proxy_set_header X-Real-IP $remote_addr;\n                proxy_set_header\
+    \ X-Forwarded-For $proxy_add_x_forwarded_for;\n                proxy_set_header\
+    \ X-Forwarded-Host $host;\n                proxy_set_header X-Forwarded-Port $server_port;\n\
+    \                proxy_set_header X-Forwarded-Proto {{if $server.RedirectToHTTPS}}https{{else}}$scheme{{end}};\n\
+    \                proxy_buffering {{if $location.ProxyBuffering}}on{{else}}off{{end}};\n\
+    \                {{- if $location.ProxyBuffers}}\n                proxy_buffers\
+    \ {{$location.ProxyBuffers}};\n                {{- end}}\n                {{-\
+    \ if $location.ProxyBufferSize}}\n                proxy_buffer_size {{$location.ProxyBufferSize}};\n\
+    \                {{- end}}\n                {{- if $location.ProxyMaxTempFileSize}}\n\
+    \                proxy_max_temp_file_size {{$location.ProxyMaxTempFileSize}};\n\
+    \                {{- end}}\n                {{if $location.SSL}}\n           \
+    \     proxy_pass https://{{$location.Upstream.Name}}{{$location.Rewrite}};\n \
+    \               {{else}}\n                proxy_pass http://{{$location.Upstream.Name}}{{$location.Rewrite}};\n\
+    \                {{end}}\n                {{end}}\n        }{{end}}\n        {{if\
+    \ $server.GRPCOnly}}\n        error_page 400 @grpcerror400;\n        error_page\
+    \ 401 @grpcerror401;\n        error_page 403 @grpcerror403;\n        error_page\
+    \ 404 @grpcerror404;\n        error_page 405 @grpcerror405;\n        error_page\
+    \ 408 @grpcerror408;\n        error_page 414 @grpcerror414;\n        error_page\
+    \ 426 @grpcerror426;\n        error_page 500 @grpcerror500;\n        error_page\
+    \ 501 @grpcerror501;\n        error_page 502 @grpcerror502;\n        error_page\
+    \ 503 @grpcerror503;\n        error_page 504 @grpcerror504;\n        {{end}}\n\
+    \        {{if $server.HTTP2}}\n        location @grpcerror400 { default_type application/grpc;\
+    \ return 400 \"\\n\"; }\n        location @grpcerror401 { default_type application/grpc;\
+    \ return 401 \"\\n\"; }\n        location @grpcerror403 { default_type application/grpc;\
+    \ return 403 \"\\n\"; }\n        location @grpcerror404 { default_type application/grpc;\
+    \ return 404 \"\\n\"; }\n        location @grpcerror405 { default_type application/grpc;\
+    \ return 405 \"\\n\"; }\n        location @grpcerror408 { default_type application/grpc;\
+    \ return 408 \"\\n\"; }\n        location @grpcerror414 { default_type application/grpc;\
+    \ return 414 \"\\n\"; }\n        location @grpcerror426 { default_type application/grpc;\
+    \ return 426 \"\\n\"; }\n        location @grpcerror500 { default_type application/grpc;\
+    \ return 500 \"\\n\"; }\n        location @grpcerror501 { default_type application/grpc;\
+    \ return 501 \"\\n\"; }\n        location @grpcerror502 { default_type application/grpc;\
+    \ return 502 \"\\n\"; }\n        location @grpcerror503 { default_type application/grpc;\
+    \ return 503 \"\\n\"; }\n        location @grpcerror504 { default_type application/grpc;\
+    \ return 504 \"\\n\"; }\n        {{end}}\n}{{end}}"

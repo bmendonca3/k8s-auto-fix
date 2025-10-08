@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -64,49 +65,101 @@ def verify(
         "--include-errors/--no-include-errors",
         help="Include verifier error messages in the output JSON.",
     ),
+    jobs: int = typer.Option(
+        1,
+        "--jobs",
+        "-j",
+        min=1,
+        help="Number of parallel workers to use (default: 1).",
+    ),
 ) -> None:
     patch_records = _load_array(patches, "patches")
     detection_map = _load_detections(detections)
-    verifier = Verifier(
-        kubectl_cmd=kubectl_cmd,
-        require_kubectl=require_kubectl,
-        enable_rescan=enable_rescan,
-        kube_linter_cmd=kube_linter_cmd,
-        kyverno_cmd=kyverno_cmd,
-        policies_dir=policies_dir,
-    )
+
+    verifier_kwargs = {
+        "kubectl_cmd": kubectl_cmd,
+        "require_kubectl": require_kubectl,
+        "enable_rescan": enable_rescan,
+        "kube_linter_cmd": kube_linter_cmd,
+        "kyverno_cmd": kyverno_cmd,
+        "policies_dir": policies_dir,
+    }
 
     results: List[Dict[str, Any]] = []
-    for record in patch_records:
-        patch_id = str(record.get("id"))
-        policy_id = record.get("policy_id")
-        patch_ops = record.get("patch")
-
-        if patch_id not in detection_map:
-            raise typer.BadParameter(f"Detection id {patch_id} missing from {detections}")
-        if not isinstance(patch_ops, list):
-            raise typer.BadParameter(f"Patch for id {patch_id} must be a list of operations")
-        if not isinstance(policy_id, str):
-            raise typer.BadParameter(f"Patch for id {patch_id} missing policy_id")
-
-        detection = detection_map[patch_id]
-        manifest_yaml = detection["manifest_yaml"]
-
-        result = verifier.verify(manifest_yaml, patch_ops, policy_id)
-        rec = {
-            "id": patch_id,
-            "accepted": result.accepted,
-            "ok_schema": result.ok_schema,
-            "ok_policy": result.ok_policy,
-            "patched_yaml": result.patched_yaml,
-        }
-        if include_errors:
-            rec["errors"] = result.errors
-        results.append(rec)
+    if jobs <= 1:
+        verifier = Verifier(**verifier_kwargs)
+        for record in patch_records:
+            results.append(
+                _verify_record(
+                    record,
+                    detection_map=detection_map,
+                    include_errors=include_errors,
+                    verifier_kwargs=verifier_kwargs,
+                    verifier=verifier,
+                    detections_path=detections,
+                )
+            )
+    else:
+        jobs = min(jobs, len(patch_records))
+        with ThreadPoolExecutor(max_workers=jobs) as executor:
+            futures = []
+            for record in patch_records:
+                futures.append(
+                    executor.submit(
+                        _verify_record,
+                        record,
+                        detection_map=detection_map,
+                        include_errors=include_errors,
+                        verifier_kwargs=verifier_kwargs,
+                        detections_path=detections,
+                    )
+                )
+            for future in futures:
+                results.append(future.result())
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     typer.echo(f"Verified {len(results)} patch(es) to {out.resolve()}")
+
+
+def _verify_record(
+    record: Dict[str, Any],
+    *,
+    detection_map: Dict[str, Dict[str, Any]],
+    include_errors: bool,
+    verifier_kwargs: Dict[str, Any],
+    detections_path: Path,
+    verifier: Optional[Verifier] = None,
+) -> Dict[str, Any]:
+    patch_id = str(record.get("id"))
+    policy_id = record.get("policy_id")
+    patch_ops = record.get("patch")
+
+    if patch_id not in detection_map:
+        raise typer.BadParameter(f"Detection id {patch_id} missing from {detections_path}")
+    if not isinstance(patch_ops, list):
+        raise typer.BadParameter(f"Patch for id {patch_id} must be a list of operations")
+    if not isinstance(policy_id, str):
+        raise typer.BadParameter(f"Patch for id {patch_id} missing policy_id")
+
+    detection = detection_map[patch_id]
+    manifest_yaml = detection["manifest_yaml"]
+
+    verifier_local = verifier if verifier is not None else Verifier(**verifier_kwargs)
+    result = verifier_local.verify(manifest_yaml, patch_ops, policy_id)
+    record_out = {
+        "id": patch_id,
+        "policy_id": policy_id,
+        "accepted": result.accepted,
+        "ok_schema": result.ok_schema,
+        "ok_policy": result.ok_policy,
+        "ok_safety": result.ok_safety,
+        "ok_rescan": result.ok_rescan,
+        "patched_yaml": result.patched_yaml,
+    }
+    if include_errors:
+        record_out["errors"] = result.errors
+    return record_out
 
 
 def _load_array(path: Path, kind: str) -> List[Any]:

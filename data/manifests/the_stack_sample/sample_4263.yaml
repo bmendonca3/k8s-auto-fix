@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-mybatis-migration-app
+  labels:
+    app: db-mybatis-migration-app
+spec:
+  selector:
+    matchLabels:
+      app: db-mybatis-migration-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: db-mybatis-migration-app
+    spec:
+      initContainers:
+      - name: db-mybatis-migration-verification
+        image: example-mybatis-database-migration:v2
+        imagePullPolicy: IfNotPresent
+        command:
+        - bash
+        - -c
+        - /opt/migrations/bin/migrate status | tee /dev/stderr | grep -q '...pending...'
+          && exit 1 || exit 0
+      containers:
+      - name: db-mybatis-migration-some-app
+        image: nginx:stable
+        imagePullPolicy: IfNotPresent

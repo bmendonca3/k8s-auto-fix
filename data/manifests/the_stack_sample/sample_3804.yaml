@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    name: cartservice
+  name: cartservice
+  namespace: hipster-shop
+spec:
+  minReadySeconds: 30
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: cartservice
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cartservice
+    spec:
+      containers:
+      - args: []
+        env:
+        - name: REDIS_ADDR
+          value: redis-cart-master:6379
+        - name: PORT
+          value: '7070'
+        - name: LISTEN_ADDR
+          value: 0.0.0.0
+        image: gcr.io/google-samples/microservices-demo/cartservice:v0.1.3
+        imagePullPolicy: Always
+        name: server
+        ports:
+        - containerPort: 7070
+          name: grpc
+        resources:
+          limits:
+            cpu: 300m
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 64Mi
+        volumeMounts: []
+      imagePullSecrets: []
+      initContainers: []
+      volumes: []

@@ -1,0 +1,454 @@
+[
+  {
+    "id": "03001",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-network\n  labels:\n    micro: runtime\n    name: micro-network\n  annotations:\n    name: go.micro.network\n    version: latest\n    source: github.com/itzmanish/micro\n    owner: micro\n    group: micro\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: micro-network\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-network\n        micro: runtime\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchExpressions:\n                - key: name\n                  operator: In\n                  values:\n                  - micro-network\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: shared-data\n        emptyDir: {}\n      containers:\n      - name: network\n        env:\n        - name: MICRO_NETWORK_TOKEN\n          value: micro.mu\n        - name: MICRO_NETWORK_ADVERTISE_STRATEGY\n          value: best\n        - name: MICRO_LOG_LEVEL\n          value: debug\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_SERVER_ADDRESS\n          value: 0.0.0.0:8080\n        args:\n        - network\n        image: micro/micro:stable\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8080\n          name: service-port\n        - containerPort: 8085\n          name: network-port\n          protocol: UDP\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03002",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: micro-network\n  labels:\n    micro: runtime\n    name: micro-network\n  annotations:\n    name: go.micro.network\n    version: latest\n    source: github.com/itzmanish/micro\n    owner: micro\n    group: micro\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: micro-network\n      micro: runtime\n  template:\n    metadata:\n      labels:\n        name: micro-network\n        micro: runtime\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchExpressions:\n                - key: name\n                  operator: In\n                  values:\n                  - micro-network\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: shared-data\n        emptyDir: {}\n      containers:\n      - name: network\n        env:\n        - name: MICRO_NETWORK_TOKEN\n          value: micro.mu\n        - name: MICRO_NETWORK_ADVERTISE_STRATEGY\n          value: best\n        - name: MICRO_LOG_LEVEL\n          value: debug\n        - name: MICRO_BROKER\n          value: nats\n        - name: MICRO_BROKER_ADDRESS\n          value: nats-cluster\n        - name: MICRO_REGISTRY\n          value: etcd\n        - name: MICRO_REGISTRY_ADDRESS\n          value: etcd-cluster-client\n        - name: MICRO_SERVER_ADDRESS\n          value: 0.0.0.0:8080\n        args:\n        - network\n        image: micro/micro:stable\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 8080\n          name: service-port\n        - containerPort: 8085\n          name: network-port\n          protocol: UDP\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03003",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03004",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03005",
+    "policy_id": "drop_capabilities",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03006",
+    "policy_id": "no_privileged",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03007",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03008",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03009",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03010",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03011",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidia-driver-installer\n  namespace: kube-system\n  labels:\n    k8s-app: nvidia-driver-installer\nspec:\n  selector:\n    matchLabels:\n      k8s-app: nvidia-driver-installer\n  template:\n    metadata:\n      labels:\n        name: nvidia-driver-installer\n        k8s-app: nvidia-driver-installer\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-accelerator\n                operator: Exists\n      volumes:\n      - name: dev\n        hostPath:\n          path: /dev\n      - name: vulkan-icd-mount\n        hostPath:\n          path: /home/kubernetes/bin/nvidia/vulkan/icd.d\n      - name: nvidia-install-dir-host\n        hostPath:\n          path: /home/kubernetes/bin/nvidia\n      - name: root-mount\n        hostPath:\n          path: /\n      initContainers:\n      - image: gcr.io/cos-cloud/cos-gpu-installer@sha256:8d86a652759f80595cafed7d3dcde3dc53f57f9bc1e33b27bc3cfa7afea8d483\n        name: nvidia-driver-installer\n        resources:\n          requests:\n            cpu: '0.15'\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        env:\n        - name: NVIDIA_INSTALL_DIR_HOST\n          value: /home/kubernetes/bin/nvidia\n        - name: NVIDIA_INSTALL_DIR_CONTAINER\n          value: /usr/local/nvidia\n        - name: VULKAN_ICD_DIR_HOST\n          value: /home/kubernetes/bin/nvidia/vulkan/icd.d\n        - name: VULKAN_ICD_DIR_CONTAINER\n          value: /etc/vulkan/icd.d\n        - name: ROOT_MOUNT_DIR\n          value: /root\n        - name: NVIDIA_DRIVER_VERSION\n          value: 450.51.06\n        volumeMounts:\n        - name: nvidia-install-dir-host\n          mountPath: /usr/local/nvidia\n        - name: vulkan-icd-mount\n          mountPath: /etc/vulkan/icd.d\n        - name: dev\n          mountPath: /dev\n        - name: root-mount\n          mountPath: /root\n      containers:\n      - image: gcr.io/google-containers/pause:2.0\n        name: pause\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03012",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7863\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03013",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7863\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03014",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7863\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03015",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7863\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03016",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7863\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03017",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20220104-d6f21887c1\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "errors": []
+  },
+  {
+    "id": "03018",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20220104-d6f21887c1\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "errors": []
+  },
+  {
+    "id": "03019",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20220104-d6f21887c1\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "errors": []
+  },
+  {
+    "id": "03020",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: cherrypicker\n  labels:\n    app: cherrypicker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cherrypicker\n  template:\n    metadata:\n      labels:\n        app: cherrypicker\n    spec:\n      serviceAccountName: ''\n      serviceAccount: ''\n      containers:\n      - name: cherrypicker\n        image: gcr.io/k8s-prow/cherrypicker:v20220104-d6f21887c1\n        imagePullPolicy: Always\n        args:\n        - --github-token-path=/etc/github/token\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --dry-run=false\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: tmp\n          mountPath: /tmp\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: tmp\n        emptyDir: {}\n      - name: hmac\n        secret:\n          secretName: hmac-token\n      - name: github-token\n        secret:\n          secretName: k8s-infra-cherrypick-robot-github-token\n",
+    "errors": []
+  },
+  {
+    "id": "03021",
+    "policy_id": "env_var_secret",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03022",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03023",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03024",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03025",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03026",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03027",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: strimzi-cluster-operator\n  labels:\n    app: strimzi\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: strimzi-cluster-operator\n      strimzi.io/kind: cluster-operator\n  template:\n    metadata:\n      labels:\n        name: strimzi-cluster-operator\n        strimzi.io/kind: cluster-operator\n    spec:\n      serviceAccountName: strimzi-cluster-operator\n      volumes:\n      - name: strimzi-tmp\n        emptyDir:\n          medium: Memory\n          sizeLimit: 1Mi\n      - name: co-config-volume\n        configMap:\n          name: strimzi-cluster-operator\n      containers:\n      - name: strimzi-cluster-operator\n        image: quay.io/strimzi/operator:stable\n        ports:\n        - containerPort: 8080\n          name: http\n        args:\n        - /opt/strimzi/bin/cluster_operator_run.sh\n        volumeMounts:\n        - name: strimzi-tmp\n          mountPath: /tmp\n        - name: co-config-volume\n          mountPath: /opt/strimzi/custom-config/\n        env:\n        - name: STRIMZI_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS\n          value: '120000'\n        - name: STRIMZI_OPERATION_TIMEOUT_MS\n          value: '300000'\n        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_KAFKA_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_CONNECT_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE\n          value: quay.io/strimzi/kafka-bridge:0.20.2\n        - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE\n          value: quay.io/strimzi/jmxtrans:latest\n        - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE\n          value: quay.io/strimzi/kaniko-executor:latest\n        - name: STRIMZI_DEFAULT_MAVEN_BUILDER\n          value: quay.io/strimzi/maven-builder:latest\n        - name: STRIMZI_OPERATOR_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_FEATURE_GATES\n          value: ''\n        livenessProbe:\n          httpGet:\n            path: /healthy\n            port: http\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: http\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 384Mi\n          requests:\n            cpu: 200m\n            memory: 384Mi\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03028",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: strimzi-cluster-operator\n  labels:\n    app: strimzi\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: strimzi-cluster-operator\n      strimzi.io/kind: cluster-operator\n  template:\n    metadata:\n      labels:\n        name: strimzi-cluster-operator\n        strimzi.io/kind: cluster-operator\n    spec:\n      serviceAccountName: strimzi-cluster-operator\n      volumes:\n      - name: strimzi-tmp\n        emptyDir:\n          medium: Memory\n          sizeLimit: 1Mi\n      - name: co-config-volume\n        configMap:\n          name: strimzi-cluster-operator\n      containers:\n      - name: strimzi-cluster-operator\n        image: quay.io/strimzi/operator:stable\n        ports:\n        - containerPort: 8080\n          name: http\n        args:\n        - /opt/strimzi/bin/cluster_operator_run.sh\n        volumeMounts:\n        - name: strimzi-tmp\n          mountPath: /tmp\n        - name: co-config-volume\n          mountPath: /opt/strimzi/custom-config/\n        env:\n        - name: STRIMZI_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS\n          value: '120000'\n        - name: STRIMZI_OPERATION_TIMEOUT_MS\n          value: '300000'\n        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_KAFKA_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_CONNECT_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE\n          value: quay.io/strimzi/kafka-bridge:0.20.2\n        - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE\n          value: quay.io/strimzi/jmxtrans:latest\n        - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE\n          value: quay.io/strimzi/kaniko-executor:latest\n        - name: STRIMZI_DEFAULT_MAVEN_BUILDER\n          value: quay.io/strimzi/maven-builder:latest\n        - name: STRIMZI_OPERATOR_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_FEATURE_GATES\n          value: ''\n        livenessProbe:\n          httpGet:\n            path: /healthy\n            port: http\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: http\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 384Mi\n          requests:\n            cpu: 200m\n            memory: 384Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03029",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: strimzi-cluster-operator\n  labels:\n    app: strimzi\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: strimzi-cluster-operator\n      strimzi.io/kind: cluster-operator\n  template:\n    metadata:\n      labels:\n        name: strimzi-cluster-operator\n        strimzi.io/kind: cluster-operator\n    spec:\n      serviceAccountName: strimzi-cluster-operator\n      volumes:\n      - name: strimzi-tmp\n        emptyDir:\n          medium: Memory\n          sizeLimit: 1Mi\n      - name: co-config-volume\n        configMap:\n          name: strimzi-cluster-operator\n      containers:\n      - name: strimzi-cluster-operator\n        image: quay.io/strimzi/operator:stable\n        ports:\n        - containerPort: 8080\n          name: http\n        args:\n        - /opt/strimzi/bin/cluster_operator_run.sh\n        volumeMounts:\n        - name: strimzi-tmp\n          mountPath: /tmp\n        - name: co-config-volume\n          mountPath: /opt/strimzi/custom-config/\n        env:\n        - name: STRIMZI_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS\n          value: '120000'\n        - name: STRIMZI_OPERATION_TIMEOUT_MS\n          value: '300000'\n        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE\n          value: quay.io/strimzi/kafka:latest-kafka-3.0.0\n        - name: STRIMZI_KAFKA_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_CONNECT_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES\n          value: '2.8.0=quay.io/strimzi/kafka:latest-kafka-2.8.0\n\n            2.8.1=quay.io/strimzi/kafka:latest-kafka-2.8.1\n\n            3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0\n\n            '\n        - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE\n          value: quay.io/strimzi/operator:latest\n        - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE\n          value: quay.io/strimzi/kafka-bridge:0.20.2\n        - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE\n          value: quay.io/strimzi/jmxtrans:latest\n        - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE\n          value: quay.io/strimzi/kaniko-executor:latest\n        - name: STRIMZI_DEFAULT_MAVEN_BUILDER\n          value: quay.io/strimzi/maven-builder:latest\n        - name: STRIMZI_OPERATOR_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: STRIMZI_FEATURE_GATES\n          value: ''\n        livenessProbe:\n          httpGet:\n            path: /healthy\n            port: http\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: http\n          initialDelaySeconds: 10\n          periodSeconds: 30\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 384Mi\n          requests:\n            cpu: 200m\n            memory: 384Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03030",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    name: hello-node\n  name: hello-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: hello-node\n  template:\n    metadata:\n      labels:\n        name: hello-node\n    spec:\n      containers:\n      - image: asia.gcr.io/<project id>/hello-node:v1\n        name: hello-node\n        ports:\n        - containerPort: 8080\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03031",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    name: hello-node\n  name: hello-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: hello-node\n  template:\n    metadata:\n      labels:\n        name: hello-node\n    spec:\n      containers:\n      - image: asia.gcr.io/<project id>/hello-node:v1\n        name: hello-node\n        ports:\n        - containerPort: 8080\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03032",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    name: hello-node\n  name: hello-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: hello-node\n  template:\n    metadata:\n      labels:\n        name: hello-node\n    spec:\n      containers:\n      - image: asia.gcr.io/<project id>/hello-node:v1\n        name: hello-node\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03033",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    name: hello-node\n  name: hello-node\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: hello-node\n  template:\n    metadata:\n      labels:\n        name: hello-node\n    spec:\n      containers:\n      - image: asia.gcr.io/<project id>/hello-node:v1\n        name: hello-node\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03034",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mock-ai\n  labels:\n    app: mock-ai\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock-ai\n  template:\n    metadata:\n      name: mock-ai\n      labels:\n        app: mock-ai\n    spec:\n      containers:\n      - name: mock-ai\n        image: europe-west2-docker.pkg.dev/ons-ci-int/int-docker-snapshot/mock-ai:Fix_file_listing_in_help_endpoint\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: '0.1'\n            memory: 512Mi\n          limits:\n            cpu: 0.5M\n            memory: 1024Mi\n        readinessProbe:\n          httpGet:\n            path: /info\n            port: 8162\n          initialDelaySeconds: 20\n          periodSeconds: 10\n          failureThreshold: 3\n          successThreshold: 1\n        livenessProbe:\n          httpGet:\n            path: /info\n            port: 8162\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          failureThreshold: 3\n          successThreshold: 1\n        ports:\n        - name: http-server\n          containerPort: 8162\n        env:\n        - name: JAVA_TOOL_OPTIONS\n          value: -Dspring.profiles.active=dev -Dlogging.level.uk.gov.ons.ctp=DEBUG\n            -Dlogging.level.org.springframework=WARN -Dendpoints.autoconfig.enabled=false\n            -Dendpoints.beans.enabled=false -Dendpoints.configprops.enabled=false\n            -Dendpoints.dump.enabled=false -Dendpoints.env.enabled=false -Dendpoints.metrics.enabled=false\n            -Dendpoints.mapping.enabled=false -Dendpoints.shutdown.enabled=false -Dendpoints.trace.enabled=false\n            -Dmanagement.health.rabbit.enabled=false\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03035",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mock-ai\n  labels:\n    app: mock-ai\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock-ai\n  template:\n    metadata:\n      name: mock-ai\n      labels:\n        app: mock-ai\n    spec:\n      containers:\n      - name: mock-ai\n        image: europe-west2-docker.pkg.dev/ons-ci-int/int-docker-snapshot/mock-ai:Fix_file_listing_in_help_endpoint\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: '0.1'\n            memory: 512Mi\n          limits:\n            cpu: 0.5M\n            memory: 1024Mi\n        readinessProbe:\n          httpGet:\n            path: /info\n            port: 8162\n          initialDelaySeconds: 20\n          periodSeconds: 10\n          failureThreshold: 3\n          successThreshold: 1\n        livenessProbe:\n          httpGet:\n            path: /info\n            port: 8162\n          initialDelaySeconds: 30\n          periodSeconds: 10\n          failureThreshold: 3\n          successThreshold: 1\n        ports:\n        - name: http-server\n          containerPort: 8162\n        env:\n        - name: JAVA_TOOL_OPTIONS\n          value: -Dspring.profiles.active=dev -Dlogging.level.uk.gov.ons.ctp=DEBUG\n            -Dlogging.level.org.springframework=WARN -Dendpoints.autoconfig.enabled=false\n            -Dendpoints.beans.enabled=false -Dendpoints.configprops.enabled=false\n            -Dendpoints.dump.enabled=false -Dendpoints.env.enabled=false -Dendpoints.metrics.enabled=false\n            -Dendpoints.mapping.enabled=false -Dendpoints.shutdown.enabled=false -Dendpoints.trace.enabled=false\n            -Dmanagement.health.rabbit.enabled=false\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03036",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03037",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03038",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03039",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  },
+  {
+    "id": "03040",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: selinuxoptions0\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      seLinuxOptions: {}\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seLinuxOptions:\n      type: somevalue\n",
+    "errors": []
+  }
+]

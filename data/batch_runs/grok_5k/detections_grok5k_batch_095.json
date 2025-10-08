@@ -1,0 +1,282 @@
+[
+  {
+    "id": "03801",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1692.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    injection.smarttuning.ibm.com: 'true'\n  labels:\n    app: mock\n  name: mock\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock\n  template:\n    metadata:\n      labels:\n        app: mock\n    spec:\n      containers:\n      - image: open-liberty:full-java11-openj9\n        imagePullPolicy: IfNotPresent\n        name: openliberty\n        ports:\n        - containerPort: 9080\n        envFrom:\n        - configMapRef:\n            name: mock-envvar\n        volumeMounts:\n        - mountPath: /config/jvm.options\n          subPath: jvm.options\n          name: mock-jvm\n        securityContext:\n          runAsUser: 0\n          privileged: true\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        readinessProbe:\n          initialDelaySeconds: 30\n          httpGet:\n            port: 9080\n      volumes:\n      - name: mock-jvm\n        configMap:\n          name: mock-jvm\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"openliberty\" is privileged"
+  },
+  {
+    "id": "03802",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1692.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    injection.smarttuning.ibm.com: 'true'\n  labels:\n    app: mock\n  name: mock\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock\n  template:\n    metadata:\n      labels:\n        app: mock\n    spec:\n      containers:\n      - image: open-liberty:full-java11-openj9\n        imagePullPolicy: IfNotPresent\n        name: openliberty\n        ports:\n        - containerPort: 9080\n        envFrom:\n        - configMapRef:\n            name: mock-envvar\n        volumeMounts:\n        - mountPath: /config/jvm.options\n          subPath: jvm.options\n          name: mock-jvm\n        securityContext:\n          runAsUser: 0\n          privileged: true\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        readinessProbe:\n          initialDelaySeconds: 30\n          httpGet:\n            port: 9080\n      volumes:\n      - name: mock-jvm\n        configMap:\n          name: mock-jvm\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"openliberty\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03803",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1692.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    injection.smarttuning.ibm.com: 'true'\n  labels:\n    app: mock\n  name: mock\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock\n  template:\n    metadata:\n      labels:\n        app: mock\n    spec:\n      containers:\n      - image: open-liberty:full-java11-openj9\n        imagePullPolicy: IfNotPresent\n        name: openliberty\n        ports:\n        - containerPort: 9080\n        envFrom:\n        - configMapRef:\n            name: mock-envvar\n        volumeMounts:\n        - mountPath: /config/jvm.options\n          subPath: jvm.options\n          name: mock-jvm\n        securityContext:\n          runAsUser: 0\n          privileged: true\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        readinessProbe:\n          initialDelaySeconds: 30\n          httpGet:\n            port: 9080\n      volumes:\n      - name: mock-jvm\n        configMap:\n          name: mock-jvm\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"openliberty\" has cpu request 0"
+  },
+  {
+    "id": "03804",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1693.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: descheduler\n  namespace: kube-system\n  labels:\n    app: descheduler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: descheduler\n  template:\n    metadata:\n      labels:\n        app: descheduler\n    spec:\n      serviceAccountName: descheduler-sa\n      containers:\n      - name: descheduler\n        image: cr.d.xiaomi.net/cloud-ml/descheduler:v20211207-v0.22.0-16-g50f9513cb\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/descheduler\n        args:\n        - --policy-config-file\n        - /policy-dir/policy.yaml\n        - --nodeSelector\n        - type=virtual-kubelet\n        - --descheduling-interval\n        - 30m\n        - --v\n        - '3'\n        ports:\n        - containerPort: 10258\n          protocol: TCP\n        resources:\n          requests:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        volumeMounts:\n        - mountPath: /policy-dir\n          name: policy-volume\n      volumes:\n      - name: policy-volume\n        configMap:\n          name: descheduler-policy-configmap\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"descheduler\" has memory limit 0"
+  },
+  {
+    "id": "03805",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"apm-eureka\" does not have a read-only root file system"
+  },
+  {
+    "id": "03806",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"sidecar\" does not have a read-only root file system"
+  },
+  {
+    "id": "03807",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"apm-eureka\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03808",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"sidecar\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03809",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"apm-eureka\" has cpu request 0"
+  },
+  {
+    "id": "03810",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"sidecar\" has cpu request 0"
+  },
+  {
+    "id": "03811",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"apm-eureka\" has memory limit 0"
+  },
+  {
+    "id": "03812",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1696.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"sidecar\" has memory limit 0"
+  },
+  {
+    "id": "03813",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1697.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-foghorn\n  labels:\n    chart: lighthouse-1.1.51\n    app: lighthouse-foghorn\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-foghorn\n  template:\n    metadata:\n      labels:\n        app: lighthouse-foghorn\n      annotations:\n        jenkins-x.io/hash: e0f23ac6addb6dce6a649e73f5c7584203878aee72cf33274a296a208bedc454\n    spec:\n      serviceAccountName: lighthouse-foghorn\n      containers:\n      - name: lighthouse-foghorn\n        image: ghcr.io/jenkins-x/lighthouse-foghorn:1.1.51\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        env:\n        - name: GIT_KIND\n          value: github\n        - name: GIT_SERVER\n          value: https://github.com\n        - name: GIT_USER\n          value: zpzjzj\n        - name: GIT_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-oauth-token\n              key: oauth\n        - name: HMAC_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-hmac-token\n              key: hmac\n              optional: false\n        - name: JX_LOG_FORMAT\n          value: json\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.1.51\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT\n          value: tekton-bot\n        - name: DEFAULT_PIPELINE_RUN_TIMEOUT\n          value: 2h0m0s\n        - name: FILE_BROWSER\n          value: git\n        - name: JX_DEFAULT_IMAGE\n          value: ghcr.io/jenkins-x/builder-maven:2.1.149-768\n        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE\n          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}\n        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG\n          value: 78ee09edfc1815a0057f1df4a3749b0dba55c117\n        resources:\n          limits:\n            cpu: 100m\n            memory: 256Mi\n          requests:\n            cpu: 80m\n            memory: 128Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"lighthouse-foghorn\" does not have a read-only root file system"
+  },
+  {
+    "id": "03814",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1697.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-foghorn\n  labels:\n    chart: lighthouse-1.1.51\n    app: lighthouse-foghorn\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-foghorn\n  template:\n    metadata:\n      labels:\n        app: lighthouse-foghorn\n      annotations:\n        jenkins-x.io/hash: e0f23ac6addb6dce6a649e73f5c7584203878aee72cf33274a296a208bedc454\n    spec:\n      serviceAccountName: lighthouse-foghorn\n      containers:\n      - name: lighthouse-foghorn\n        image: ghcr.io/jenkins-x/lighthouse-foghorn:1.1.51\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        env:\n        - name: GIT_KIND\n          value: github\n        - name: GIT_SERVER\n          value: https://github.com\n        - name: GIT_USER\n          value: zpzjzj\n        - name: GIT_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-oauth-token\n              key: oauth\n        - name: HMAC_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: lighthouse-hmac-token\n              key: hmac\n              optional: false\n        - name: JX_LOG_FORMAT\n          value: json\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.1.51\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT\n          value: tekton-bot\n        - name: DEFAULT_PIPELINE_RUN_TIMEOUT\n          value: 2h0m0s\n        - name: FILE_BROWSER\n          value: git\n        - name: JX_DEFAULT_IMAGE\n          value: ghcr.io/jenkins-x/builder-maven:2.1.149-768\n        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE\n          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}\n        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG\n          value: 78ee09edfc1815a0057f1df4a3749b0dba55c117\n        resources:\n          limits:\n            cpu: 100m\n            memory: 256Mi\n          requests:\n            cpu: 80m\n            memory: 128Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"lighthouse-foghorn\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03815",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1699.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03816",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1699.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03817",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1699.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "03818",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1699.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "03819",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1702.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:latest\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"cntr-apache\" is using an invalid container image, \"httpd:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03820",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1702.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:latest\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"cntr-apache\" does not have a read-only root file system"
+  },
+  {
+    "id": "03821",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1702.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:latest\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"cntr-apache\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03822",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1702.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:latest\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"cntr-apache\" has cpu request 0"
+  },
+  {
+    "id": "03823",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1702.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:latest\n    ports:\n    - containerPort: 80\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"cntr-apache\" has memory limit 0"
+  },
+  {
+    "id": "03824",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1704.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: github-actions-runner-controller-registry\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: github-actions-runner-controller-registry\n  template:\n    metadata:\n      labels:\n        app: github-actions-runner-controller-registry\n    spec:\n      containers:\n      - name: registry\n        image: registry:2\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 5000\n        volumeMounts:\n        - name: data\n          mountPath: /var/lib/registry\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"registry\" does not have a read-only root file system"
+  },
+  {
+    "id": "03825",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1704.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: github-actions-runner-controller-registry\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: github-actions-runner-controller-registry\n  template:\n    metadata:\n      labels:\n        app: github-actions-runner-controller-registry\n    spec:\n      containers:\n      - name: registry\n        image: registry:2\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 5000\n        volumeMounts:\n        - name: data\n          mountPath: /var/lib/registry\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"registry\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03826",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1704.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: github-actions-runner-controller-registry\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: github-actions-runner-controller-registry\n  template:\n    metadata:\n      labels:\n        app: github-actions-runner-controller-registry\n    spec:\n      containers:\n      - name: registry\n        image: registry:2\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 5000\n        volumeMounts:\n        - name: data\n          mountPath: /var/lib/registry\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"registry\" has cpu request 0"
+  },
+  {
+    "id": "03827",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1704.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: github-actions-runner-controller-registry\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: github-actions-runner-controller-registry\n  template:\n    metadata:\n      labels:\n        app: github-actions-runner-controller-registry\n    spec:\n      containers:\n      - name: registry\n        image: registry:2\n        imagePullPolicy: Always\n        ports:\n        - containerPort: 5000\n        volumeMounts:\n        - name: data\n          mountPath: /var/lib/registry\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"registry\" has memory limit 0"
+  },
+  {
+    "id": "03828",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1706.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:latest\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx-ingress-operator\" is using an invalid container image, \"nginx/nginx-ingress-operator:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03829",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1706.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:latest\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx-ingress-operator\" does not have a read-only root file system"
+  },
+  {
+    "id": "03830",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1706.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:latest\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx-ingress-operator\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03831",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1706.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:latest\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx-ingress-operator\" has cpu request 0"
+  },
+  {
+    "id": "03832",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1706.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:latest\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx-ingress-operator\" has memory limit 0"
+  },
+  {
+    "id": "03833",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "env-var-secret",
+    "violation_text": "environment variable AWS_SECRET_ACCESS_KEY in container \"app\" found"
+  },
+  {
+    "id": "03834",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "env-var-secret",
+    "violation_text": "environment variable AWS_SECRET_ACCESS_KEY in container \"init-ubuntu\" found"
+  },
+  {
+    "id": "03835",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"app\" is using an invalid container image, \"alpine\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03836",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"init-ubuntu\" is using an invalid container image, \"ubuntu\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03837",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"app\" does not have a read-only root file system"
+  },
+  {
+    "id": "03838",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"init-ubuntu\" does not have a read-only root file system"
+  },
+  {
+    "id": "03839",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03840",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1711.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: app\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: app\n      annotations:\n        vault.security.banzaicloud.io/vault-addr: https://vault.vault:8200\n        vault.security.banzaicloud.io/vault-tls-secret: vault-tls\n    spec:\n      initContainers:\n      - name: init-ubuntu\n        image: ubuntu\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo initContainers ready\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#${.AWS_SECRET_ACCESS_KEY}\n      containers:\n      - name: app\n        image: alpine\n        command:\n        - sh\n        - -c\n        - echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000\n        env:\n        - name: AWS_SECRET_ACCESS_KEY\n          value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"init-ubuntu\" is not set to runAsNonRoot"
+  }
+]

@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-flannel
+  namespace: kube-system
+  labels:
+    application: flannel
+    version: v0.11.0-10
+spec:
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      application: flannel
+  template:
+    metadata:
+      labels:
+        application: flannel
+        version: v0.11.0-10
+    spec:
+      priorityClassName: system-node-critical
+      serviceAccountName: flannel
+      containers:
+      - name: delayed-install-cni
+        image: registry.opensource.zalan.do/teapot/flannel-awaiter:master-4
+        command:
+        - /await-and-copy
+        stdin: true
+        volumeMounts:
+        - name: cni
+          mountPath: /etc/cni/net.d
+        - name: flannel-cfg
+          mountPath: /etc/kube-flannel/
+        env:
+        - name: CNI_CONFIG_SOURCE
+          value: /etc/kube-flannel/cni-conf.json
+        - name: CNI_CONFIG_TARGET
+          value: /etc/cni/net.d/10-flannel.conflist
+        resources:
+          requests:
+            cpu: 25m
+            memory: 50Mi
+            ephemeral-storage: 256Mi
+          limits:
+            cpu: 25m
+            memory: 50Mi
+      - name: apiserver-proxy
+        image: registry.opensource.zalan.do/teapot/etcd-proxy:master-6
+        command:
+        - /bin/sh
+        args:
+        - -c
+        - exec /etcd-proxy --listen-address 127.0.0.1:333 $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
+        resources:
+          requests:
+            cpu: 25m
+            memory: 25Mi
+            ephemeral-storage: 256Mi
+          limits:
+            cpu: 25m
+            memory: 25Mi
+      - name: kube-flannel
+        image: registry.opensource.zalan.do/teapot/flannel:v0.11.0-10
+        command:
+        - /opt/bin/flanneld
+        args:
+        - --ip-masq
+        - --kube-subnet-mgr
+        - --v=2
+        env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: 127.0.0.1
+        - name: KUBERNETES_SERVICE_PORT
+          value: '333'
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: '{{ .Cluster.ConfigItems.flannel_cpu }}'
+            memory: '{{ .Cluster.ConfigItems.flannel_memory }}'
+            ephemeral-storage: 256Mi
+          limits:
+            cpu: '{{ .Cluster.ConfigItems.flannel_cpu }}'
+            memory: '{{ .Cluster.ConfigItems.flannel_memory }}'
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: flannel-cfg
+          mountPath: /etc/kube-flannel/
+        - name: run
+          mountPath: /run
+      - args:
+        - -c
+        - /tc-flannel.sh
+        command:
+        - /bin/bash
+        image: registry.opensource.zalan.do/teapot/flannel-tc:v0.0.3
+        name: flannel-tc
+        resources:
+          requests:
+            cpu: 1m
+            memory: 25Mi
+            ephemeral-storage: 256Mi
+          limits:
+            cpu: 1m
+            memory: 25Mi
+        securityContext:
+          privileged: true
+        stdin: true
+        volumeMounts:
+        - mountPath: /run
+          name: run
+        - mountPath: /lib/tc
+          name: lib-tc
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
+      volumes:
+      - name: flannel-cfg
+        configMap:
+          name: kube-flannel-cfg
+      - name: cni
+        hostPath:
+          path: /etc/kubernetes/cni/net.d
+      - name: run
+        hostPath:
+          path: /run
+      - hostPath:
+          path: /lib/tc
+          type: ''
+        name: lib-tc

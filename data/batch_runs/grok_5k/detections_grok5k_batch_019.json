@@ -1,0 +1,282 @@
+[
+  {
+    "id": "00761",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0132.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hive-controllers\n  namespace: hive\n  labels:\n    control-plane: controller-manager\n    controller-tools.k8s.io: '1.0'\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n      controller-tools.k8s.io: '1.0'\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n        controller-tools.k8s.io: '1.0'\n    spec:\n      serviceAccountName: default\n      volumes:\n      - name: kubectl-cache\n        emptyDir: {}\n      containers:\n      - image: registry.svc.ci.openshift.org/openshift/hive-v4.0:hive\n        imagePullPolicy: Always\n        name: manager\n        resources:\n          requests:\n            cpu: 50m\n            memory: 512Mi\n        command:\n        - /opt/services/manager\n        volumeMounts:\n        - name: kubectl-cache\n          mountPath: /var/cache/kubectl\n        env:\n        - name: CLI_CACHE_DIR\n          value: /var/cache/kubectl\n        livenessProbe:\n          httpGet:\n            path: /debug/health\n            port: 8080\n          initialDelaySeconds: 10\n          failureThreshold: 1\n          periodSeconds: 10\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"manager\" does not have a read-only root file system"
+  },
+  {
+    "id": "00762",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0132.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hive-controllers\n  namespace: hive\n  labels:\n    control-plane: controller-manager\n    controller-tools.k8s.io: '1.0'\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n      controller-tools.k8s.io: '1.0'\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n        controller-tools.k8s.io: '1.0'\n    spec:\n      serviceAccountName: default\n      volumes:\n      - name: kubectl-cache\n        emptyDir: {}\n      containers:\n      - image: registry.svc.ci.openshift.org/openshift/hive-v4.0:hive\n        imagePullPolicy: Always\n        name: manager\n        resources:\n          requests:\n            cpu: 50m\n            memory: 512Mi\n        command:\n        - /opt/services/manager\n        volumeMounts:\n        - name: kubectl-cache\n          mountPath: /var/cache/kubectl\n        env:\n        - name: CLI_CACHE_DIR\n          value: /var/cache/kubectl\n        livenessProbe:\n          httpGet:\n            path: /debug/health\n            port: 8080\n          initialDelaySeconds: 10\n          failureThreshold: 1\n          periodSeconds: 10\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"manager\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00763",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0132.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hive-controllers\n  namespace: hive\n  labels:\n    control-plane: controller-manager\n    controller-tools.k8s.io: '1.0'\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n      controller-tools.k8s.io: '1.0'\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n        controller-tools.k8s.io: '1.0'\n    spec:\n      serviceAccountName: default\n      volumes:\n      - name: kubectl-cache\n        emptyDir: {}\n      containers:\n      - image: registry.svc.ci.openshift.org/openshift/hive-v4.0:hive\n        imagePullPolicy: Always\n        name: manager\n        resources:\n          requests:\n            cpu: 50m\n            memory: 512Mi\n        command:\n        - /opt/services/manager\n        volumeMounts:\n        - name: kubectl-cache\n          mountPath: /var/cache/kubectl\n        env:\n        - name: CLI_CACHE_DIR\n          value: /var/cache/kubectl\n        livenessProbe:\n          httpGet:\n            path: /debug/health\n            port: 8080\n          initialDelaySeconds: 10\n          failureThreshold: 1\n          periodSeconds: 10\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"manager\" has memory limit 0"
+  },
+  {
+    "id": "00764",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"api-database\" is using an invalid container image, \"postgres:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00765",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"pgsql-data-permission-fix\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00766",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"api-database\" does not have a read-only root file system"
+  },
+  {
+    "id": "00767",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"pgsql-data-permission-fix\" does not have a read-only root file system"
+  },
+  {
+    "id": "00768",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"api-database\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00769",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"pgsql-data-permission-fix\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00770",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"api-database\" has cpu request 0"
+  },
+  {
+    "id": "00771",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"pgsql-data-permission-fix\" has cpu request 0"
+  },
+  {
+    "id": "00772",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"api-database\" has memory limit 0"
+  },
+  {
+    "id": "00773",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0138.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api-db\nspec:\n  containers:\n  - name: api-database\n    image: postgres:latest\n    env:\n    - name: POSTGRES_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: api-secret\n          key: POSTGRES_PASSWORD\n    volumeMounts:\n    - mountPath: /var/lib/postgresql\n      name: api-data\n  initContainers:\n  - name: pgsql-data-permission-fix\n    image: busybox\n    command:\n    - /bin/chmod\n    - -R\n    - '777'\n    - /data\n    volumeMounts:\n    - name: api-data\n      mountPath: /data\n  volumes:\n  - name: api-data\n    persistentVolumeClaim:\n      claimName: api-pvc\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"pgsql-data-permission-fix\" has memory limit 0"
+  },
+  {
+    "id": "00774",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-tekton-controller\n  labels:\n    chart: lighthouse-1.5.7\n    app: lighthouse-tekton-controller\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-tekton-controller\n  template:\n    metadata:\n      labels:\n        app: lighthouse-tekton-controller\n      annotations:\n        jenkins-x.io/hash: 60461a69ffa09bc8e76a211946cab1220740169ece13144fe59417d2d20f18ab\n    spec:\n      serviceAccountName: lighthouse-tekton-controller\n      containers:\n      - name: lighthouse-tekton-controller\n        image: ghcr.io/jenkins-x/lighthouse-tekton-controller:1.5.7\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        - --dashboard-url=http://dashboard.jx.change.me\n        - --dashboard-template=namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun\n          }}\n        ports:\n        - name: metrics\n          containerPort: 8080\n        env:\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.5.7\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT\n          value: tekton-bot\n        - name: DEFAULT_PIPELINE_RUN_TIMEOUT\n          value: 2h0m0s\n        - name: FILE_BROWSER\n          value: git\n        - name: JX_DEFAULT_IMAGE\n          value: ghcr.io/jenkins-x/builder-maven:2.1.149-768\n        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE\n          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}\n        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG\n          value: 9e58caa93ba0a07182b4512285c1b1d01a279995\n        envFrom:\n        - secretRef:\n            name: jx-boot-job-env-vars\n            optional: true\n        resources:\n          limits:\n            cpu: 100m\n            memory: 256Mi\n          requests:\n            cpu: 80m\n            memory: 128Mi\n      affinity: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"lighthouse-tekton-controller\" does not have a read-only root file system"
+  },
+  {
+    "id": "00775",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0139.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: lighthouse-tekton-controller\n  labels:\n    chart: lighthouse-1.5.7\n    app: lighthouse-tekton-controller\n    gitops.jenkins-x.io/pipeline: namespaces\n  annotations:\n    meta.helm.sh/release-name: lighthouse\n    wave.pusher.com/update-on-config-change: 'true'\n  namespace: jx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: lighthouse-tekton-controller\n  template:\n    metadata:\n      labels:\n        app: lighthouse-tekton-controller\n      annotations:\n        jenkins-x.io/hash: 60461a69ffa09bc8e76a211946cab1220740169ece13144fe59417d2d20f18ab\n    spec:\n      serviceAccountName: lighthouse-tekton-controller\n      containers:\n      - name: lighthouse-tekton-controller\n        image: ghcr.io/jenkins-x/lighthouse-tekton-controller:1.5.7\n        imagePullPolicy: IfNotPresent\n        args:\n        - --namespace=jx\n        - --dashboard-url=http://dashboard.jx.change.me\n        - --dashboard-template=namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun\n          }}\n        ports:\n        - name: metrics\n          containerPort: 8080\n        env:\n        - name: LOGRUS_FORMAT\n          value: json\n        - name: LOGRUS_SERVICE\n          value: lighthouse\n        - name: LOGRUS_SERVICE_VERSION\n          value: 1.5.7\n        - name: LOGRUS_STACK_SKIP\n          value: ''\n        - name: DEFAULT_PIPELINE_RUN_SERVICE_ACCOUNT\n          value: tekton-bot\n        - name: DEFAULT_PIPELINE_RUN_TIMEOUT\n          value: 2h0m0s\n        - name: FILE_BROWSER\n          value: git\n        - name: JX_DEFAULT_IMAGE\n          value: ghcr.io/jenkins-x/builder-maven:2.1.149-768\n        - name: LIGHTHOUSE_DASHBOARD_TEMPLATE\n          value: namespaces/{{ .Namespace }}/pipelineruns/{{ .PipelineRun }}\n        - name: LIGHTHOUSE_VERSIONSTREAM_JENKINS_X_JX3_PIPELINE_CATALOG\n          value: 9e58caa93ba0a07182b4512285c1b1d01a279995\n        envFrom:\n        - secretRef:\n            name: jx-boot-job-env-vars\n            optional: true\n        resources:\n          limits:\n            cpu: 100m\n            memory: 256Mi\n          requests:\n            cpu: 80m\n            memory: 128Mi\n      affinity: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"lighthouse-tekton-controller\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00776",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0140.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: sinker\n  labels:\n    app: sinker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: sinker\n  template:\n    metadata:\n      labels:\n        app: sinker\n    spec:\n      serviceAccountName: sinker\n      containers:\n      - name: sinker\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        image: gcr.io/k8s-prow/sinker:v20200628-cc1c099dad\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"sinker\" does not have a read-only root file system"
+  },
+  {
+    "id": "00777",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0140.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: sinker\n  labels:\n    app: sinker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: sinker\n  template:\n    metadata:\n      labels:\n        app: sinker\n    spec:\n      serviceAccountName: sinker\n      containers:\n      - name: sinker\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        image: gcr.io/k8s-prow/sinker:v20200628-cc1c099dad\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"sinker\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00778",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0140.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: sinker\n  labels:\n    app: sinker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: sinker\n  template:\n    metadata:\n      labels:\n        app: sinker\n    spec:\n      serviceAccountName: sinker\n      containers:\n      - name: sinker\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        image: gcr.io/k8s-prow/sinker:v20200628-cc1c099dad\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"sinker\" has cpu request 0"
+  },
+  {
+    "id": "00779",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0140.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: sinker\n  labels:\n    app: sinker\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: sinker\n  template:\n    metadata:\n      labels:\n        app: sinker\n    spec:\n      serviceAccountName: sinker\n      containers:\n      - name: sinker\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --dry-run=false\n        image: gcr.io/k8s-prow/sinker:v20200628-cc1c099dad\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"sinker\" has memory limit 0"
+  },
+  {
+    "id": "00780",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0145.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20200225-55a0aacbd\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --history-uri=gs://k8s-prow/tide-history.json\n        - --status-path=gs://k8s-prow/tide-status-checkpoint.yaml\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"tide\" does not have a read-only root file system"
+  },
+  {
+    "id": "00781",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0145.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20200225-55a0aacbd\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --history-uri=gs://k8s-prow/tide-history.json\n        - --status-path=gs://k8s-prow/tide-status-checkpoint.yaml\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"tide\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00782",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0145.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20200225-55a0aacbd\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --history-uri=gs://k8s-prow/tide-history.json\n        - --status-path=gs://k8s-prow/tide-status-checkpoint.yaml\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"tide\" has cpu request 0"
+  },
+  {
+    "id": "00783",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0145.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: tide\n  labels:\n    app: tide\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: tide\n  template:\n    metadata:\n      labels:\n        app: tide\n    spec:\n      serviceAccountName: tide\n      containers:\n      - name: tide\n        image: gcr.io/k8s-prow/tide:v20200225-55a0aacbd\n        args:\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --history-uri=gs://k8s-prow/tide-history.json\n        - --status-path=gs://k8s-prow/tide-status-checkpoint.yaml\n        ports:\n        - name: http\n          containerPort: 8888\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"tide\" has memory limit 0"
+  },
+  {
+    "id": "00784",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0153.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\nspec:\n  containers:\n  - name: busybox\n    image: busybox:1.34.1\n    command:\n    - /bin/sh\n    - -c\n    - echo $MY_ENV_VAR && sleep 99d\n    env:\n    - name: MY_ENV_VAR\n      valueFrom:\n        configMapKeyRef:\n          key: a-key\n          name: a-configmap\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"busybox\" does not have a read-only root file system"
+  },
+  {
+    "id": "00785",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0153.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\nspec:\n  containers:\n  - name: busybox\n    image: busybox:1.34.1\n    command:\n    - /bin/sh\n    - -c\n    - echo $MY_ENV_VAR && sleep 99d\n    env:\n    - name: MY_ENV_VAR\n      valueFrom:\n        configMapKeyRef:\n          key: a-key\n          name: a-configmap\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"busybox\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00786",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0153.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\nspec:\n  containers:\n  - name: busybox\n    image: busybox:1.34.1\n    command:\n    - /bin/sh\n    - -c\n    - echo $MY_ENV_VAR && sleep 99d\n    env:\n    - name: MY_ENV_VAR\n      valueFrom:\n        configMapKeyRef:\n          key: a-key\n          name: a-configmap\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"busybox\" has cpu request 0"
+  },
+  {
+    "id": "00787",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0153.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\nspec:\n  containers:\n  - name: busybox\n    image: busybox:1.34.1\n    command:\n    - /bin/sh\n    - -c\n    - echo $MY_ENV_VAR && sleep 99d\n    env:\n    - name: MY_ENV_VAR\n      valueFrom:\n        configMapKeyRef:\n          key: a-key\n          name: a-configmap\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"busybox\" has memory limit 0"
+  },
+  {
+    "id": "00788",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0154.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: dns-test\n  namespace: kube-system\nspec:\n  containers:\n  - image: busybox\n    command:\n    - sleep\n    - '3600'\n    imagePullPolicy: IfNotPresent\n    name: busybox\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"busybox\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00789",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0154.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: dns-test\n  namespace: kube-system\nspec:\n  containers:\n  - image: busybox\n    command:\n    - sleep\n    - '3600'\n    imagePullPolicy: IfNotPresent\n    name: busybox\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"busybox\" does not have a read-only root file system"
+  },
+  {
+    "id": "00790",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0154.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: dns-test\n  namespace: kube-system\nspec:\n  containers:\n  - image: busybox\n    command:\n    - sleep\n    - '3600'\n    imagePullPolicy: IfNotPresent\n    name: busybox\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"busybox\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00791",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0154.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: dns-test\n  namespace: kube-system\nspec:\n  containers:\n  - image: busybox\n    command:\n    - sleep\n    - '3600'\n    imagePullPolicy: IfNotPresent\n    name: busybox\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"busybox\" has cpu request 0"
+  },
+  {
+    "id": "00792",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0154.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: dns-test\n  namespace: kube-system\nspec:\n  containers:\n  - image: busybox\n    command:\n    - sleep\n    - '3600'\n    imagePullPolicy: IfNotPresent\n    name: busybox\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"busybox\" has memory limit 0"
+  },
+  {
+    "id": "00793",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0155.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20211014-7ca1952a94\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"statusreconciler\" does not have a read-only root file system"
+  },
+  {
+    "id": "00794",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0155.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20211014-7ca1952a94\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"statusreconciler\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00795",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0155.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20211014-7ca1952a94\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"statusreconciler\" has cpu request 0"
+  },
+  {
+    "id": "00796",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0155.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20211014-7ca1952a94\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"statusreconciler\" has memory limit 0"
+  },
+  {
+    "id": "00797",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0156.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5718\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00798",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0156.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5718\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "00799",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0156.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5718\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00800",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0156.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5718\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  }
+]

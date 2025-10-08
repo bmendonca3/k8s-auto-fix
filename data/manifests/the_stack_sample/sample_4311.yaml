@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-autoscaler
+  namespace: knative-serving
+  labels:
+    serving.knative.dev/release: devel
+data:
+  _example: "################################\n#                              #\n\
+    #    EXAMPLE CONFIGURATION     #\n#                              #\n################################\n\
+    \n# This block is not actually functional configuration,\n# but serves to illustrate\
+    \ the available configuration\n# options and document them in a way that is accessible\n\
+    # to users that `kubectl edit` this config map.\n#\n# These sample configuration\
+    \ options may be copied out of\n# this example block and unindented to be in the\
+    \ data block\n# to actually change the configuration.\n\n# The Revision ContainerConcurrency\
+    \ field specifies the maximum number\n# of requests the Container can handle at\
+    \ once. Container concurrency\n# target percentage is how much of that maximum\
+    \ to use in a stable\n# state. E.g. if a Revision specifies ContainerConcurrency\
+    \ of 10, then\n# the Autoscaler will try to maintain 7 concurrent connections\
+    \ per pod\n# on average.\n# Note: this limit will be applied to container concurrency\
+    \ set at every\n# level (ConfigMap, Revision Spec or Annotation).\n# For legacy\
+    \ and backwards compatibility reasons, this value also accepts\n# fractional values\
+    \ in (0, 1] interval (i.e. 0.7 \u21D2 70%).\n# Thus minimal percentage value must\
+    \ be greater than 1.0, or it will be\n# treated as a fraction.\ncontainer-concurrency-target-percentage:\
+    \ \"70\"\n\n# The container concurrency target default is what the Autoscaler\
+    \ will\n# try to maintain when concurrency is used as the scaling metric for a\n\
+    # Revision and the Revision specifies unlimited concurrency.\n# Even when specifying\
+    \ unlimited concurrency, the autoscaler will\n# horizontally scale the application\
+    \ based on this target concurrency.\n# NOTE: Only one metric can be used for autoscaling\
+    \ a Revision.\ncontainer-concurrency-target-default: \"100\"\n\n# The requests\
+    \ per second (RPS) target default is what the Autoscaler will\n# try to maintain\
+    \ when RPS is used as the scaling metric for a Revision and\n# the Revision specifies\
+    \ unlimited RPS. Even when specifying unlimited RPS,\n# the autoscaler will horizontally\
+    \ scale the application based on this\n# target RPS.\n# Must be greater than 1.0.\n\
+    # NOTE: Only one metric can be used for autoscaling a Revision.\nrequests-per-second-target-default:\
+    \ \"200\"\n\n# The target burst capacity specifies the size of burst in concurrent\n\
+    # requests that the system operator expects the system will receive.\n# Autoscaler\
+    \ will try to protect the system from queueing by introducing\n# Activator in\
+    \ the request path if the current spare capacity of the\n# service is less than\
+    \ this setting.\n# If this setting is 0, then Activator will be in the request\
+    \ path only\n# when the revision is scaled to 0.\n# If this setting is > 0 and\
+    \ container-concurrency-target-percentage is\n# 100% or 1.0, then activator will\
+    \ always be in the request path.\n# -1 denotes unlimited target-burst-capacity\
+    \ and activator will always\n# be in the request path.\n# Other negative values\
+    \ are invalid.\ntarget-burst-capacity: \"200\"\n\n# When operating in a stable\
+    \ mode, the autoscaler operates on the\n# average concurrency over the stable\
+    \ window.\n# Stable window must be in whole seconds.\nstable-window: \"60s\"\n\
+    \n# When observed average concurrency during the panic window reaches\n# panic-threshold-percentage\
+    \ the target concurrency, the autoscaler\n# enters panic mode. When operating\
+    \ in panic mode, the autoscaler\n# scales on the average concurrency over the\
+    \ panic window which is\n# panic-window-percentage of the stable-window.\n# When\
+    \ computing the panic window it will be rounded to the closest\n# whole second.\n\
+    panic-window-percentage: \"10.0\"\n\n# The percentage of the container concurrency\
+    \ target at which to\n# enter panic mode when reached within the panic window.\n\
+    panic-threshold-percentage: \"200.0\"\n\n# Max scale up rate limits the rate at\
+    \ which the autoscaler will\n# increase pod count. It is the maximum ratio of\
+    \ desired pods versus\n# observed pods.\n# Cannot less or equal to 1.\n# I.e with\
+    \ value of 2.0 the number of pods can at most go N to 2N\n# over single Autoscaler\
+    \ period (see tick-interval), but at least N to\n# N+1, if Autoscaler needs to\
+    \ scale up.\nmax-scale-up-rate: \"1000.0\"\n\n# Max scale down rate limits the\
+    \ rate at which the autoscaler will\n# decrease pod count. It is the maximum ratio\
+    \ of observed pods versus\n# desired pods.\n# Cannot less or equal to 1.\n# I.e.\
+    \ with value of 2.0 the number of pods can at most go N to N/2\n# over single\
+    \ Autoscaler evaluation period (see tick-interval), but at\n# least N to N-1,\
+    \ if Autoscaler needs to scale down.\n# Not yet used // TODO(vagababov) remove\
+    \ once other parts are ready.\nmax-scale-down-rate: \"2.0\"\n\n# Scale to zero\
+    \ feature flag\nenable-scale-to-zero: \"true\"\n\n# Tick interval is the time\
+    \ between autoscaling calculations.\ntick-interval: \"2s\"\n\n# Dynamic parameters\
+    \ (take effect when config map is updated):\n\n# Scale to zero grace period is\
+    \ the time an inactive revision is left\n# running before it is scaled to zero\
+    \ (min: 30s).\nscale-to-zero-grace-period: \"30s\"\n\n# Enable graceful scaledown\
+    \ feature flag.\n# Once enabled, it allows the autoscaler to prioritize pods processing\n\
+    # fewer (or zero) requests for removal when scaling down.\nenable-graceful-scaledown:\
+    \ \"false\"\n\n# pod-autoscaler-class specifies the default pod autoscaler class\n\
+    # that should be used if none is specified. If omitted, the Knative\n# Horizontal\
+    \ Pod Autoscaler (KPA) is used by default.\npod-autoscaler-class: \"kpa.autoscaling.knative.dev\""

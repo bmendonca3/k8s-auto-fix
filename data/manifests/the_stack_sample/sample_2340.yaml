@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  labels:
+    deployment: celery-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: celery-worker
+  template:
+    metadata:
+      labels:
+        pod: celery-worker
+    spec:
+      containers:
+      - name: celery-worker
+        image: backend:1
+        command:
+        - celery
+        - worker
+        - --app=backend.celery_app:app
+        - --loglevel=info
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: backend.settings.minikube
+        - name: SECRET_KEY
+          value: my-secret-key
+        - name: POSTGRES_NAME
+          value: postgres
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password

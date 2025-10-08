@@ -1,0 +1,36 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: acme-dns-config
+  namespace: acme-dns
+data:
+  config.cfg: "[general]\n# DNS interface. Note that systemd-resolved may reserve\
+    \ port 53 on 127.0.0.53\n# In this case acme-dns will error out and you will need\
+    \ to define the listening interface\n# for example: listen = \"127.0.0.1:53\"\n\
+    listen = \"0.0.0.0:53\"\n# protocol, \"both\", \"both4\", \"both6\", \"udp\",\
+    \ \"udp4\", \"udp6\" or \"tcp\", \"tcp4\", \"tcp6\"\nprotocol = \"udp\"\n# domain\
+    \ name to serve the requests off of\ndomain = \"auth.$(HOSTNAME)\"\n# zone name\
+    \ server\nnsname = \"auth.$(HOSTNAME)\"\n# admin email address, where @\_is substituted\
+    \ with .\nnsadmin = \"admin.$(HOSTNAME)\"\n# predefined records served in addition\
+    \ to the TXT\nrecords = [\n    # domain pointing to the public IP of your acme-dns\
+    \ server\n    \"auth.$(HOSTNAME). A $(IP)\",\n    # specify that auth.$(HOSTNAME)\
+    \ will resolve any *.auth.$(HOSTNAME) records\n    \"auth.$(HOSTNAME). NS auth.$(HOSTNAME).\"\
+    ,\n]\n# debug messages from CORS etc\ndebug = false\n\n[database]\n# Database\
+    \ engine to use, sqlite3 or postgres\nengine = \"sqlite3\"\n# Connection string,\
+    \ filename for sqlite3 and postgres://$username:$password@$host/$db_name for postgres\n\
+    # Please note that the default Docker image uses path /var/lib/acme-dns/acme-dns.db\
+    \ for sqlite3\nconnection = \"/var/lib/acme-dns/acme-dns.db\"\n# connection =\
+    \ \"postgres://user:password@localhost/acmedns_db\"\n\n[api]\n# listen ip eg.\
+    \ 127.0.0.1\nip = \"0.0.0.0\"\n# disable registration endpoint\ndisable_registration\
+    \ = false\n# listen port, eg. 443 for default HTTPS\nport = \"80\"\n# possible\
+    \ values: \"letsencrypt\", \"letsencryptstaging\", \"cert\", \"none\"\ntls = \"\
+    none\"\n# only used if tls = \"cert\"\ntls_cert_privkey = \"/etc/tls/$(HOSTNAME)/privkey.pem\"\
+    \ntls_cert_fullchain = \"/etc/tls/$(HOSTNAME)/fullchain.pem\"\n# only used if\
+    \ tls = \"letsencrypt\"\nacme_cache_dir = \"api-certs\"\n# CORS AllowOrigins,\
+    \ wildcards can be used\ncorsorigins = [\n    \"*\"\n]\n# use HTTP header to get\
+    \ the client ip\nuse_header = false\n# header name to pull the ip address / list\
+    \ of ip addresses from\nheader_name = \"X-Forwarded-For\"\n\n[logconfig]\n# logging\
+    \ level: \"error\", \"warning\", \"info\" or \"debug\"\nloglevel = \"debug\"\n\
+    # possible values: stdout, TODO file & integrations\nlogtype = \"stdout\"\n# file\
+    \ path for logfile TODO\n# logfile = \"./acme-dns.log\"\n# format, either \"json\"\
+    \ or \"text\"\nlogformat = \"text\""

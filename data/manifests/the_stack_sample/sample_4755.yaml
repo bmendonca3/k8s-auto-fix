@@ -1,0 +1,50 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: f5-cis-configmap-arcadia
+  namespace: arcadia
+  labels:
+    f5type: virtual-server
+    as3: 'true'
+data:
+  template: "{\n  \"class\": \"AS3\",\n  \"action\": \"deploy\",\n  \"persist\": true,\n\
+    \  \"declaration\": {\n    \"class\": \"ADC\",\n    \"schemaVersion\": \"3.21.0\"\
+    ,\n    \"id\": \"f5-cis-configmap-arcadia\",\n    \"arcadia\": {\n      \"class\"\
+    : \"Tenant\",\n      \"arcadia_app\": {\n        \"class\": \"Application\",\n\
+    \        \"template\": \"generic\",\n        \"arcadia_vs\": {\n          \"class\"\
+    : \"Service_HTTP\",\n          \"iRules\": [\"arcadia_iRules\"],\n          \"\
+    virtualAddresses\": [\n            \"192.168.200.60\"\n          ],\n        \
+    \  \"snat\": \"self\",\n          \"serviceDownImmediateAction\": \"reset\",\n\
+    \          \"virtualPort\": 80,\n          \"persistenceMethods\": [{\n      \
+    \      \"use\": \"arcadia_cookie_encryption\"\n          }],\n          \"pool\"\
+    : \"arcadia_main_pool\"\n        },\n        \"arcadia_cookie_encryption\": {\n\
+    \          \"class\": \"Persist\",\n          \"persistenceMethod\": \"cookie\"\
+    ,\n          \"encrypt\": true,\n          \"cookieMethod\": \"insert\",\n   \
+    \       \"passphrase\": {\n            \"ciphertext\": \"a3RjeGZ5Z2Q=\",\n   \
+    \         \"protected\": \"eyJhbGciOiJkaXIiLCJlbmMiOiJub25lIn0=\"\n          }\n\
+    \        },\n        \"arcadia_main_pool\": {\n          \"class\": \"Pool\",\n\
+    \          \"monitors\": [\n            \"http\"\n          ],\n          \"loadBalancingMode\"\
+    : \"least-connections-member\",\n          \"minimumMembersActive\": 0,\n    \
+    \      \"members\": [\n          {\n            \"servicePort\": 80,\n       \
+    \     \"serverAddresses\": []\n          }\n          ]\n        },\n        \"\
+    arcadia_backend_pool\": {\n          \"class\": \"Pool\",\n          \"monitors\"\
+    : [\n            \"http\"\n          ],\n          \"loadBalancingMode\": \"least-connections-member\"\
+    ,\n          \"minimumMembersActive\": 0,\n          \"members\": [\n        \
+    \  {\n            \"servicePort\": 80,\n            \"serverAddresses\": []\n\
+    \          }\n          ]\n        },\n        \"arcadia_app2_pool\": {\n    \
+    \      \"class\": \"Pool\",\n          \"monitors\": [\n            \"http\"\n\
+    \          ],\n          \"loadBalancingMode\": \"least-connections-member\",\n\
+    \          \"minimumMembersActive\": 0,\n          \"members\": [\n          {\n\
+    \            \"servicePort\": 80,\n            \"serverAddresses\": []\n     \
+    \     }\n          ]\n        },\n        \"arcadia_app3_pool\": {\n         \
+    \ \"class\": \"Pool\",\n          \"monitors\": [\n            \"http\"\n    \
+    \      ],\n          \"loadBalancingMode\": \"least-connections-member\",\n  \
+    \        \"minimumMembersActive\": 0,\n          \"members\": [\n          {\n\
+    \            \"servicePort\": 80,\n            \"serverAddresses\": []\n     \
+    \     }\n          ]\n        },\n        \"arcadia_iRules\": {\n          \"\
+    class\": \"iRule\",\n          \"remark\": \"switch between pools\",\n       \
+    \   \"iRule\": \"when HTTP_REQUEST {\\n if { [HTTP::uri] starts_with \\\"/files\\\
+    \" } {\\n pool arcadia_backend_pool \\n } elseif {[HTTP::uri] starts_with \\\"\
+    /api\\\"} {\\n pool arcadia_app2_pool \\n } elseif {[HTTP::uri] starts_with \\\
+    \"/app3\\\"} {\\n pool arcadia_app3_pool \\n } else { \\n pool arcadia_main_pool\
+    \ \\n }\\n  \\n}\"\n        }\n      }\n    }\n  }\n}"

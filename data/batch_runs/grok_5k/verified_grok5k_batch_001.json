@@ -1,0 +1,502 @@
+[
+  {
+    "id": "00041",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-scheduler\n  labels:\n    tier: airflow\n    component: scheduler\n    release: release-name\n    chart: airflow-1.18.0\n    heritage: Helm\n    executor: CeleryExecutor\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      tier: airflow\n      component: scheduler\n      release: release-name\n  template:\n    metadata:\n      labels:\n        tier: airflow\n        component: scheduler\n        release: release-name\n      annotations:\n        checksum/metadata-secret: 327e091234a14bd54fe663b0f2eb6d8f7b817c2dcfa8b6fc2311334f6a68faf1\n        checksum/result-backend-secret: 98a68f230007cfa8f5d3792e1aff843a76b0686409e4a46ab2f092f6865a1b71\n        checksum/pgbouncer-config-secret: 1dae2adc757473469686d37449d076b0c82404f61413b58ae68b3c5e99527688\n        checksum/airflow-config: 8280f1a548335eb4fa2dadaae8a78f009bb408ea8725a2363cc9533a176ec5db\n        checksum/extra-configmaps: e862ea47e13e634cf17d476323784fa27dac20015550c230953b526182f5cac8\n        checksum/extra-secrets: e9582fdd622296c976cbc10a5ba7d6702c28a24fe80795ea5b84ba443a56c827\n        cluster-autoscaler.kubernetes.io/safe-to-evict: 'true'\n    spec:\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  component: scheduler\n              topologyKey: kubernetes.io/hostname\n            weight: 100\n      serviceAccountName: release-name-airflow-scheduler\n      securityContext:\n        runAsUser: 50000\n        fsGroup: 0\n      initContainers:\n      - name: wait-for-airflow-migrations\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        image: apache/airflow:3.0.2\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        volumeMounts:\n        - name: config\n          mountPath: /opt/airflow/airflow.cfg\n          subPath: airflow.cfg\n          readOnly: true\n        - name: config\n          mountPath: /opt/airflow/config/airflow_local_settings.py\n          subPath: airflow_local_settings.py\n          readOnly: true\n        args:\n        - airflow\n        - db\n        - check-migrations\n        - --migration-wait-timeout=60\n        envFrom: []\n        env:\n        - name: AIRFLOW__CORE__FERNET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: release-name-fernet-key\n              key: fernet-key\n        - name: AIRFLOW_HOME\n          value: /opt/airflow\n        - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN\n          valueFrom:\n            secretKeyRef:\n              name: release-name-metadata\n              key: connection\n        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN\n          valueFrom:\n            secretKeyRef:\n              name: release-name-metadata\n              key: connection\n        - name: AIRFLOW_CONN_AIRFLOW_DB\n          valueFrom:\n            secretKeyRef:\n              name: release-name-metadata\n              key: connection\n        - name: AIRFLOW__API__SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: release-name-api-secret-key\n              key: api-secret-key\n        - name: AIRFLOW__API_AUTH__JWT_SECRET\n          valueFrom:\n            secretKeyRef:\n              name: release-name-jwt-secret\n              key: jwt-secret\n        - name: AIRFLOW__CELERY__BROKER_URL\n          valueFrom:\n            secretKeyRef:\n              name: release-name-broker-url\n              key: connection\n      containers:\n      - name: scheduler\n        image: apache/airflow:3.0.2\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        args:\n        - bash\n        - -c\n        - exec airflow scheduler\n        envFrom: []\n        env:\n        - name: AIRFLOW__CORE__FERNET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: release-name-fernet-key\n              key: fernet-key\n        - name: AIRFLOW_HOME\n          value: /opt/airflow\n        - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN\n          valueFrom:\n            secretKeyRef:\n              name: release-name-metadata\n              key: connection\n        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN\n          valueFrom:\n            secretKeyRef:\n              name: release-name-metadata\n              key: connection\n        - name: AIRFLOW_CONN_AIRFLOW_DB\n          valueFrom:\n            secretKeyRef:\n              name: release-name-metadata\n              key: connection\n        - name: AIRFLOW__API__SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: release-name-api-secret-key\n              key: api-secret-key\n        - name: AIRFLOW__API_AUTH__JWT_SECRET\n          valueFrom:\n            secretKeyRef:\n              name: release-name-jwt-secret\n              key: jwt-secret\n        - name: AIRFLOW__CELERY__BROKER_URL\n          valueFrom:\n            secretKeyRef:\n              name: release-name-broker-url\n              key: connection\n        livenessProbe:\n          initialDelaySeconds: 10\n          timeoutSeconds: 20\n          failureThreshold: 5\n          periodSeconds: 60\n          exec:\n            command:\n            - sh\n            - -c\n            - 'CONNECTION_CHECK_MAX_COUNT=0 AIRFLOW__LOGGING__LOGGING_LEVEL=ERROR\n              exec /entrypoint \\\n\n              airflow jobs check --job-type SchedulerJob --local\n\n              '\n        startupProbe:\n          initialDelaySeconds: 0\n          timeoutSeconds: 20\n          failureThreshold: 6\n          periodSeconds: 10\n          exec:\n            command:\n            - sh\n            - -c\n            - 'CONNECTION_CHECK_MAX_COUNT=0 AIRFLOW__LOGGING__LOGGING_LEVEL=ERROR\n              exec /entrypoint \\\n\n              airflow jobs check --job-type SchedulerJob --local\n\n              '\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        volumeMounts:\n        - name: config\n          mountPath: /opt/airflow/pod_templates/pod_template_file.yaml\n          subPath: pod_template_file.yaml\n          readOnly: true\n        - name: logs\n          mountPath: /opt/airflow/logs\n        - name: config\n          mountPath: /opt/airflow/airflow.cfg\n          subPath: airflow.cfg\n          readOnly: true\n        - name: config\n          mountPath: /opt/airflow/config/airflow_local_settings.py\n          subPath: airflow_local_settings.py\n          readOnly: true\n      - name: scheduler-log-groomer\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        image: apache/airflow:3.0.2\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        args:\n        - bash\n        - /clean-logs\n        env:\n        - name: AIRFLOW__LOG_RETENTION_DAYS\n          value: '15'\n        - name: AIRFLOW__LOG_CLEANUP_FREQUENCY_MINUTES\n          value: '15'\n        - name: AIRFLOW_HOME\n          value: /opt/airflow\n        volumeMounts:\n        - name: logs\n          mountPath: /opt/airflow/logs\n      volumes:\n      - name: config\n        configMap:\n          name: release-name-config\n      - name: logs\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "00042",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-statsd\n  labels:\n    tier: airflow\n    component: statsd\n    release: release-name\n    chart: airflow-1.18.0\n    heritage: Helm\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      tier: airflow\n      component: statsd\n      release: release-name\n  template:\n    metadata:\n      labels:\n        tier: airflow\n        component: statsd\n        release: release-name\n    spec:\n      affinity: {}\n      serviceAccountName: release-name-airflow-statsd\n      securityContext:\n        runAsUser: 65534\n      containers:\n      - name: statsd\n        image: quay.io/prometheus/statsd-exporter:v0.28.0\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          privileged: false\n        args:\n        - --statsd.mapping-config=/etc/statsd-exporter/mappings.yml\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 100m\n            memory: 128Mi\n        ports:\n        - name: statsd-ingest\n          protocol: UDP\n          containerPort: 9125\n        - name: statsd-scrape\n          containerPort: 9102\n        livenessProbe:\n          httpGet:\n            path: /metrics\n            port: 9102\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /metrics\n            port: 9102\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: config\n          mountPath: /etc/statsd-exporter/mappings.yml\n          subPath: mappings.yml\n      volumes:\n      - name: config\n        configMap:\n          name: release-name-statsd\n",
+    "errors": []
+  },
+  {
+    "id": "00043",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-statsd\n  labels:\n    tier: airflow\n    component: statsd\n    release: release-name\n    chart: airflow-1.18.0\n    heritage: Helm\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      tier: airflow\n      component: statsd\n      release: release-name\n  template:\n    metadata:\n      labels:\n        tier: airflow\n        component: statsd\n        release: release-name\n    spec:\n      affinity: {}\n      serviceAccountName: release-name-airflow-statsd\n      securityContext:\n        runAsUser: 65534\n      containers:\n      - name: statsd\n        image: quay.io/prometheus/statsd-exporter:v0.28.0\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        args:\n        - --statsd.mapping-config=/etc/statsd-exporter/mappings.yml\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        ports:\n        - name: statsd-ingest\n          protocol: UDP\n          containerPort: 9125\n        - name: statsd-scrape\n          containerPort: 9102\n        livenessProbe:\n          httpGet:\n            path: /metrics\n            port: 9102\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /metrics\n            port: 9102\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: config\n          mountPath: /etc/statsd-exporter/mappings.yml\n          subPath: mappings.yml\n      volumes:\n      - name: config\n        configMap:\n          name: release-name-statsd\n",
+    "errors": []
+  },
+  {
+    "id": "00044",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-statsd\n  labels:\n    tier: airflow\n    component: statsd\n    release: release-name\n    chart: airflow-1.18.0\n    heritage: Helm\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      tier: airflow\n      component: statsd\n      release: release-name\n  template:\n    metadata:\n      labels:\n        tier: airflow\n        component: statsd\n        release: release-name\n    spec:\n      affinity: {}\n      serviceAccountName: release-name-airflow-statsd\n      securityContext:\n        runAsUser: 65534\n      containers:\n      - name: statsd\n        image: quay.io/prometheus/statsd-exporter:v0.28.0\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        args:\n        - --statsd.mapping-config=/etc/statsd-exporter/mappings.yml\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        ports:\n        - name: statsd-ingest\n          protocol: UDP\n          containerPort: 9125\n        - name: statsd-scrape\n          containerPort: 9102\n        livenessProbe:\n          httpGet:\n            path: /metrics\n            port: 9102\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            path: /metrics\n            port: 9102\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 5\n        volumeMounts:\n        - name: config\n          mountPath: /etc/statsd-exporter/mappings.yml\n          subPath: mappings.yml\n      volumes:\n      - name: config\n        configMap:\n          name: release-name-statsd\n",
+    "errors": []
+  },
+  {
+    "id": "00045",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00046",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00047",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00048",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00049",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00050",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00051",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00052",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00053",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00054",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00055",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00056",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00057",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00058",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00059",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00060",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00061",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00062",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00063",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00064",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00065",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00066",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00067",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00068",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00069",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00070",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00071",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00072",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00073",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00074",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "00075",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-argocd-applicationset-controller\n  namespace: default\n  labels:\n    helm.sh/chart: argo-cd-8.5.9\n    app.kubernetes.io/name: argocd-applicationset-controller\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: applicationset-controller\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/part-of: argocd\n    app.kubernetes.io/version: v3.1.8\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-applicationset-controller\n      app.kubernetes.io/instance: release-name\n  template:\n    metadata:\n      annotations:\n        checksum/cmd-params: 2668ced57bd7b8a4198bc09a7505497f26b422d12a957a08b048317dda050991\n      labels:\n        helm.sh/chart: argo-cd-8.5.9\n        app.kubernetes.io/name: argocd-applicationset-controller\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: applicationset-controller\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/part-of: argocd\n        app.kubernetes.io/version: v3.1.8\n    spec:\n      serviceAccountName: argocd-applicationset-controller\n      containers:\n      - name: applicationset-controller\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        args:\n        - /usr/local/bin/argocd-applicationset-controller\n        - --metrics-addr=:8080\n        - --probe-addr=:8081\n        - --webhook-addr=:7000\n        env:\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_GLOBAL_PRESERVED_ANNOTATIONS\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.global.preserved.annotations\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_GLOBAL_PRESERVED_LABELS\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.global.preserved.labels\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_LEADER_ELECTION\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.leader.election\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER\n          valueFrom:\n            configMapKeyRef:\n              key: repo.server\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_POLICY\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.policy\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_POLICY_OVERRIDE\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.policy.override\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.debug\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_LOGFORMAT\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.log.format\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_LOGLEVEL\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.log.level\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_LOG_FORMAT_TIMESTAMP\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: log.format.timestamp\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_DRY_RUN\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.dryrun\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_GIT_MODULES_ENABLED\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.git.submodule\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_PROGRESSIVE_SYNCS\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.progressive.syncs\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_TOKENREF_STRICT_MODE\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.tokenref.strict.mode\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_NEW_GIT_FILE_GLOBBING\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.new.git.file.globbing\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER_PLAINTEXT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.repo.server.plaintext\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER_STRICT_TLS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.repo.server.strict.tls\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER_TIMEOUT_SECONDS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.repo.server.timeout.seconds\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_CONCURRENT_RECONCILIATIONS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.concurrent.reconciliations.max\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_NAMESPACES\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.namespaces\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_SCM_ROOT_CA_PATH\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.scm.root.ca.path\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ALLOWED_SCM_PROVIDERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.allowed.scm.providers\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_SCM_PROVIDERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.enable.scm.providers\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_GITHUB_API_METRICS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.enable.github.api.metrics\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_WEBHOOK_PARALLELISM_LIMIT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.webhook.parallelism.limit\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REQUEUE_AFTER\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.requeue.after\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_MAX_RESOURCES_STATUS_COUNT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.status.max.resources.count\n              optional: true\n        ports:\n        - name: metrics\n          containerPort: 8080\n          protocol: TCP\n        - name: probe\n          containerPort: 8081\n          protocol: TCP\n        - name: webhook\n          containerPort: 7000\n          protocol: TCP\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n        volumeMounts:\n        - mountPath: /app/config/ssh\n          name: ssh-known-hosts\n        - mountPath: /app/config/tls\n          name: tls-certs\n        - mountPath: /app/config/gpg/source\n          name: gpg-keys\n        - mountPath: /app/config/gpg/keys\n          name: gpg-keyring\n        - mountPath: /app/config/reposerver/tls\n          name: argocd-repo-server-tls\n        - mountPath: /tmp\n          name: tmp\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/name: argocd-applicationset-controller\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: ssh-known-hosts\n        configMap:\n          name: argocd-ssh-known-hosts-cm\n      - name: tls-certs\n        configMap:\n          name: argocd-tls-certs-cm\n      - name: gpg-keys\n        configMap:\n          name: argocd-gpg-keys-cm\n      - name: gpg-keyring\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n      - name: argocd-repo-server-tls\n        secret:\n          secretName: argocd-repo-server-tls\n          optional: true\n          items:\n          - key: tls.crt\n            path: tls.crt\n          - key: tls.key\n            path: tls.key\n          - key: ca.crt\n            path: ca.crt\n",
+    "errors": []
+  },
+  {
+    "id": "00076",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-argocd-applicationset-controller\n  namespace: default\n  labels:\n    helm.sh/chart: argo-cd-8.5.9\n    app.kubernetes.io/name: argocd-applicationset-controller\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: applicationset-controller\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/part-of: argocd\n    app.kubernetes.io/version: v3.1.8\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-applicationset-controller\n      app.kubernetes.io/instance: release-name\n  template:\n    metadata:\n      annotations:\n        checksum/cmd-params: 2668ced57bd7b8a4198bc09a7505497f26b422d12a957a08b048317dda050991\n      labels:\n        helm.sh/chart: argo-cd-8.5.9\n        app.kubernetes.io/name: argocd-applicationset-controller\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: applicationset-controller\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/part-of: argocd\n        app.kubernetes.io/version: v3.1.8\n    spec:\n      serviceAccountName: argocd-applicationset-controller\n      containers:\n      - name: applicationset-controller\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        args:\n        - /usr/local/bin/argocd-applicationset-controller\n        - --metrics-addr=:8080\n        - --probe-addr=:8081\n        - --webhook-addr=:7000\n        env:\n        - name: NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_GLOBAL_PRESERVED_ANNOTATIONS\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.global.preserved.annotations\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_GLOBAL_PRESERVED_LABELS\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.global.preserved.labels\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_LEADER_ELECTION\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.leader.election\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER\n          valueFrom:\n            configMapKeyRef:\n              key: repo.server\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_POLICY\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.policy\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_POLICY_OVERRIDE\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.policy.override\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_DEBUG\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.debug\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_LOGFORMAT\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.log.format\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_LOGLEVEL\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.log.level\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_LOG_FORMAT_TIMESTAMP\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: log.format.timestamp\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_DRY_RUN\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.dryrun\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_GIT_MODULES_ENABLED\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.git.submodule\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_PROGRESSIVE_SYNCS\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.progressive.syncs\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_TOKENREF_STRICT_MODE\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.tokenref.strict.mode\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_NEW_GIT_FILE_GLOBBING\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.enable.new.git.file.globbing\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER_PLAINTEXT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.repo.server.plaintext\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER_STRICT_TLS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.repo.server.strict.tls\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REPO_SERVER_TIMEOUT_SECONDS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.repo.server.timeout.seconds\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_CONCURRENT_RECONCILIATIONS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.concurrent.reconciliations.max\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_NAMESPACES\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.namespaces\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_SCM_ROOT_CA_PATH\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.scm.root.ca.path\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ALLOWED_SCM_PROVIDERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.allowed.scm.providers\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_SCM_PROVIDERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.enable.scm.providers\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_ENABLE_GITHUB_API_METRICS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.enable.github.api.metrics\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_WEBHOOK_PARALLELISM_LIMIT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.webhook.parallelism.limit\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_REQUEUE_AFTER\n          valueFrom:\n            configMapKeyRef:\n              key: applicationsetcontroller.requeue.after\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_APPLICATIONSET_CONTROLLER_MAX_RESOURCES_STATUS_COUNT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: applicationsetcontroller.status.max.resources.count\n              optional: true\n        ports:\n        - name: metrics\n          containerPort: 8080\n          protocol: TCP\n        - name: probe\n          containerPort: 8081\n          protocol: TCP\n        - name: webhook\n          containerPort: 7000\n          protocol: TCP\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n        volumeMounts:\n        - mountPath: /app/config/ssh\n          name: ssh-known-hosts\n        - mountPath: /app/config/tls\n          name: tls-certs\n        - mountPath: /app/config/gpg/source\n          name: gpg-keys\n        - mountPath: /app/config/gpg/keys\n          name: gpg-keyring\n        - mountPath: /app/config/reposerver/tls\n          name: argocd-repo-server-tls\n        - mountPath: /tmp\n          name: tmp\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/name: argocd-applicationset-controller\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: ssh-known-hosts\n        configMap:\n          name: argocd-ssh-known-hosts-cm\n      - name: tls-certs\n        configMap:\n          name: argocd-tls-certs-cm\n      - name: gpg-keys\n        configMap:\n          name: argocd-gpg-keys-cm\n      - name: gpg-keyring\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n      - name: argocd-repo-server-tls\n        secret:\n          secretName: argocd-repo-server-tls\n          optional: true\n          items:\n          - key: tls.crt\n            path: tls.crt\n          - key: tls.key\n            path: tls.key\n          - key: ca.crt\n            path: ca.crt\n",
+    "errors": []
+  },
+  {
+    "id": "00077",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-argocd-notifications-controller\n  namespace: default\n  labels:\n    helm.sh/chart: argo-cd-8.5.9\n    app.kubernetes.io/name: argocd-notifications-controller\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: notifications-controller\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/part-of: argocd\n    app.kubernetes.io/version: v3.1.8\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-notifications-controller\n      app.kubernetes.io/instance: release-name\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: argo-cd-8.5.9\n        app.kubernetes.io/name: argocd-notifications-controller\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: notifications-controller\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/part-of: argocd\n        app.kubernetes.io/version: v3.1.8\n    spec:\n      serviceAccountName: argocd-notifications-controller\n      containers:\n      - name: notifications-controller\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        args:\n        - /usr/local/bin/argocd-notifications\n        - --metrics-port=9001\n        - --namespace=default\n        - --argocd-repo-server=release-name-argocd-repo-server:8081\n        - --secret-name=argocd-notifications-secret\n        env:\n        - name: ARGOCD_NOTIFICATIONS_CONTROLLER_LOGLEVEL\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.log.level\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_NOTIFICATIONS_CONTROLLER_LOGFORMAT\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.log.format\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_LOG_FORMAT_TIMESTAMP\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: log.format.timestamp\n              optional: true\n        - name: ARGOCD_APPLICATION_NAMESPACES\n          valueFrom:\n            configMapKeyRef:\n              key: application.namespaces\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_NOTIFICATION_CONTROLLER_SELF_SERVICE_NOTIFICATION_ENABLED\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.selfservice.enabled\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_NOTIFICATION_CONTROLLER_REPO_SERVER_PLAINTEXT\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.repo.server.plaintext\n              name: argocd-cmd-params-cm\n              optional: true\n        ports:\n        - name: metrics\n          containerPort: 9001\n          protocol: TCP\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n        workingDir: /app\n        volumeMounts:\n        - name: tls-certs\n          mountPath: /app/config/tls\n        - name: argocd-repo-server-tls\n          mountPath: /app/config/reposerver/tls\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/name: argocd-notifications-controller\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: tls-certs\n        configMap:\n          name: argocd-tls-certs-cm\n      - name: argocd-repo-server-tls\n        secret:\n          secretName: argocd-repo-server-tls\n          optional: true\n          items:\n          - key: tls.crt\n            path: tls.crt\n          - key: tls.key\n            path: tls.key\n          - key: ca.crt\n            path: ca.crt\n",
+    "errors": []
+  },
+  {
+    "id": "00078",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-argocd-notifications-controller\n  namespace: default\n  labels:\n    helm.sh/chart: argo-cd-8.5.9\n    app.kubernetes.io/name: argocd-notifications-controller\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: notifications-controller\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/part-of: argocd\n    app.kubernetes.io/version: v3.1.8\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-notifications-controller\n      app.kubernetes.io/instance: release-name\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: argo-cd-8.5.9\n        app.kubernetes.io/name: argocd-notifications-controller\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: notifications-controller\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/part-of: argocd\n        app.kubernetes.io/version: v3.1.8\n    spec:\n      serviceAccountName: argocd-notifications-controller\n      containers:\n      - name: notifications-controller\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        args:\n        - /usr/local/bin/argocd-notifications\n        - --metrics-port=9001\n        - --namespace=default\n        - --argocd-repo-server=release-name-argocd-repo-server:8081\n        - --secret-name=argocd-notifications-secret\n        env:\n        - name: ARGOCD_NOTIFICATIONS_CONTROLLER_LOGLEVEL\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.log.level\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_NOTIFICATIONS_CONTROLLER_LOGFORMAT\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.log.format\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_LOG_FORMAT_TIMESTAMP\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: log.format.timestamp\n              optional: true\n        - name: ARGOCD_APPLICATION_NAMESPACES\n          valueFrom:\n            configMapKeyRef:\n              key: application.namespaces\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_NOTIFICATION_CONTROLLER_SELF_SERVICE_NOTIFICATION_ENABLED\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.selfservice.enabled\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_NOTIFICATION_CONTROLLER_REPO_SERVER_PLAINTEXT\n          valueFrom:\n            configMapKeyRef:\n              key: notificationscontroller.repo.server.plaintext\n              name: argocd-cmd-params-cm\n              optional: true\n        ports:\n        - name: metrics\n          containerPort: 9001\n          protocol: TCP\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n        workingDir: /app\n        volumeMounts:\n        - name: tls-certs\n          mountPath: /app/config/tls\n        - name: argocd-repo-server-tls\n          mountPath: /app/config/reposerver/tls\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/name: argocd-notifications-controller\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: tls-certs\n        configMap:\n          name: argocd-tls-certs-cm\n      - name: argocd-repo-server-tls\n        secret:\n          secretName: argocd-repo-server-tls\n          optional: true\n          items:\n          - key: tls.crt\n            path: tls.crt\n          - key: tls.key\n            path: tls.key\n          - key: ca.crt\n            path: ca.crt\n",
+    "errors": []
+  },
+  {
+    "id": "00079",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-argocd-repo-server\n  namespace: default\n  labels:\n    helm.sh/chart: argo-cd-8.5.9\n    app.kubernetes.io/name: argocd-repo-server\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: repo-server\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/part-of: argocd\n    app.kubernetes.io/version: v3.1.8\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-repo-server\n      app.kubernetes.io/instance: release-name\n  template:\n    metadata:\n      annotations:\n        checksum/cmd-params: 2668ced57bd7b8a4198bc09a7505497f26b422d12a957a08b048317dda050991\n        checksum/cm: 96ecfb88b6c2d1b7b1b033e1c466cb5b41411e6d7280e8c87ae5a02343d5079a\n      labels:\n        helm.sh/chart: argo-cd-8.5.9\n        app.kubernetes.io/name: argocd-repo-server\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: repo-server\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/part-of: argocd\n        app.kubernetes.io/version: v3.1.8\n    spec:\n      serviceAccountName: release-name-argocd-repo-server\n      containers:\n      - name: repo-server\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        args:\n        - /usr/local/bin/argocd-repo-server\n        - --port=8081\n        - --metrics-port=8084\n        env:\n        - name: ARGOCD_REPO_SERVER_NAME\n          value: release-name-argocd-repo-server\n        - name: ARGOCD_RECONCILIATION_TIMEOUT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cm\n              key: timeout.reconciliation\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LOGFORMAT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.log.format\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LOGLEVEL\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.log.level\n              optional: true\n        - name: ARGOCD_LOG_FORMAT_TIMESTAMP\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: log.format.timestamp\n              optional: true\n        - name: ARGOCD_REPO_SERVER_PARALLELISM_LIMIT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.parallelism.limit\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LISTEN_ADDRESS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.listen.address\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LISTEN_METRICS_ADDRESS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.metrics.listen.address\n              optional: true\n        - name: ARGOCD_REPO_SERVER_DISABLE_TLS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.disable.tls\n              optional: true\n        - name: ARGOCD_TLS_MIN_VERSION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.tls.minversion\n              optional: true\n        - name: ARGOCD_TLS_MAX_VERSION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.tls.maxversion\n              optional: true\n        - name: ARGOCD_TLS_CIPHERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.tls.ciphers\n              optional: true\n        - name: ARGOCD_REPO_CACHE_EXPIRATION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.repo.cache.expiration\n              optional: true\n        - name: REDIS_SERVER\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: redis.server\n              optional: true\n        - name: REDIS_COMPRESSION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: redis.compression\n              optional: true\n        - name: REDISDB\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: redis.db\n              optional: true\n        - name: REDIS_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: argocd-redis\n              key: redis-username\n              optional: true\n        - name: REDIS_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: argocd-redis\n              key: auth\n              optional: false\n        - name: REDIS_SENTINEL_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: release-name-argocd-redis\n              key: redis-sentinel-username\n              optional: true\n        - name: REDIS_SENTINEL_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: release-name-argocd-redis\n              key: redis-sentinel-password\n              optional: true\n        - name: ARGOCD_DEFAULT_CACHE_EXPIRATION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.default.cache.expiration\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_ADDRESS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.address\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_INSECURE\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.insecure\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_HEADERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.headers\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_ATTRS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.attrs\n              optional: true\n        - name: ARGOCD_REPO_SERVER_MAX_COMBINED_DIRECTORY_MANIFESTS_SIZE\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.max.combined.directory.manifests.size\n              optional: true\n        - name: ARGOCD_REPO_SERVER_PLUGIN_TAR_EXCLUSIONS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.plugin.tar.exclusions\n              optional: true\n        - name: ARGOCD_REPO_SERVER_PLUGIN_USE_MANIFEST_GENERATE_PATHS\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.plugin.use.manifest.generate.paths\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_ALLOW_OUT_OF_BOUNDS_SYMLINKS\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.allow.oob.symlinks\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_STREAMED_MANIFEST_MAX_TAR_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.streamed.manifest.max.tar.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_STREAMED_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.streamed.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_HELM_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.helm.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_DISABLE_HELM_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.disable.helm.manifest.max.extracted.size\n              optional: true\n        - name: ARGOCD_GIT_MODULES_ENABLED\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.enable.git.submodule\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_GIT_LS_REMOTE_PARALLELISM_LIMIT\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.git.lsremote.parallelism.limit\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_GIT_REQUEST_TIMEOUT\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.git.request.timeout\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OCI_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.oci.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_DISABLE_OCI_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.disable.oci.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OCI_LAYER_MEDIA_TYPES\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.oci.layer.media.types\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REVISION_CACHE_LOCK_TIMEOUT\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.revision.cache.lock.timeout\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_INCLUDE_HIDDEN_DIRECTORIES\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.include.hidden.directories\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: HELM_CACHE_HOME\n          value: /helm-working-dir\n        - name: HELM_CONFIG_HOME\n          value: /helm-working-dir\n        - name: HELM_DATA_HOME\n          value: /helm-working-dir\n        volumeMounts:\n        - mountPath: /app/config/ssh\n          name: ssh-known-hosts\n        - mountPath: /app/config/tls\n          name: tls-certs\n        - mountPath: /app/config/gpg/source\n          name: gpg-keys\n        - mountPath: /app/config/gpg/keys\n          name: gpg-keyring\n        - mountPath: /app/config/reposerver/tls\n          name: argocd-repo-server-tls\n        - mountPath: /helm-working-dir\n          name: helm-working-dir\n        - mountPath: /home/argocd/cmp-server/plugins\n          name: plugins\n        - mountPath: /tmp\n          name: tmp\n        ports:\n        - name: repo-server\n          containerPort: 8081\n          protocol: TCP\n        - name: metrics\n          containerPort: 8084\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz?full=true\n            port: metrics\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: metrics\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n      initContainers:\n      - command:\n        - /bin/cp\n        - -n\n        - /usr/local/bin/argocd\n        - /var/run/argocd/argocd-cmp-server\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        name: copyutil\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n        volumeMounts:\n        - mountPath: /var/run/argocd\n          name: var-files\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/name: argocd-repo-server\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: helm-working-dir\n        emptyDir: {}\n      - name: plugins\n        emptyDir: {}\n      - name: var-files\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n      - name: ssh-known-hosts\n        configMap:\n          name: argocd-ssh-known-hosts-cm\n      - name: tls-certs\n        configMap:\n          name: argocd-tls-certs-cm\n      - name: gpg-keys\n        configMap:\n          name: argocd-gpg-keys-cm\n      - name: gpg-keyring\n        emptyDir: {}\n      - name: argocd-repo-server-tls\n        secret:\n          secretName: argocd-repo-server-tls\n          optional: true\n          items:\n          - key: tls.crt\n            path: tls.crt\n          - key: tls.key\n            path: tls.key\n          - key: ca.crt\n            path: ca.crt\n",
+    "errors": []
+  },
+  {
+    "id": "00080",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-argocd-repo-server\n  namespace: default\n  labels:\n    helm.sh/chart: argo-cd-8.5.9\n    app.kubernetes.io/name: argocd-repo-server\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/component: repo-server\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/part-of: argocd\n    app.kubernetes.io/version: v3.1.8\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-repo-server\n      app.kubernetes.io/instance: release-name\n  template:\n    metadata:\n      annotations:\n        checksum/cmd-params: 2668ced57bd7b8a4198bc09a7505497f26b422d12a957a08b048317dda050991\n        checksum/cm: 96ecfb88b6c2d1b7b1b033e1c466cb5b41411e6d7280e8c87ae5a02343d5079a\n      labels:\n        helm.sh/chart: argo-cd-8.5.9\n        app.kubernetes.io/name: argocd-repo-server\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/component: repo-server\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/part-of: argocd\n        app.kubernetes.io/version: v3.1.8\n    spec:\n      serviceAccountName: release-name-argocd-repo-server\n      containers:\n      - name: repo-server\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        args:\n        - /usr/local/bin/argocd-repo-server\n        - --port=8081\n        - --metrics-port=8084\n        env:\n        - name: ARGOCD_REPO_SERVER_NAME\n          value: release-name-argocd-repo-server\n        - name: ARGOCD_RECONCILIATION_TIMEOUT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cm\n              key: timeout.reconciliation\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LOGFORMAT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.log.format\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LOGLEVEL\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.log.level\n              optional: true\n        - name: ARGOCD_LOG_FORMAT_TIMESTAMP\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: log.format.timestamp\n              optional: true\n        - name: ARGOCD_REPO_SERVER_PARALLELISM_LIMIT\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.parallelism.limit\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LISTEN_ADDRESS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.listen.address\n              optional: true\n        - name: ARGOCD_REPO_SERVER_LISTEN_METRICS_ADDRESS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.metrics.listen.address\n              optional: true\n        - name: ARGOCD_REPO_SERVER_DISABLE_TLS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.disable.tls\n              optional: true\n        - name: ARGOCD_TLS_MIN_VERSION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.tls.minversion\n              optional: true\n        - name: ARGOCD_TLS_MAX_VERSION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.tls.maxversion\n              optional: true\n        - name: ARGOCD_TLS_CIPHERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.tls.ciphers\n              optional: true\n        - name: ARGOCD_REPO_CACHE_EXPIRATION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.repo.cache.expiration\n              optional: true\n        - name: REDIS_SERVER\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: redis.server\n              optional: true\n        - name: REDIS_COMPRESSION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: redis.compression\n              optional: true\n        - name: REDISDB\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: redis.db\n              optional: true\n        - name: REDIS_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: argocd-redis\n              key: redis-username\n              optional: true\n        - name: REDIS_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: argocd-redis\n              key: auth\n              optional: false\n        - name: REDIS_SENTINEL_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: release-name-argocd-redis\n              key: redis-sentinel-username\n              optional: true\n        - name: REDIS_SENTINEL_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: release-name-argocd-redis\n              key: redis-sentinel-password\n              optional: true\n        - name: ARGOCD_DEFAULT_CACHE_EXPIRATION\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.default.cache.expiration\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_ADDRESS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.address\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_INSECURE\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.insecure\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_HEADERS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.headers\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OTLP_ATTRS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: otlp.attrs\n              optional: true\n        - name: ARGOCD_REPO_SERVER_MAX_COMBINED_DIRECTORY_MANIFESTS_SIZE\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.max.combined.directory.manifests.size\n              optional: true\n        - name: ARGOCD_REPO_SERVER_PLUGIN_TAR_EXCLUSIONS\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.plugin.tar.exclusions\n              optional: true\n        - name: ARGOCD_REPO_SERVER_PLUGIN_USE_MANIFEST_GENERATE_PATHS\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.plugin.use.manifest.generate.paths\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_ALLOW_OUT_OF_BOUNDS_SYMLINKS\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.allow.oob.symlinks\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_STREAMED_MANIFEST_MAX_TAR_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.streamed.manifest.max.tar.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_STREAMED_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.streamed.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_HELM_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.helm.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_DISABLE_HELM_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              name: argocd-cmd-params-cm\n              key: reposerver.disable.helm.manifest.max.extracted.size\n              optional: true\n        - name: ARGOCD_GIT_MODULES_ENABLED\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.enable.git.submodule\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_GIT_LS_REMOTE_PARALLELISM_LIMIT\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.git.lsremote.parallelism.limit\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_GIT_REQUEST_TIMEOUT\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.git.request.timeout\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OCI_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.oci.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_DISABLE_OCI_MANIFEST_MAX_EXTRACTED_SIZE\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.disable.oci.manifest.max.extracted.size\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_OCI_LAYER_MEDIA_TYPES\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.oci.layer.media.types\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REVISION_CACHE_LOCK_TIMEOUT\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.revision.cache.lock.timeout\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: ARGOCD_REPO_SERVER_INCLUDE_HIDDEN_DIRECTORIES\n          valueFrom:\n            configMapKeyRef:\n              key: reposerver.include.hidden.directories\n              name: argocd-cmd-params-cm\n              optional: true\n        - name: HELM_CACHE_HOME\n          value: /helm-working-dir\n        - name: HELM_CONFIG_HOME\n          value: /helm-working-dir\n        - name: HELM_DATA_HOME\n          value: /helm-working-dir\n        volumeMounts:\n        - mountPath: /app/config/ssh\n          name: ssh-known-hosts\n        - mountPath: /app/config/tls\n          name: tls-certs\n        - mountPath: /app/config/gpg/source\n          name: gpg-keys\n        - mountPath: /app/config/gpg/keys\n          name: gpg-keyring\n        - mountPath: /app/config/reposerver/tls\n          name: argocd-repo-server-tls\n        - mountPath: /helm-working-dir\n          name: helm-working-dir\n        - mountPath: /home/argocd/cmp-server/plugins\n          name: plugins\n        - mountPath: /tmp\n          name: tmp\n        ports:\n        - name: repo-server\n          containerPort: 8081\n          protocol: TCP\n        - name: metrics\n          containerPort: 8084\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz?full=true\n            port: metrics\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: metrics\n          initialDelaySeconds: 10\n          periodSeconds: 10\n          timeoutSeconds: 1\n          successThreshold: 1\n          failureThreshold: 3\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n      initContainers:\n      - command:\n        - /bin/cp\n        - -n\n        - /usr/local/bin/argocd\n        - /var/run/argocd/argocd-cmp-server\n        image: quay.io/argoproj/argocd:v3.1.8\n        imagePullPolicy: IfNotPresent\n        name: copyutil\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          privileged: false\n        volumeMounts:\n        - mountPath: /var/run/argocd\n          name: var-files\n      affinity:\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - weight: 100\n            podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/name: argocd-repo-server\n              topologyKey: kubernetes.io/hostname\n      volumes:\n      - name: helm-working-dir\n        emptyDir: {}\n      - name: plugins\n        emptyDir: {}\n      - name: var-files\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n      - name: ssh-known-hosts\n        configMap:\n          name: argocd-ssh-known-hosts-cm\n      - name: tls-certs\n        configMap:\n          name: argocd-tls-certs-cm\n      - name: gpg-keys\n        configMap:\n          name: argocd-gpg-keys-cm\n      - name: gpg-keyring\n        emptyDir: {}\n      - name: argocd-repo-server-tls\n        secret:\n          secretName: argocd-repo-server-tls\n          optional: true\n          items:\n          - key: tls.crt\n            path: tls.crt\n          - key: tls.key\n            path: tls.key\n          - key: ca.crt\n            path: ca.crt\n",
+    "errors": []
+  }
+]

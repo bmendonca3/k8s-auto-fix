@@ -1,0 +1,261 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/chain-name: test-chain-tls-overlord
+    app.kubernetes.io/chain-node: test-chain-tls-overlord-node0
+  name: test-chain-tls-overlord-node0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/chain-name: test-chain-tls-overlord
+      app.kubernetes.io/chain-node: test-chain-tls-overlord-node0
+  serviceName: ''
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/chain-name: test-chain-tls-overlord
+        app.kubernetes.io/chain-node: test-chain-tls-overlord-node0
+    spec:
+      containers:
+      - command:
+        - network
+        - run
+        - -c
+        - /etc/cita-cloud/config/config.toml
+        - --stdout
+        image: docker.io/citacloud/network_tls:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=127.0.0.1:50000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: network
+        ports:
+        - containerPort: 40000
+          name: network
+          protocol: TCP
+        - containerPort: 50000
+          name: grpc
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8192Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /data
+          name: datadir
+        - mountPath: /etc/cita-cloud/config
+          name: node-config
+        - mountPath: /etc/cita-cloud/log
+          name: node-log
+        workingDir: /data
+      - command:
+        - /bin/sh
+        - -c
+        - if [ ! -f "/data/private_key" ]; then cp /mnt/private_key /data;fi; consensus
+          run -c /etc/cita-cloud/config/config.toml -l /etc/cita-cloud/log/consensus-log4rs.yaml
+        image: docker.io/citacloud/consensus_overlord:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=127.0.0.1:50001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: consensus
+        ports:
+        - containerPort: 50001
+          name: grpc
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8192Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /data
+          name: datadir
+        - mountPath: /etc/cita-cloud/config
+          name: node-config
+        - mountPath: /etc/cita-cloud/log
+          name: node-log
+        - mountPath: /mnt
+          name: node-account
+        workingDir: /data
+      - command:
+        - executor
+        - run
+        - -c
+        - /etc/cita-cloud/config/config.toml
+        - -l
+        - /etc/cita-cloud/log/executor-log4rs.yaml
+        image: docker.io/citacloud/executor_evm:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=127.0.0.1:50002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: executor
+        ports:
+        - containerPort: 50002
+          name: grpc
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8192Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /data
+          name: datadir
+        - mountPath: /etc/cita-cloud/config
+          name: node-config
+        - mountPath: /etc/cita-cloud/log
+          name: node-log
+        workingDir: /data
+      - command:
+        - storage
+        - run
+        - -c
+        - /etc/cita-cloud/config/config.toml
+        - -l
+        - /etc/cita-cloud/log/storage-log4rs.yaml
+        image: docker.io/citacloud/storage_rocksdb:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=127.0.0.1:50003
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: storage
+        ports:
+        - containerPort: 50003
+          name: grpc
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8192Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /data
+          name: datadir
+        - mountPath: /etc/cita-cloud/config
+          name: node-config
+        - mountPath: /etc/cita-cloud/log
+          name: node-log
+        workingDir: /data
+      - command:
+        - controller
+        - run
+        - -c
+        - /etc/cita-cloud/config/config.toml
+        - -l
+        - /etc/cita-cloud/log/controller-log4rs.yaml
+        image: docker.io/citacloud/controller:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=127.0.0.1:50004
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        name: controller
+        ports:
+        - containerPort: 50004
+          name: grpc
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8192Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /data
+          name: datadir
+        - mountPath: /etc/cita-cloud/config
+          name: node-config
+        - mountPath: /etc/cita-cloud/log
+          name: node-log
+        workingDir: /data
+      - command:
+        - /bin/sh
+        - -c
+        - if [ ! -f "/data/private_key" ]; then cp /mnt/private_key /data;fi; crypto
+          run -c /etc/cita-cloud/config/config.toml -l /etc/cita-cloud/log/crypto-log4rs.yaml
+        image: docker.io/citacloud/crypto_sm:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=127.0.0.1:50005
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: crypto
+        ports:
+        - containerPort: 50005
+          name: grpc
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8192Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /data
+          name: datadir
+        - mountPath: /etc/cita-cloud/config
+          name: node-config
+        - mountPath: /etc/cita-cloud/log
+          name: node-log
+        - mountPath: /mnt
+          name: node-account
+        workingDir: /data
+      volumes:
+      - configMap:
+          name: test-chain-tls-overlord-node0-account
+        name: node-account
+      - configMap:
+          name: test-chain-tls-overlord-node0-config
+        name: node-config
+      - configMap:
+          name: test-chain-tls-overlord-node0-log
+        name: node-log
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: nas-client-provisioner

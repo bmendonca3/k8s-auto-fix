@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nvidia-device-plugin-daemonset
+  name: nvidia-device-plugin-daemonset
+  namespace: gpu-operator-resources
+  annotations:
+    openshift.io/scc: hostmount-anyuid
+spec:
+  selector:
+    matchLabels:
+      app: nvidia-device-plugin-daemonset
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+      labels:
+        app: nvidia-device-plugin-daemonset
+    spec:
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      serviceAccount: nvidia-device-plugin
+      containers:
+      - image: FILLED BY THE OPERATOR
+        name: nvidia-device-plugin-ctr
+        securityContext:
+          privileged: true
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+      nodeSelector:
+        feature.node.kubernetes.io/pci-10de.present: 'true'

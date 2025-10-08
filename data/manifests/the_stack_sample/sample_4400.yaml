@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: jx-boot
+    jenkins-x.io/kind: jx-git-operator
+spec:
+  backoffLimit: 4
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: jx-boot
+        jenkins-x.io/kind: jx-git-operator
+    spec:
+      initContainers:
+      - args:
+        - gitops
+        - git
+        - clone
+        command:
+        - jx
+        env:
+        - name: XDG_CONFIG_HOME
+          value: /workspace/xdg_config
+        - name: HTTP_PROXY
+          value: http://proxy.esl.cisco.com:8080/
+        - name: HTTPS_PROXY
+          value: http://proxy.esl.cisco.com:8080/
+        - name: http_proxy
+          value: http://proxy.esl.cisco.com:8080/
+        - name: https_proxy
+          value: http://proxy.esl.cisco.com:8080/
+        - name: NO_PROXY
+          value: 10.30.196.27,localhost,127.0.0.1,.cisco.com,.local,0,1,2,3,4,5,6,7,8,9
+        - name: no_proxy
+          value: 10.30.196.27,localhost,127.0.0.1,.cisco.com,.local,0,1,2,3,4,5,6,7,8,9
+        image: ghcr.io/jenkins-x/jx-boot:3.2.77
+        name: git-clone
+        volumeMounts:
+        - mountPath: /workspace
+          name: workspace-volume
+        workingDir: /workspace
+      containers:
+      - args:
+        - apply
+        command:
+        - make
+        env:
+        - name: XDG_CONFIG_HOME
+          value: /workspace/xdg_config
+        envFrom:
+        - secretRef:
+            name: jx-boot-job-env-vars
+            optional: true
+        image: ghcr.io/jenkins-x/jx-boot:3.2.77
+        imagePullPolicy: Always
+        name: job
+        volumeMounts:
+        - mountPath: /workspace
+          name: workspace-volume
+        workingDir: /workspace/source
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      serviceAccountName: jx-boot-job
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: workspace-volume
+        emptyDir: {}

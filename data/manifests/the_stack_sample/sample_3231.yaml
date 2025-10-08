@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ibm-healthcheck-operator
+  labels:
+    app.kubernetes.io/instance: ibm-healthcheck-operator
+    app.kubernetes.io/managed-by: ibm-healthcheck-operator
+    app.kubernetes.io/name: ibm-healthcheck-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ibm-healthcheck-operator
+  template:
+    metadata:
+      labels:
+        name: ibm-healthcheck-operator
+        app.kubernetes.io/instance: ibm-healthcheck-operator
+        app.kubernetes.io/managed-by: ibm-healthcheck-operator
+        app.kubernetes.io/name: ibm-healthcheck-operator
+      annotations:
+        productName: IBM Cloud Platform Common Services
+        productID: 068a62892a1e4db39641342e592daa25
+        productMetric: FREE
+    spec:
+      serviceAccountName: ibm-healthcheck-operator
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+      containers:
+      - name: ibm-healthcheck-operator
+        image: quay.io/opencloudio/ibm-healthcheck-operator:3.11.0
+        command:
+        - ibm-healthcheck-operator
+        imagePullPolicy: Always
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: ibm-healthcheck-operator
+        - name: SYSTEM_HEALTHCHECK_SERVICE_IMAGE
+          value: quay.io/opencloudio/system-healthcheck-service:3.9.2
+        - name: ICP_MEMCACHED_IMAGE
+          value: quay.io/opencloudio/icp-memcached:3.9.1
+        - name: MUST_GATHER_IMAGE
+          value: quay.io/opencloudio/must-gather:4.5.6
+        - name: MUST_GATHER_SERVICE_IMAGE
+          value: quay.io/opencloudio/must-gather-service:1.2.4
+        resources:
+          limits:
+            cpu: 160m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true

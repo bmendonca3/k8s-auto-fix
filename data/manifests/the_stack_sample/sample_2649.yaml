@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: comment-monitor-eventmap
+data:
+  eventmap.yml: "- event_type: prombench_start\n  regex_string: (?mi)^/prombench\\\
+    s*(?P<RELEASE>master|v[0-9]+\\.[0-9]+\\.[0-9]+\\S*)\\s*$\n  comment_template:\
+    \ |\n    \u23F1\uFE0F Welcome to Prometheus Benchmarking Tool. \u23F1\uFE0F\n\n\
+    \    **Compared versions:** [**`PR-{{ index . \"PR_NUMBER\" }}`**](http://{{ index\
+    \ . \"DOMAIN_NAME\" }}/{{ index . \"PR_NUMBER\" }}/prometheus-pr) and [**`{{ index\
+    \ . \"RELEASE\" }}`**](http://{{ index . \"DOMAIN_NAME\" }}/{{ index . \"PR_NUMBER\"\
+    \ }}/prometheus-release)\n\n    After successful deployment, the benchmarking\
+    \ metrics can be viewed at:\n\n    - [Prometheus Meta](http://{{ index . \"DOMAIN_NAME\"\
+    \ }}/prometheus-meta/graph?g0.expr={namespace%3D\"prombench-{{ index . \"PR_NUMBER\"\
+    \ }}\"}&g0.tab=1)\n    - [Prombench Dashboard](http://{{ index . \"DOMAIN_NAME\"\
+    \ }}/grafana/d/7gmLoNDmz/prombench?orgId=1&var-pr-number={{ index . \"PR_NUMBER\"\
+    \ }})\n    - [Grafana Explorer, Loki logs](http://{{ index . \"DOMAIN_NAME\" }}/grafana/explore?orgId=1&left=[\"\
+    now-6h\",\"now\",\"loki-meta\",{},{\"mode\":\"Logs\"},{\"ui\":[true,true,true,\"\
+    none\"]}])\n\n    **Other Commands:**\n    To stop benchmark: `/prombench cancel`\n\
+    \    To restart benchmark: `/prombench restart {{ index . \"RELEASE\" }}`\n\n\
+    - event_type: prombench_stop\n  regex_string: (?mi)^/prombench\\s+cancel\\s*$\n\
+    \  comment_template: |\n    Benchmark cancel is in progress.\n\n- event_type:\
+    \ noop\n  regex_string: (?mi)^/prombench\\s*$\n  comment_template: |\n    Please\
+    \ add the version number to compare against.\n    Eg. `/prombench master`, `/prombench\
+    \ v2.12.0`\n\n- event_type: prombench_restart\n  regex_string: (?mi)^/prombench\\\
+    s+restart\\s+(?P<RELEASE>master|v[0-9]+\\.[0-9]+\\.[0-9]+\\S*)\\s*$\n  comment_template:\
+    \ |\n    \u23F1\uFE0F Welcome to Prometheus Benchmarking Tool. \u23F1\uFE0F\n\n\
+    \    **Compared versions:** [**`PR-{{ index . \"PR_NUMBER\" }}`**](http://{{ index\
+    \ . \"DOMAIN_NAME\" }}/{{ index . \"PR_NUMBER\" }}/prometheus-pr) and [**`{{ index\
+    \ . \"RELEASE\" }}`**](http://{{ index . \"DOMAIN_NAME\" }}/{{ index . \"PR_NUMBER\"\
+    \ }}/prometheus-release)\n\n    After successful deployment, the benchmarking\
+    \ metrics can be viewed at:\n\n    - [Prometheus Meta](http://{{ index . \"DOMAIN_NAME\"\
+    \ }}/prometheus-meta/graph?g0.expr={namespace%3D\"prombench-{{ index . \"PR_NUMBER\"\
+    \ }}\"}&g0.tab=1)\n    - [Prombench Dashboard](http://{{ index . \"DOMAIN_NAME\"\
+    \ }}/grafana/d/7gmLoNDmz/prombench?orgId=1&var-pr-number={{ index . \"PR_NUMBER\"\
+    \ }})\n    - [Grafana Exlorer, Loki logs](http://{{ index . \"DOMAIN_NAME\" }}/grafana/explore?orgId=1&left=[\"\
+    now-6h\",\"now\",\"loki-meta\",{},{\"mode\":\"Logs\"},{\"ui\":[true,true,true,\"\
+    none\"]}])\n\n    **Other Commands:**\n    To stop benchmark: `/prombench cancel`\n\
+    \    To restart benchmark: `/prombench restart {{ index . \"RELEASE\" }}`\n\n\
+    - event_type: funcbench_start\n  regex_string: (?m)^/funcbench[[:blank:]]+(?P<BRANCH>[\\\
+    w\\-\\/\\.]+)[[:blank:]]*(?P<BENCH_FUNC_REGEX>(?:Benchmark\\w*)?(?:\\.\\*)?)?[[:blank:]]*$\n\
+    \  comment_template: |\n    \u23F1\uFE0F Welcome to Funcbench Tool. \u23F1\uFE0F\
+    \n\n    Running benchmark `{{ index . \"BENCH_FUNC_REGEX\"}}` on **`PR-{{ index\
+    \ . \"PR_NUMBER\" }}`** vs **`{{ index . \"BRANCH\" }}`**"

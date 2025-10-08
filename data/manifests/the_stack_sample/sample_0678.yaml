@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-view
+  namespace: vela-system
+data:
+  template: "import (\n  \"vela/ql\"\n)\n\nparameter: {\n  name:      string\n  namespace:\
+    \ string\n  cluster:   *\"\" | string\n}\n\npod: ql.#Read & {\n  value: {\n  \
+    \  apiVersion: \"v1\"\n    kind:       \"Pod\"\n    metadata: {\n      name: \
+    \     parameter.name\n      namespace: parameter.namespace\n    }\n  }\n  cluster:\
+    \ parameter.cluster\n}\n\neventList: ql.#SearchEvents & {\n  value: {\n    apiVersion:\
+    \ \"v1\"\n    kind:       \"Pod\"\n    metadata:   pod.value.metadata\n  }\n \
+    \ cluster: parameter.cluster\n}\n\npodMetrics: ql.#Read & {\n  cluster: parameter.cluster\n\
+    \  value: {\n    apiVersion: \"metrics.k8s.io/v1beta1\"\n    kind:       \"PodMetrics\"\
+    \n    metadata: {\n      name:      parameter.name\n      namespace: parameter.namespace\n\
+    \    }\n  }\n}\n\nstatus: {\n  if pod.err == _|_ {\n    containers: [ for container\
+    \ in pod.value.spec.containers {\n      name:  container.name\n      image: container.image\n\
+    \      resources: {\n        if container.resources.limits != _|_ {\n        \
+    \  limits: container.resources.limits\n        }\n        if container.resources.requests\
+    \ != _|_ {\n          requests: container.resources.requests\n        }\n    \
+    \    if podMetrics.err == _|_ {\n          usage: {for containerUsage in podMetrics.value.containers\
+    \ {\n            if containerUsage.name == container.name {\n              cpu:\
+    \    containerUsage.usage.cpu\n              memory: containerUsage.usage.memory\n\
+    \            }\n          }}\n        }\n      }\n      status: {for containerStatus\
+    \ in pod.value.status.containerStatuses if containerStatus.name == container.name\
+    \ {\n        state:        containerStatus.state\n        restartCount: containerStatus.restartCount\n\
+    \      }}\n    }]\n    if eventList.err == _|_ {\n      events: eventList.list\n\
+    \    }\n  }\n  if pod.err != _|_ {\n    error: pod.err\n  }\n}"

@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-log-collector-config-all
+  namespace: prophecis
+  labels:
+    k8s-app: fluent-bit
+data:
+  fluent-bit.conf: "[SERVICE]\n    Flush         1   \n    Log_Level     info\n  \
+    \  Daemon        off\n    Parsers_File  parsers.conf  \n    HTTP_Server   On\n\
+    \    HTTP_Listen   0.0.0.0\n    HTTP_Port     2020\n@INCLUDE training-log.conf\n\
+    @INCLUDE record_modifier.conf\n@INCLUDE output-elasticsearch.conf\n"
+  training-log.conf: "[INPUT]\n    Name              tail\n    Tag               training.*\
+    \    \n    Path              /job/*.log \n    Parser            syslog    \n \
+    \   DB                /job/training-log.db    \n    Mem_Buf_Limit     5MB\n  \
+    \  Skip_Long_Lines   On\n    Refresh_Interval  10\n    Key               line\
+    \    \n"
+  record_modifier.conf: "[FILTER]\n    Name    lua\n    Match   training.*\n    script\
+    \  training.lua   \n    call    cb_print    \n    Type_int_key rindex time   \
+    \ \n    Match training.*\n[FILTER]\n    Name nest  \n    Match training.*\n  \
+    \  Operation nest\n    Wildcard time\n    Wildcard rindex\n    Wildcard training_id\
+    \ \n    Nest_under meta  \n"
+  training.lua: "start_line_num = 1\nfunction cb_print(tag, timestamp, record)\n \
+    \  fname_strat_num = string.find(tag,\".training\")+1\n   fname_end_num = string.find(tag,\"\
+    .\",-1)\n   fname =  string.sub(tag,fname_strat_num,-5)\n\n   fline_name = \"\
+    /job/\"..fname..\"-line.pos\"\n   print(fline_name) \n   -- check if file exists\n\
+    \   local file = io.open(fline_name, \"r\")\n   -- if file not exists, create\
+    \ file and set default value\n   if(file == nil)\n   then\n     print(\"file not\
+    \ exists\")\n     file = io.open(fline_name, \"w+\")\n     file:write(start_line_num)\n\
+    \   end\n   file:close()\n   -- read current line num from line.pos\n   file =\
+    \ io.open(fline_name, \"r\")\n   local current = file:read()\n   file:close()\n\
+    \   -- object which will be returned\n   new_record = {}\n   new_record[\"training_id\"\
+    ] = fname\n   -- line num\n   new_record[\"rindex\"] = tonumber(current)\n\n \
+    \  fname_strat_num = string.find(tag,\".training\")+1\n   fname_end_num = string.find(tag,\"\
+    .\",-1)\n   fname =  string.sub(tag,fname_strat_num,-5)\n   new_record[\"training_id\"\
+    ] = fname\n\n   -- current timestamp\n   origin_time = string.format(\"%d\", timestamp*1000)\n\
+    \   -- new_record[\"time\"] = string.sub(origin_time,1,-8)\n   new_record[\"time\"\
+    ] = tonumber(origin_time)\n   -- other key from input\n   for key, val in pairs(record)\
+    \ do\n     new_record[key] = val\n   end\n   -- save back in line.pos\n   file\
+    \ = io.open(fline_name, \"w+\")\n   current = current + 1\n   file:write(current)\n\
+    \   file:close()\n   return 1, timestamp, new_record\nend\n"
+  output-elasticsearch.conf: "[OUTPUT]\n    Name            es\n    Match        \
+    \   *\n    Host            ${FLUENT_ELASTICSEARCH_HOST}\n    Port            ${FLUENT_ELASTICSEARCH_PORT}\n\
+    \    HTTP_User       ${FLUENT_ELASTICSEARCH_USER}\n    HTTP_Passwd     ${FLUENT_ELASTICSEARCH_PASSWD}\n\
+    \    Index           dlaas_learner_data   \n    #Logstash_Format On\n    Replace_Dots\
+    \    On\n    Retry_Limit     False\n    Type            logline    \n    # Time_Key\
+    \        time    \n\n[OUTPUT]\n    Name  stdout\n    Match *\n"
+  parsers.conf: "[PARSER]\n    Name   apache\n    Format regex\n    Regex  ^(?<host>[^\
+    \ ]*) [^ ]* (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\S+)(?: +(?<path>[^\\\
+    \"]*?)(?: +\\S*)?)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"(?<referer>[^\\\"]*)\"\
+    \ \"(?<agent>[^\\\"]*)\")?$\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S\
+    \ %z\n\n[PARSER]\n    Name   apache2\n    Format regex\n    Regex  ^(?<host>[^\
+    \ ]*) [^ ]* (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\S+)(?: +(?<path>[^\
+    \ ]*) +\\S*)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"(?<referer>[^\\\"]*)\" \"(?<agent>[^\\\
+    \"]*)\")?$\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S %z\n\n[PARSER]\n\
+    \    Name   apache_error\n    Format regex\n    Regex  ^\\[[^ ]* (?<time>[^\\\
+    ]]*)\\] \\[(?<level>[^\\]]*)\\](?: \\[pid (?<pid>[^\\]]*)\\])?( \\[client (?<client>[^\\\
+    ]]*)\\])? (?<message>.*)$\n\n[PARSER]\n    Name   nginx\n    Format regex\n  \
+    \  Regex ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\\
+    ] \"(?<method>\\S+)(?: +(?<path>[^\\\"]*?)(?: +\\S*)?)?\" (?<code>[^ ]*) (?<size>[^\
+    \ ]*)(?: \"(?<referer>[^\\\"]*)\" \"(?<agent>[^\\\"]*)\")?$\n    Time_Key time\n\
+    \    Time_Format %d/%b/%Y:%H:%M:%S %z\n\n[PARSER]\n    Name   json\n    Format\
+    \ json\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S %z\n\n[PARSER]\n\
+    \    Name        docker\n    Format      json\n    Time_Key    time\n    Time_Format\
+    \ %Y-%m-%dT%H:%M:%S.%L\n    Time_Keep   On\n\n[PARSER]\n    Name        syslog\n\
+    \    Format      regex\n    Regex       ^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^\
+    \ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\\
+    ])?(?:[^\\:]*\\:)? *(?<message>.*)$\n    # Time_Format %b %d %H:%M:%S\n    Time_Format\
+    \ %S%L\n    Time_Keep   On"

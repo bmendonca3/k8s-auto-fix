@@ -1,0 +1,45 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: istio-validator-istio-system
+  labels:
+    app: istiod
+    release: release-name
+    istio: istiod
+    istio.io/rev: default
+    app.kubernetes.io/name: istiod
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/part-of: istio
+    app.kubernetes.io/version: 1.27.1
+    helm.sh/chart: istiod-1.27.1
+webhooks:
+- name: rev.validation.istio.io
+  clientConfig:
+    service:
+      name: istiod
+      namespace: istio-system
+      path: /validate
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - security.istio.io
+    - networking.istio.io
+    - telemetry.istio.io
+    - extensions.istio.io
+    apiVersions:
+    - '*'
+    resources:
+    - '*'
+  failurePolicy: Ignore
+  sideEffects: None
+  admissionReviewVersions:
+  - v1
+  objectSelector:
+    matchExpressions:
+    - key: istio.io/rev
+      operator: In
+      values:
+      - default

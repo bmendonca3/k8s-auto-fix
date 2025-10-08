@@ -1,0 +1,282 @@
+[
+  {
+    "id": "03521",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1538.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: cowweb\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: cowweb\n  template:\n    metadata:\n      labels:\n        app: cowweb\n    spec:\n      containers:\n      - name: cowweb\n        image: phx.ocir.io/orasejapan/handsontest-001/cowweb:v1.0\n        ports:\n        - name: api\n          containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /cowsay/ping\n            port: api\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        livenessProbe:\n          httpGet:\n            path: /cowsay/ping\n            port: api\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        imagePullPolicy: Always\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"cowweb\" has memory limit 0"
+  },
+  {
+    "id": "03522",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1543.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n",
+    "policy_id": "env-var-secret",
+    "violation_text": "environment variable AAA_SECRET_DATA_DIRECT_ENV in container \"alpine\" found"
+  },
+  {
+    "id": "03523",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1543.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"alpine\" is using an invalid container image, \"alpine\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03524",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1543.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"alpine\" does not have a read-only root file system"
+  },
+  {
+    "id": "03525",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1543.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"alpine\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03526",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1543.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"alpine\" has cpu request 0"
+  },
+  {
+    "id": "03527",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1543.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          value: vault:secret/data/sandbox/aaa#AAA_SECRET_DATA_DIRECT_ENV\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"alpine\" has memory limit 0"
+  },
+  {
+    "id": "03528",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1547.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"label-sync\" does not have a read-only root file system"
+  },
+  {
+    "id": "03529",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1547.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"label-sync\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03530",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1547.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"label-sync\" has cpu request 0"
+  },
+  {
+    "id": "03531",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1547.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"label-sync\" has memory limit 0"
+  },
+  {
+    "id": "03532",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1550.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: demogaurav.azurecr.io/blue-nginx:1\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 200m\n            memory: 200Mi\n          limits:\n            cpu: 500m\n            memory: 500Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "03533",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1550.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: demogaurav.azurecr.io/blue-nginx:1\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 200m\n            memory: 200Mi\n          limits:\n            cpu: 500m\n            memory: 500Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03534",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1552.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"app\" does not have a read-only root file system"
+  },
+  {
+    "id": "03535",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1552.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"log-aggregator\" does not have a read-only root file system"
+  },
+  {
+    "id": "03536",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1552.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03537",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1552.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"log-aggregator\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03538",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1555.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:latest\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"notification\" is using an invalid container image, \"stocktradersjilv2/notification:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03539",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1555.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:latest\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"notification\" does not have a read-only root file system"
+  },
+  {
+    "id": "03540",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1555.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:latest\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"notification\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03541",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1555.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:latest\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"notification\" has memory limit 0"
+  },
+  {
+    "id": "03542",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1556.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          value: '%MINIO_SECRET_KEY%'\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n",
+    "policy_id": "env-var-secret",
+    "violation_text": "environment variable MINIO_SECRET_KEY in container \"nulog-inference-service\" found"
+  },
+  {
+    "id": "03543",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1556.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          value: '%MINIO_SECRET_KEY%'\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nulog-inference-service\" does not have a read-only root file system"
+  },
+  {
+    "id": "03544",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1556.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          value: '%MINIO_SECRET_KEY%'\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nulog-inference-service\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03545",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1556.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          value: '%MINIO_SECRET_KEY%'\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nulog-inference-service\" has cpu request 0"
+  },
+  {
+    "id": "03546",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1556.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          value: '%MINIO_SECRET_KEY%'\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nulog-inference-service\" has memory limit 0"
+  },
+  {
+    "id": "03547",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1558.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"glusterfs\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03548",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1558.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"glusterfs\" does not have a read-only root file system"
+  },
+  {
+    "id": "03549",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1558.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"glusterfs\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "03550",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1558.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"glusterfs\" has cpu request 0"
+  },
+  {
+    "id": "03551",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1558.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"glusterfs\" has memory limit 0"
+  },
+  {
+    "id": "03552",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"container1\" is using an invalid container image, \"k8s.gcr.io/pause\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03553",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"initcontainer1\" is using an invalid container image, \"k8s.gcr.io/pause\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "03554",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"container1\" does not have a read-only root file system"
+  },
+  {
+    "id": "03555",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"initcontainer1\" does not have a read-only root file system"
+  },
+  {
+    "id": "03556",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"container1\" has cpu request 0"
+  },
+  {
+    "id": "03557",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"initcontainer1\" has cpu request 0"
+  },
+  {
+    "id": "03558",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"container1\" has memory limit 0"
+  },
+  {
+    "id": "03559",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1568.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n  initContainers:\n  - image: k8s.gcr.io/pause\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"initcontainer1\" has memory limit 0"
+  },
+  {
+    "id": "03560",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1571.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-ingress-controller\n  labels:\n    k8s-app: nginx-ingress-lb\nspec:\n  replicas: 1\n  selector:\n    k8s-app: nginx-ingress-lb\n  template:\n    metadata:\n      labels:\n        k8s-app: nginx-ingress-lb\n        name: nginx-ingress-lb\n    spec:\n      containers:\n      - image: gcr.io/google_containers/nginx-ingress-controller:0.62\n        name: nginx-ingress-lb\n        imagePullPolicy: Always\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 10249\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        ports:\n        - containerPort: 80\n          hostPort: 80\n        - containerPort: 443\n          hostPort: 443\n        args:\n        - /nginx-ingress-controller\n        - --default-backend-service=default/default-http-backend\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx-ingress-lb\" does not have a read-only root file system"
+  }
+]

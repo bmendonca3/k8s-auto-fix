@@ -1,0 +1,482 @@
+[
+  {
+    "id": "02561",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prod1\n  labels:\n    app: prod1\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: prod1\n  template:\n    metadata:\n      labels:\n        app: prod1\n    spec:\n      containers:\n      - name: prod1-container\n        image: paulfdunn/prod1:v0.0.0\n        imagePullPolicy: IfNotPresent\n        ports:\n        - containerPort: 8000\n        volumeMounts:\n        - mountPath: /opt/prod1/data\n          name: data\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: data\n        persistentVolumeClaim:\n          claimName: prod1-pvc\n",
+    "errors": []
+  },
+  {
+    "id": "02562",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kctl\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kctl\n  template:\n    metadata:\n      labels:\n        app: kctl\n    spec:\n      containers:\n      - name: kctl\n        image: kg8s-local/kctl:v21.12.1\n        command:\n        - sh\n        args:\n        - -c\n        - 'cat /opt/ca.crt\n\n          cp /opt/ca.crt /usr/local/share/ca-certificates/nip-io-ca.crt\n\n          update-ca-certificates\n\n          echo \"\"\n\n          echo \"[UPDATE CA CERTIFICATE] check ca certificates\"\n\n          tail -n 20 /etc/ssl/certs/ca-certificates.crt\n\n          echo $(date) ; tail -f /dev/null\n\n          '\n        resources:\n          limits:\n            cpu: '1'\n            memory: 256Mi\n          requests:\n            cpu: 200m\n            memory: 128Mi\n        volumeMounts:\n        - name: cm-ca-nip\n          mountPath: /opt/ca.crt\n          subPath: ca.crt\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: cm-ca-nip\n        configMap:\n          name: ca-nip\n",
+    "errors": []
+  },
+  {
+    "id": "02563",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kctl\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kctl\n  template:\n    metadata:\n      labels:\n        app: kctl\n    spec:\n      containers:\n      - name: kctl\n        image: kg8s-local/kctl:v21.12.1\n        command:\n        - sh\n        args:\n        - -c\n        - 'cat /opt/ca.crt\n\n          cp /opt/ca.crt /usr/local/share/ca-certificates/nip-io-ca.crt\n\n          update-ca-certificates\n\n          echo \"\"\n\n          echo \"[UPDATE CA CERTIFICATE] check ca certificates\"\n\n          tail -n 20 /etc/ssl/certs/ca-certificates.crt\n\n          echo $(date) ; tail -f /dev/null\n\n          '\n        resources:\n          limits:\n            cpu: '1'\n            memory: 256Mi\n          requests:\n            cpu: 200m\n            memory: 128Mi\n        volumeMounts:\n        - name: cm-ca-nip\n          mountPath: /opt/ca.crt\n          subPath: ca.crt\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: cm-ca-nip\n        configMap:\n          name: ca-nip\n",
+    "errors": []
+  },
+  {
+    "id": "02564",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: guestbook\n      tier: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: guestbook\n        tier: frontend\n    spec:\n      containers:\n      - name: php-redis\n        image: naoyoshi/mb-ui:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: GET_HOSTS_FROM\n          value: dns\n        ports:\n        - containerPort: 80\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02565",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: guestbook\n      tier: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: guestbook\n        tier: frontend\n    spec:\n      containers:\n      - name: php-redis\n        image: naoyoshi/mb-ui:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: GET_HOSTS_FROM\n          value: dns\n        ports:\n        - containerPort: 80\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02566",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: guestbook\n      tier: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: guestbook\n        tier: frontend\n    spec:\n      containers:\n      - name: php-redis\n        image: naoyoshi/mb-ui:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n        env:\n        - name: GET_HOSTS_FROM\n          value: dns\n        ports:\n        - containerPort: 80\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02567",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend\nspec:\n  selector:\n    matchLabels:\n      app: guestbook\n      tier: frontend\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: guestbook\n        tier: frontend\n    spec:\n      containers:\n      - name: php-redis\n        image: naoyoshi/mb-ui:stable\n        resources:\n          requests:\n            cpu: 100m\n            memory: 100Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        env:\n        - name: GET_HOSTS_FROM\n          value: dns\n        ports:\n        - containerPort: 80\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02568",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: auto-deploy\n  template:\n    metadata:\n      labels:\n        app: auto-deploy\n    spec:\n      containers:\n      - name: server\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.server\n        - serve\n        - --template-folder=/app/templates\n        - --deployments-dir=/cache/deployments\n        - --port=80\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      - name: reconciler\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.reconciler\n        - run\n        - --config-path=/app/config/deployments.yaml\n        - --job-template-path=/app/config/deploy-kubeflow.yaml\n        - --local-dir=/cache/auto_deploy_src\n        - --deployments-dir=/cache/deployments\n        env:\n        - name: JOB_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      serviceAccount: default-editor\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: cache\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "02569",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: auto-deploy\n  template:\n    metadata:\n      labels:\n        app: auto-deploy\n    spec:\n      containers:\n      - name: server\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.server\n        - serve\n        - --template-folder=/app/templates\n        - --deployments-dir=/cache/deployments\n        - --port=80\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      - name: reconciler\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.reconciler\n        - run\n        - --config-path=/app/config/deployments.yaml\n        - --job-template-path=/app/config/deploy-kubeflow.yaml\n        - --local-dir=/cache/auto_deploy_src\n        - --deployments-dir=/cache/deployments\n        env:\n        - name: JOB_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      serviceAccount: default-editor\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: cache\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "02570",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: auto-deploy\n  template:\n    metadata:\n      labels:\n        app: auto-deploy\n    spec:\n      containers:\n      - name: server\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.server\n        - serve\n        - --template-folder=/app/templates\n        - --deployments-dir=/cache/deployments\n        - --port=80\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: reconciler\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.reconciler\n        - run\n        - --config-path=/app/config/deployments.yaml\n        - --job-template-path=/app/config/deploy-kubeflow.yaml\n        - --local-dir=/cache/auto_deploy_src\n        - --deployments-dir=/cache/deployments\n        env:\n        - name: JOB_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      serviceAccount: default-editor\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: cache\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "02571",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: auto-deploy\n  template:\n    metadata:\n      labels:\n        app: auto-deploy\n    spec:\n      containers:\n      - name: server\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.server\n        - serve\n        - --template-folder=/app/templates\n        - --deployments-dir=/cache/deployments\n        - --port=80\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: reconciler\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.reconciler\n        - run\n        - --config-path=/app/config/deployments.yaml\n        - --job-template-path=/app/config/deploy-kubeflow.yaml\n        - --local-dir=/cache/auto_deploy_src\n        - --deployments-dir=/cache/deployments\n        env:\n        - name: JOB_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      serviceAccount: default-editor\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: cache\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "02572",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: auto-deploy\n  template:\n    metadata:\n      labels:\n        app: auto-deploy\n    spec:\n      containers:\n      - name: server\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.server\n        - serve\n        - --template-folder=/app/templates\n        - --deployments-dir=/cache/deployments\n        - --port=80\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: reconciler\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.reconciler\n        - run\n        - --config-path=/app/config/deployments.yaml\n        - --job-template-path=/app/config/deploy-kubeflow.yaml\n        - --local-dir=/cache/auto_deploy_src\n        - --deployments-dir=/cache/deployments\n        env:\n        - name: JOB_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      serviceAccount: default-editor\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: cache\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "02573",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: server\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: auto-deploy\n  template:\n    metadata:\n      labels:\n        app: auto-deploy\n    spec:\n      containers:\n      - name: server\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.server\n        - serve\n        - --template-folder=/app/templates\n        - --deployments-dir=/cache/deployments\n        - --port=80\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: reconciler\n        image: gcr.io/kubeflow-ci/auto_deploy:stable\n        command:\n        - python\n        - -m\n        - kubeflow.testing.auto_deploy.reconciler\n        - run\n        - --config-path=/app/config/deployments.yaml\n        - --job-template-path=/app/config/deploy-kubeflow.yaml\n        - --local-dir=/cache/auto_deploy_src\n        - --deployments-dir=/cache/deployments\n        env:\n        - name: JOB_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        resources:\n          requests:\n            cpu: 2\n            memory: 8Gi\n        workingDir: /app\n        volumeMounts:\n        - name: config\n          mountPath: /app/config\n        - name: cache\n          mountPath: /cache\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      serviceAccount: default-editor\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: cache\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "02574",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02575",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02576",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: load-balancer-example\n  name: hello-world\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: load-balancer-example\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: load-balancer-example\n    spec:\n      containers:\n      - image: nikhil101/django-k8s:2.1\n        name: hello-world\n        ports:\n        - containerPort: 8000\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02577",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: load-balancer-example\n  name: hello-world\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: load-balancer-example\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: load-balancer-example\n    spec:\n      containers:\n      - image: nikhil101/django-k8s:2.1\n        name: hello-world\n        ports:\n        - containerPort: 8000\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02578",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: load-balancer-example\n  name: hello-world\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: load-balancer-example\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: load-balancer-example\n    spec:\n      containers:\n      - image: nikhil101/django-k8s:2.1\n        name: hello-world\n        ports:\n        - containerPort: 8000\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02579",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: load-balancer-example\n  name: hello-world\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: load-balancer-example\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: load-balancer-example\n    spec:\n      containers:\n      - image: nikhil101/django-k8s:2.1\n        name: hello-world\n        ports:\n        - containerPort: 8000\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02580",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3665\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02581",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3665\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02582",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3665\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02583",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3665\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02584",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-3665\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02585",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02586",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02587",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02588",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02589",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02590",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02591",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02592",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02593",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02594",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02595",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02596",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "no containers found in manifest",
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "02597",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1497\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02598",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1497\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02599",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1497\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "02600",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-1497\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  }
+]

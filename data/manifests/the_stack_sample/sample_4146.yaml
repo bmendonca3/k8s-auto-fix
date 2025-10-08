@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: zcp-system
+  labels:
+    app: fluent-bit
+data:
+  fluent-bit.conf: "[SERVICE]\n    Flush         1\n    Log_Level     info\n    Daemon\
+    \        off\n    Parsers_File  parsers.conf\n@INCLUDE input-kubernetes.conf\n\
+    @INCLUDE filter-kubernetes.conf\n@INCLUDE output-fluentd.conf\n"
+  input-kubernetes.conf: "[INPUT]\n    Name              tail\n    Tag           \
+    \    kube.*\n    Path              /var/log/containers/*.log\n    Parser     \
+    \       containerd\n    DB                /var/log/flb_kube.db\n    Mem_Buf_Limit\
+    \     5MB\n    Refresh_Interval  10\n    Exclude_Path   /var/log/containers/fluentd-aggregator*,/var/log/containers/p*nginx-ingress-*controller*_kube-system_*.log\n\
+    [INPUT]\n    Name              tail\n    Tag               kubemeta.*\n    Path\
+    \              /var/log/*.log\n    Path_Key          file\n    Parser        \
+    \    kubemeta\n    DB                /var/log/flb_kubemeta.db\n    Mem_Buf_Limit\
+    \     5MB\n    Refresh_Interval  10\n[INPUT]\n    Name              tail\n   \
+    \ Tag               ingress.*\n    Path              /var/log/containers/p*-alb*_kube-system_*.log\n\
+    \    Parser            containerd\n    DB                /var/log/flb_ingress.db\n\
+    \    Mem_Buf_Limit     5MB\n    Refresh_Interval  10\n[INPUT]\n    Name      \
+    \        tail\n    Tag               ingress.*\n    Path              /var/log/containers/p*nginx-ingress-*controller*_kube-system_*.log\n\
+    \    Parser            containerd\n    DB                /var/log/flb_ingress.db\n\
+    \    Mem_Buf_Limit     5MB\n    Refresh_Interval  10\n"
+  filter-kubernetes.conf: "[FILTER]\n    Name                kubernetes\n    Match\
+    \               kube.*\n    Kube_URL            https://kubernetes.default.svc.cluster.local:443\n\
+    \    Merge_Log           Off\n    K8S-Logging.Parser  On\n[FILTER]\n    Name \
+    \               record_modifier\n    Match               kubemeta.*\n    Record\
+    \              node_name ${NODE_NAME}\n[FILTER]\n    Name                kubernetes\n\
+    \    Match               ingress.*\n    Kube_URL            https://kubernetes.default.svc.cluster.local:443\n\
+    \    Merge_Log           Off\n    K8S-Logging.Parser  On\n"
+  output-fluentd.conf: "[OUTPUT]\n   Name            forward\n   Match           *\n\
+    \   Host            fluentd-aggregator\n   Port            24224\n   Time_as_Integer\
+    \ True\n"
+  parsers.conf: "[PARSER]\n    Name   apache\n    Format regex\n    Regex  ^(?<host>[^\
+    \ ]*) [^ ]* (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\S+)(?: +(?<path>[^\\\
+    \"]*?)(?: +\\S*)?)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"(?<referer>[^\\\"]*)\"\
+    \ \"(?<agent>[^\\\"]*)\")?$\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S\
+    \ %z\n[PARSER]\n    Name   apache2\n    Format regex\n    Regex  ^(?<host>[^ ]*)\
+    \ [^ ]* (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\S+)(?: +(?<path>[^\
+    \ ]*) +\\S*)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"(?<referer>[^\\\"]*)\" \"(?<agent>[^\\\
+    \"]*)\")?$\n    Time_Key time\n    Time_Format %d/%b/%Y:%H:%M:%S %z\n[PARSER]\n\
+    \    Name   apache_error\n    Format regex\n    Regex  ^\\[[^ ]* (?<time>[^\\\
+    ]]*)\\] \\[(?<level>[^\\]]*)\\](?: \\[pid (?<pid>[^\\]]*)\\])?( \\[client (?<client>[^\\\
+    ]]*)\\])? (?<message>.*)$\n[PARSER]\n    Name   nginx\n    Format regex\n    Regex\
+    \ ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \\[(?<time>[^\\]]*)\\] \"(?<method>\\\
+    S+)(?: +(?<path>[^\\\"]*?)(?: +\\S*)?)?\" (?<code>[^ ]*) (?<size>[^ ]*)(?: \"\
+    (?<referer>[^\\\"]*)\" \"(?<agent>[^\\\"]*)\")?$\n    Time_Key time\n    Time_Format\
+    \ %d/%b/%Y:%H:%M:%S %z\n[PARSER]\n    Name   json\n    Format json\n    Time_Key\
+    \ time\n    Time_Format %d/%b/%Y:%H:%M:%S %z\n    Decode_Field_as escaped_utf8\
+    \ log\n[PARSER]\n    Name        containerd\n    Format      json\n    Time_Key\
+    \    time\n    Time_Format %Y-%m-%dT%H:%M:%S.%L\n    Time_Keep   On\n    #Regex\
+    \ ^(?<time>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,}Z) (?<stream>stdout|stderr)\
+    \ (?<line>[FPI]) (?<log>.*)$\n    # Command      |  Decoder | Field | Optional\
+    \ Action\n    # =============|==================|=================\n    Decode_Field_As\
+    \    escaped      log\n[PARSER]\n    Name        syslog\n    Format      regex\n\
+    \    Regex       ^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^\
+    \ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)?\
+    \ *(?<message>.*)$\n    Time_Key    time\n    Time_Format %b %d %H:%M:%S\n[PARSER]\n\
+    \    Format regex\n    Name java_multiline\n    Regex (?<apptime>\\d{4}-\\d{1,2}-\\\
+    d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2}\\.\\d{2,3})  (?<level>[^ ]*) (?<pid>[^ ]*) ---\
+    \ \\[(?<thread>[^\\]]*)\\] *(?<message>.*)$\n    Time_Format %Y-%m-%d %H:%M:%S.%L\n\
+    \    Time_Keep On\n    Time_Key apptime\n[PARSER]\n    Name        kubemeta\n\
+    \    Format      regex\n    Regex       (?<apptime>^\\D{3} (\\s\\d{1}|\\d{1,2})\
+    \ \\d{2}:\\d{2}:\\d{2})(?<log>.*)\n    Time_Format %b %d %H:%M:%S\n    Time_Key\
+    \    apptime\n    Time_Keep   On\n[PARSER]\n    Name        nginx-ingress\n  \
+    \  Format      json\n    Time_Key    time_date\n    Time_Format %Y-%m-%dT%H:%M:%S.%L\n\
+    \    Time_Keep   On\n    # Command      |  Decoder | Field | Optional Action\n\
+    \    # =============|==================|=================\n    Decode_Field_As\
+    \    escaped      log"

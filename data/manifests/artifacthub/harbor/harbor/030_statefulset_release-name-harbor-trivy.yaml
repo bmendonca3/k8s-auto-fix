@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-harbor-trivy
+  namespace: default
+  labels:
+    heritage: Helm
+    release: release-name
+    chart: harbor
+    app: harbor
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.14.0
+    component: trivy
+    app.kubernetes.io/component: trivy
+spec:
+  replicas: 1
+  serviceName: release-name-harbor-trivy
+  selector:
+    matchLabels:
+      release: release-name
+      app: harbor
+      component: trivy
+  template:
+    metadata:
+      labels:
+        heritage: Helm
+        release: release-name
+        chart: harbor
+        app: harbor
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: harbor
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: harbor
+        app.kubernetes.io/version: 2.14.0
+        component: trivy
+        app.kubernetes.io/component: trivy
+      annotations:
+        checksum/secret: 6fbc9db4d37c6bc53260a46776f92e1e0390c1d50cd884e19a8d0a3c73deed8f
+    spec:
+      securityContext:
+        runAsUser: 10000
+        fsGroup: 10000
+      automountServiceAccountToken: false
+      containers:
+      - name: trivy
+        image: goharbor/trivy-adapter-photon:v2.14.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        env:
+        - name: HTTP_PROXY
+          value: ''
+        - name: HTTPS_PROXY
+          value: ''
+        - name: NO_PROXY
+          value: release-name-harbor-core,release-name-harbor-jobservice,release-name-harbor-database,release-name-harbor-registry,release-name-harbor-portal,release-name-harbor-trivy,release-name-harbor-exporter,127.0.0.1,localhost,.local,.internal
+        - name: SCANNER_LOG_LEVEL
+          value: info
+        - name: SCANNER_TRIVY_CACHE_DIR
+          value: /home/scanner/.cache/trivy
+        - name: SCANNER_TRIVY_REPORTS_DIR
+          value: /home/scanner/.cache/reports
+        - name: SCANNER_TRIVY_DEBUG_MODE
+          value: 'false'
+        - name: SCANNER_TRIVY_VULN_TYPE
+          value: os,library
+        - name: SCANNER_TRIVY_TIMEOUT
+          value: 5m0s
+        - name: SCANNER_TRIVY_GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-harbor-trivy
+              key: gitHubToken
+        - name: SCANNER_TRIVY_SEVERITY
+          value: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+        - name: SCANNER_TRIVY_IGNORE_UNFIXED
+          value: 'false'
+        - name: SCANNER_TRIVY_SKIP_UPDATE
+          value: 'false'
+        - name: SCANNER_TRIVY_SKIP_JAVA_DB_UPDATE
+          value: 'false'
+        - name: SCANNER_TRIVY_DB_REPOSITORY
+          value: mirror.gcr.io/aquasec/trivy-db,ghcr.io/aquasecurity/trivy-db
+        - name: SCANNER_TRIVY_JAVA_DB_REPOSITORY
+          value: mirror.gcr.io/aquasec/trivy-java-db,ghcr.io/aquasecurity/trivy-java-db
+        - name: SCANNER_TRIVY_OFFLINE_SCAN
+          value: 'false'
+        - name: SCANNER_TRIVY_SECURITY_CHECKS
+          value: vuln
+        - name: SCANNER_TRIVY_INSECURE
+          value: 'false'
+        - name: SCANNER_API_SERVER_ADDR
+          value: :8080
+        - name: SCANNER_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: release-name-harbor-trivy
+              key: redisURL
+        - name: SCANNER_STORE_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: release-name-harbor-trivy
+              key: redisURL
+        - name: SCANNER_JOB_QUEUE_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: release-name-harbor-trivy
+              key: redisURL
+        ports:
+        - name: api-server
+          containerPort: 8080
+        volumeMounts:
+        - name: data
+          mountPath: /home/scanner/.cache
+          subPath: null
+          readOnly: false
+        livenessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /probe/healthy
+            port: api-server
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /probe/ready
+            port: api-server
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: 1
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 512Mi
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: data
+      labels:
+        heritage: Helm
+        release: release-name
+        chart: harbor
+        app: harbor
+      annotations: null
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi

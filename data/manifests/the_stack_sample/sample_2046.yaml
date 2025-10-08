@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: RELEASE-NAME-matomo
+  labels:
+    app.kubernetes.io/name: matomo
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: matomo-1.0.1
+data:
+  matomo.conf: "upstream php-handler {\n  server localhost:9000;\n}\n\nserver {\n\
+    \  listen 80;\n\n  add_header Referrer-Policy origin; # make sure outgoing links\
+    \ don't show the URL to the Matomo instance\n  root /var/www/html; # replace with\
+    \ path to your matomo instance\n  index index.php;\n  try_files $uri $uri/ =404;\n\
+    \  \n  ## Rewrite matomo.js and matomo.php to reduce adblocking rate\n  rewrite\
+    \ ^/mj /matomo.js last;\n  rewrite ^/mp /matomo.php last;\n\n  ## only allow accessing\
+    \ the following php files\n  location ~ ^/(index|matomo|piwik|js/index|plugins/HeatmapSessionRecording/configs).php\
+    \ {\n    # regex to split $uri to $fastcgi_script_name and $fastcgi_path\n   \
+    \ fastcgi_split_path_info ^(.+\\.php)(/.+)$;\n\n    # Check that the PHP script\
+    \ exists before passing it\n    try_files $fastcgi_script_name =404;\n\n    include\
+    \ fastcgi_params;\n    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n\
+    \    fastcgi_param PATH_INFO $fastcgi_path_info;\n    fastcgi_param HTTP_PROXY\
+    \ \"\"; # prohibit httpoxy: https://httpoxy.org/\n    fastcgi_pass php-handler;\n\
+    \  }\n\n  ## deny access to all other .php files\n  location ~* ^.+\\.php$ {\n\
+    \    deny all;\n    return 403;\n  }\n\n  ## disable all access to the following\
+    \ directories\n  location ~ /(config|tmp|core|lang) {\n    deny all;\n    return\
+    \ 403; # replace with 404 to not show these directories exist\n  }\n  location\
+    \ ~ /\\.ht {\n    deny all;\n    return 403;\n  }\n\n  location ~ js/container_.*_preview\\\
+    .js$ {\n    expires off;\n    add_header Cache-Control 'private, no-cache, no-store';\n\
+    \  }\n\n  location ~ \\.(gif|ico|jpg|png|svg|js|css|htm|html|mp3|mp4|wav|ogg|avi|ttf|eot|woff|woff2|json)$\
+    \ {\n    allow all;\n    ## Cache images,CSS,JS and webfonts for an hour\n   \
+    \ ## Increasing the duration may improve the load-time, but may cause old files\
+    \ to show after an Matomo upgrade\n    expires 1h;\n    add_header Pragma public;\n\
+    \    add_header Cache-Control \"public\";\n  }\n\n  location ~ /(libs|vendor|plugins|misc/user)\
+    \ {\n    deny all;\n    return 403;\n  }\n\n  ## properly display textfiles in\
+    \ root directory\n  location ~/(.*\\.md|LEGALNOTICE|LICENSE) {\n    default_type\
+    \ text/plain;\n  }\n}\n"
+  update-ipdb.sh: '#!/bin/sh
+
+
+    DATE=$(date +"%Y-%m")
+
+
+    printf "Downloading IP-DB Database for date: %s\\n" "$DATE"
+
+    wget -O geoip.gz "https://download.db-ip.com/free/dbip-city-lite-$(date +%Y-%m).mmdb.gz"
+
+    printf "Unzipping...\\n"
+
+    gunzip -c geoip.gz > /data/geoip/DBIP-City.mmdb
+
+    printf "Setting permission for DBIP-City\\n"
+
+    chown 82:82 /data/geoip/DBIP-City.mmdb'

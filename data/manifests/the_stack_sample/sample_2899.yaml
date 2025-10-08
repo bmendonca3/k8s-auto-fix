@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goreportcard
+  labels:
+    app: goreportcard
+    app.kubernetes.io/name: goreportcard
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: goreportcard
+      app.kubernetes.io/name: goreportcard
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app: goreportcard
+        app.kubernetes.io/name: goreportcard
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: yeqown/goreportcard:v1.4.1
+        name: goreportcard
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+        volumeMounts:
+        - name: goreportcard-configuration-volume
+          mountPath: /root
+      volumes:
+      - configMap:
+          name: goreportcard-configuration
+          items:
+          - key: ssh-pub
+            path: .ssh/id_rsa.pub
+          - key: goreportcard
+            path: goreportcard.toml
+        name: goreportcard-configuration-volume

@@ -1,0 +1,54 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: phunter
+  labels:
+    app: phunter
+spec:
+  selector:
+    matchLabels:
+      app: phunter
+  template:
+    metadata:
+      labels:
+        app: phunter
+    spec:
+      hostPID: true
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: phunter
+        env:
+        - name: PHUNTER_CONFIG_FILE
+          value: /config/config-example.yml
+        - name: PHUNTER_LOG_LEVEL
+          value: INFO
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            memory: 256Mi
+        securityContext:
+          capabilities:
+            add:
+            - SYS_PTRACE
+        ports:
+        - containerPort: 9000
+        imagePullPolicy: Always
+        image: phunter:latest
+        volumeMounts:
+        - name: phunter-config
+          mountPath: /config
+        - name: dockersocket
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: phunter-config
+        configMap:
+          name: phunter-config
+      - name: dockersocket
+        hostPath:
+          path: /var/run/docker.sock

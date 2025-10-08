@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prod1
+  labels:
+    app: prod1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: prod1
+  template:
+    metadata:
+      labels:
+        app: prod1
+    spec:
+      containers:
+      - name: prod1-container
+        image: paulfdunn/prod1:v0.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: /opt/prod1/data
+          name: data
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: prod1-pvc

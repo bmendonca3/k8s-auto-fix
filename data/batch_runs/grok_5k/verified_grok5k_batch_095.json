@@ -1,0 +1,470 @@
+[
+  {
+    "id": "03801",
+    "policy_id": "no_privileged",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    injection.smarttuning.ibm.com: 'true'\n  labels:\n    app: mock\n  name: mock\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock\n  template:\n    metadata:\n      labels:\n        app: mock\n    spec:\n      containers:\n      - image: open-liberty:full-java11-openj9\n        imagePullPolicy: IfNotPresent\n        name: openliberty\n        ports:\n        - containerPort: 9080\n        envFrom:\n        - configMapRef:\n            name: mock-envvar\n        volumeMounts:\n        - mountPath: /config/jvm.options\n          subPath: jvm.options\n          name: mock-jvm\n        securityContext:\n          runAsUser: 0\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        readinessProbe:\n          initialDelaySeconds: 30\n          httpGet:\n            port: 9080\n      volumes:\n      - name: mock-jvm\n        configMap:\n          name: mock-jvm\n",
+    "errors": []
+  },
+  {
+    "id": "03802",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": false,
+    "patched_yaml": null,
+    "errors": []
+  },
+  {
+    "id": "03803",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    injection.smarttuning.ibm.com: 'true'\n  labels:\n    app: mock\n  name: mock\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mock\n  template:\n    metadata:\n      labels:\n        app: mock\n    spec:\n      containers:\n      - image: open-liberty:full-java11-openj9\n        imagePullPolicy: IfNotPresent\n        name: openliberty\n        ports:\n        - containerPort: 9080\n        envFrom:\n        - configMapRef:\n            name: mock-envvar\n        volumeMounts:\n        - mountPath: /config/jvm.options\n          subPath: jvm.options\n          name: mock-jvm\n        securityContext:\n          runAsUser: 0\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        readinessProbe:\n          initialDelaySeconds: 30\n          httpGet:\n            port: 9080\n      volumes:\n      - name: mock-jvm\n        configMap:\n          name: mock-jvm\n",
+    "errors": []
+  },
+  {
+    "id": "03804",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: descheduler\n  namespace: kube-system\n  labels:\n    app: descheduler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: descheduler\n  template:\n    metadata:\n      labels:\n        app: descheduler\n    spec:\n      serviceAccountName: descheduler-sa\n      containers:\n      - name: descheduler\n        image: cr.d.xiaomi.net/cloud-ml/descheduler:v20211207-v0.22.0-16-g50f9513cb\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/descheduler\n        args:\n        - --policy-config-file\n        - /policy-dir/policy.yaml\n        - --nodeSelector\n        - type=virtual-kubelet\n        - --descheduling-interval\n        - 30m\n        - --v\n        - '3'\n        ports:\n        - containerPort: 10258\n          protocol: TCP\n        resources:\n          requests:\n            cpu: 500m\n            memory: 256Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        volumeMounts:\n        - mountPath: /policy-dir\n          name: policy-volume\n      volumes:\n      - name: policy-volume\n        configMap:\n          name: descheduler-policy-configmap\n",
+    "errors": []
+  },
+  {
+    "id": "03805",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03806",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03807",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03808",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03809",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03810",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03811",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03812",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: apm-eureka\n  labels:\n    deploy: apm-eureka\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: apm-eureka\n  template:\n    metadata:\n      name: apm-eureka\n      labels:\n        app: apm-eureka\n    spec:\n      initContainers:\n      - name: sidecar\n        image: apache/skywalking-base:6.5.0\n        imagePullPolicy: IfNotPresent\n        command:\n        - cp\n        - -r\n        - /skywalking/agent\n        - /sidecar\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      containers:\n      - name: apm-eureka\n        image: evanxuhe/apm-eureka:6.1.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: JAVA_OPTS\n          value: -javaagent:/sidecar/agent/skywalking-agent.jar\n        - name: SW_AGENT_NAME\n          value: apm-eureka\n        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES\n          value: skywalk-1h6lqf-skywalking-skywalking-oap.demo\n        ports:\n        - name: http\n          containerPort: 8761\n        volumeMounts:\n        - name: sidecar\n          mountPath: /sidecar\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: sidecar\n        emptyDir: {}\n",
+    "errors": []
+  },
+  {
+    "id": "03813",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03814",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03815",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03816",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03817",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03818",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\nspec:\n  volumes:\n  - name: persistentsharedspace\n    persistentVolumeClaim:\n      claimName: my-pv-claim\n  containers:\n  - name: nginx\n    image: nginx:1.7.9\n    volumeMounts:\n    - mountPath: /containerMount\n      name: persistentsharedspace\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03819",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:stable\n    ports:\n    - containerPort: 80\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03820",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:stable\n    ports:\n    - containerPort: 80\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03821",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:stable\n    ports:\n    - containerPort: 80\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03822",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:stable\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03823",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: pod-web\n  labels:\n    app: web\nspec:\n  containers:\n  - name: cntr-apache\n    image: httpd:stable\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03824",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03825",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03826",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03827",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03828",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:stable\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03829",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:stable\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03830",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:stable\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03831",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:stable\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03832",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-ingress-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: nginx-ingress-operator\n  template:\n    metadata:\n      labels:\n        name: nginx-ingress-operator\n    spec:\n      serviceAccountName: nginx-ingress-operator\n      containers:\n      - name: nginx-ingress-operator\n        image: nginx/nginx-ingress-operator:stable\n        command:\n        - nginx-ingress-operator\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: nginx-ingress-operator\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "03833",
+    "policy_id": "env_var_secret",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03834",
+    "policy_id": "env_var_secret",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03835",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03836",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03837",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03838",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03839",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "03840",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  }
+]

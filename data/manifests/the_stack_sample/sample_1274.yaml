@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wrkflw-tools
+  namespace: argo
+  labels:
+    app: wrkflw-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wrkflw-tools
+  template:
+    metadata:
+      labels:
+        app: wrkflw-tools
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+      - name: mgbio-cred
+      - name: mcdb-bot
+      containers:
+      - name: wrkflw-tools
+        image: docker.cancerdb.io/mcdb-bots/bootstrap:mgbio
+        env:
+        - name: FASTQR1
+          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_1.fastq.gz
+        - name: FASTQR2
+          value: /data/samples/tumor-exome/TL-21-3AMURU27_T_DSQ1_2.fastq.gz
+        - name: OUTPUTDIR
+          value: /data/output
+        - name: DATATYPE
+          value: tumor-exome
+        - name: SAMPLEID
+          value: mcdb010
+        - name: PLATFORMUNIT
+          value: HJC52BBXX.1
+        - name: PLATFORM
+          value: /data/output/mcdb005/hla/hla_calls/combined_calls.txt
+        - name: SEQHOUSE
+          value: Tempus
+        command:
+        - /bin/bash
+        - -c
+        - --
+        args:
+        - while true; do sleep 30; done;
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /ref-hg38
+          name: workflow-ref-hg38-dev
+      hostNetwork: true
+      volumes:
+      - name: workflow-ref-hg38-dev
+        persistentVolumeClaim:
+          claimName: workflow-ref-hg38-dev
+          readOnly: false

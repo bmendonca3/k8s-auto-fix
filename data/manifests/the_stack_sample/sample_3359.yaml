@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: service-loadbalancer
+  namespace: load-balancer
+  labels:
+    app: service-loadbalancer
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    app: service-loadbalancer
+    version: v1
+  template:
+    metadata:
+      labels:
+        app: service-loadbalancer
+        version: v1
+    spec:
+      serviceAccount: lb-sa
+      serviceAccountName: lb-sa
+      containers:
+      - image: gcr.io/${BPG_GCP_PROJECT_ID}/haproxy:0.4-preprod-20190503-1829
+        imagePullPolicy: Always
+        resources: {}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        name: haproxy
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        - containerPort: 443
+          protocol: TCP
+        - containerPort: 3306
+          hostPort: 3306
+          protocol: TCP
+        - containerPort: 1936
+          protocol: TCP
+        args:
+        - --tcp-services=mysql:3306,nginxsvc:443
+        - --syslog=true
+        - --ssl-cert=/etc/certs/sslterm/star_playground_preprod_ballerina_io.pem
+        - --ssl-ca-cert=/etc/certs/sslterm/DigiCertCA.crt
+        - --reload-interval=5s

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-server
+  namespace: minecraft
+  labels:
+    app: minecraft-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minecraft-server
+  template:
+    metadata:
+      labels:
+        app: minecraft-server
+    spec:
+      volumes:
+      - name: minecraft-data
+        persistentVolumeClaim:
+          claimName: minecraft-data-pvc
+      containers:
+      - name: minecraft-server
+        image: itzg/minecraft-server:latest
+        resources:
+          limits:
+            memory: 7Gi
+          requests:
+            memory: 5Gi
+        env:
+        - name: EULA
+          value: 'TRUE'
+        - name: MOTD
+          value: Hilton Network AoF5 1.2.3
+        - name: TYPE
+          value: CURSEFORGE
+        - name: CF_SERVER_MOD
+          value: All-of-Fabric-5-Server-1.2.3.zip
+        - name: MEMORY
+          value: ' '
+        - name: JVM_XX_OPTS
+          value: -XX:MaxRAMPercentage=70
+        ports:
+        - containerPort: 25565
+          name: minecraft
+        volumeMounts:
+        - name: minecraft-data
+          mountPath: /data

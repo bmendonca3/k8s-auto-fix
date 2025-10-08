@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: oase
+  name: kie-server
+  labels:
+    name: kie-server
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: kie-server
+  template:
+    metadata:
+      labels:
+        name: kie-server
+    spec:
+      hostname: kie-server
+      containers:
+      - name: kie-server
+        image: exastro/kie-server:latest
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        env:
+        - name: KIE_SERVER_LOCATION
+          value: http://kie-server:8080/kie-server/services/rest/server
+        - name: KIE_SERVER_CONTROLLER
+          value: http://business-central:8080/business-central/rest/controller
+        - name: KIE_MAVEN_REPO
+          value: http://business-central:8080/business-central/maven2
+        - name: JAVA_OPTS
+          value: -Xms256m -Xmx2048m -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8
+        ports:
+        - name: service
+          containerPort: 8080
+        volumeMounts:
+        - name: share
+          mountPath: /opt/jboss/.m2/repository/com/oase
+          subPath: m2-repository
+          readOnly: false
+        securityContext:
+          capabilities: {}
+          privileged: false
+      volumes:
+      - name: share
+        persistentVolumeClaim:
+          claimName: share-pvc

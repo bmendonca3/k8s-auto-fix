@@ -27,10 +27,27 @@ def run(
     # median patch ops for accepted items
     id_to_patch_len = {str(p.get("id")): len(p.get("patch") or []) for p in pat if isinstance(p, dict)}
     accepted_lengths: List[int] = []
+    failed_policy = 0
+    failed_schema = 0
+    failed_safety = 0
+    failed_rescan = 0
     for r in ver:
         if not isinstance(r, dict):
             continue
         _id = str(r.get("id"))
+        ok_policy = bool(r.get("ok_policy", True))
+        ok_schema = bool(r.get("ok_schema", True))
+        ok_safety = bool(r.get("ok_safety", True))
+        ok_rescan = bool(r.get("ok_rescan", True))
+        if not r.get("accepted"):
+            if not ok_policy:
+                failed_policy += 1
+            if not ok_schema:
+                failed_schema += 1
+            if not ok_safety:
+                failed_safety += 1
+            if not ok_rescan:
+                failed_rescan += 1
         if r.get("accepted") and _id in id_to_patch_len:
             accepted_lengths.append(id_to_patch_len[_id])
     median_ops = statistics.median(accepted_lengths) if accepted_lengths else 0
@@ -42,6 +59,10 @@ def run(
         "accepted": accepted,
         "auto_fix_rate": round(auto_fix_rate, 4),
         "median_patch_ops": median_ops,
+        "failed_policy": failed_policy,
+        "failed_schema": failed_schema,
+        "failed_safety": failed_safety,
+        "failed_rescan": failed_rescan,
     }
 
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -62,5 +83,4 @@ def _load_array(path: Path) -> List[Any]:
 
 if __name__ == "__main__":  # pragma: no cover
     typer.run(run)
-
 

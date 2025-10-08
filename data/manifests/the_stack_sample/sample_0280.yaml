@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: director
+  namespace: dataleague
+  labels:
+    app: director
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: director
+  template:
+    metadata:
+      labels:
+        app: director
+      annotations:
+        timestamp: '{{ .Values.timestamp }}'
+    spec:
+      initContainers:
+      - name: wait-nakama-grpc-api
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - until nc -vz nakama.dataleague.svc.cluster.local 7349; do echo "Waiting
+          for Nakama gRPC API"; sleep 2; done;
+      - name: wait-open-match-backend
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - until nc -vz open-match-backend.open-match.svc.cluster.local 50505; do echo
+          "Waiting for OM backend"; sleep 2; done;
+      - name: wait-om-function
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - until nc -vz matchfunction.dataleague.svc.cluster.local 50502; do echo "Waiting
+          for OM function"; sleep 2; done;
+      containers:
+      - name: director
+        image: '{{- .Values.openmatch.director.image -}}'
+        imagePullPolicy: Always

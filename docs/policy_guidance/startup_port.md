@@ -1,0 +1,1 @@
+Startup probes also require a matching container port. Ensure the container lists the probe's port under spec.containers[].ports. Keep the name aligned with the probe's port name so other probes can re-use the same entry.

@@ -1,0 +1,35 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: zpm-cleaner
+  namespace: iris
+spec:
+  schedule: 0 0 * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: zpm-cleaner
+            image: curlimages/curl:7.70.0
+            command:
+            - /bin/sh
+            - -c
+            - "curl -XPATCH --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\
+              \               \\\n  -H \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\"\
+              \  \\\n  -H \"Content-Type: application/strategic-merge-patch+json\"\
+              \                              \\\n  --data '{\"spec\":{\"replicas\"\
+              :0}}'                                                       \\\n  https://kubernetes.default.svc/apis/apps/v1/namespaces/iris/statefulsets/zpm-registry\n\
+              \nsleep 10\n\ncurl -XDELETE --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\
+              \                                       \\\n  -H \"Authorization: Bearer\
+              \ $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\"     \
+              \                      \\\n  -H \"Content-Type: application/json\" \
+              \                                                                  \
+              \          \\\n  https://kubernetes.default.svc/api/v1/namespaces/iris/persistentvolumeclaims/zpm-registry-volume-zpm-registry-0\n\
+              \nsleep 10\n\ncurl -XPATCH --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\
+              \               \\\n  -H \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\"\
+              \  \\\n  -H \"Content-Type: application/strategic-merge-patch+json\"\
+              \                              \\\n  --data '{\"spec\":{\"replicas\"\
+              :1}}'                                                       \\\n  https://kubernetes.default.svc/apis/apps/v1/namespaces/iris/statefulsets/zpm-registry\n"
+          serviceAccountName: zpm-cleaner
+          restartPolicy: OnFailure

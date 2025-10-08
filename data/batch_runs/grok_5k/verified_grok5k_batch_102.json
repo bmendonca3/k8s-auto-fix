@@ -1,0 +1,490 @@
+[
+  {
+    "id": "04081",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: image-downloader\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: image-downloader\n  template:\n    metadata:\n      labels:\n        name: image-downloader\n    spec:\n      containers:\n      - name: python-predictor-cpu\n        image: $CORTEX_IMAGE_PYTHON_PREDICTOR_CPU:stable\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: tensorflow-serving-cpu\n        image: $CORTEX_IMAGE_TENSORFLOW_SERVING_CPU:stable\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: tensorflow-predictor\n        image: $CORTEX_IMAGE_TENSORFLOW_PREDICTOR:stable\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      - name: downloader\n        image: $CORTEX_IMAGE_DOWNLOADER:stable\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - sleep 1000000\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04082",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04083",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04084",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04085",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04086",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: modeldb\n  name: modeldb-artifact-store\nspec:\n  selector:\n    matchLabels:\n      app: modeldb\n      tier: artifact-store\n  template:\n    metadata:\n      labels:\n        app: modeldb\n        tier: artifact-store\n      annotations:\n        sidecar.istio.io/inject: 'true'\n    spec:\n      containers:\n      - env:\n        - name: VERTA_ARTIFACT_CONFIG\n          value: /config/config.yaml\n        image: vertaaiofficial/modeldb-artifact-store:kubeflow\n        imagePullPolicy: Always\n        name: modeldb-artifact-store\n        ports:\n        - containerPort: 8086\n        volumeMounts:\n        - mountPath: /config\n          name: modeldb-artifact-store-config\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - configMap:\n          name: modeldb-artifact-store-config\n        name: modeldb-artifact-store-config\n",
+    "errors": []
+  },
+  {
+    "id": "04087",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: modeldb\n  name: modeldb-artifact-store\nspec:\n  selector:\n    matchLabels:\n      app: modeldb\n      tier: artifact-store\n  template:\n    metadata:\n      labels:\n        app: modeldb\n        tier: artifact-store\n      annotations:\n        sidecar.istio.io/inject: 'true'\n    spec:\n      containers:\n      - env:\n        - name: VERTA_ARTIFACT_CONFIG\n          value: /config/config.yaml\n        image: vertaaiofficial/modeldb-artifact-store:kubeflow\n        imagePullPolicy: Always\n        name: modeldb-artifact-store\n        ports:\n        - containerPort: 8086\n        volumeMounts:\n        - mountPath: /config\n          name: modeldb-artifact-store-config\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - configMap:\n          name: modeldb-artifact-store-config\n        name: modeldb-artifact-store-config\n",
+    "errors": []
+  },
+  {
+    "id": "04088",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: modeldb\n  name: modeldb-artifact-store\nspec:\n  selector:\n    matchLabels:\n      app: modeldb\n      tier: artifact-store\n  template:\n    metadata:\n      labels:\n        app: modeldb\n        tier: artifact-store\n      annotations:\n        sidecar.istio.io/inject: 'true'\n    spec:\n      containers:\n      - env:\n        - name: VERTA_ARTIFACT_CONFIG\n          value: /config/config.yaml\n        image: vertaaiofficial/modeldb-artifact-store:kubeflow\n        imagePullPolicy: Always\n        name: modeldb-artifact-store\n        ports:\n        - containerPort: 8086\n        volumeMounts:\n        - mountPath: /config\n          name: modeldb-artifact-store-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - configMap:\n          name: modeldb-artifact-store-config\n        name: modeldb-artifact-store-config\n",
+    "errors": []
+  },
+  {
+    "id": "04089",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: modeldb\n  name: modeldb-artifact-store\nspec:\n  selector:\n    matchLabels:\n      app: modeldb\n      tier: artifact-store\n  template:\n    metadata:\n      labels:\n        app: modeldb\n        tier: artifact-store\n      annotations:\n        sidecar.istio.io/inject: 'true'\n    spec:\n      containers:\n      - env:\n        - name: VERTA_ARTIFACT_CONFIG\n          value: /config/config.yaml\n        image: vertaaiofficial/modeldb-artifact-store:kubeflow\n        imagePullPolicy: Always\n        name: modeldb-artifact-store\n        ports:\n        - containerPort: 8086\n        volumeMounts:\n        - mountPath: /config\n          name: modeldb-artifact-store-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - configMap:\n          name: modeldb-artifact-store-config\n        name: modeldb-artifact-store-config\n",
+    "errors": []
+  },
+  {
+    "id": "04090",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: compliance-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: compliance-operator\n  template:\n    metadata:\n      labels:\n        name: compliance-operator\n      annotations:\n        workload.openshift.io/management: '{\"effect\": \"PreferredDuringScheduling\"}'\n    spec:\n      serviceAccountName: compliance-operator\n      containers:\n      - name: compliance-operator\n        image: quay.io/compliance-operator/compliance-operator:stable\n        command:\n        - compliance-operator\n        - operator\n        imagePullPolicy: Always\n        securityContext:\n          readOnlyRootFilesystem: true\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n        resources:\n          requests:\n            memory: 20Mi\n            cpu: 10m\n          limits:\n            memory: 200Mi\n            cpu: 100m\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: compliance-operator\n        - name: RELATED_IMAGE_OPENSCAP\n          value: quay.io/compliance-operator/openscap-ocp:1.3.5\n        - name: RELATED_IMAGE_OPERATOR\n          value: quay.io/compliance-operator/compliance-operator:latest\n        - name: RELATED_IMAGE_PROFILE\n          value: quay.io/complianceascode/ocp4:latest\n        volumeMounts:\n        - name: serving-cert\n          mountPath: /var/run/secrets/serving-cert\n          readOnly: true\n      volumes:\n      - name: serving-cert\n        secret:\n          secretName: compliance-operator-serving-cert\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "04091",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: compliance-operator\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: compliance-operator\n  template:\n    metadata:\n      labels:\n        name: compliance-operator\n      annotations:\n        workload.openshift.io/management: '{\"effect\": \"PreferredDuringScheduling\"}'\n    spec:\n      serviceAccountName: compliance-operator\n      containers:\n      - name: compliance-operator\n        image: quay.io/compliance-operator/compliance-operator:stable\n        command:\n        - compliance-operator\n        - operator\n        imagePullPolicy: Always\n        securityContext:\n          readOnlyRootFilesystem: true\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n        resources:\n          requests:\n            memory: 20Mi\n            cpu: 10m\n          limits:\n            memory: 200Mi\n            cpu: 100m\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: compliance-operator\n        - name: RELATED_IMAGE_OPENSCAP\n          value: quay.io/compliance-operator/openscap-ocp:1.3.5\n        - name: RELATED_IMAGE_OPERATOR\n          value: quay.io/compliance-operator/compliance-operator:latest\n        - name: RELATED_IMAGE_PROFILE\n          value: quay.io/complianceascode/ocp4:latest\n        volumeMounts:\n        - name: serving-cert\n          mountPath: /var/run/secrets/serving-cert\n          readOnly: true\n      volumes:\n      - name: serving-cert\n        secret:\n          secretName: compliance-operator-serving-cert\n          optional: true\n",
+    "errors": []
+  },
+  {
+    "id": "04092",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04093",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04094",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04095",
+    "policy_id": "drop_capabilities",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04096",
+    "policy_id": "no_privileged",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04097",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04098",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04099",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04100",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04101",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04102",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04103",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: podinfo-ds\n  labels:\n    app.kubernetes.io/name: podinfo-ds\nspec:\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: podinfo-ds\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9797'\n      labels:\n        app.kubernetes.io/name: podinfo-ds\n    spec:\n      containers:\n      - name: podinfod\n        image: ghcr.io/stefanprodan/podinfo:6.0.0\n        imagePullPolicy: IfNotPresent\n        ports:\n        - name: http\n          containerPort: 9898\n          protocol: TCP\n        - name: http-metrics\n          containerPort: 9797\n          protocol: TCP\n        - name: grpc\n          containerPort: 9999\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --port-metrics=9797\n        - --grpc-port=9999\n        - --grpc-service-name=podinfo\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        livenessProbe:\n          httpGet:\n            port: 9898\n            path: /healthz\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            port: 9898\n            path: /readyz\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 1m\n            memory: 16Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04104",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: podinfo-ds\n  labels:\n    app.kubernetes.io/name: podinfo-ds\nspec:\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: podinfo-ds\n  template:\n    metadata:\n      annotations:\n        prometheus.io/scrape: 'true'\n        prometheus.io/port: '9797'\n      labels:\n        app.kubernetes.io/name: podinfo-ds\n    spec:\n      containers:\n      - name: podinfod\n        image: ghcr.io/stefanprodan/podinfo:6.0.0\n        imagePullPolicy: IfNotPresent\n        ports:\n        - name: http\n          containerPort: 9898\n          protocol: TCP\n        - name: http-metrics\n          containerPort: 9797\n          protocol: TCP\n        - name: grpc\n          containerPort: 9999\n          protocol: TCP\n        command:\n        - ./podinfo\n        - --port=9898\n        - --port-metrics=9797\n        - --grpc-port=9999\n        - --grpc-service-name=podinfo\n        - --level=info\n        - --random-delay=false\n        - --random-error=false\n        livenessProbe:\n          httpGet:\n            port: 9898\n            path: /healthz\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        readinessProbe:\n          httpGet:\n            port: 9898\n            path: /readyz\n          initialDelaySeconds: 5\n          timeoutSeconds: 5\n        resources:\n          limits:\n            cpu: 1000m\n            memory: 128Mi\n          requests:\n            cpu: 1m\n            memory: 16Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04105",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7290\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04106",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7290\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04107",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7290\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04108",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7290\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04109",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-7290\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04110",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04111",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04112",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04113",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04114",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04115",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04116",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04117",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04118",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": false,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed"
+    ]
+  },
+  {
+    "id": "04119",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vote\n  labels:\n    app: vote\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: vote\n      env: dev\n  template:\n    metadata:\n      labels:\n        app: vote\n        env: dev\n    spec:\n      containers:\n      - name: vote\n        image: dockersamples/examplevotingapp_vote:before\n        ports:\n        - containerPort: 80\n          name: vote\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  },
+  {
+    "id": "04120",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vote\n  labels:\n    app: vote\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: vote\n      env: dev\n  template:\n    metadata:\n      labels:\n        app: vote\n        env: dev\n    spec:\n      containers:\n      - name: vote\n        image: dockersamples/examplevotingapp_vote:before\n        ports:\n        - containerPort: 80\n          name: vote\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "errors": []
+  }
+]

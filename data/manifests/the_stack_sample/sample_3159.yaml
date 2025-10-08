@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-apiserver
+    image: gcr.io/google_containers/hyperkube:v1.7.5
+    command:
+    - /hyperkube
+    - apiserver
+    - --advertise-address=10.0.0.10
+    - --etcd-servers=http://127.0.0.1:4001
+    - --service-cluster-ip-range=10.20.0.0/16
+    - --runtime-config=authorization.k8s.io/v1beta1=true
+    - --kubelet-preferred-address-types=Hostname,ExternalIP
+    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,ResourceQuota
+    - --cert-dir=/var/kubernetes/ssl
+    - --kubelet-client-certificate=/etc/kubernetes/ssl/kubelet-client.pem
+    - --kubelet-client-key=/etc/kubernetes/ssl/kubelet-client-key.pem
+    - --client-ca-file=/etc/kubernetes/ssl/ca.pem
+    - --tls-ca-file=/etc/kubernetes/ssl/ca.pem
+    - --tls-cert-file=/etc/kubernetes/ssl/kube-apiserver-server.pem
+    - --tls-private-key-file=/etc/kubernetes/ssl/kube-apiserver-server-key.pem
+    - --service-account-key-file=/etc/kubernetes/ssl/kube-apiserver-server-key.pem
+    - --basic-auth-file=/etc/kubernetes/ssl/basic_auth.csv
+    - --allow-privileged=true
+    - --anonymous-auth=false
+    - --storage-backend=etcd3
+    resources:
+      requests:
+        cpu: 100m
+    livenessProbe:
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    ports:
+    - containerPort: 6443
+      hostPort: 6443
+      name: https
+    - containerPort: 8080
+      hostPort: 8080
+      name: local
+    volumeMounts:
+    - mountPath: /etc/kubernetes/ssl
+      name: srvkubessl
+      readOnly: true
+    - mountPath: /etc/kubernetes/kubeconfigs
+      name: etc-kubernetes-kubeconfigs
+      readOnly: true
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes/ssl
+    name: srvkubessl
+  - hostPath:
+      path: /etc/kubernetes/kubeconfigs
+    name: etc-kubernetes-kubeconfigs

@@ -1,0 +1,43 @@
+apiVersion: v1
+data:
+  kernel-monitor.json: "{\n    \"plugin\": \"kmsg\",\n    \"logPath\": \"/dev/kmsg\"\
+    ,\n    \"lookback\": \"5m\",\n    \"bufferSize\": 10,\n    \"source\": \"kernel-monitor\"\
+    ,\n    \"conditions\": [\n        {\n            \"type\": \"KernelDeadlock\"\
+    ,\n            \"reason\": \"KernelHasNoDeadlock\",\n            \"message\":\
+    \ \"kernel has no deadlock\"\n        },\n        {\n            \"type\": \"\
+    ReadonlyFilesystem\",\n            \"reason\": \"FilesystemIsNotReadOnly\",\n\
+    \            \"message\": \"Filesystem is not read-only\"\n        }\n    ],\n\
+    \    \"rules\": [\n        {\n            \"type\": \"temporary\",\n         \
+    \   \"reason\": \"OOMKilling\",\n            \"pattern\": \"Kill process \\\\\
+    d+ (.+) score \\\\d+ or sacrifice child\\\\nKilled process \\\\d+ (.+) total-vm:\\\
+    \\d+kB, anon-rss:\\\\d+kB, file-rss:\\\\d+kB.*\"\n        },\n        {\n    \
+    \        \"type\": \"temporary\",\n            \"reason\": \"TaskHung\",\n   \
+    \         \"pattern\": \"task \\\\S+:\\\\w+ blocked for more than \\\\w+ seconds\\\
+    \\.\"\n        },\n        {\n            \"type\": \"temporary\",\n         \
+    \   \"reason\": \"UnregisterNetDevice\",\n            \"pattern\": \"unregister_netdevice:\
+    \ waiting for \\\\w+ to become free. Usage count = \\\\d+\"\n        },\n    \
+    \    {\n            \"type\": \"temporary\",\n            \"reason\": \"KernelOops\"\
+    ,\n            \"pattern\": \"BUG: unable to handle kernel NULL pointer dereference\
+    \ at .*\"\n        },\n        {\n            \"type\": \"temporary\",\n     \
+    \       \"reason\": \"KernelOops\",\n            \"pattern\": \"divide error:\
+    \ 0000 \\\\[#\\\\d+\\\\] SMP\"\n        },\n        {\n            \"type\": \"\
+    permanent\",\n            \"condition\": \"KernelDeadlock\",\n            \"reason\"\
+    : \"AUFSUmountHung\",\n            \"pattern\": \"task umount\\\\.aufs:\\\\w+\
+    \ blocked for more than \\\\w+ seconds\\\\.\"\n        },\n        {\n       \
+    \     \"type\": \"permanent\",\n            \"condition\": \"KernelDeadlock\"\
+    ,\n            \"reason\": \"DockerHung\",\n            \"pattern\": \"task docker:\\\
+    \\w+ blocked for more than \\\\w+ seconds\\\\.\"\n        },\n        {\n    \
+    \        \"type\": \"permanent\",\n            \"condition\": \"ReadonlyFilesystem\"\
+    ,\n            \"reason\": \"FilesystemIsReadOnly\",\n            \"pattern\"\
+    : \"Remounting filesystem read-only\"\n        }\n    ]\n}\n"
+  docker-monitor.json: "{\n    \"plugin\": \"journald\",\n    \"pluginConfig\": {\n\
+    \        \"source\": \"dockerd\"\n    },\n    \"logPath\": \"/var/log/journal\"\
+    ,\n    \"lookback\": \"5m\",\n    \"bufferSize\": 10,\n    \"source\": \"docker-monitor\"\
+    ,\n    \"conditions\": [],\n    \"rules\": [\n        {\n            \"type\"\
+    : \"temporary\",\n            \"reason\": \"CorruptDockerImage\",\n          \
+    \  \"pattern\": \"Error trying v2 registry: failed to register layer: rename /var/lib/docker/image/(.+)\
+    \ /var/lib/docker/image/(.+): directory not empty.*\"\n        }\n    ]\n}\n"
+kind: ConfigMap
+metadata:
+  name: node-problem-detector-config
+  namespace: kube-system

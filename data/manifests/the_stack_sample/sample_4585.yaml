@@ -1,0 +1,26 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: registry-cleanup
+spec:
+  schedule: 0 0 * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+          - name: registry-storage
+            nfs:
+              server: nas.crazyzone.be
+              path: /volume1/docker-storage/docker-registry
+          containers:
+          - name: registry-cleanup
+            image: registry:latest
+            command:
+            - /bin/registry
+            - garbage-collect
+            - /var/lib/registry/config.yaml
+            volumeMounts:
+            - name: registry-storage
+              mountPath: /var/lib/registry

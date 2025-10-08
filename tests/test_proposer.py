@@ -1,5 +1,6 @@
 import unittest
 
+from src.proposer.cli import _rule_based_patch
 from src.proposer.guards import PatchError, extract_json_array
 from src.verifier.jsonpatch_guard import validate_paths_exist
 
@@ -13,6 +14,19 @@ spec:
   containers:
     - name: app
       image: nginx:latest
+"""
+
+HARDENING_MANIFEST = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: nginx:latest
 """
 
 
@@ -40,6 +54,22 @@ class ProposerGuardsTests(unittest.TestCase):
         patch_ops = [{"op": "replace", "path": "/spec/containers/1/image", "value": "nginx:stable"}]
         with self.assertRaises(PatchError):
             validate_paths_exist(SAMPLE_MANIFEST, patch_ops)
+
+    def test_rule_based_patch_includes_guardrails(self) -> None:
+        detection = {
+            "id": "guard-001",
+            "policy_id": "no_privileged",
+            "violation_text": "container is privileged",
+            "manifest_yaml": HARDENING_MANIFEST,
+        }
+        ops = _rule_based_patch(detection)
+        paths = {op["path"] for op in ops if isinstance(op, dict)}
+        self.assertTrue(any("resources" in path for path in paths), "expected resources guard op")
+        self.assertTrue(any("runAsNonRoot" in path for path in paths), "expected runAsNonRoot guard op")
+        self.assertTrue(
+            any("readOnlyRootFilesystem" in path for path in paths),
+            "expected readOnlyRootFilesystem guard op",
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

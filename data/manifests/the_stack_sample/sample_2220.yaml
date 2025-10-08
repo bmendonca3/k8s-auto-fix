@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: machine-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: machine-controller-manager
+  template:
+    metadata:
+      labels:
+        role: machine-controller-manager
+    spec:
+      containers:
+      - name: machine-controller-manager
+        image: eu.gcr.io/gardener-project/gardener/machine-controller-manager:v0.39.0
+        imagePullPolicy: Always
+        command:
+        - ./machine-controller-manager
+        - --target-kubeconfig=/var/lib/machine-controller-manager/kubeconfig
+        - --control-kubeconfig=inClusterConfig
+        - --safety-up=2
+        - --safety-down=1
+        - --machine-safety-overshooting-period=1m
+        - --v=3
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10258
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /var/lib/machine-controller-manager
+          name: machine-controller-manager
+          readOnly: true
+        resources: {}
+      - command:
+        - ./machine-controller
+        - --control-kubeconfig=inClusterConfig
+        - --target-kubeconfig=/var/lib/machine-controller-manager/kubeconfig
+        - --machine-creation-timeout=20m
+        - --machine-drain-timeout=5m
+        - --machine-health-timeout=10m
+        - --machine-safety-orphan-vms-period=30m
+        - --node-conditions=ReadonlyFilesystem,KernelDeadlock,DiskPressure
+        - --v=3
+        image: eu.gcr.io/gardener-project/gardener/machine-controller-manager-provider-gcp:v0.7.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: machine-controller
+        ports:
+        - containerPort: 10259
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 350m
+            memory: 3000Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /var/lib/machine-controller-manager
+          name: machine-controller-manager
+          readOnly: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      securityContext: {}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+      - name: machine-controller-manager
+        secret:
+          defaultMode: 420
+          secretName: machine-controller-manager

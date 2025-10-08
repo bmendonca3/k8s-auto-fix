@@ -1,0 +1,1 @@
+A readinessProbe must target an exposed container port. Add or update spec.containers[].ports so the container publishes the same port (and name) used by the readiness probe. This allows Kubernetes to route traffic only when the container is ready.

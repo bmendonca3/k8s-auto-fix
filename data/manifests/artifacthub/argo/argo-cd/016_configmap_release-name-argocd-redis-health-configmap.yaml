@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-argocd-redis-health-configmap
+  namespace: default
+  labels:
+    helm.sh/chart: argo-cd-8.5.9
+    app.kubernetes.io/name: argocd-redis
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/version: v3.1.8
+data:
+  redis_liveness.sh: "response=$(\n  redis-cli \\\n    -a \"${REDIS_PASSWORD}\" --no-auth-warning\
+    \ \\\n    -h localhost \\\n    -p 6379 \\\n    ping\n)\nif [ \"$response\" !=\
+    \ \"PONG\" ] && [ \"${response:0:7}\" != \"LOADING\" ] ; then\n  echo \"$response\"\
+    \n  exit 1\nfi\necho \"response=$response\"\n"
+  redis_readiness.sh: "response=$(\n  redis-cli \\\n    -a \"${REDIS_PASSWORD}\" --no-auth-warning\
+    \ \\\n    -h localhost \\\n    -p 6379 \\\n    ping\n)\nif [ \"$response\" !=\
+    \ \"PONG\" ] ; then\n  echo \"$response\"\n  exit 1\nfi\necho \"response=$response\"\
+    \n"

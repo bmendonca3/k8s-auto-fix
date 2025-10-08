@@ -71,7 +71,7 @@ class Detector:
         for idx, result in enumerate(results, start=1):
             manifest_path = Path(result.manifest).resolve()
             try:
-                manifest_text = manifest_path.read_text(encoding="utf-8")
+                manifest_text = self._load_targeted_manifest(manifest_path, result)
             except OSError:
                 manifest_text = None
             try:
@@ -90,6 +90,243 @@ class Detector:
                 "violation_text": result.message,
             }
             yield record
+
+    def _load_targeted_manifest(self, manifest_path: Path, detection: DetectionResult) -> Optional[str]:
+        raw_text = manifest_path.read_text(encoding="utf-8")
+        try:
+            documents = list(yaml.safe_load_all(raw_text))
+        except yaml.YAMLError:
+            return raw_text
+        if not documents:
+            return raw_text
+
+        identity = self._extract_resource_identity(detection)
+
+        if any(identity):
+            target_doc = self._select_document(documents, identity)
+            if target_doc is not None:
+                return yaml.safe_dump(target_doc, sort_keys=False)
+
+        if len(documents) == 1 and isinstance(documents[0], dict):
+            pruned = self._prune_document(documents[0], detection)
+            return yaml.safe_dump(pruned, sort_keys=False)
+
+        first_mapping = next((doc for doc in documents if isinstance(doc, dict)), None)
+        if first_mapping is not None:
+            pruned = self._prune_document(first_mapping, detection)
+            return yaml.safe_dump(pruned, sort_keys=False)
+
+        first_doc = documents[0]
+        if not isinstance(first_doc, (str, bytes)):
+            try:
+                return yaml.safe_dump(first_doc, sort_keys=False)
+            except Exception:
+                pass
+
+        return raw_text
+
+    @staticmethod
+    def _extract_resource_identity(detection: DetectionResult) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        kind: Optional[str] = None
+        namespace: Optional[str] = None
+        name: Optional[str] = None
+
+        resource = detection.resource
+        if isinstance(resource, str) and resource.strip():
+            parts = [part for part in resource.split("/") if part]
+            if len(parts) == 2:
+                kind, name = parts
+            elif len(parts) >= 3:
+                kind, namespace, name = parts[0], parts[1], parts[2]
+
+        extra = detection.extra or {}
+        if isinstance(extra, dict):
+            object_info = extra.get("object")
+            if isinstance(object_info, dict):
+                kind = kind or Detector._first_string(object_info, "Kind", "kind")
+                namespace = namespace or Detector._first_string(object_info, "Namespace", "namespace")
+                name = name or Detector._first_string(object_info, "Name", "name")
+            resources = extra.get("resources")
+            if isinstance(resources, list):
+                for resource_entry in resources:
+                    if not isinstance(resource_entry, dict):
+                        continue
+                    kind = kind or Detector._first_string(resource_entry, "kind", "Kind")
+                    namespace = namespace or Detector._first_string(resource_entry, "namespace", "Namespace")
+                    name = name or Detector._first_string(resource_entry, "name", "Name")
+                    if kind and name:
+                        break
+
+        return (kind, namespace, name)
+
+    @staticmethod
+    def _select_document(
+        documents: Sequence[Any], identity: Tuple[Optional[str], Optional[str], Optional[str]]
+    ) -> Optional[Any]:
+        kind, namespace, name = identity
+        lowered_kind = kind.lower() if isinstance(kind, str) else None
+        lowered_name = name.lower() if isinstance(name, str) else None
+        lowered_namespace = namespace.lower() if isinstance(namespace, str) else None
+
+        for document in documents:
+            if not isinstance(document, dict):
+                continue
+            doc_kind = document.get("kind")
+            metadata = document.get("metadata")
+            doc_name = metadata.get("name") if isinstance(metadata, dict) else None
+            doc_namespace = metadata.get("namespace") if isinstance(metadata, dict) else None
+
+            if lowered_kind and (not isinstance(doc_kind, str) or doc_kind.lower() != lowered_kind):
+                continue
+            if lowered_name and (not isinstance(doc_name, str) or doc_name.lower() != lowered_name):
+                continue
+            if lowered_namespace:
+                doc_ns_normalised = doc_namespace.lower() if isinstance(doc_namespace, str) else ""
+                if doc_ns_normalised != lowered_namespace:
+                    continue
+            return document
+        return None
+
+    @staticmethod
+    def _prune_document(document: Dict[str, Any], detection: DetectionResult) -> Dict[str, Any]:
+        """
+        Reduce large manifests to the minimal context needed for prompting when the detector
+        cannot pinpoint an exact resource. Keeps identifying metadata plus policy-relevant
+        spec subtrees so downstream patches and verifications still succeed.
+        """
+
+        def prune_metadata(meta: Any) -> Dict[str, Any]:
+            if not isinstance(meta, dict):
+                return {}
+            allowed_keys = ("name", "namespace", "labels", "annotations")
+            return {key: value for key, value in meta.items() if key in allowed_keys and value is not None}
+
+        def prune_container(container: Dict[str, Any]) -> Dict[str, Any]:
+            if not isinstance(container, dict):
+                return {}
+            allowed = {
+                "name",
+                "image",
+                "securityContext",
+                "resources",
+                "env",
+                "envFrom",
+                "ports",
+                "volumeMounts",
+                "command",
+                "args",
+                "livenessProbe",
+                "readinessProbe",
+                "startupProbe",
+                "workingDir",
+                "imagePullPolicy",
+            }
+            return {key: value for key, value in container.items() if key in allowed and value is not None}
+
+        def prune_containers(section: Any) -> Any:
+            if not isinstance(section, list):
+                return section
+            pruned_list = [prune_container(container) for container in section if isinstance(container, dict)]
+            return [container for container in pruned_list if container]
+
+        def prune_spec(spec: Any, level: int = 0) -> Dict[str, Any]:
+            if not isinstance(spec, dict):
+                return {}
+
+            allowed_keys = {
+                "containers",
+                "initContainers",
+                "ephemeralContainers",
+                "volumes",
+                "securityContext",
+                "serviceAccount",
+                "serviceAccountName",
+                "affinity",
+                "selector",
+                "replicas",
+                "template",
+                "jobTemplate",
+                "ttlSecondsAfterFinished",
+                "unhealthyPodEvictionPolicy",
+                "type",
+                "externalName",
+                "ports",
+                "clusterIP",
+                "sessionAffinity",
+                "data",
+                "stringData",
+            }
+
+            policy = (detection.rule or "").lower()
+            if "host_path" in policy:
+                allowed_keys.add("volumeMounts")
+            if "env" in policy:
+                allowed_keys.add("env")
+                allowed_keys.add("envFrom")
+
+            pruned: Dict[str, Any] = {}
+            for key, value in spec.items():
+                if key not in allowed_keys:
+                    continue
+                if key in {"containers", "initContainers", "ephemeralContainers"}:
+                    pruned_value = prune_containers(value)
+                    if pruned_value:
+                        pruned[key] = pruned_value
+                    continue
+                if key in {"template"} and isinstance(value, dict):
+                    nested = {
+                        "metadata": prune_metadata(value.get("metadata")),
+                        "spec": prune_spec(value.get("spec"), level + 1),
+                    }
+                    nested = {k: v for k, v in nested.items() if v}
+                    if nested:
+                        pruned[key] = nested
+                    continue
+                if key == "jobTemplate" and isinstance(value, dict):
+                    job_spec = value.get("spec")
+                    nested = {}
+                    if isinstance(job_spec, dict):
+                        template = job_spec.get("template")
+                        if isinstance(template, dict):
+                            nested_template = {
+                                "metadata": prune_metadata(template.get("metadata")),
+                                "spec": prune_spec(template.get("spec"), level + 1),
+                            }
+                            nested_template = {k: v for k, v in nested_template.items() if v}
+                            if nested_template:
+                                nested["template"] = nested_template
+                    if nested:
+                        pruned[key] = nested
+                    continue
+                pruned[key] = value
+            return pruned
+
+        pruned_doc: Dict[str, Any] = {}
+        for key in ("apiVersion", "kind"):
+            if key in document:
+                pruned_doc[key] = document[key]
+
+        metadata = prune_metadata(document.get("metadata"))
+        if metadata:
+            pruned_doc["metadata"] = metadata
+
+        spec = prune_spec(document.get("spec"))
+        if spec:
+            pruned_doc["spec"] = spec
+
+        # Preserve service-specific fields when spec is absent.
+        if "spec" not in pruned_doc and isinstance(document.get("spec"), dict):
+            pruned_doc["spec"] = {}
+
+        return pruned_doc or document
+
+    @staticmethod
+    def _first_string(data: Dict[str, Any], *keys: str) -> Optional[str]:
+        for key in keys:
+            value = data.get(key)
+            if isinstance(value, str) and value.strip():
+                return value
+        return None
 
     def _run_kube_linter(self, manifest: Path) -> List[DetectionResult]:
         stdout = self._run_command(

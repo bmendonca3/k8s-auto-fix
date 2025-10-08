@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+spec:
+  selector:
+    matchLabels:
+      app: phpmyadmin
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin
+    spec:
+      containers:
+      - image: my_phpmyadmin
+        name: phpmyadmin
+        imagePullPolicy: Never
+        ports:
+        - name: php-port
+          containerPort: 5000
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - service telegraf status && service nginx status && service mariadb status
+              && service php-fpm7 status
+          initialDelaySeconds: 5
+          periodSeconds: 5

@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ibmmq-producer
+spec:
+  template:
+    spec:
+      containers:
+      - name: ibmmq-client
+        image: mqkeda/sample-app:latest
+        imagePullPolicy: Always
+        command:
+        - /src/send
+        args:
+        - '75'
+        - '1'
+        env:
+        - name: APP_USER
+          valueFrom:
+            secretKeyRef:
+              name: ibmmq-secret
+              key: APP_USER
+        - name: APP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ibmmq-secret
+              key: APP_PASSWORD
+        - name: QMGR
+          value: MQoC
+        - name: QUEUE_NAME
+          value: DEMO.QUEUE
+        - name: HOST
+          value: mqoc-419f.qm.eu-gb.mq.appdomain.cloud
+        - name: PORT
+          value: '31175'
+        - name: CHANNEL
+          value: CLOUD.APP.SVRCONN
+        - name: TOPIC_NAME
+          value: dev/
+      restartPolicy: Never
+  backoffLimit: 1

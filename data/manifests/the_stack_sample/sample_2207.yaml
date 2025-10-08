@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy
+  namespace: backend
+data:
+  config.yaml: "node:\n  id: backend\n  cluster: backend\n\nadmin:\n  access_log_path:\
+    \ /dev/stdout\n  address:\n    socket_address:\n      protocol: TCP\n      address:\
+    \ 0.0.0.0\n      port_value: 9901\n\nstatic_resources:\n  listeners:\n  - name:\
+    \ listener_https\n    address:\n      socket_address:\n        protocol: TCP\n\
+    \        address: 0.0.0.0\n        port_value: 443\n    access_log:\n      name:\
+    \ envoy.access_loggers.file\n      typed_config:\n        \"@type\": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog\n\
+    \        path: /dev/stdout\n    filter_chains:\n    - filters:\n      - name:\
+    \ envoy.filters.network.http_connection_manager\n        typed_config:\n     \
+    \     \"@type\": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager\n\
+    \          codec_type: auto\n          stat_prefix: ingress_http\n          route_config:\n\
+    \            name: local_route\n            virtual_hosts:\n            - name:\
+    \ backend\n              domains:\n              - \"{{ .Values.spire.trust_domain\
+    \ }}\"\n              routes:\n              - match:\n                  prefix:\
+    \ \"/\"\n                route:\n                  cluster: backend\n        \
+    \  http_filters:\n          - name: envoy.filters.http.rbac\n            typed_config:\n\
+    \              \"@type\": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC\n\
+    \              rules:\n                action: ALLOW\n                policies:\n\
+    \                  \"proxy\":\n                    permissions:\n            \
+    \        - or_rules:\n                        rules:\n                       \
+    \ - header:\n                            name: \":method\"\n                 \
+    \           exact_match: \"GET\"\n                        - header:\n        \
+    \                    name: \":method\"\n                            exact_match:\
+    \ \"HEAD\"\n                    principals:\n                    - authenticated:\n\
+    \                        principal_name:\n                          exact: \"\
+    spiffe://{{ .Values.spire.trust_domain }}/ns/proxy/sa/default\"\n          - name:\
+    \ envoy.filters.http.router\n            typed_config: {}\n      transport_socket:\n\
+    \        name: envoy.transport_sockets.tls\n        typed_config:\n          \"\
+    @type\": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext\n\
+    \          require_client_certificate: true\n          common_tls_context:\n \
+    \           alpn_protocols: h2,http/1.1\n            tls_certificate_sds_secret_configs:\n\
+    \            - name: \"spiffe://{{ .Values.spire.trust_domain }}/ns/backend/sa/default\"\
+    \n              sds_config:\n                api_config_source:\n            \
+    \      api_type: GRPC\n                  grpc_services:\n                    envoy_grpc:\n\
+    \                      cluster_name: spire_agent\n            validation_context_sds_secret_config:\n\
+    \              name: \"spiffe://{{ .Values.spire.trust_domain }}\"\n         \
+    \     sds_config:\n                api_config_source:\n                  api_type:\
+    \ GRPC\n                  grpc_services:\n                    envoy_grpc:\n  \
+    \                    cluster_name: spire_agent\n\n  clusters:\n  - name: spire_agent\n\
+    \    connect_timeout: 0.25s\n    http2_protocol_options: {}\n    load_assignment:\n\
+    \      cluster_name: spire_agent\n      endpoints:\n      - lb_endpoints:\n  \
+    \      - endpoint:\n            address:\n              pipe:\n              \
+    \  path: /run/spire/sockets/agent.sock\n\n  - name: backend\n    connect_timeout:\
+    \ 0.25s\n    type: STATIC\n    dns_lookup_family: V4_ONLY\n    lb_policy: ROUND_ROBIN\n\
+    \    load_assignment:\n      cluster_name: backend\n      endpoints:\n      -\
+    \ lb_endpoints:\n        - endpoint:\n            address:\n              socket_address:\n\
+    \                address: 127.0.0.1\n                port_value: 8080"

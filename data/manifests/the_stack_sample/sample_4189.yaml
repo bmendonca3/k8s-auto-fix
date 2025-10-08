@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: warehouse-staging
+spec:
+  selector:
+    matchLabels:
+      app: warehouse
+      env: staging
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: warehouse
+        env: staging
+    spec:
+      initContainers:
+      - name: migrate
+        image: gcr.io/dd-decaf-cfbf6/warehouse:devel
+        imagePullPolicy: Always
+        env:
+        - name: ENVIRONMENT
+          value: staging
+        - name: SCRIPT_NAME
+          value: /warehouse
+        - name: FLASK_APP
+          value: src/warehouse/wsgi.py
+        - name: ALLOWED_ORIGINS
+          value: https://caffeine.dd-decaf.eu,https://staging.dd-decaf.eu,http://localhost:4200
+        - name: IAM_API
+          value: http://iam-staging/iam
+        - name: POSTGRES_HOST
+          value: cloudsql-proxy
+        - name: POSTGRES_PORT
+          value: '5432'
+        - name: POSTGRES_DB_NAME
+          value: warehouse_staging
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: SECRET_KEY
+        - name: POSTGRES_ENV_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: POSTGRES_ENV_USERNAME
+        - name: POSTGRES_ENV_PASS
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: POSTGRES_ENV_PASS
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: SENTRY_DSN
+        - name: BASIC_AUTH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: BASIC_AUTH_USERNAME
+        - name: BASIC_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: BASIC_AUTH_PASSWORD
+        command:
+        - flask
+        - db
+        - upgrade
+        resources:
+          requests:
+            cpu: 1m
+          limits:
+            cpu: 2000m
+      containers:
+      - name: web
+        image: gcr.io/dd-decaf-cfbf6/warehouse:devel
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ENVIRONMENT
+          value: staging
+        - name: SCRIPT_NAME
+          value: /warehouse
+        - name: FLASK_APP
+          value: src/warehouse/wsgi.py
+        - name: ALLOWED_ORIGINS
+          value: https://caffeine.dd-decaf.eu,https://staging.dd-decaf.eu,http://localhost:4200
+        - name: IAM_API
+          value: http://iam-staging/iam
+        - name: POSTGRES_HOST
+          value: cloudsql-proxy
+        - name: POSTGRES_PORT
+          value: '5432'
+        - name: POSTGRES_DB_NAME
+          value: warehouse_staging
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: SECRET_KEY
+        - name: POSTGRES_ENV_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: POSTGRES_ENV_USERNAME
+        - name: POSTGRES_ENV_PASS
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: POSTGRES_ENV_PASS
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: SENTRY_DSN
+        - name: BASIC_AUTH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: BASIC_AUTH_USERNAME
+        - name: BASIC_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: warehouse-staging
+              key: BASIC_AUTH_PASSWORD
+        resources:
+          requests:
+            cpu: 1m
+          limits:
+            cpu: 2000m

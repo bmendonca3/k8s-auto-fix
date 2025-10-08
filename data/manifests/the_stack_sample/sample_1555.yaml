@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+      version: v1
+  revisionHistoryLimit: 1
+  template:
+    metadata:
+      labels:
+        app: notification
+        version: v1
+    spec:
+      containers:
+      - name: notification
+        image: stocktradersjilv2/notification:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MQ_USR
+          valueFrom:
+            secretKeyRef:
+              name: rbq
+              key: user
+        - name: MQ_PWD
+          valueFrom:
+            secretKeyRef:
+              name: rbq
+              key: password
+        - name: MQ_VIRTUAL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: rbq
+              key: vhost
+        - name: MQ_HOST_NAME
+          valueFrom:
+            secretKeyRef:
+              name: rbq
+              key: host
+        - name: MQ_PORT
+          valueFrom:
+            secretKeyRef:
+              name: rbq
+              key: port
+        - name: MQ_QUEUE
+          valueFrom:
+            secretKeyRef:
+              name: rbq
+              key: queue
+        - name: TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloudpush
+              key: tenenatid
+        - name: API_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloudpush
+              key: apikey
+        - name: REGION
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloudpush
+              key: region
+        - name: TAG_NAME
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloudpush
+              key: tag
+        - name: ALERT_MSG_URL
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloudpush
+              key: alertmsgurl
+        resources:
+          requests:
+            cpu: 200m
+            memory: 300Mi

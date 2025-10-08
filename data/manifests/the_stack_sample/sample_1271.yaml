@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress
+  namespace: demo
+data:
+  envoy.yaml: "static_resources:\n  listeners:\n    - address:\n        socket_address:\n\
+    \          address: 0.0.0.0\n          port_value: 8080\n      filter_chains:\n\
+    \        - filters:\n            - name: envoy.http_connection_manager\n     \
+    \         config:\n                access_log:\n                  - name: envoy.file_access_log\n\
+    \                    config:\n                      path: /dev/stdout\n      \
+    \          codec_type: auto\n                stat_prefix: ingress_http\n     \
+    \           http_filters:\n                  - name: envoy.router\n          \
+    \          config: {}\n                route_config:\n                  name:\
+    \ local_route\n                  virtual_hosts:\n                    - name: local_service\n\
+    \                      domains: [\"*\"]\n                      routes:\n     \
+    \                   - match:\n                            prefix: \"/\"\n    \
+    \                      route:\n                            cluster: podinfo\n\
+    \                            host_rewrite: podinfo.demo\n                    \
+    \        timeout: 5s\n                            retry_policy:\n            \
+    \                  retry_on: \"gateway-error,connect-failure,refused-stream\"\n\
+    \                              num_retries: 5\n                              per_try_timeout:\
+    \ 5s\n  clusters:\n    - name: podinfo\n      connect_timeout: 0.30s\n      type:\
+    \ strict_dns\n      lb_policy: round_robin\n      load_assignment:\n        cluster_name:\
+    \ podinfo\n        endpoints:\n          - lb_endpoints:\n              - endpoint:\n\
+    \                  address:\n                    socket_address:\n           \
+    \           address: podinfo.demo\n                      port_value: 9898\n\n\
+    admin:\n  access_log_path: /dev/null\n  address:\n    socket_address:\n      address:\
+    \ 0.0.0.0\n      port_value: 9999"

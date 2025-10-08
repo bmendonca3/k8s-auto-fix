@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: splunk-kubernetes-logging
+  labels:
+    app: splunk-kubernetes-logging
+    version: 1.4.0
+data:
+  fluent.conf: '@include system.conf
+
+    @include source.containers.conf
+
+    @include source.files.conf
+
+    @include source.journald.conf
+
+    @include monit.conf
+
+    @include output.conf
+
+    @include prometheus.conf'
+  system.conf: "# system wide configurations\n<system>\n  log_level info\n  root_dir\
+    \ /tmp/fluentd\n</system>"
+  prometheus.conf: "# input plugin that exports metrics\n<source>\n  @type prometheus\n\
+    </source>\n\n<source>\n  @type forward\n</source>\n\n# input plugin that collects\
+    \ metrics from MonitorAgent\n<source>\n  @type prometheus_monitor\n  <labels>\n\
+    \    host ${hostname}\n  </labels>\n</source>\n\n# input plugin that collects\
+    \ metrics for output plugin\n<source>\n  @type prometheus_output_monitor\n  <labels>\n\
+    \    host ${hostname}\n  </labels>\n</source>"
+  source.containers.conf: "# This configuration file for Fluentd / td-agent is used\n\
+    # to watch changes to Docker log files. The kubelet creates symlinks that\n# capture\
+    \ the pod name, namespace, container name & Docker container ID\n# to the docker\
+    \ logs for pods in the /var/log/containers directory on the host.\n# If running\
+    \ this fluentd configuration in a Docker container, the /var/log\n# directory\
+    \ should be mounted in the container.\n# reading kubelet logs from journal\n#\n\
+    # Reference:\n# https://github.com/kubernetes/community/blob/20d2f6f5498a5668bae2aea9dcaf4875b9c06ccb/contributors/design-proposals/node/kubelet-cri-logging.md\n\
+    #\n# Json Log Example:\n# {\"log\":\"[info:2016-02-16T16:04:05.930-08:00] Some\
+    \ log text here\\n\",\"stream\":\"stdout\",\"time\":\"2016-02-17T00:04:05.931087621Z\"\
+    }\n# CRI Log Example (not supported):\n# 2016-02-17T00:04:05.931087621Z stdout\
+    \ [info:2016-02-16T16:04:05.930-08:00] Some log text here\n<source>\n  @id containers.log\n\
+    \  @type tail\n  @label @SPLUNK\n  tag tail.containers.*\n  path /var/log/containers/*.log\n\
+    \  pos_file /var/log/splunk-fluentd-containers.log.pos\n  path_key source\n  read_from_head\
+    \ true\n  <parse>\n    @type json\n    time_format %Y-%m-%dT%H:%M:%S.%NZ\n   \
+    \ time_key time\n    time_type string\n    localtime false\n  </parse>\n</source>"
+  source.files.conf: "# This fluentd conf file contains sources for log files other\
+    \ than container logs.\n<source>\n  @id tail.file.kube-audit\n  @type tail\n \
+    \ @label @SPLUNK\n  tag tail.file.kube:apiserver-audit\n  path /var/log/kube-apiserver-audit.log\n\
+    \  pos_file /var/log/splunk-fluentd-kube-audit.pos\n  read_from_head true\n  path_key\
+    \ source\n  <parse>\n    @type regexp\n    expression /^(?<log>.*)$/\n    time_key\
+    \ time\n    time_type string\n    time_format %Y-%m-%dT%H:%M:%SZ\n  </parse>\n\
+    </source>"
+  source.journald.conf: "# This fluentd conf file contains configurations for reading\
+    \ logs from systemd journal.\n<source>\n  @id journald-docker\n  @type systemd\n\
+    \  @label @SPLUNK\n  tag journald.kube:docker\n  path \"/run/log/journal\"\n \
+    \ matches [{ \"_SYSTEMD_UNIT\": \"docker.service\" }]\n  read_from_head true\n\
+    \  <storage>\n    @type local\n    persistent true\n    path /var/log/splunkd-fluentd-journald-docker.pos.json\n\
+    \  </storage>\n  <entry>\n    field_map {\"MESSAGE\": \"log\", \"_SYSTEMD_UNIT\"\
+    : \"source\"}\n    field_map_strict true\n  </entry>\n</source>\n<source>\n  @id\
+    \ journald-kubelet\n  @type systemd\n  @label @SPLUNK\n  tag journald.kube:kubelet\n\
+    \  path \"/run/log/journal\"\n  matches [{ \"_SYSTEMD_UNIT\": \"kubelet.service\"\
+    \ }]\n  read_from_head true\n  <storage>\n    @type local\n    persistent true\n\
+    \    path /var/log/splunkd-fluentd-journald-kubelet.pos.json\n  </storage>\n \
+    \ <entry>\n    field_map {\"MESSAGE\": \"log\", \"_SYSTEMD_UNIT\": \"source\"\
+    }\n    field_map_strict true\n  </entry>\n</source>"
+  monit.conf: "<source>\n  @id fluentd-monitor-agent\n  @type monitor_agent\n  @label\
+    \ @SPLUNK\n  tag monitor_agent\n</source>"
+  output.conf: "<label @SPLUNK>\n  # = filters for container logs =\n  <filter tail.containers.var.log.containers.dns-controller*dns-controller*.log>\n\
+    \    @type concat\n    key log\n    timeout_label @SPLUNK\n    stream_identity_key\
+    \ stream\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval\
+    \ 5s\n    separator \"\"\n    use_first_timestamp true\n  </filter>\n  <filter\
+    \ tail.containers.var.log.containers.kube-dns*sidecar*.log>\n    @type concat\n\
+    \    key log\n    timeout_label @SPLUNK\n    stream_identity_key stream\n    multiline_start_regexp\
+    \ /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval 5s\n    separator \"\"\n    use_first_timestamp\
+    \ true\n  </filter>\n  <filter tail.containers.var.log.containers.kube-dns*dnsmasq*.log>\n\
+    \    @type concat\n    key log\n    timeout_label @SPLUNK\n    stream_identity_key\
+    \ stream\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval\
+    \ 5s\n    separator \"\"\n    use_first_timestamp true\n  </filter>\n  <filter\
+    \ tail.containers.var.log.containers.kube-apiserver*kube-apiserver*.log>\n   \
+    \ @type concat\n    key log\n    timeout_label @SPLUNK\n    stream_identity_key\
+    \ stream\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval\
+    \ 5s\n    separator \"\"\n    use_first_timestamp true\n  </filter>\n  <filter\
+    \ tail.containers.var.log.containers.kube-controller-manager*kube-controller-manager*.log>\n\
+    \    @type concat\n    key log\n    timeout_label @SPLUNK\n    stream_identity_key\
+    \ stream\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval\
+    \ 5s\n    separator \"\"\n    use_first_timestamp true\n  </filter>\n  <filter\
+    \ tail.containers.var.log.containers.kube-dns-autoscaler*autoscaler*.log>\n  \
+    \  @type concat\n    key log\n    timeout_label @SPLUNK\n    stream_identity_key\
+    \ stream\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval\
+    \ 5s\n    separator \"\"\n    use_first_timestamp true\n  </filter>\n  <filter\
+    \ tail.containers.var.log.containers.kube-proxy*kube-proxy*.log>\n    @type concat\n\
+    \    key log\n    timeout_label @SPLUNK\n    stream_identity_key stream\n    multiline_start_regexp\
+    \ /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval 5s\n    separator \"\"\n    use_first_timestamp\
+    \ true\n  </filter>\n  <filter tail.containers.var.log.containers.kube-scheduler*kube-scheduler*.log>\n\
+    \    @type concat\n    key log\n    timeout_label @SPLUNK\n    stream_identity_key\
+    \ stream\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval\
+    \ 5s\n    separator \"\"\n    use_first_timestamp true\n  </filter>\n  <filter\
+    \ tail.containers.var.log.containers.kube-dns*kubedns*.log>\n    @type concat\n\
+    \    key log\n    timeout_label @SPLUNK\n    stream_identity_key stream\n    multiline_start_regexp\
+    \ /^\\w[0-1]\\d[0-3]\\d/\n    flush_interval 5s\n    separator \"\"\n    use_first_timestamp\
+    \ true\n  </filter>\n\n  # Enrich log with k8s metadata\n  <filter tail.containers.**>\n\
+    \    @type kubernetes_metadata\n    annotation_match [ \"^splunk\\.com\" ]\n \
+    \   de_dot false\n  </filter>\n  <filter tail.containers.**>\n    @type record_transformer\n\
+    \    enable_ruby\n    <record>\n      # set the sourcetype from splunk.com/sourcetype\
+    \ pod annotation or set it to kube:container:CONTAINER_NAME\n      sourcetype\
+    \ ${record.dig(\"kubernetes\", \"annotations\", \"splunk.com/sourcetype\") ? \"\
+    kube:\"+record.dig(\"kubernetes\", \"annotations\", \"splunk.com/sourcetype\"\
+    ) : \"kube:container:\"+record.dig(\"kubernetes\",\"container_name\")}\n     \
+    \ container_name ${record.dig(\"kubernetes\",\"container_name\")}\n      namespace\
+    \ ${record.dig(\"kubernetes\",\"namespace_name\")}\n      pod ${record.dig(\"\
+    kubernetes\",\"pod_name\")}\n      container_id ${record.dig(\"docker\",\"container_id\"\
+    )}\n      pod_uid ${record.dig(\"kubernetes\",\"pod_id\")}\n      container_image\
+    \ ${record.dig(\"kubernetes\",\"container_image\")}\n      # set the cluster_name\
+    \ field to the configured value, or default to \"cluster_name\"\n      cluster_name\
+    \ cluster_name\n      # set the index field to the value found in the pod splunk.com/index\
+    \ annotations. if not set, use namespace annotation, or default to the default_index\n\
+    \      index ${record.dig(\"kubernetes\", \"annotations\", \"splunk.com/index\"\
+    ) ? record.dig(\"kubernetes\", \"annotations\", \"splunk.com/index\") : record.dig(\"\
+    kubernetes\", \"namespace_annotations\", \"splunk.com/index\") ? (record[\"kubernetes\"\
+    ][\"namespace_annotations\"][\"splunk.com/index\"]) : (\"main\")}\n      label_app\
+    \ ${record.dig(\"kubernetes\",\"labels\",\"app\")}\n      label_k8s-app ${record.dig(\"\
+    kubernetes\",\"labels\",\"k8s-app\")}\n      label_release ${record.dig(\"kubernetes\"\
+    ,\"labels\",\"release\")}\n      blacklist ${record.dig(\"kubernetes\", \"annotations\"\
+    , \"splunk.com/exclude\") ? record.dig(\"kubernetes\", \"annotations\", \"splunk.com/exclude\"\
+    ) : record.dig(\"kubernetes\", \"namespace_annotations\", \"splunk.com/exclude\"\
+    ) ? (record[\"kubernetes\"][\"namespace_annotations\"][\"splunk.com/exclude\"\
+    ]) : (\"false\")}\n    </record>\n  </filter>\n  <filter tail.containers.**>\n\
+    \    # Exclude all logs that are blacklisted\n    @type grep\n    <exclude>\n\
+    \      key blacklist\n      pattern /^true$/\n    </exclude>\n  </filter>\n  #\
+    \ extract pod_uid and container_name for CRIO runtime\n\n  # = filters for journald\
+    \ logs =\n  <filter journald.kube:kubelet>\n    @type concat\n    key log\n  \
+    \  timeout_label @SPLUNK\n    multiline_start_regexp /^\\w[0-1]\\d[0-3]\\d/\n\
+    \    flush_interval 5s\n  </filter>\n\n  # create source and sourcetype\n  <filter\
+    \ journald.**>\n    @type jq_transformer\n    jq '.record.source = \"/run/log/journal/\"\
+    \ + .record.source | .record.sourcetype = (.tag | ltrimstr(\"journald.\")) | .record.cluster_name\
+    \ = \"cluster_name\" | .record.index = \"main\" |.record'\n  </filter>\n\n  #\
+    \ = filters for non-container log files =\n  # extract sourcetype\n  <filter tail.file.**>\n\
+    \    @type jq_transformer\n    jq '.record.sourcetype = (.tag | ltrimstr(\"tail.file.\"\
+    )) | .record.cluster_name = \"cluster_name\" | .record.index = \"main\" | .record'\n\
+    \  </filter>\n\n  # = filters for monitor agent =\n  <filter monitor_agent>\n\
+    \    @type jq_transformer\n    jq \".record.source = \\\"namespace:#{ENV['MY_NAMESPACE']}/pod:#{ENV['MY_POD_NAME']}\\\
+    \" | .record.sourcetype = \\\"fluentd:monitor-agent\\\" | .record.cluster_name\
+    \ = \\\"cluster_name\\\" | .record.index = \\\"main\\\" | .record\"\n  </filter>\n\
+    \n  # = custom filters specified by users =\n\n  # = output =\n  <match **>\n\
+    \    @type splunk_hec\n    protocol https\n    hec_host \"MY-SPLUNK-HOST\"\n \
+    \   hec_port 8088\n    hec_token \"#{ENV['SPLUNK_HEC_TOKEN']}\"\n    index_key\
+    \ index\n    insecure_ssl true\n    host \"#{ENV['K8S_NODE_NAME']}\"\n    source_key\
+    \ source\n    sourcetype_key sourcetype\n    <fields>\n      # currently CRI does\
+    \ not produce log paths with all the necessary\n      # metadata to parse out\
+    \ pod, namespace, container_name, container_id.\n      # this may be resolved\
+    \ in the future by this issue: https://github.com/kubernetes/kubernetes/issues/58638#issuecomment-385126031\n\
+    \      container_image\n      pod_uid\n      pod\n      container_name\n     \
+    \ namespace\n      container_id\n      cluster_name\n      label_app\n      label_k8s-app\n\
+    \      label_release\n    </fields>\n    <buffer>\n      @type memory\n      chunk_limit_records\
+    \ 100000\n      chunk_limit_size 200m\n      flush_interval 5s\n      flush_thread_count\
+    \ 1\n      overflow_action block\n      retry_max_times 3\n      total_limit_size\
+    \ 600m\n    </buffer>\n    <format monitor_agent>\n      @type json\n    </format>\n\
+    \    <format>\n      # we just want to keep the raw logs, not the structure created\
+    \ by docker or journald\n      @type single_value\n      message_key log\n   \
+    \   add_newline false\n    </format>\n  </match>\n</label>"

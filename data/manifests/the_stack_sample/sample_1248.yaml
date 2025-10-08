@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openapi-nginx-conf
+data:
+  run.sh: "#! /bin/sh\n\nset -e\nBASE_URL=${BASE_URL:-/}\nNGINX_ROOT=/usr/share/nginx/html\n\
+    INDEX_FILE=$NGINX_ROOT/index.html\nNGINX_CONF=/etc/nginx/nginx.conf\n\nnode /usr/share/nginx/configurator\
+    \ $INDEX_FILE\n\nreplace_in_index () {\n  if [ \"$1\" != \"**None**\" ]; then\n\
+    \    sed -i \"s|/\\*||g\" $INDEX_FILE\n    sed -i \"s|\\*/||g\" $INDEX_FILE\n\
+    \    sed -i \"s|$1|$2|g\" $INDEX_FILE\n  fi\n}\n\nreplace_or_delete_in_index ()\
+    \ {\n  if [ -z \"$2\" ]; then\n    sed -i \"/$1/d\" $INDEX_FILE\n  else\n    replace_in_index\
+    \ $1 $2\n  fi\n}\n\nreplace_in_index myApiKeyXXXX123456789 $API_KEY\n\nif [ \"\
+    $SWAGGER_JSON_URL\" ]; then\n  sed -i \"s|https://petstore.swagger.io/v2/swagger.json|$SWAGGER_JSON_URL|g\"\
+    \ $INDEX_FILE\n  sed -i \"s|http://example.com/api|$SWAGGER_JSON_URL|g\" $INDEX_FILE\n\
+    fi\n\nif [[ -f \"$SWAGGER_JSON\" ]]; then\n  cp -s \"$SWAGGER_JSON\" \"$NGINX_ROOT\"\
+    \n  REL_PATH=\"./$(basename $SWAGGER_JSON)\"\n\n  if [[ -z \"$SWAGGER_ROOT\" ]];\
+    \ then\n    SWAGGER_ROOT=\"$(dirname $SWAGGER_JSON)\"\n  fi\n\n  sed -i \"s|https://petstore.swagger.io/v2/swagger.json|$REL_PATH|g\"\
+    \ $INDEX_FILE\n  sed -i \"s|http://example.com/api|$REL_PATH|g\" $INDEX_FILE\n\
+    fi\n\nfind $NGINX_ROOT -type f -regex \".*\\.\\(html\\|js\\|css\\)\" -exec sh\
+    \ -c \"gzip < {} > {}.gz\" \\;\n\nexec nginx -g 'daemon off;'\n"
+  nginx.conf: "worker_processes      1;\n\nevents {\n  worker_connections  1024;\n\
+    }\n\nhttp {\n  include             mime.types;\n  default_type        application/octet-stream;\n\
+    \n  sendfile on;\n\n  keepalive_timeout   65;\n\n  gzip on;\n  gzip_static on;\n\
+    \  gzip_disable \"msie6\";\n\n  gzip_vary on;\n  gzip_types text/plain text/css\
+    \ application/javascript;\n\n  map $request_method $access_control_max_age {\n\
+    \    OPTIONS 1728000; # 20 days\n  }\n  server_tokens off; # Hide Nginx version\n\
+    \n  server {\n    listen            8080;\n    server_name       localhost;\n\
+    \    index             index.html index.htm;\n\n    location /swagger {\n    \
+    \  absolute_redirect off;\n      alias            /usr/share/nginx/html/;\n  \
+    \    expires 1d;\n\n      location ~* \\.(?:json|yml|yaml)$ {\n        #SWAGGER_ROOT\n\
+    \        expires -1;\n\n        include cors.conf;\n      }\n\n      include cors.conf;\n\
+    \    }\n\n    location /health {\n      return 200 'OK';\n    }\n    # This is\
+    \ a hack to prevent nginx from running sed on this file, which causes a crash\n\
+    \    # listen  [::]:80;\n  }\n}"

@@ -1,0 +1,1 @@
+Pods must never run with privileged=true. Set securityContext.privileged to false, add allowPrivilegeEscalation: false, and drop the dangerous capabilities NET_RAW, NET_ADMIN, SYS_ADMIN, SYS_MODULE, SYS_PTRACE, SYS_CHROOT if they appear in capabilities.add.

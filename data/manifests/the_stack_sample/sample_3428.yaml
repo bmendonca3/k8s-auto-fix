@@ -1,0 +1,35 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: polygate
+  namespace: lowcode
+  annotations:
+    kubesphere.io/creator: zhenlinding
+data:
+  config.yml: "#  -------------------- base --------------------\n\n# port \u7AEF\u53E3\
+    \n# e.g :80\nport: :80\n\n# model \u6A21\u5F0F debug|release\n# debug\u6A21\u5F0F\
+    \uFF0C\u53EF\u4EE5\u8F93\u51FA\u66F4\u52A0\u8BE6\u7EC6\u7684\u65E5\u5FD7\uFF0C\
+    \u4F46\u662F\u8FD0\u884C\u901F\u5EA6\u4F1A\u51CF\u6162\nmodel: debug\n\n# schema\
+    \ \u540E\u7AEF\u670D\u52A1schema\nschema: http://\n\n#  -------------------- proxy\
+    \ --------------------\nproxy:\n  timeout: 30\n  keepAlive: 30\n  maxIdleConns:\
+    \ 100000\n  idleConnTimeout: 90\n  tlsHandshakeTimeout: 10\n  expectContinueTimeout:\
+    \ 1\n\n\ngate:\n  limitRate:\n    enable: true\n    # 1 ~ 10,0000\n    ratePerSecond:\
+    \ 50\n  ipBlock:\n    enable: true\n    white:\n      - \"*.*.*.*\"\n    black:\n\
+    \      - \"192.168.100.*\"\n\nremotes:\n  #  -------------------- oauth --------------------\n\
+    \  oauthToken:\n    addr: http://jwt/api/v1/jwt/check\n    timeout: 20\n    maxIdleConns:\
+    \ 10\n\n  #  -------------------- oauth by api-key --------------------\n  oauthKey:\n\
+    \    addr: http://kms/api/v1/kms/key/signature\n    timeout: 20\n    maxIdleConns:\
+    \ 10\n\n  #  -------------------- goalie --------------------\n  goalie:\n   \
+    \ addr: http://goalie/api/v1/goalie/role\n    timeout: 20\n    maxIdleConns: 10\n\
+    \napiFilter:\n  white:\n    - /api/v1/oauth2c/login\n    - /api/v1/oauth2c/in/refresh\n\
+    \    - /api/v1/org/login/code\n    - /api/v1/org/forget/code\n    - /api/v1/nurturing/userForgetResetPWD\n\
+    \    - /api/v1/message/ws\n    - /api/v1/message/ws/\n    - /api/v1/oauth2s/jwt/login\n\
+    \    - /api/v1/oauth2s/jwt/refresh\n    - /api/v1/oauth2s/jwt/auth\n    - /api/v1/jwt/login\n\
+    \    - /api/v1/jwt/auth\n    - /api/v1/jwt/refresh\n    - /api/v1/fileserver/domain\n\
+    \  black:\n\n#  -------------------- log --------------------\n# comply with zap\
+    \ log specification\nlog:\n  level: -1\n  development: false\n  sampling:\n  \
+    \  initial: 100\n    thereafter: 100\n  outputPath:\n    - stderr\n  errorOutputPath:\n\
+    \    - stderr\n\n# -------------------- redis --------------------\nredis:\n \
+    \ {{- with .Values.config.redis.addrs }}\n  addrs:\n    {{- toYaml . | nindent\
+    \ 8 }}\n  {{- end }}\n  username: {{ .Values.config.redis.username }}\n  password:\
+    \ {{ .Values.config.redis.password }}"

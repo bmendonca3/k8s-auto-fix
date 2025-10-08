@@ -1,0 +1,42 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: satellite-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: skywalking-system-satellite
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: External
+    external:
+      metric:
+        name: skywalking.apache.org|satellite_service_grpc_connect_count
+        selector:
+          matchLabels:
+            service.str.0: satellite
+            service.byte.1: 3a
+            service.byte.2: 3a
+            service.str.3: satellite
+            service.byte.4: 2d
+            service.str.5: service
+      target:
+        type: Value
+        value: 1900
+  - type: External
+    external:
+      metric:
+        name: skywalking.apache.org|satellite_service_server_cpu_utilization
+        selector:
+          matchLabels:
+            service.str.0: satellite
+            service.byte.1: 3a
+            service.byte.2: 3a
+            service.str.3: satellite
+            service.byte.4: 2d
+            service.str.5: service
+      target:
+        type: Value
+        value: 75

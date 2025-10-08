@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: additional-scrape-configs
+  namespace: prow-monitoring
+stringData:
+  prometheus-additional.yaml: "- job_name: k8s-prow-builds-boskos\n  metrics_path:\
+    \ /metrics\n  static_configs:\n    - targets:\n        - \"104.197.27.114\"\n\
+    - job_name: blackbox\n  metrics_path: /probe\n  params:\n    module: [http_2xx]\n\
+    \  static_configs:\n    - targets:\n      # ATTENTION: Keep this in sync with\
+    \ the list in mixins/prometheus/prober_alerts.libsonnet\n      - https://prow.k8s.io\n\
+    \      - https://monitoring.prow.k8s.io\n      - https://testgrid.k8s.io\n   \
+    \   - https://gubernator.k8s.io\n      - https://gubernator.k8s.io/pr/fejta #\
+    \ Deep health check of someone's PR dashboard.\n      - https://storage.googleapis.com/k8s-gubernator/triage/index.html\n\
+    \      - https://storage.googleapis.com/test-infra-oncall/oncall.html\n  relabel_configs:\n\
+    \    - source_labels: [__address__]\n      target_label: __param_target\n    -\
+    \ source_labels: [__param_target]\n      target_label: instance\n    - target_label:\
+    \ __address__\n      replacement: blackbox-prober\n"
+type: Opaque

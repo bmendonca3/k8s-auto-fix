@@ -1,0 +1,260 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    duck.knative.dev/source: 'true'
+    events.cloud.google.com/release: devel
+    events.cloud.google.com/crd-install: 'true'
+  annotations:
+    registry.knative.dev/eventTypes: "[\n  { \"type\": \"google.cloud.storage.object.v1.finalized\"\
+      , \"schema\": \"https://raw.githubusercontent.com/googleapis/google-cloudevents/master/proto/google/events/cloud/storage/v1/data.proto\"\
+      , \"description\": \"Sent when a new object (or a new generation of an existing\
+      \ object) is successfully created in the bucket. This includes copying or rewriting\
+      \ an existing object. A failed upload does not trigger this event.\" },\n  {\
+      \ \"type\": \"google.cloud.storage.object.v1.deleted\", \"schema\": \"https://raw.githubusercontent.com/googleapis/google-cloudevents/master/proto/google/events/cloud/storage/v1/data.proto\"\
+      , \"description\": \"Sent when an object has been permanently deleted. This\
+      \ includes objects that are overwritten or are deleted as part of the bucket's\
+      \ lifecycle configuration. For buckets with object versioning enabled, this\
+      \ is not sent when an object is archived.\"},\n  { \"type\": \"google.cloud.storage.object.v1.archived\"\
+      , \"schema\": \"https://raw.githubusercontent.com/googleapis/google-cloudevents/master/proto/google/events/cloud/storage/v1/data.proto\"\
+      , \"description\": \"Only sent when a bucket has enabled object versioning.\
+      \ This event indicates that the live version of an object has become an archived\
+      \ version, either because it was archived or because it was overwritten by the\
+      \ upload of an object of the same name.\"},\n  { \"type\": \"google.cloud.storage.object.v1.metadataUpdated\"\
+      , \"schema\": \"https://raw.githubusercontent.com/googleapis/google-cloudevents/master/proto/google/events/cloud/storage/v1/data.proto\"\
+      , \"description\": \"Sent when the metadata of an existing object changes.\"\
+      \ }\n]\n"
+  name: cloudstoragesources.events.cloud.google.com
+spec:
+  group: events.cloud.google.com
+  names:
+    categories:
+    - all
+    - knative
+    - cloudstoragesource
+    - sources
+    kind: CloudStorageSource
+    plural: cloudstoragesources
+  scope: Namespaced
+  preserveUnknownFields: false
+  conversion:
+    strategy: Webhook
+    webhook:
+      conversionReviewVersions:
+      - v1
+      - v1beta1
+      clientConfig:
+        service:
+          name: webhook
+          namespace: cloud-run-events
+  versions:
+  - name: v1
+    served: true
+    storage: false
+    subresources: &id001
+      status: {}
+    additionalPrinterColumns: &id002
+    - name: Ready
+      type: string
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
+    - name: Reason
+      type: string
+      jsonPath: .status.conditions[?(@.type=="Ready")].reason
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required: &id003
+            - bucket
+            - sink
+            properties:
+              sink: &id004
+                type: object
+                description: 'Sink which receives the notifications.
+
+                  '
+                properties:
+                  uri:
+                    type: string
+                    minLength: 1
+                  ref:
+                    type: object
+                    required:
+                    - apiVersion
+                    - kind
+                    - name
+                    properties:
+                      apiVersion:
+                        type: string
+                        minLength: 1
+                      kind:
+                        type: string
+                        minLength: 1
+                      namespace:
+                        type: string
+                      name:
+                        type: string
+                        minLength: 1
+              ceOverrides: &id005
+                type: object
+                description: 'Defines overrides to control modifications of the event
+                  sent to the sink.
+
+                  '
+                properties:
+                  extensions:
+                    type: object
+                    description: 'Extensions specify what attribute are added or overridden
+                      on the outbound event. Each `Extensions` key-value pair are
+                      set on the event as an attribute extension independently.
+
+                      '
+                    x-kubernetes-preserve-unknown-fields: true
+              serviceAccountName: &id006
+                type: string
+                description: 'Kubernetes service account used to bind to a google
+                  service account to poll the Cloud Pub/Sub Subscription. The value
+                  of the Kubernetes service account must be a valid DNS subdomain
+                  name. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
+
+                  '
+              secret: &id007
+                type: object
+                description: 'Credential used to poll the Cloud Pub/Sub Subscription.
+                  It is not used to create or delete the Subscription, only to poll
+                  it. The value of the secret entry must be a service account key
+                  in the JSON format (see https://cloud.google.com/iam/docs/creating-managing-service-account-keys).
+                  Defaults to secret.name of ''google-cloud-key'' and secret.key of
+                  ''key.json''.
+
+                  '
+                properties:
+                  name:
+                    type: string
+                  key:
+                    type: string
+                  optional:
+                    type: boolean
+              project: &id008
+                type: string
+                description: 'Google Cloud Project ID of the project into which the
+                  topic should be created. If omitted uses the Project ID from the
+                  GKE cluster metadata service.
+
+                  '
+              bucket: &id009
+                type: string
+                description: 'GCS bucket to subscribe to. For example ''my-test-bucket''.
+
+                  '
+              objectNamePrefix: &id010
+                type: string
+                description: 'Optional prefix to only notify when objects match this
+                  prefix.
+
+                  '
+              eventTypes: &id011
+                type: array
+                items:
+                  type: string
+                  enum:
+                  - google.cloud.storage.object.v1.finalized
+                  - google.cloud.storage.object.v1.deleted
+                  - google.cloud.storage.object.v1.archived
+                  - google.cloud.storage.object.v1.metadataUpdated
+          status:
+            type: object
+            properties:
+              observedGeneration: &id012
+                type: integer
+                format: int64
+              conditions: &id013
+                type: array
+                items:
+                  type: object
+                  properties:
+                    lastTransitionTime:
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    severity:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  - status
+              sinkUri: &id014
+                type: string
+              ceAttributes: &id015
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    source:
+                      type: string
+              projectId: &id016
+                type: string
+              topicId: &id017
+                type: string
+              subscriptionId: &id018
+                type: string
+              notificationId: &id019
+                type: string
+  - name: v1alpha1
+    served: true
+    storage: false
+    subresources: *id001
+    additionalPrinterColumns: *id002
+    schema: &id020
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required: *id003
+            properties:
+              sink: *id004
+              ceOverrides: *id005
+              serviceAccountName: *id006
+              secret: *id007
+              project: *id008
+              bucket: *id009
+              objectNamePrefix: *id010
+              eventTypes: *id011
+              payloadFormat:
+                type: string
+                description: 'Optional payload format. Either NONE or JSON_API_V1.
+                  If omitted, uses JSON_API_V1.
+
+                  '
+          status:
+            type: object
+            properties:
+              observedGeneration: *id012
+              conditions: *id013
+              sinkUri: *id014
+              ceAttributes: *id015
+              projectId: *id016
+              topicId: *id017
+              subscriptionId: *id018
+              notificationId: *id019
+              serviceAccountName:
+                type: string
+  - name: v1beta1
+    served: true
+    storage: true
+    subresources: *id001
+    additionalPrinterColumns: *id002
+    schema: *id020

@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: triage-party-config-release
+  namespace: triageparty-release
+data:
+  config.yaml: "settings:\n  name: kubernetes\n  min_similarity: 0.8\n  repos:\n \
+    \   - https://github.com/kubernetes/kubernetes\n\n  # Who should automatically\
+    \ be considered a project member?\n  # See: https://developer.github.com/v4/enum/commentauthorassociation/\n\
+    \  # Default is \"collaborator, owner, member\", unless \"members\" is set\n \
+    \ member-roles:\n  # - collaborator\n  # - owner\n  # - member\n\n  # Who else\
+    \ do we consider to be a project member? Default is empty.\n  # members:\n  #\
+    \ - k8s-ci-robot\n\n\ncollections:\n  - id: daily\n    name: Daily Triage\n  \
+    \  dedup: true\n    description: >\n      queue to be emptied once a day\n   \
+    \ rules:\n      - milestone-issues\n      - urgent-issues\n      - urgent-prs\n\
+    \nrules:\n  ### Milestone ###\n  milestone-issues:\n    name: \"v1.19 Issues\"\
+    \n    resolution: \"Add a milestone/ label\"\n    type: issue\n    filters:\n\
+    \    - milestone: \"v1.19\"\n\n  ### Daily Triage ####\n  issue-needs-priority-overdue:\n\
+    \    name: \"Unprioritized issues older than 7 days\"\n    resolution: \"Add a\
+    \ priority/ or triage/ label\"\n    type: issue\n    filters:\n      - label:\
+    \ \"!priority/.*\"\n      - label: \"!triage/.*\"\n      - created: +7d\n\n  issue-needs-comment-overdue:\n\
+    \    name: \"Uncommented older than 7 days\"\n    resolution: \"Add a priority/\
+    \ or triage/ label\"\n    type: issue\n    filters:\n      - tag: \"!commented\"\
+    \n      - tag: \"recv\"\n      - created: +7d\n\n  issue-soon-overdue:\n    name:\
+    \ \"Important soon, but no updates in 90 days\"\n    resolution: \"Downgrade to\
+    \ important-longterm\"\n    type: issue\n    filters:\n      - label: \"priority/important-soon\"\
+    \n      - updated: +90d\n\n  issue-longterm-overdue:\n    name: \"Important longterm,\
+    \ but no updates in 180 days\"\n    resolution: \"Downgrade to backlog\"\n   \
+    \ type: issue\n    filters:\n      - label: \"priority/important-longterm\"\n\
+    \      - updated: +180d\n\n  # Don't leave code reviews hanging\n  pr-reviewable:\n\
+    \    name: \"Pull Requests: Review Ready\"\n    resolution: \"Review requests\
+    \ or mark them as do-not-merge/work-in-progress\"\n    type: pull_request\n  \
+    \  filters:\n      - label: \"!do-not-merge.*\"\n      - label: \"!needs-rebase\"\
+    \n      - label: \"!cncf-cla: no\"\n      - tag: \"!requested-changes\"\n    \
+    \  - tag: \"!send\"\n      # Temporarily workaround inability to track PR eligibility\n\
+    \      - updated: +1d\n\n  # Issues missing initial feedback\n  issue-needs-kind:\n\
+    \    name: \"Unkinded Issues\"\n    resolution: \"Add a kind/ or triage/support\
+    \ label\"\n    type: issue\n    filters:\n      - label: \"!kind/.*\"\n      -\
+    \ label: \"!triage/support\"\n\n  issue-needs-priority:\n    name: \"Unprioritized\
+    \ Recent Issues\"\n    resolution: \"Add a priority/ or triage/ label\"\n    type:\
+    \ issue\n    filters:\n      - label: \"!priority/.*\"\n      - label: \"!triage/.*\"\
+    \n\n  issue-needs-comment:\n    name: \"Uncommented Recent Issues\"\n    resolution:\
+    \ \"Add a comment\"\n    type: issue\n    filters:\n      - tag: \"!commented\"\
+    \n      - tag: \"recv\"\n      - created: -7d\n\n  # Issues that may need reprioritized\n\
+    \  issue-new-with-reactions:\n    name: \"New, has multiple reactions, but not\
+    \ important-soon\"\n    resolution: \"Check if issue should be prioritized as\
+    \ important-soon\"\n    type: issue\n    filters:\n      - reactions: \">2\"\n\
+    \      - created: -10d\n      - tag: \"!send\"\n      - label: \"!priority/important-soon\"\
+    \n\n  issue-new-with-many-commenters:\n    name: \"New, has multiple commenters,\
+    \ but not important-soon\"\n    resolution: \"Check if issue should be prioritized\
+    \ as important-soon\"\n    type: issue\n    filters:\n      - commenters: \">3\"\
+    \n      - created: -10d\n      - tag: \"!send\"\n      - label: \"!priority/important-soon\"\
+    \n\n  # Don't forget our users\n  issue-updated-needs-info:\n    name: \"needs\
+    \ information, has update\"\n    resolution: \"Comment and remove triage/needs-information\
+    \ tag\"\n    type: issue\n    filters:\n      - label: triage/needs-information\n\
+    \      - tag: recv\n\n  issue-updated-has-question:\n      name: \"Recently updated\
+    \ issue has a question\"\n      resolution: \"Add an answer\"\n      type: issue\n\
+    \      filters:\n        - tag: recv-q\n        - label: \"!triage/needs-information\"\
+    \n        - tag: \"!member-last\"\n        - tag: \"!contributor-last\"\n    \
+    \    - responded: +3d\n        - updated: -7d\n\n  ####### Weekly Triage #########\n\
+    \  # SLO nearing\n  issue-near-soon-overdue:\n    name: \"Important soon, but\
+    \ no updates in 60 days\"\n    resolution: \"Downgrade to important-longterm\"\
+    \n    type: issue\n    filters:\n      - label: \"priority/important-soon\"\n\
+    \      - updated: +60d\n\n  issue-near-longterm-overdue:\n    name: \"Important\
+    \ longterm, but no updates in 120 days\"\n    resolution: \"Downgrade to backlog\"\
+    \n    type: issue\n    filters:\n      - label: \"priority/important-longterm\"\
+    \n      - updated: +120d\n\n  # issues needing reprioritization\n  many-reactions:\n\
+    \    name: \"many reactions, low priority\"\n    resolution: \"Upgrade to priority-soon,\
+    \ priority-longterm, or longterm-support\"\n    filters:\n      - reactions: \"\
+    >3\"\n      - reactions-per-month: \">0.75\"\n      - label: \"!priority/important-soon\"\
+    \n      - label: \"!priority/important-longterm\"\n      - label: \"!long-term-support\"\
+    \n\n  many-commenters:\n    name: \"many commenters, low priority\"\n    resolution:\
+    \ \"Upgrade to priority-soon, priority-longterm, or longterm-support\"\n    filters:\n\
+    \      - commenters: \">2\"\n      - commenters-per-month: \">1.9\"\n      - created:\
+    \ \"+30d\"\n      - label: \"!priority/important-soon\"\n      - label: \"!priority/important-longterm\"\
+    \n      - label: \"!long-term-support\"\n\n  issue-zombies:\n    name: \"Screaming\
+    \ into the void\"\n    resolution: \"Reopen, or ask folks to open a new issue\"\
+    \n    type: issue\n    filters:\n      - state: closed\n      - updated: -7d\n\
+    \      - tag: recv\n      - comments-while-closed: \">1\"\n\n  # Issues needing\
+    \ closure\n  issue-stale-needs-info:\n    name: \"Needs information for over 2\
+    \ weeks\"\n    resolution: \"Close or remove triage/needs-information label\"\n\
+    \    type: issue\n    filters:\n      - label: triage/needs-information\n    \
+    \  - updated: +13d\n\n  issue-stale-support:\n    name: \"Support request over\
+    \ 30 days old\"\n    resolution: \"Close, or add to triage/long-term-support\"\
+    \n    type: issue\n    filters:\n      - label: triage/support\n      - label:\
+    \ \"!long-term-support\"\n      - updated: +29d\n\n  lifecycle-rotten:\n    name:\
+    \ \"Issues nearing expiration\"\n    resolution: \"Close or label as frozen\"\n\
+    \    filters:\n      - label: lifecycle/rotten\n\n  # PR's needing closure\n \
+    \ pr-approved-stale:\n    name: \"Pull requests: Approved and getting old\"\n\
+    \    type: pull_request\n    filters:\n      - label: \"!do-not-merge.*\"\n  \
+    \    - label: \"!needs-rebase\"\n      - label: \"approved\"\n      - updated:\
+    \ +5d\n\n  pr-unapproved-stale:\n    name: \"Pull Requests: Stale\"\n    resolution:\
+    \ \"Add comment and/or close PR\"\n    type: pull_request\n    filters:\n    \
+    \  - created: +20d\n      - updated: +5d\n\n  # People with questions\n  issue-has-question:\n\
+    \    name: \"Overdue answers for a question\"\n    resolution: \"Add a comment\"\
+    \n    type: issue\n    filters:\n      - tag: recv-q\n      - label: \"!triage/needs-information\"\
+    \n      - tag: \"!member-last\"\n      - tag: \"!contributor-last\"\n      - responded:\
+    \ +6d\n\n  issue-updated-support:\n    name: \"Updated support requests\"\n  \
+    \  resolution: \"Move out of support, or add a comment\"\n    type: issue\n  \
+    \  filters:\n      - tag: recv\n      - label: \"!triage/needs-information\"\n\
+    \      - tag: \"!member-last\"\n      - tag: \"!contributor-last\"\n      - responded:\
+    \ +6d\n\n  ## Bug Scrub ##\n  bugs-old-recv:\n    name: \"Bugs that deserve a\
+    \ follow-up comment\"\n    resolution: \"Comment or close the issue\"\n    type:\
+    \ issue\n    filters:\n      - tag: recv\n      - responded: +60d\n      - created:\
+    \ +60d\n      - label: \"kind/bug\"\n\n  features-old-recv:\n    name: \"Features\
+    \ that deserve a follow-up comment\"\n    resolution: \"Comment or close the issue\"\
+    \n    type: issue\n    filters:\n      - tag: recv\n      - responded: +90d\n\
+    \      - created: +30d\n      - label: \"kind/feature\"\n\n  other-old-recv:\n\
+    \    name: \"Items that deserve a follow-up comment\"\n    resolution: \"Comment\
+    \ or close the issue\"\n    type: issue\n    filters:\n      - tag: recv\n   \
+    \   - responded: +60d\n      - label: \"!kind/feature\"\n      - label: \"!kind/bug\"\
+    \n      - label: \"!triage/support\"\n\n  features-old:\n    name: \"Features\
+    \ that have not been commented on within 90 days\"\n    resolution: \"Comment\
+    \ or close the issue\"\n    type: issue\n    filters:\n      - responded: +90d\n\
+    \      - created: +90d\n      - label: \"kind/feature\"\n\n  bugs-old:\n    name:\
+    \ \"Bugs that have not been commented on within 60 days\"\n    resolution: \"\
+    Comment or close the issue\"\n    type: issue\n    filters:\n      - label: \"\
+    kind/bug\"\n      - responded: +60d\n      - created: +60d\n      - label: \"\
+    !priority/awaiting-evidence\"\n\n  other-old:\n    name: \"Items that have not\
+    \ been commented on within 60 days\"\n    resolution: \"Comment or close the issue\"\
+    \n    type: issue\n    filters:\n      - responded: +90d\n      - created: +90d\n\
+    \      - label: \"!kind/feature\"\n      - label: \"!kind/bug\"\n      - label:\
+    \ \"!triage/support\"\n      - label: \"!priority/awaiting-evidence\"\n\n  lifecycle-stale:\n\
+    \    name: \"Issues nearing expiration\"\n    resolution: \"Close or label as\
+    \ frozen\"\n    filters:\n      - label: lifecycle/stale\n\n  # Receive queue\n\
+    \  question-recv:\n    name: \"Questions awaiting follow-up\"\n    resolution:\
+    \ \"Comment or close the issue\"\n    type: issue\n    filters:\n      - tag:\
+    \ recv\n      - label: \".*question\"\n\n  bugs-recv:\n    name: \"Bugs awaiting\
+    \ follow-up\"\n    resolution: \"Comment or close the issue\"\n    type: issue\n\
+    \    filters:\n      - tag: recv\n      - label: \".*bug\"\n\n  enhancement-recv:\n\
+    \    name: \"Features awaiting follow-up\"\n    resolution: \"Comment or close\
+    \ the issue\"\n    type: issue\n    filters:\n      - tag: recv\n      - label:\
+    \ \".*(feature|enhancement|idea).*\"\n\n  other-recv:\n    name: \"Items that\
+    \ deserve a follow-up comment\"\n    resolution: \"Comment or close the issue\"\
+    \n    type: issue\n    filters:\n      - tag: recv\n      - responded: +30d\n\
+    \      - label: \"!.*(feature|enhancement).*\"\n      - label: \"!.*bug\"\n  \
+    \    - label: \".*question\"\n\n  # Urgent\n  urgent-prs:\n    name: \"Urgent\
+    \ Pull Requests\"\n    type: pull_request\n    resolution: Merge em\n    filters:\n\
+    \      - label: \"priority/critical-urgent\"\n\n  urgent-issues:\n    name: \"\
+    Urgent Issues\"\n    type: issue\n    resolution: Close or deprioritize\n    filters:\n\
+    \      - label: \"priority/critical-urgent\"\n\n  # Soon\n  soon-bugs:\n    name:\
+    \ \"bugs labelled important/soon\"\n    type: issue\n    resolution: Close or\
+    \ deprioritize\n    filters:\n      - label: \"priority/important-soon\"\n   \
+    \   - label: \"kind/bug\"\n\n  soon-features:\n    name: \"features labelled important/soon\"\
+    \n    type: issue\n    resolution: Close or deprioritize\n    filters:\n     \
+    \ - label: \"priority/important-soon\"\n      - label: \"kind/feature-request\"\
+    \n\n  soon-other:\n    name: \"other issues labelled important-soon\"\n    type:\
+    \ issue\n    resolution: Close or deprioritize\n    filters:\n      - label: \"\
+    priority/important-soon\"\n      - label: \"!kind/feature-request\"\n      - label:\
+    \ \"!kind/bug\"\n\n  soon-prs:\n    name: \"PR's labelled important-soon\"\n \
+    \   type: pull_request\n    resolution: Merge em\n    filters:\n      - label:\
+    \ \"priority/important-soon\"\n\n  ## Similar\n  similar-prs:\n    name: \"Similar\
+    \ Pull Requests\"\n    type: pull_request\n    resolution: Close as duplicate\
+    \ or give a better title\n    filters:\n      - tag: similar\n\n  similar-issues:\n\
+    \    name: \"Similar Issues\"\n    type: issue\n    resolution: Close as duplicate\
+    \ or give a better title\n    filters:\n      - tag: similar\n\n  # for statistics\
+    \ generation\n  open-issues:\n    name: \"Open Issues\"\n    type: issue\n\n \
+    \ open-prs:\n    name: \"Open PRs\"\n    type: pull_request"

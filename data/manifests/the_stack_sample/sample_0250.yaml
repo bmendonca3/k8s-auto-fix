@@ -1,0 +1,24 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: dataservice-forecast-cronjob
+spec:
+  successfulJobsHistoryLimit: 3
+  schedule: 1 * * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: dataservice-forecast-job
+            image: gwdowner/dataservice:latest
+            command:
+            - npm
+            - run
+            - batchjob:forecast
+            imagePullPolicy: Always
+            envFrom:
+            - secretRef:
+                name: data-service
+          restartPolicy: OnFailure
+      backoffLimit: 5

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ubbagent-config
+data:
+  config.yaml: "# The identity section contains authentication information used\n\
+    # by the agent.\nidentities:\n- name: gcp\n  gcp:\n    # This parameter accepts\
+    \ a base64-encoded JSON service\n    # account key. The value comes from the reporting\
+    \ secret.\n    encodedServiceAccountKey: $AGENT_ENCODED_KEY\n\n# The metrics section\
+    \ defines the metric that will be reported.\n# Metric names should match verbatim\
+    \ the identifiers created\n# during pricing setup.\nmetrics:\n- name: cost_per_hour\n\
+    \  type: int\n  metric_kind: DELTA\n  value_type: INT64\n  unit: h\n\n  endpoints:\n\
+    \  - name: on_disk\n  - name: servicecontrol\n\n  # The passthrough marker indicates\
+    \ that no aggregation should\n  # occur for this metric. Reports received are\
+    \ immediately sent\n  # to the reporting endpoint. We use passthrough for the\n\
+    \  # instance_time metric since reports are generated\n  # automatically by a\
+    \ heartbeat source defined in a later\n  # section.\n  passthrough: {}\n\n# The\
+    \ endpoints section defines where metering data is ultimately\n# sent. Currently\
+    \ supported endpoints include:\n# * disk - some directory on the local filesystem\n\
+    # * servicecontrol - Google Service Control\nendpoints:\n- name: on_disk\n  #\
+    \ The disk endpoint is useful for debugging, but its inclusion\n  # is not necessary\
+    \ in a production deployment.\n  disk:\n    reportDir: /var/lib/ubbagent/reports\n\
+    \    expireSeconds: 3600\n- name: servicecontrol\n  servicecontrol:\n    identity:\
+    \ gcp\n    # The service name is unique to your application and will be\n    #\
+    \ provided during onboarding.\n    serviceName: unleash-enterprise.mp-bricks-software-public.appspot.com\n\
+    \    consumerId: $AGENT_CONSUMER_ID  # From the reporting secret.\n  \n\n# The\
+    \ sources section lists metric data sources run by the agent\n# itself. The currently-supported\
+    \ source is 'heartbeat', which\n# sends a defined value to a metric at a defined\
+    \ interval. In\n# this example, the heartbeat sends a 1-hour value through the\n\
+    # \"instance_time\" metric every hour.\nsources:\n- name: instance_time_heartbeat\n\
+    \  heartbeat:\n    metric: cost_per_hour\n    intervalSeconds: 3600\n    value:\n\
+    \      int64Value: 1"

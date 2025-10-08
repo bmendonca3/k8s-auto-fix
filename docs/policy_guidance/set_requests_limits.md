@@ -1,0 +1,1 @@
+Right-size each container's resources.requests and resources.limits with realistic CPU and memory numbers. Use paths like /spec/containers/0/resources/requests and set cpu (e.g. 100m) and memory (e.g. 128Mi) for requests, and slightly larger values (e.g. 500m / 256Mi) for limits when none are present.

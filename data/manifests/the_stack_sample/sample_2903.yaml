@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-employees-deployment
+  labels:
+    app: mysql-employees
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mysql-employees
+  template:
+    metadata:
+      labels:
+        app: mysql-employees
+    spec:
+      containers:
+      - name: mysql-employees
+        image: tdewin/mysql-employees
+        ports:
+        - name: mysql-employees
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: MYSQL_DB
+          value: employees
+        - name: MYSQL_SERVER
+          value: tcp(mysql-demo:3306)
+        - name: MYSQL_USERNAME
+          value: root
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: mysql-root-password
+              name: mysql-demo
+        volumeMounts:
+        - name: mysql-configmap
+          mountPath: /usr/share/mysql-employees
+      volumes:
+      - name: mysql-configmap
+        configMap:
+          name: mysql-configmap

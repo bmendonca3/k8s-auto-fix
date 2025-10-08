@@ -1,0 +1,179 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-valkey-cluster
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: valkey-cluster
+    app.kubernetes.io/version: 8.1.3
+    helm.sh/chart: valkey-cluster-3.0.24
+spec:
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: valkey-cluster
+  replicas: 3
+  serviceName: release-name-valkey-cluster-headless
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: valkey-cluster
+        app.kubernetes.io/version: 8.1.3
+        helm.sh/chart: valkey-cluster-3.0.24
+      annotations:
+        checksum/scripts: b416f9c23ba0f844168db1fda55802c08f6e6158998b5dc543fb3e2827aee988
+        checksum/secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        checksum/config: d260a75cea2840d303318eeb5409b6f6f190e3e221ea66f3e98857402f575fa0
+    spec:
+      hostNetwork: false
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      serviceAccountName: release-name-valkey-cluster
+      automountServiceAccountToken: false
+      affinity:
+        podAffinity: null
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/name: valkey-cluster
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+        nodeAffinity: null
+      containers:
+      - name: release-name-valkey-cluster
+        image: docker.io/bitnamilegacy/valkey-cluster:8.1.3-debian-12-r3
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        command:
+        - /bin/bash
+        - -c
+        args:
+        - "# Backwards compatibility change\nif ! [[ -f /opt/bitnami/valkey/etc/valkey.conf\
+          \ ]]; then\n    echo COPYING FILE\n    cp  /opt/bitnami/valkey/etc/valkey-default.conf\
+          \ /opt/bitnami/valkey/etc/valkey.conf\nfi\npod_index=($(echo \"$POD_NAME\"\
+          \ | tr \"-\" \"\\n\"))\npod_index=\"${pod_index[-1]}\"\nif [[ \"$pod_index\"\
+          \ == \"0\" ]]; then\n  export VALKEY_CLUSTER_CREATOR=\"yes\"\n  export VALKEY_CLUSTER_REPLICAS=\"\
+          0\"\nfi\n/opt/bitnami/scripts/valkey-cluster/entrypoint.sh /opt/bitnami/scripts/valkey-cluster/run.sh\n"
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: VALKEY_NODES
+          value: 'release-name-valkey-cluster-0.release-name-valkey-cluster-headless
+            release-name-valkey-cluster-1.release-name-valkey-cluster-headless release-name-valkey-cluster-2.release-name-valkey-cluster-headless '
+        - name: ALLOW_EMPTY_PASSWORD
+          value: 'yes'
+        - name: VALKEY_AOF_ENABLED
+          value: 'yes'
+        - name: VALKEY_TLS_ENABLED
+          value: 'no'
+        - name: VALKEY_PORT_NUMBER
+          value: '6379'
+        ports:
+        - name: tcp-redis
+          containerPort: 6379
+        - name: tcp-redis-bus
+          containerPort: 16379
+        livenessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 6
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - sh
+            - -c
+            - /scripts/ping_liveness_local.sh 5
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - sh
+            - -c
+            - /scripts/ping_readiness_local.sh 1
+        resources:
+          limits:
+            cpu: 150m
+            ephemeral-storage: 2Gi
+            memory: 192Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 128Mi
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: valkey-data
+          mountPath: /bitnami/valkey/data
+          subPath: null
+        - name: default-config
+          mountPath: /opt/bitnami/valkey/etc/valkey-default.conf
+          subPath: valkey-default.conf
+        - name: empty-dir
+          mountPath: /opt/bitnami/valkey/etc/
+          subPath: app-conf-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/valkey/tmp
+          subPath: app-tmp-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/valkey/logs
+          subPath: app-logs-dir
+        - name: empty-dir
+          mountPath: /tmp
+          subPath: tmp-dir
+      volumes:
+      - name: scripts
+        configMap:
+          name: release-name-valkey-cluster-scripts
+          defaultMode: 493
+      - name: default-config
+        configMap:
+          name: release-name-valkey-cluster-default
+      - name: empty-dir
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: valkey-data
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: valkey-cluster
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi

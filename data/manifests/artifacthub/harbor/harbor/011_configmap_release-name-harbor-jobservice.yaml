@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-harbor-jobservice
+  namespace: default
+  labels:
+    heritage: Helm
+    release: release-name
+    chart: harbor
+    app: harbor
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.14.0
+data:
+  config.yml: "#Server listening port\nprotocol: \"http\"\nport: 8080\nworker_pool:\n\
+    \  workers: 10\n  backend: \"redis\"\n  redis_pool:\n    redis_url: \"redis://release-name-harbor-redis:6379/1\"\
+    \n    namespace: \"harbor_job_service_namespace\"\n    idle_timeout_second: 3600\n\
+    job_loggers:\n  - name: \"FILE\"\n    level: INFO\n    settings: # Customized\
+    \ settings of logger\n      base_dir: \"/var/log/jobs\"\n    sweeper:\n      duration:\
+    \ 14 #days\n      settings: # Customized settings of sweeper\n        work_dir:\
+    \ \"/var/log/jobs\"\nmetric:\n  enabled: false\n  path: /metrics\n  port: 8001\n\
+    #Loggers for the job service\nloggers:\n  - name: \"STD_OUTPUT\"\n    level: INFO\n\
+    reaper:\n  # the max time to wait for a task to finish, if unfinished after max_update_hours,\
+    \ the task will be mark as error, but the task will continue to run, default value\
+    \ is 24\n  max_update_hours: 24\n  # the max time for execution in running state\
+    \ without new task created\n  max_dangling_hours: 168\n"

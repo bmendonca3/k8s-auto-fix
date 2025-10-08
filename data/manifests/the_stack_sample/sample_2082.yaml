@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: localingress-ds
+  namespace: localingress
+  labels:
+    component: localingress
+spec:
+  selector:
+    matchLabels:
+      component: localingress
+  template:
+    metadata:
+      labels:
+        component: localingress
+    spec:
+      volumes:
+      - name: localingress-config
+        configMap:
+          name: localingress-config
+      containers:
+      - name: ingress
+        image: docker.io/library/haproxy:2.2.4
+        volumeMounts:
+        - name: localingress-config
+          mountPath: /usr/local/etc/haproxy/
+        ports:
+        - containerPort: 443
+          hostPort: 443
+        - containerPort: 80
+          hostPort: 80

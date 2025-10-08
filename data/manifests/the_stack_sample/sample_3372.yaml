@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-splunk-otel-collector-otel-agent
+  labels:
+    app.kubernetes.io/name: splunk-otel-collector
+    helm.sh/chart: splunk-otel-collector-0.43.0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/version: 0.43.0
+    app: splunk-otel-collector
+    chart: splunk-otel-collector-0.43.0
+    release: default
+    heritage: Helm
+data:
+  relay: "exporters:\n  sapm:\n    access_token: ${SPLUNK_OBSERVABILITY_ACCESS_TOKEN}\n\
+    \    endpoint: https://ingest.CHANGEME.signalfx.com/v2/trace\n  signalfx:\n  \
+    \  access_token: ${SPLUNK_OBSERVABILITY_ACCESS_TOKEN}\n    api_url: https://api.CHANGEME.signalfx.com\n\
+    \    correlation: null\n    ingest_url: https://ingest.CHANGEME.signalfx.com\n\
+    \    sync_host_metadata: true\nextensions:\n  health_check: null\n  k8s_observer:\n\
+    \    auth_type: serviceAccount\n    node: ${K8S_NODE_NAME}\n  memory_ballast:\n\
+    \    size_mib: ${SPLUNK_BALLAST_SIZE_MIB}\n  zpages: null\nprocessors:\n  batch:\
+    \ null\n  filter/logs:\n    logs:\n      exclude:\n        resource_attributes:\n\
+    \        - key: splunk.com/exclude\n          value: \"true\"\n  groupbyattrs/logs:\n\
+    \    keys:\n    - com.splunk.source\n    - com.splunk.sourcetype\n    - container.id\n\
+    \    - fluent.tag\n    - istio_service_name\n    - k8s.container.name\n    - k8s.namespace.name\n\
+    \    - k8s.pod.name\n    - k8s.pod.uid\n  k8sattributes:\n    extract:\n     \
+    \ annotations:\n      - from: pod\n        key: splunk.com/sourcetype\n      -\
+    \ from: namespace\n        key: splunk.com/exclude\n        tag_name: splunk.com/exclude\n\
+    \      - from: pod\n        key: splunk.com/exclude\n        tag_name: splunk.com/exclude\n\
+    \      - from: namespace\n        key: splunk.com/index\n        tag_name: com.splunk.index\n\
+    \      - from: pod\n        key: splunk.com/index\n        tag_name: com.splunk.index\n\
+    \      labels:\n      - key: app\n      metadata:\n      - k8s.namespace.name\n\
+    \      - k8s.node.name\n      - k8s.pod.name\n      - k8s.pod.uid\n      - container.id\n\
+    \      - container.image.name\n      - container.image.tag\n    filter:\n    \
+    \  node_from_env_var: K8S_NODE_NAME\n    pod_association:\n    - from: resource_attribute\n\
+    \      name: k8s.pod.uid\n    - from: resource_attribute\n      name: k8s.pod.ip\n\
+    \    - from: resource_attribute\n      name: ip\n    - from: connection\n    -\
+    \ from: resource_attribute\n      name: host.name\n  memory_limiter:\n    check_interval:\
+    \ 2s\n    limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}\n  resource:\n    attributes:\n\
+    \    - action: insert\n      key: k8s.node.name\n      value: ${K8S_NODE_NAME}\n\
+    \    - action: insert\n      key: k8s.cluster.name\n      value: CHANGEME\n  resource/add_agent_k8s:\n\
+    \    attributes:\n    - action: insert\n      key: k8s.pod.name\n      value:\
+    \ ${K8S_POD_NAME}\n    - action: insert\n      key: k8s.pod.uid\n      value:\
+    \ ${K8S_POD_UID}\n    - action: insert\n      key: k8s.namespace.name\n      value:\
+    \ ${K8S_NAMESPACE}\n  resource/logs:\n    attributes:\n    - action: upsert\n\
+    \      from_attribute: k8s.pod.annotations.splunk.com/sourcetype\n      key: com.splunk.sourcetype\n\
+    \    - action: delete\n      key: k8s.pod.annotations.splunk.com/sourcetype\n\
+    \    - action: delete\n      key: splunk.com/exclude\n  resourcedetection:\n \
+    \   detectors:\n    - env\n    - system\n    override: false\n    timeout: 10s\n\
+    receivers:\n  jaeger:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:14250\n\
+    \      thrift_http:\n        endpoint: 0.0.0.0:14268\n  otlp:\n    protocols:\n\
+    \      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:4318\n\
+    \  prometheus/agent:\n    config:\n      scrape_configs:\n      - job_name: otel-agent\n\
+    \        scrape_interval: 10s\n        static_configs:\n        - targets:\n \
+    \         - ${K8S_POD_IP}:8889\n  smartagent/signalfx-forwarder:\n    listenAddress:\
+    \ 0.0.0.0:9080\n    type: signalfx-forwarder\n  zipkin:\n    endpoint: 0.0.0.0:9411\n\
+    service:\n  extensions:\n  - health_check\n  - k8s_observer\n  - memory_ballast\n\
+    \  - zpages\n  pipelines:\n    metrics/agent:\n      exporters:\n      - signalfx\n\
+    \      processors:\n      - memory_limiter\n      - batch\n      - resource\n\
+    \      - resource/add_agent_k8s\n      - resourcedetection\n      receivers:\n\
+    \      - prometheus/agent\n    traces:\n      exporters:\n      - sapm\n     \
+    \ processors:\n      - memory_limiter\n      - k8sattributes\n      - batch\n\
+    \      - resource\n      - resourcedetection\n      receivers:\n      - otlp\n\
+    \      - jaeger\n      - smartagent/signalfx-forwarder\n      - zipkin\n  telemetry:\n\
+    \    metrics:\n      address: 0.0.0.0:8889"
