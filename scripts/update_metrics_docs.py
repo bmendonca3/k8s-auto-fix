@@ -268,6 +268,17 @@ def run(dry_run: bool = False, skip_readme: bool = False, skip_paper: bool = Fal
     readme_section = build_readme_section(metrics)
     paper_paragraph = build_paper_paragraph(metrics)
 
+    schedule_summary = metrics.schedule.get("summary") if isinstance(metrics.schedule, dict) else None
+    schedule_telemetry = metrics.schedule.get("telemetry") if isinstance(metrics.schedule, dict) else None
+    dashboards_payload = {
+        "scheduler_summary": schedule_summary or {},
+        "scheduler_telemetry": schedule_telemetry or {},
+    }
+
+    dashboards_path = Path("data/dashboard_metrics.json")
+    dashboards_path.parent.mkdir(parents=True, exist_ok=True)
+    dashboards_path.write_text(json.dumps(dashboards_payload, indent=2), encoding="utf-8")
+
     if dry_run:
         return readme_section, paper_paragraph
 

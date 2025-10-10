@@ -9,7 +9,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-postgresql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[1].name: Not found: \"data\"\n* spec.template.spec.initContainers[0].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -22,377 +22,305 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-postgresql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[1].name: Not found: \"data\"\n* spec.template.spec.initContainers[0].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
     "id": "00123",
     "policy_id": "no_latest_tag",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00124",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00125",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00126",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      securityContext:\n        runAsNonRoot: true\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00127",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      securityContext:\n        runAsNonRoot: true\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00128",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00129",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00130",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00131",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrator-install\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  ttlSecondsAfterFinished: null\n  template:\n    metadata:\n      labels:\n        helm.sh/chart: artifact-hub-1.21.0\n        app.kubernetes.io/name: artifact-hub\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/version: 1.21.0\n        app.kubernetes.io/managed-by: Helm\n    spec:\n      serviceAccountName: default\n      initContainers:\n      - name: check-db-ready\n        image: docker.io/artifacthub/postgres:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: PGHOST\n          value: release-name-postgresql.default\n        - name: PGPORT\n          value: '5432'\n        - name: PGUSER\n          value: postgres\n        command:\n        - sh\n        - -c\n        - until pg_isready; do echo waiting for database; sleep 2; done;\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      containers:\n      - name: db-migrator\n        image: artifacthub/db-migrator:v1.21.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: TERN_CONF\n          value: /home/db-migrator/.cfg/tern.conf\n        volumeMounts:\n        - name: db-migrator-config\n          mountPath: /home/db-migrator/.cfg\n          readOnly: true\n        command:\n        - ./migrate.sh\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: db-migrator-config\n        secret:\n          secretName: db-migrator-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "00132",
     "policy_id": "no_latest_tag",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              privileged: false\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            securityContext:\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              privileged: false\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00133",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00134",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00135",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00136",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00137",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00138",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00139",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00140",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scanner\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: scanner\n            image: artifacthub/scanner:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: scanner-config\n              mountPath: /home/scanner/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: scanner-config\n            secret:\n              secretName: scanner-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00141",
     "policy_id": "no_latest_tag",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              privileged: false\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            securityContext:\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              privileged: false\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00142",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00143",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            securityContext:\n              readOnlyRootFilesystem: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00144",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00145",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            securityContext:\n              runAsNonRoot: true\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              readOnlyRootFilesystem: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00146",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00147",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00148",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00149",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
-    "ok_safety": false,
+    "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "no containers found in manifest",
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: tracker\n  labels:\n    helm.sh/chart: artifact-hub-1.21.0\n    app.kubernetes.io/name: artifact-hub\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/version: 1.21.0\n    app.kubernetes.io/managed-by: Helm\nspec:\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            helm.sh/chart: artifact-hub-1.21.0\n            app.kubernetes.io/name: artifact-hub\n            app.kubernetes.io/instance: release-name\n            app.kubernetes.io/version: 1.21.0\n            app.kubernetes.io/managed-by: Helm\n        spec:\n          serviceAccountName: default\n          initContainers:\n          - name: check-db-ready\n            image: docker.io/artifacthub/postgres:stable\n            imagePullPolicy: IfNotPresent\n            env:\n            - name: PGHOST\n              value: release-name-postgresql.default\n            - name: PGPORT\n              value: '5432'\n            - name: PGUSER\n              value: postgres\n            command:\n            - sh\n            - -c\n            - until pg_isready; do echo waiting for database; sleep 2; done;\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          containers:\n          - name: tracker\n            image: artifacthub/tracker:v1.21.0\n            imagePullPolicy: IfNotPresent\n            volumeMounts:\n            - name: tracker-config\n              mountPath: /home/tracker/.cfg\n              readOnly: true\n            resources:\n              requests:\n                cpu: 100m\n                memory: 128Mi\n              limits:\n                cpu: 500m\n                memory: 256Mi\n            securityContext:\n              privileged: false\n              capabilities:\n                drop:\n                - NET_RAW\n                - NET_ADMIN\n                - SYS_ADMIN\n                - SYS_MODULE\n                - SYS_PTRACE\n                - SYS_CHROOT\n              allowPrivilegeEscalation: false\n              runAsNonRoot: true\n              readOnlyRootFilesystem: true\n          volumes:\n          - name: tracker-config\n            secret:\n              secretName: tracker-config\n          restartPolicy: OnFailure\n  schedule: 0 0 * * *\n",
+    "errors": []
   },
   {
     "id": "00150",
@@ -426,7 +354,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-mariadb\" is invalid: spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -439,7 +367,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-mariadb\" is invalid: spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -450,7 +378,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-mongodb\n  namespace: default\n  labels:\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: mongodb\n    app.kubernetes.io/version: 8.2.1\n    helm.sh/chart: mongodb-18.0.5\n    app.kubernetes.io/component: mongodb\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/name: mongodb\n      app.kubernetes.io/component: mongodb\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/name: mongodb\n        app.kubernetes.io/version: 8.2.1\n        helm.sh/chart: mongodb-18.0.5\n        app.kubernetes.io/component: mongodb\n    spec:\n      serviceAccountName: release-name-mongodb\n      affinity:\n        podAffinity: null\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/instance: release-name\n                  app.kubernetes.io/name: mongodb\n                  app.kubernetes.io/component: mongodb\n              topologyKey: kubernetes.io/hostname\n            weight: 1\n        nodeAffinity: null\n      securityContext:\n        fsGroup: 1001\n        fsGroupChangePolicy: Always\n        supplementalGroups: []\n        sysctls: []\n      initContainers:\n      - name: log-dir\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/bash\n        args:\n        - -ec\n        - 'ln -sf /dev/stdout \"/opt/bitnami/mongodb/logs/mongodb.log\"\n\n          '\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n      containers:\n      - name: mongodb\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        env:\n        - name: BITNAMI_DEBUG\n          value: 'false'\n        - name: MONGODB_ROOT_USER\n          value: root\n        - name: MONGODB_ROOT_PASSWORD_FILE\n          value: /opt/bitnami/mongodb/secrets/mongodb-root-password\n        - name: ALLOW_EMPTY_PASSWORD\n          value: 'no'\n        - name: MONGODB_SYSTEM_LOG_VERBOSITY\n          value: '0'\n        - name: MONGODB_DISABLE_SYSTEM_LOG\n          value: 'no'\n        - name: MONGODB_DISABLE_JAVASCRIPT\n          value: 'no'\n        - name: MONGODB_ENABLE_JOURNAL\n          value: 'yes'\n        - name: MONGODB_PORT_NUMBER\n          value: '27017'\n        - name: MONGODB_ENABLE_IPV6\n          value: 'no'\n        - name: MONGODB_ENABLE_DIRECTORY_PER_DB\n          value: 'no'\n        ports:\n        - name: mongodb\n          containerPort: 27017\n        livenessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 30\n          periodSeconds: 20\n          successThreshold: 1\n          timeoutSeconds: 10\n          exec:\n            command:\n            - /bitnami/scripts/ping-mongodb.sh\n        readinessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 5\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 5\n          exec:\n            command:\n            - /bitnami/scripts/readiness-probe.sh\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /tmp\n          subPath: tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/conf\n          subPath: app-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/tmp\n          subPath: app-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n        - name: empty-dir\n          mountPath: /.mongodb\n          subPath: mongosh-home\n        - name: datadir\n          mountPath: /bitnami/mongodb\n          subPath: null\n        - name: common-scripts\n          mountPath: /bitnami/scripts\n        - name: mongodb-secrets\n          mountPath: /opt/bitnami/mongodb/secrets\n      volumes:\n      - name: empty-dir\n        emptyDir: {}\n      - name: common-scripts\n        configMap:\n          name: release-name-mongodb-common-scripts\n          defaultMode: 360\n      - name: mongodb-secrets\n        secret:\n          secretName: release-name-mongodb\n      - name: datadir\n        persistentVolumeClaim:\n          claimName: release-name-mongodb\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-mongodb\n  namespace: default\n  labels:\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: mongodb\n    app.kubernetes.io/version: 8.2.1\n    helm.sh/chart: mongodb-18.0.5\n    app.kubernetes.io/component: mongodb\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/name: mongodb\n      app.kubernetes.io/component: mongodb\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/name: mongodb\n        app.kubernetes.io/version: 8.2.1\n        helm.sh/chart: mongodb-18.0.5\n        app.kubernetes.io/component: mongodb\n    spec:\n      serviceAccountName: release-name-mongodb\n      affinity:\n        podAffinity: null\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/instance: release-name\n                  app.kubernetes.io/name: mongodb\n                  app.kubernetes.io/component: mongodb\n              topologyKey: kubernetes.io/hostname\n            weight: 1\n        nodeAffinity: null\n      securityContext:\n        fsGroup: 1001\n        fsGroupChangePolicy: Always\n        supplementalGroups: []\n        sysctls: []\n      initContainers:\n      - name: log-dir\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/bash\n        args:\n        - -ec\n        - 'ln -sf /dev/stdout \"/opt/bitnami/mongodb/logs/mongodb.log\"\n\n          '\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n      containers:\n      - name: mongodb\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        env:\n        - name: BITNAMI_DEBUG\n          value: 'false'\n        - name: MONGODB_ROOT_USER\n          value: root\n        - name: MONGODB_ROOT_PASSWORD_FILE\n          valueFrom:\n            secretKeyRef:\n              name: release-name-mongodb\n              key: mongodb_root_password_file\n        - name: ALLOW_EMPTY_PASSWORD\n          value: 'no'\n        - name: MONGODB_SYSTEM_LOG_VERBOSITY\n          value: '0'\n        - name: MONGODB_DISABLE_SYSTEM_LOG\n          value: 'no'\n        - name: MONGODB_DISABLE_JAVASCRIPT\n          value: 'no'\n        - name: MONGODB_ENABLE_JOURNAL\n          value: 'yes'\n        - name: MONGODB_PORT_NUMBER\n          value: '27017'\n        - name: MONGODB_ENABLE_IPV6\n          value: 'no'\n        - name: MONGODB_ENABLE_DIRECTORY_PER_DB\n          value: 'no'\n        ports:\n        - name: mongodb\n          containerPort: 27017\n        livenessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 30\n          periodSeconds: 20\n          successThreshold: 1\n          timeoutSeconds: 10\n          exec:\n            command:\n            - /bitnami/scripts/ping-mongodb.sh\n        readinessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 5\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 5\n          exec:\n            command:\n            - /bitnami/scripts/readiness-probe.sh\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /tmp\n          subPath: tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/conf\n          subPath: app-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/tmp\n          subPath: app-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n        - name: empty-dir\n          mountPath: /.mongodb\n          subPath: mongosh-home\n        - name: datadir\n          mountPath: /bitnami/mongodb\n          subPath: null\n        - name: common-scripts\n          mountPath: /bitnami/scripts\n        - name: mongodb-secrets\n          mountPath: /opt/bitnami/mongodb/secrets\n      volumes:\n      - name: empty-dir\n        emptyDir: {}\n      - name: common-scripts\n        configMap:\n          name: release-name-mongodb-common-scripts\n          defaultMode: 360\n      - name: mongodb-secrets\n        secret:\n          secretName: release-name-mongodb\n      - name: datadir\n        persistentVolumeClaim:\n          claimName: release-name-mongodb\n",
     "errors": []
   },
   {
@@ -461,7 +389,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-mongodb\n  namespace: default\n  labels:\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: mongodb\n    app.kubernetes.io/version: 8.2.1\n    helm.sh/chart: mongodb-18.0.5\n    app.kubernetes.io/component: mongodb\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/name: mongodb\n      app.kubernetes.io/component: mongodb\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/name: mongodb\n        app.kubernetes.io/version: 8.2.1\n        helm.sh/chart: mongodb-18.0.5\n        app.kubernetes.io/component: mongodb\n    spec:\n      serviceAccountName: release-name-mongodb\n      affinity:\n        podAffinity: null\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/instance: release-name\n                  app.kubernetes.io/name: mongodb\n                  app.kubernetes.io/component: mongodb\n              topologyKey: kubernetes.io/hostname\n            weight: 1\n        nodeAffinity: null\n      securityContext:\n        fsGroup: 1001\n        fsGroupChangePolicy: Always\n        supplementalGroups: []\n        sysctls: []\n      initContainers:\n      - name: log-dir\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/bash\n        args:\n        - -ec\n        - 'ln -sf /dev/stdout \"/opt/bitnami/mongodb/logs/mongodb.log\"\n\n          '\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n      containers:\n      - name: mongodb\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        env:\n        - name: BITNAMI_DEBUG\n          value: 'false'\n        - name: MONGODB_ROOT_USER\n          value: root\n        - name: MONGODB_ROOT_PASSWORD_FILE\n          value: /opt/bitnami/mongodb/secrets/mongodb-root-password\n        - name: ALLOW_EMPTY_PASSWORD\n          value: 'no'\n        - name: MONGODB_SYSTEM_LOG_VERBOSITY\n          value: '0'\n        - name: MONGODB_DISABLE_SYSTEM_LOG\n          value: 'no'\n        - name: MONGODB_DISABLE_JAVASCRIPT\n          value: 'no'\n        - name: MONGODB_ENABLE_JOURNAL\n          value: 'yes'\n        - name: MONGODB_PORT_NUMBER\n          value: '27017'\n        - name: MONGODB_ENABLE_IPV6\n          value: 'no'\n        - name: MONGODB_ENABLE_DIRECTORY_PER_DB\n          value: 'no'\n        ports:\n        - name: mongodb\n          containerPort: 27017\n        livenessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 30\n          periodSeconds: 20\n          successThreshold: 1\n          timeoutSeconds: 10\n          exec:\n            command:\n            - /bitnami/scripts/ping-mongodb.sh\n        readinessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 5\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 5\n          exec:\n            command:\n            - /bitnami/scripts/readiness-probe.sh\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /tmp\n          subPath: tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/conf\n          subPath: app-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/tmp\n          subPath: app-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n        - name: empty-dir\n          mountPath: /.mongodb\n          subPath: mongosh-home\n        - name: datadir\n          mountPath: /bitnami/mongodb\n          subPath: null\n        - name: common-scripts\n          mountPath: /bitnami/scripts\n        - name: mongodb-secrets\n          mountPath: /opt/bitnami/mongodb/secrets\n      volumes:\n      - name: empty-dir\n        emptyDir: {}\n      - name: common-scripts\n        configMap:\n          name: release-name-mongodb-common-scripts\n          defaultMode: 360\n      - name: mongodb-secrets\n        secret:\n          secretName: release-name-mongodb\n      - name: datadir\n        persistentVolumeClaim:\n          claimName: release-name-mongodb\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: release-name-mongodb\n  namespace: default\n  labels:\n    app.kubernetes.io/instance: release-name\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: mongodb\n    app.kubernetes.io/version: 8.2.1\n    helm.sh/chart: mongodb-18.0.5\n    app.kubernetes.io/component: mongodb\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/instance: release-name\n      app.kubernetes.io/name: mongodb\n      app.kubernetes.io/component: mongodb\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/instance: release-name\n        app.kubernetes.io/managed-by: Helm\n        app.kubernetes.io/name: mongodb\n        app.kubernetes.io/version: 8.2.1\n        helm.sh/chart: mongodb-18.0.5\n        app.kubernetes.io/component: mongodb\n    spec:\n      serviceAccountName: release-name-mongodb\n      affinity:\n        podAffinity: null\n        podAntiAffinity:\n          preferredDuringSchedulingIgnoredDuringExecution:\n          - podAffinityTerm:\n              labelSelector:\n                matchLabels:\n                  app.kubernetes.io/instance: release-name\n                  app.kubernetes.io/name: mongodb\n                  app.kubernetes.io/component: mongodb\n              topologyKey: kubernetes.io/hostname\n            weight: 1\n        nodeAffinity: null\n      securityContext:\n        fsGroup: 1001\n        fsGroupChangePolicy: Always\n        supplementalGroups: []\n        sysctls: []\n      initContainers:\n      - name: log-dir\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/bash\n        args:\n        - -ec\n        - 'ln -sf /dev/stdout \"/opt/bitnami/mongodb/logs/mongodb.log\"\n\n          '\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n      containers:\n      - name: mongodb\n        image: registry-1.docker.io/bitnami/mongodb:stable\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsGroup: 1001\n          runAsNonRoot: true\n          runAsUser: 1001\n          seLinuxOptions: {}\n          seccompProfile:\n            type: RuntimeDefault\n        env:\n        - name: BITNAMI_DEBUG\n          value: 'false'\n        - name: MONGODB_ROOT_USER\n          value: root\n        - name: MONGODB_ROOT_PASSWORD_FILE\n          valueFrom:\n            secretKeyRef:\n              name: release-name-mongodb\n              key: mongodb_root_password_file\n        - name: ALLOW_EMPTY_PASSWORD\n          value: 'no'\n        - name: MONGODB_SYSTEM_LOG_VERBOSITY\n          value: '0'\n        - name: MONGODB_DISABLE_SYSTEM_LOG\n          value: 'no'\n        - name: MONGODB_DISABLE_JAVASCRIPT\n          value: 'no'\n        - name: MONGODB_ENABLE_JOURNAL\n          value: 'yes'\n        - name: MONGODB_PORT_NUMBER\n          value: '27017'\n        - name: MONGODB_ENABLE_IPV6\n          value: 'no'\n        - name: MONGODB_ENABLE_DIRECTORY_PER_DB\n          value: 'no'\n        ports:\n        - name: mongodb\n          containerPort: 27017\n        livenessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 30\n          periodSeconds: 20\n          successThreshold: 1\n          timeoutSeconds: 10\n          exec:\n            command:\n            - /bitnami/scripts/ping-mongodb.sh\n        readinessProbe:\n          failureThreshold: 6\n          initialDelaySeconds: 5\n          periodSeconds: 10\n          successThreshold: 1\n          timeoutSeconds: 5\n          exec:\n            command:\n            - /bitnami/scripts/readiness-probe.sh\n        resources:\n          limits:\n            cpu: 750m\n            ephemeral-storage: 2Gi\n            memory: 768Mi\n          requests:\n            cpu: 500m\n            ephemeral-storage: 50Mi\n            memory: 512Mi\n        volumeMounts:\n        - name: empty-dir\n          mountPath: /tmp\n          subPath: tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/conf\n          subPath: app-conf-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/tmp\n          subPath: app-tmp-dir\n        - name: empty-dir\n          mountPath: /opt/bitnami/mongodb/logs\n          subPath: app-logs-dir\n        - name: empty-dir\n          mountPath: /.mongodb\n          subPath: mongosh-home\n        - name: datadir\n          mountPath: /bitnami/mongodb\n          subPath: null\n        - name: common-scripts\n          mountPath: /bitnami/scripts\n        - name: mongodb-secrets\n          mountPath: /opt/bitnami/mongodb/secrets\n      volumes:\n      - name: empty-dir\n        emptyDir: {}\n      - name: common-scripts\n        configMap:\n          name: release-name-mongodb-common-scripts\n          defaultMode: 360\n      - name: mongodb-secrets\n        secret:\n          secretName: release-name-mongodb\n      - name: datadir\n        persistentVolumeClaim:\n          claimName: release-name-mongodb\n",
     "errors": []
   },
   {
@@ -496,7 +424,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-postgresql\" is invalid: spec.template.spec.containers[0].volumeMounts[5].name: Not found: \"data\""
     ]
   },
   {
@@ -509,7 +437,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-redis-master\" is invalid: spec.template.spec.containers[0].volumeMounts[3].name: Not found: \"redis-data\""
     ]
   },
   {
@@ -522,7 +450,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"release-name-redis-replicas\" is invalid: spec.template.spec.containers[0].volumeMounts[3].name: Not found: \"redis-data\""
     ]
   }
 ]

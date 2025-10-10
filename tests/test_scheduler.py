@@ -65,5 +65,21 @@ class SchedulerTests(unittest.TestCase):
             ])
 
 
+class ScheduleParametersTests(unittest.TestCase):
+    def test_to_output_respects_kev_weight(self) -> None:
+        candidate = PatchCandidate(
+            id="kev-item",
+            risk=100.0,
+            probability=1.0,
+            expected_time=10.0,
+            kev=True,
+        )
+        base_score = candidate.score(alpha=0.0, kev_weight=1.0)
+        boosted_score = candidate.score(alpha=0.0, kev_weight=5.0)
+        self.assertGreater(boosted_score, base_score)
+        output = candidate.to_output(alpha=0.0, epsilon=1e-6, kev_weight=5.0)
+        self.assertAlmostEqual(output["score"], boosted_score, places=6)
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

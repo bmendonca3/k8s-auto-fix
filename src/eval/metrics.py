@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import statistics
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Dict, List
 
 import typer
 
@@ -31,6 +31,12 @@ def run(
     failed_schema = 0
     failed_safety = 0
     failed_rescan = 0
+    usage_totals: Dict[str, float] = {
+        "prompt_tokens": 0.0,
+        "completion_tokens": 0.0,
+        "total_tokens": 0.0,
+    }
+
     for r in ver:
         if not isinstance(r, dict):
             continue
@@ -52,6 +58,20 @@ def run(
             accepted_lengths.append(id_to_patch_len[_id])
     median_ops = statistics.median(accepted_lengths) if accepted_lengths else 0
 
+    # Aggregate model usage from patches (non-rules sources)
+    for record in pat:
+        if not isinstance(record, dict):
+            continue
+        if record.get("source") == "rules":
+            continue
+        usage = record.get("model_usage")
+        if not isinstance(usage, dict):
+            continue
+        for key in usage_totals:
+            value = usage.get(key)
+            if isinstance(value, (int, float)):
+                usage_totals[key] += float(value)
+
     metrics = {
         "detections": num_detections,
         "patches": num_patches,
@@ -63,6 +83,7 @@ def run(
         "failed_schema": failed_schema,
         "failed_safety": failed_safety,
         "failed_rescan": failed_rescan,
+        "model_usage": {k: round(v, 2) for k, v in usage_totals.items()},
     }
 
     out.parent.mkdir(parents=True, exist_ok=True)

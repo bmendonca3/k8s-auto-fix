@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -46,16 +47,29 @@ class Detector:
         self.kyverno_cmd = kyverno_cmd
         self.policies_dir = policies_dir
 
-    def detect(self, manifests: Sequence[Path]) -> List[DetectionResult]:
+    def detect(self, manifests: Sequence[Path], jobs: int = 1) -> List[DetectionResult]:
         normalized_manifests = [Path(m).resolve() for m in manifests]
         all_results: List[DetectionResult] = []
 
-        for manifest in normalized_manifests:
+        def process_manifest(manifest: Path) -> List[DetectionResult]:
             if not manifest.exists():
                 raise FileNotFoundError(f"Manifest not found: {manifest}")
-            all_results.extend(self._run_kube_linter(manifest))
+            manifest_results: List[DetectionResult] = []
+            manifest_results.extend(self._run_kube_linter(manifest))
             if self.policies_dir:
-                all_results.extend(self._run_kyverno(manifest))
+                manifest_results.extend(self._run_kyverno(manifest))
+            manifest_results.extend(self._run_builtin_checks(manifest))
+            return manifest_results
+
+        if jobs <= 1:
+            for manifest in normalized_manifests:
+                all_results.extend(process_manifest(manifest))
+        else:
+            jobs = min(jobs, len(normalized_manifests))
+            with ThreadPoolExecutor(max_workers=jobs) as executor:
+                futures = [executor.submit(process_manifest, manifest) for manifest in normalized_manifests]
+                for future in futures:
+                    all_results.extend(future.result())
 
         return self._deduplicate(all_results)
 
@@ -431,6 +445,53 @@ class Detector:
             )
         return results
 
+    def _run_builtin_checks(self, manifest: Path) -> List[DetectionResult]:
+        try:
+            raw_text = manifest.read_text(encoding="utf-8")
+        except OSError:
+            return []
+
+        try:
+            documents = list(yaml.safe_load_all(raw_text))
+        except yaml.YAMLError:
+            return []
+
+        results: List[DetectionResult] = []
+        for document in documents:
+            if not isinstance(document, dict):
+                continue
+            specs = list(self._collect_specs(document.get("spec")))
+            if not specs:
+                continue
+            resource_ref = self._format_document_reference(document)
+            manifest_str = str(manifest.resolve())
+
+            if any(self._spec_contains_host_path(spec) for spec in specs):
+                results.append(
+                    DetectionResult(
+                        tool="builtin",
+                        manifest=manifest_str,
+                        rule="hostpath-volume",
+                        message="volume uses hostPath",
+                        resource=resource_ref,
+                        severity="warning",
+                    )
+                )
+
+            if any(self._spec_contains_host_port(spec) for spec in specs):
+                results.append(
+                    DetectionResult(
+                        tool="builtin",
+                        manifest=manifest_str,
+                        rule="host-ports",
+                        message="container exposes hostPort",
+                        resource=resource_ref,
+                        severity="warning",
+                    )
+                )
+
+        return results
+
     @staticmethod
     def _extract_policy_report_entries(documents: List[Any]) -> Iterable[Dict[str, Any]]:
         for document in documents:
@@ -481,6 +542,65 @@ class Detector:
             for doc in yaml.safe_load_all(raw_output)
             if isinstance(doc, (dict, list))
         ]
+
+    def _collect_specs(self, spec_root: Any) -> List[Dict[str, Any]]:
+        specs: List[Dict[str, Any]] = []
+
+        def visit(candidate: Any) -> None:
+            if not isinstance(candidate, dict):
+                return
+            specs.append(candidate)
+
+            template = candidate.get("template")
+            if isinstance(template, dict):
+                visit(template.get("spec"))
+
+            job_template = candidate.get("jobTemplate")
+            if isinstance(job_template, dict):
+                job_spec = job_template.get("spec")
+                if isinstance(job_spec, dict):
+                    visit(job_spec.get("template", {}).get("spec"))
+
+        visit(spec_root)
+        return specs
+
+    @staticmethod
+    def _spec_contains_host_path(spec: Dict[str, Any]) -> bool:
+        volumes = spec.get("volumes")
+        if isinstance(volumes, list):
+            for volume in volumes:
+                if isinstance(volume, dict) and isinstance(volume.get("hostPath"), dict):
+                    return True
+        return False
+
+    @staticmethod
+    def _spec_contains_host_port(spec: Dict[str, Any]) -> bool:
+        def iter_containers(section: Optional[List[Any]]) -> Iterable[Dict[str, Any]]:
+            if isinstance(section, list):
+                for container in section:
+                    if isinstance(container, dict):
+                        yield container
+
+        for key in ("containers", "initContainers", "ephemeralContainers"):
+            for container in iter_containers(spec.get(key)):
+                ports = container.get("ports")
+                if isinstance(ports, list):
+                    for port in ports:
+                        if isinstance(port, dict) and port.get("hostPort") is not None:
+                            return True
+        return False
+
+    @staticmethod
+    def _format_document_reference(document: Dict[str, Any]) -> Optional[str]:
+        kind = document.get("kind")
+        metadata = document.get("metadata") if isinstance(document.get("metadata"), dict) else {}
+        name = metadata.get("name") if isinstance(metadata, dict) else None
+        namespace = metadata.get("namespace") if isinstance(metadata, dict) else None
+        if not isinstance(kind, str) or not isinstance(name, str):
+            return None
+        if isinstance(namespace, str) and namespace:
+            return f"{kind}/{namespace}/{name}"
+        return f"{kind}/{name}"
 
     @staticmethod
     def _format_resource_reference(data: Any) -> Optional[str]:

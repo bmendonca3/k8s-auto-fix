@@ -1,4 +1,6 @@
 import unittest
+import json
+from pathlib import Path
 
 from scripts import update_metrics_docs as updater
 
@@ -69,6 +71,15 @@ class UpdateMetricsDocsTests(unittest.TestCase):
         self.assertIn("100.0\\%", paragraph)
         self.assertIn("1.5\\,h", paragraph)
         self.assertIn("+1.5\\,h", paragraph)
+
+    def test_scheduler_metrics_written(self) -> None:
+        dashboards_path = Path("data/dashboard_metrics.json")
+        dashboards_path.parent.mkdir(parents=True, exist_ok=True)
+        dashboards_path.write_text(json.dumps({"scheduler_summary": {}, "scheduler_telemetry": {}}), encoding="utf-8")
+        updater.run(dry_run=True)
+        data = json.loads(dashboards_path.read_text())
+        self.assertIn("scheduler_summary", data)
+        self.assertIn("scheduler_telemetry", data)
 
 
 if __name__ == "__main__":  # pragma: no cover

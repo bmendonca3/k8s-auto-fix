@@ -7,7 +7,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -18,7 +18,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      limits:\n        cpu: 500m\n        memory: 256Mi\n      requests:\n        cpu: 100m\n        memory: 128Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -29,7 +29,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -40,7 +40,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
     "errors": []
   },
   {
@@ -51,7 +51,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n      securityContext:\n        runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -62,7 +62,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
     "errors": []
   },
   {
@@ -73,7 +73,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
     "errors": []
   },
   {
@@ -84,7 +84,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -95,7 +95,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -106,7 +106,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -117,7 +117,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -128,60 +128,52 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-4894\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
     "id": "00533",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: hook\n  labels:\n    app: hook\nspec:\n  replicas: 4\n  selector:\n    matchLabels:\n      app: hook\n  template:\n    metadata:\n      labels:\n        app: hook\n    spec:\n      serviceAccountName: hook\n      containers:\n      - name: hook\n        image: gcr.io/k8s-prow/hook:v20220404-e2e605a820\n        imagePullPolicy: Always\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy.prow.svc.cluster.local\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/token\n        - --job-config-path=/etc/job-config\n        - --kubeconfig=/etc/kubeconfig/kubeconfig\n        ports:\n        - name: http\n          containerPort: 8888\n        - name: metrics\n          containerPort: 9090\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        - name: kubeconfig\n          mountPath: /etc/kubeconfig\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: hmac\n        secret:\n          secretName: k8s-infra-prow-hmac-token\n      - name: github-token\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-ci-robot-github-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-build-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
   },
   {
     "id": "00534",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: hook\n  labels:\n    app: hook\nspec:\n  replicas: 4\n  selector:\n    matchLabels:\n      app: hook\n  template:\n    metadata:\n      labels:\n        app: hook\n    spec:\n      serviceAccountName: hook\n      containers:\n      - name: hook\n        image: gcr.io/k8s-prow/hook:v20220404-e2e605a820\n        imagePullPolicy: Always\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy.prow.svc.cluster.local\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/token\n        - --job-config-path=/etc/job-config\n        - --kubeconfig=/etc/kubeconfig/kubeconfig\n        ports:\n        - name: http\n          containerPort: 8888\n        - name: metrics\n          containerPort: 9090\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        - name: kubeconfig\n          mountPath: /etc/kubeconfig\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: hmac\n        secret:\n          secretName: k8s-infra-prow-hmac-token\n      - name: github-token\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-ci-robot-github-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-build-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
   },
   {
     "id": "00535",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: hook\n  labels:\n    app: hook\nspec:\n  replicas: 4\n  selector:\n    matchLabels:\n      app: hook\n  template:\n    metadata:\n      labels:\n        app: hook\n    spec:\n      serviceAccountName: hook\n      containers:\n      - name: hook\n        image: gcr.io/k8s-prow/hook:v20220404-e2e605a820\n        imagePullPolicy: Always\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy.prow.svc.cluster.local\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/token\n        - --job-config-path=/etc/job-config\n        - --kubeconfig=/etc/kubeconfig/kubeconfig\n        ports:\n        - name: http\n          containerPort: 8888\n        - name: metrics\n          containerPort: 9090\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        - name: kubeconfig\n          mountPath: /etc/kubeconfig\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: hmac\n        secret:\n          secretName: k8s-infra-prow-hmac-token\n      - name: github-token\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-ci-robot-github-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-build-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
   },
   {
     "id": "00536",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: prow\n  name: hook\n  labels:\n    app: hook\nspec:\n  replicas: 4\n  selector:\n    matchLabels:\n      app: hook\n  template:\n    metadata:\n      labels:\n        app: hook\n    spec:\n      serviceAccountName: hook\n      containers:\n      - name: hook\n        image: gcr.io/k8s-prow/hook:v20220404-e2e605a820\n        imagePullPolicy: Always\n        args:\n        - --config-path=/etc/config/config.yaml\n        - --dry-run=false\n        - --github-endpoint=http://ghproxy.prow.svc.cluster.local\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/token\n        - --job-config-path=/etc/job-config\n        - --kubeconfig=/etc/kubeconfig/kubeconfig\n        ports:\n        - name: http\n          containerPort: 8888\n        - name: metrics\n          containerPort: 9090\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        volumeMounts:\n        - name: hmac\n          mountPath: /etc/webhook\n          readOnly: true\n        - name: github-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        - name: kubeconfig\n          mountPath: /etc/kubeconfig\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: hmac\n        secret:\n          secretName: k8s-infra-prow-hmac-token\n      - name: github-token\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-ci-robot-github-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: k8s-infra-build-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "errors": []
   },
   {
     "id": "00537",
@@ -191,7 +183,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  volumes:\n  - hostPath:\n      path: /tmp\n    name: test-volume\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - name: test-volume\n    emptyDir: {}\n",
     "errors": []
   },
   {
@@ -202,7 +194,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - hostPath:\n      path: /tmp\n    name: test-volume\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n  volumes:\n  - name: test-volume\n    emptyDir: {}\n",
     "errors": []
   },
   {
@@ -213,7 +205,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - hostPath:\n      path: /tmp\n    name: test-volume\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - name: test-volume\n    emptyDir: {}\n  securityContext:\n    runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -224,7 +216,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - hostPath:\n      path: /tmp\n    name: test-volume\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n  volumes:\n  - name: test-volume\n    emptyDir: {}\n",
     "errors": []
   },
   {
@@ -235,60 +227,52 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - hostPath:\n      path: /tmp\n    name: test-volume\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  annotations:\n    git-commit-hash: de53e301b2cbc0e991f2cf609eef099c91a7fcfe\n  name: test-pd\nspec:\n  containers:\n  - image: gcr.io/google_containers/test-webserver:stable\n    name: test-container\n    volumeMounts:\n    - mountPath: /test-pd\n      name: test-volume\n    resources:\n      limits:\n        cpu: 500m\n        memory: 256Mi\n      requests:\n        cpu: 100m\n        memory: 128Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n  volumes:\n  - emptyDir: {}\n    name: test-volume\n",
     "errors": []
   },
   {
     "id": "00542",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: openmcp-snapshot\n  namespace: openmcp\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: openmcp-snapshot\n  template:\n    metadata:\n      labels:\n        name: openmcp-snapshot\n    spec:\n      serviceAccountName: openmcp-snapshot-sa\n      containers:\n      - name: openmcp-snapshot\n        image: openmcp/openmcp-snapshot:v0.0.2\n        command:\n        - openmcp-snapshot\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: openmcp-snapshot\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
   },
   {
     "id": "00543",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: openmcp-snapshot\n  namespace: openmcp\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: openmcp-snapshot\n  template:\n    metadata:\n      labels:\n        name: openmcp-snapshot\n    spec:\n      serviceAccountName: openmcp-snapshot-sa\n      containers:\n      - name: openmcp-snapshot\n        image: openmcp/openmcp-snapshot:v0.0.2\n        command:\n        - openmcp-snapshot\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: openmcp-snapshot\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      securityContext:\n        runAsNonRoot: true\n",
+    "errors": []
   },
   {
     "id": "00544",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: openmcp-snapshot\n  namespace: openmcp\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: openmcp-snapshot\n  template:\n    metadata:\n      labels:\n        name: openmcp-snapshot\n    spec:\n      serviceAccountName: openmcp-snapshot-sa\n      containers:\n      - name: openmcp-snapshot\n        image: openmcp/openmcp-snapshot:v0.0.2\n        command:\n        - openmcp-snapshot\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: openmcp-snapshot\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "00545",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: openmcp-snapshot\n  namespace: openmcp\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: openmcp-snapshot\n  template:\n    metadata:\n      labels:\n        name: openmcp-snapshot\n    spec:\n      serviceAccountName: openmcp-snapshot-sa\n      containers:\n      - name: openmcp-snapshot\n        image: openmcp/openmcp-snapshot:v0.0.2\n        command:\n        - openmcp-snapshot\n        imagePullPolicy: Always\n        env:\n        - name: WATCH_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: OPERATOR_NAME\n          value: openmcp-snapshot\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "00546",
@@ -298,7 +282,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -309,7 +293,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n    volumeMounts:\n    - mountPath: /var/cache/nginx\n      name: nginx-cache\n    - mountPath: /var/log/nginx\n      name: nginx-log\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - emptyDir: {}\n    name: nginx-cache\n  - emptyDir: {}\n    name: nginx-log\n",
     "errors": []
   },
   {
@@ -320,7 +304,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -331,7 +315,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      limits:\n        cpu: 500m\n        memory: 256Mi\n      requests:\n        cpu: 100m\n        memory: 128Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -342,137 +326,117 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-6696\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
     "id": "00551",
     "policy_id": "env_var_secret",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-ui\n  namespace: oih-dev-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: web-ui\n  template:\n    metadata:\n      labels:\n        app: web-ui\n    spec:\n      containers:\n      - name: web-ui\n        image: node:16-alpine\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - npm install --non-interactive && npm start:container\n        workingDir: /usr/src/app/\n        ports:\n        - containerPort: 3000\n        env:\n        - name: PORT\n          value: '3000'\n        - name: ENDPOINT_IAM\n          value: http://iam.example.com\n        - name: ENDPOINT_FLOW\n          value: http://flow-repository.example.com\n        - name: ENDPOINT_COMPONENT\n          value: http://component-repository.example.com\n        - name: ENDPOINT_SECRETS\n          valueFrom:\n            secretKeyRef:\n              name: endpoint-secrets-secret\n              key: endpoint_secrets\n        - name: ENDPOINT_DISPATCHER\n          value: http://dispatcher-service.example.com\n        - name: ENDPOINT_METADATA\n          value: http://metadata.example.com/api/v1\n        - name: ENDPOINT_APP_DIRECTORY\n          value: http://app-directory.example.com/api/v1\n        - name: NODE_ENV\n          value: development\n        - name: LOG_LEVEL\n          value: debug\n        resources:\n          limits:\n            cpu: '0.1'\n            memory: 500Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        volumeMounts:\n        - name: code\n          mountPath: /usr/src/app\n          subPath: services/web-ui\n        livenessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 300\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 120\n          timeoutSeconds: 1\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: code\n        persistentVolumeClaim:\n          claimName: source-volume-claim\n",
+    "errors": []
   },
   {
     "id": "00552",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-ui\n  namespace: oih-dev-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: web-ui\n  template:\n    metadata:\n      labels:\n        app: web-ui\n    spec:\n      containers:\n      - name: web-ui\n        image: node:16-alpine\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - npm install --non-interactive && npm start:container\n        workingDir: /usr/src/app/\n        ports:\n        - containerPort: 3000\n        env:\n        - name: PORT\n          value: '3000'\n        - name: ENDPOINT_IAM\n          value: http://iam.example.com\n        - name: ENDPOINT_FLOW\n          value: http://flow-repository.example.com\n        - name: ENDPOINT_COMPONENT\n          value: http://component-repository.example.com\n        - name: ENDPOINT_SECRETS\n          valueFrom:\n            secretKeyRef:\n              name: endpoint-secrets-secret\n              key: endpoint_secrets\n        - name: ENDPOINT_DISPATCHER\n          value: http://dispatcher-service.example.com\n        - name: ENDPOINT_METADATA\n          value: http://metadata.example.com/api/v1\n        - name: ENDPOINT_APP_DIRECTORY\n          value: http://app-directory.example.com/api/v1\n        - name: NODE_ENV\n          value: development\n        - name: LOG_LEVEL\n          value: debug\n        - name: NPM_CONFIG_CACHE\n          value: /tmp/.npm-cache\n        resources:\n          limits:\n            cpu: '0.1'\n            memory: 500Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        volumeMounts:\n        - name: code\n          mountPath: /usr/src/app\n          subPath: services/web-ui\n        - name: tmp\n          mountPath: /tmp\n        livenessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 300\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 120\n          timeoutSeconds: 1\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n      volumes:\n      - name: code\n        persistentVolumeClaim:\n          claimName: source-volume-claim\n      - name: tmp\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "00553",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-ui\n  namespace: oih-dev-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: web-ui\n  template:\n    metadata:\n      labels:\n        app: web-ui\n    spec:\n      containers:\n      - name: web-ui\n        image: node:16-alpine\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - npm install --non-interactive && npm start:container\n        workingDir: /usr/src/app/\n        ports:\n        - containerPort: 3000\n        env:\n        - name: PORT\n          value: '3000'\n        - name: ENDPOINT_IAM\n          value: http://iam.example.com\n        - name: ENDPOINT_FLOW\n          value: http://flow-repository.example.com\n        - name: ENDPOINT_COMPONENT\n          value: http://component-repository.example.com\n        - name: ENDPOINT_SECRETS\n          valueFrom:\n            secretKeyRef:\n              name: endpoint-secrets-secret\n              key: endpoint_secrets\n        - name: ENDPOINT_DISPATCHER\n          value: http://dispatcher-service.example.com\n        - name: ENDPOINT_METADATA\n          value: http://metadata.example.com/api/v1\n        - name: ENDPOINT_APP_DIRECTORY\n          value: http://app-directory.example.com/api/v1\n        - name: NODE_ENV\n          value: development\n        - name: LOG_LEVEL\n          value: debug\n        resources:\n          limits:\n            cpu: '0.1'\n            memory: 500Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        volumeMounts:\n        - name: code\n          mountPath: /usr/src/app\n          subPath: services/web-ui\n        livenessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 300\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 120\n          timeoutSeconds: 1\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: code\n        persistentVolumeClaim:\n          claimName: source-volume-claim\n      securityContext:\n        runAsNonRoot: true\n",
+    "errors": []
   },
   {
     "id": "00554",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-ui\n  namespace: oih-dev-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: web-ui\n  template:\n    metadata:\n      labels:\n        app: web-ui\n    spec:\n      containers:\n      - name: web-ui\n        image: node:16-alpine\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - npm install --non-interactive && npm start:container\n        workingDir: /usr/src/app/\n        ports:\n        - containerPort: 3000\n        env:\n        - name: PORT\n          value: '3000'\n        - name: ENDPOINT_IAM\n          value: http://iam.example.com\n        - name: ENDPOINT_FLOW\n          value: http://flow-repository.example.com\n        - name: ENDPOINT_COMPONENT\n          value: http://component-repository.example.com\n        - name: ENDPOINT_SECRETS\n          valueFrom:\n            secretKeyRef:\n              name: endpoint-secrets-secret\n              key: endpoint_secrets\n        - name: ENDPOINT_DISPATCHER\n          value: http://dispatcher-service.example.com\n        - name: ENDPOINT_METADATA\n          value: http://metadata.example.com/api/v1\n        - name: ENDPOINT_APP_DIRECTORY\n          value: http://app-directory.example.com/api/v1\n        - name: NODE_ENV\n          value: development\n        - name: LOG_LEVEL\n          value: debug\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        volumeMounts:\n        - name: code\n          mountPath: /usr/src/app\n          subPath: services/web-ui\n        livenessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 300\n          timeoutSeconds: 1\n        readinessProbe:\n          httpGet:\n            port: 3000\n            path: /healthcheck\n          initialDelaySeconds: 120\n          timeoutSeconds: 1\n        imagePullPolicy: IfNotPresent\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: code\n        persistentVolumeClaim:\n          claimName: source-volume-claim\n",
+    "errors": []
   },
   {
     "id": "00555",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: csi-bosplugin-node-server\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: csi-bosplugin-node-server\n  template:\n    metadata:\n      labels:\n        app: csi-bosplugin-node-server\n    spec:\n      serviceAccount: csi-bos-external-runner\n      containers:\n      - name: node-driver-registrar\n        image: registry.baidubce.com/cce-plugin-pro/csi-node-driver-registrar:v2.1.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --kubelet-registration-path=$(ADDRESS)\n        - --v=5\n        env:\n        - name: ADDRESS\n          value: /var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: reg-dir\n          mountPath: /registration\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      - name: csi-bosplugin\n        securityContext:\n          privileged: false\n          capabilities:\n            add: []\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        image: registry.baidubce.com/cce-plugin-pro/cce-csi-plugin:v1.1.1\n        args:\n        - --driver-type=bos\n        - --csi-endpoint=$(CSI_ENDPOINT)\n        - --driver-mode=node\n        - --max-volumes-per-node=10\n        - --region=gz\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix://var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n          mountPropagation: HostToContainer\n        - name: host-sys\n          mountPath: /sys\n          mountPropagation: HostToContainer\n        - name: docker-sock\n          mountPath: /var/run/docker.sock\n        - name: bosfs-cred-dir\n          mountPath: /etc/bosfs/credentials\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubelet-dir\n        hostPath:\n          path: /var/lib/kubelet\n          type: DirectoryOrCreate\n      - name: reg-dir\n        hostPath:\n          path: /var/lib/kubelet/plugins_registry\n          type: DirectoryOrCreate\n      - name: host-sys\n        hostPath:\n          path: /sys\n      - name: docker-sock\n        hostPath:\n          path: /var/run/docker.sock\n          type: Socket\n      - name: bosfs-cred-dir\n        hostPath:\n          path: /etc/bosfs/credentials\n          type: DirectoryOrCreate\n",
+    "errors": []
   },
   {
     "id": "00556",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: csi-bosplugin-node-server\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: csi-bosplugin-node-server\n  template:\n    metadata:\n      labels:\n        app: csi-bosplugin-node-server\n    spec:\n      serviceAccount: csi-bos-external-runner\n      containers:\n      - name: node-driver-registrar\n        image: registry.baidubce.com/cce-plugin-pro/csi-node-driver-registrar:v2.1.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --kubelet-registration-path=$(ADDRESS)\n        - --v=5\n        env:\n        - name: ADDRESS\n          value: /var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: reg-dir\n          mountPath: /registration\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      - name: csi-bosplugin\n        securityContext:\n          privileged: false\n          capabilities:\n            add: []\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          seccompProfile:\n            type: RuntimeDefault\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        image: registry.baidubce.com/cce-plugin-pro/cce-csi-plugin:v1.1.1\n        args:\n        - --driver-type=bos\n        - --csi-endpoint=$(CSI_ENDPOINT)\n        - --driver-mode=node\n        - --max-volumes-per-node=10\n        - --region=gz\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix://var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n          mountPropagation: HostToContainer\n        - name: host-sys\n          mountPath: /sys\n          mountPropagation: HostToContainer\n        - name: docker-sock\n          mountPath: /var/run/docker.sock\n        - name: bosfs-cred-dir\n          mountPath: /etc/bosfs/credentials\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubelet-dir\n        hostPath:\n          path: /var/lib/kubelet\n          type: DirectoryOrCreate\n      - name: reg-dir\n        hostPath:\n          path: /var/lib/kubelet/plugins_registry\n          type: DirectoryOrCreate\n      - name: host-sys\n        hostPath:\n          path: /sys\n      - name: docker-sock\n        hostPath:\n          path: /var/run/docker.sock\n          type: Socket\n      - name: bosfs-cred-dir\n        hostPath:\n          path: /etc/bosfs/credentials\n          type: DirectoryOrCreate\n",
+    "errors": []
   },
   {
     "id": "00557",
     "policy_id": "drop_capabilities",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: csi-bosplugin-node-server\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: csi-bosplugin-node-server\n  template:\n    metadata:\n      labels:\n        app: csi-bosplugin-node-server\n    spec:\n      serviceAccount: csi-bos-external-runner\n      containers:\n      - name: node-driver-registrar\n        image: registry.baidubce.com/cce-plugin-pro/csi-node-driver-registrar:v2.1.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --kubelet-registration-path=$(ADDRESS)\n        - --v=5\n        env:\n        - name: ADDRESS\n          value: /var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: reg-dir\n          mountPath: /registration\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      - name: csi-bosplugin\n        securityContext:\n          privileged: false\n          capabilities:\n            add: []\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        image: registry.baidubce.com/cce-plugin-pro/cce-csi-plugin:v1.1.1\n        args:\n        - --driver-type=bos\n        - --csi-endpoint=$(CSI_ENDPOINT)\n        - --driver-mode=node\n        - --max-volumes-per-node=10\n        - --region=gz\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix://var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n          mountPropagation: HostToContainer\n        - name: host-sys\n          mountPath: /sys\n          mountPropagation: HostToContainer\n        - name: docker-sock\n          mountPath: /var/run/docker.sock\n        - name: bosfs-cred-dir\n          mountPath: /etc/bosfs/credentials\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubelet-dir\n        hostPath:\n          path: /var/lib/kubelet\n          type: DirectoryOrCreate\n      - name: reg-dir\n        hostPath:\n          path: /var/lib/kubelet/plugins_registry\n          type: DirectoryOrCreate\n      - name: host-sys\n        hostPath:\n          path: /sys\n      - name: docker-sock\n        hostPath:\n          path: /var/run/docker.sock\n          type: Socket\n      - name: bosfs-cred-dir\n        hostPath:\n          path: /etc/bosfs/credentials\n          type: DirectoryOrCreate\n",
+    "errors": []
   },
   {
     "id": "00558",
     "policy_id": "no_privileged",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: csi-bosplugin-node-server\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: csi-bosplugin-node-server\n  template:\n    metadata:\n      labels:\n        app: csi-bosplugin-node-server\n    spec:\n      serviceAccount: csi-bos-external-runner\n      containers:\n      - name: node-driver-registrar\n        image: registry.baidubce.com/cce-plugin-pro/csi-node-driver-registrar:v2.1.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --kubelet-registration-path=$(ADDRESS)\n        - --v=5\n        env:\n        - name: ADDRESS\n          value: /var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: reg-dir\n          mountPath: /registration\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      - name: csi-bosplugin\n        securityContext:\n          privileged: false\n          capabilities:\n            add: []\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n        image: registry.baidubce.com/cce-plugin-pro/cce-csi-plugin:v1.1.1\n        args:\n        - --driver-type=bos\n        - --csi-endpoint=$(CSI_ENDPOINT)\n        - --driver-mode=node\n        - --max-volumes-per-node=10\n        - --region=gz\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix://var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n          mountPropagation: HostToContainer\n        - name: host-sys\n          mountPath: /sys\n          mountPropagation: HostToContainer\n        - name: docker-sock\n          mountPath: /var/run/docker.sock\n        - name: bosfs-cred-dir\n          mountPath: /etc/bosfs/credentials\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubelet-dir\n        hostPath:\n          path: /var/lib/kubelet\n          type: DirectoryOrCreate\n      - name: reg-dir\n        hostPath:\n          path: /var/lib/kubelet/plugins_registry\n          type: DirectoryOrCreate\n      - name: host-sys\n        hostPath:\n          path: /sys\n      - name: docker-sock\n        hostPath:\n          path: /var/run/docker.sock\n          type: Socket\n      - name: bosfs-cred-dir\n        hostPath:\n          path: /etc/bosfs/credentials\n          type: DirectoryOrCreate\n",
+    "errors": []
   },
   {
     "id": "00559",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: csi-bosplugin-node-server\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: csi-bosplugin-node-server\n  template:\n    metadata:\n      labels:\n        app: csi-bosplugin-node-server\n    spec:\n      serviceAccount: csi-bos-external-runner\n      containers:\n      - name: node-driver-registrar\n        image: registry.baidubce.com/cce-plugin-pro/csi-node-driver-registrar:v2.1.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --kubelet-registration-path=$(ADDRESS)\n        - --v=5\n        env:\n        - name: ADDRESS\n          value: /var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: reg-dir\n          mountPath: /registration\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      - name: csi-bosplugin\n        securityContext:\n          privileged: false\n          capabilities:\n            add: []\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        image: registry.baidubce.com/cce-plugin-pro/cce-csi-plugin:v1.1.1\n        args:\n        - --driver-type=bos\n        - --csi-endpoint=$(CSI_ENDPOINT)\n        - --driver-mode=node\n        - --max-volumes-per-node=10\n        - --region=gz\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix://var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n          mountPropagation: HostToContainer\n        - name: host-sys\n          mountPath: /sys\n          mountPropagation: HostToContainer\n        - name: docker-sock\n          mountPath: /var/run/docker.sock\n        - name: bosfs-cred-dir\n          mountPath: /etc/bosfs/credentials\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubelet-dir\n        hostPath:\n          path: /var/lib/kubelet\n          type: DirectoryOrCreate\n      - name: reg-dir\n        hostPath:\n          path: /var/lib/kubelet/plugins_registry\n          type: DirectoryOrCreate\n      - name: host-sys\n        hostPath:\n          path: /sys\n      - name: docker-sock\n        hostPath:\n          path: /var/run/docker.sock\n          type: Socket\n      - name: bosfs-cred-dir\n        hostPath:\n          path: /etc/bosfs/credentials\n          type: DirectoryOrCreate\n",
+    "errors": []
   },
   {
     "id": "00560",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: csi-bosplugin-node-server\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: csi-bosplugin-node-server\n  template:\n    metadata:\n      labels:\n        app: csi-bosplugin-node-server\n    spec:\n      serviceAccount: csi-bos-external-runner\n      containers:\n      - name: node-driver-registrar\n        image: registry.baidubce.com/cce-plugin-pro/csi-node-driver-registrar:v2.1.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --kubelet-registration-path=$(ADDRESS)\n        - --v=5\n        env:\n        - name: ADDRESS\n          value: /var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: reg-dir\n          mountPath: /registration\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      - name: csi-bosplugin\n        securityContext:\n          privileged: false\n          capabilities:\n            add: []\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        image: registry.baidubce.com/cce-plugin-pro/cce-csi-plugin:v1.1.1\n        args:\n        - --driver-type=bos\n        - --csi-endpoint=$(CSI_ENDPOINT)\n        - --driver-mode=node\n        - --max-volumes-per-node=10\n        - --region=gz\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix://var/lib/kubelet/plugins/bos.csi.baidubce.com/csi.sock\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        imagePullPolicy: Always\n        volumeMounts:\n        - name: kubelet-dir\n          mountPath: /var/lib/kubelet\n          mountPropagation: HostToContainer\n        - name: host-sys\n          mountPath: /sys\n          mountPropagation: HostToContainer\n        - name: docker-sock\n          mountPath: /var/run/docker.sock\n        - name: bosfs-cred-dir\n          mountPath: /etc/bosfs/credentials\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: kubelet-dir\n        hostPath:\n          path: /var/lib/kubelet\n          type: DirectoryOrCreate\n      - name: reg-dir\n        hostPath:\n          path: /var/lib/kubelet/plugins_registry\n          type: DirectoryOrCreate\n      - name: host-sys\n        hostPath:\n          path: /sys\n      - name: docker-sock\n        hostPath:\n          path: /var/run/docker.sock\n          type: Socket\n      - name: bosfs-cred-dir\n        hostPath:\n          path: /etc/bosfs/credentials\n          type: DirectoryOrCreate\n",
+    "errors": []
   }
 ]

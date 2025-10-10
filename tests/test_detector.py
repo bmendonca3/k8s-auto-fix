@@ -106,6 +106,43 @@ spec:
         )
         self.assertIn("no-privileged", {entry["policy_id"] for entry in data})
 
+    def test_detect_supports_parallel_jobs(self) -> None:
+        other_manifest = Path(self.tmpdir.name) / "second.yaml"
+        other_manifest.write_text(self.manifest_path.read_text())
+        results = self.detector.detect([self.manifest_path, other_manifest], jobs=2)
+        kube_calls = [cmd for cmd in self.commands if cmd[0] == "kube-linter"]
+        kyverno_calls = [cmd for cmd in self.commands if cmd[0] == "kyverno"]
+        self.assertEqual(len(kube_calls), 2)
+        self.assertEqual(len(kyverno_calls), 2)
+        self.assertEqual(len([r for r in results if r.tool == "kube-linter"]), 2)
+        self.assertEqual(len([r for r in results if r.tool == "kyverno"]), 2)
+
+    def test_builtin_detections_cover_hostpath_and_hostports(self) -> None:
+        manifest = Path(self.tmpdir.name) / "host_access.yaml"
+        manifest.write_text(
+            """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: host-access
+spec:
+  containers:
+    - name: api
+      image: nginx:1.25
+      ports:
+        - containerPort: 8080
+          hostPort: 30080
+  volumes:
+    - name: data
+      hostPath:
+        path: /var/lib/data
+""".strip()
+        )
+        results = self.detector.detect([manifest], jobs=1)
+        rules = {result.rule for result in results if result.tool == "builtin"}
+        self.assertIn("host-ports", rules)
+        self.assertIn("hostpath-volume", rules)
+
     def test_targeted_manifest_selects_matching_document(self) -> None:
         multi_path = Path(self.tmpdir.name) / "multi.yaml"
         multi_path.write_text(

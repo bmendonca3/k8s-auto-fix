@@ -7,54 +7,7 @@ from typing import Any, Dict, List, Optional
 import typer
 
 from .schedule import EPSILON, PatchCandidate, schedule_patches
-
-
-def _normalise_policy_id(policy: Optional[str]) -> str:
-    key = (policy or "").strip().lower()
-    mapping = {
-        "no_latest_tag": "no_latest_tag",
-        "latest-tag": "no_latest_tag",
-        "privileged-container": "no_privileged",
-        "privilege-escalation-container": "no_privileged",
-        "no_privileged": "no_privileged",
-        "no-read-only-root-fs": "read_only_root_fs",
-        "check-requests-limits": "set_requests_limits",
-        "unset-cpu-requirements": "set_requests_limits",
-        "unset-memory-requirements": "set_requests_limits",
-        "run-as-non-root": "run_as_non_root",
-        "check-runasnonroot": "run_as_non_root",
-        "hostnetwork": "no_host_network",
-        "host-network": "no_host_network",
-        "hostpid": "no_host_pid",
-        "host-pid": "no_host_pid",
-        "hostipc": "no_host_ipc",
-        "host-ipc": "no_host_ipc",
-        "hostpath": "no_host_path",
-        "host-path": "no_host_path",
-        "hostpath-volume": "no_host_path",
-        "disallow-hostpath": "no_host_path",
-        "hostports": "no_host_ports",
-        "host-port": "no_host_ports",
-        "host-ports": "no_host_ports",
-        "disallow-hostports": "no_host_ports",
-        "run-as-user": "run_as_user",
-        "check-runasuser": "run_as_user",
-        "requires-runasuser": "run_as_user",
-        "seccomp": "enforce_seccomp",
-        "seccomp-profile": "enforce_seccomp",
-        "requires-seccomp": "enforce_seccomp",
-        "drop-capabilities": "drop_capabilities",
-        "linux-capabilities": "drop_capabilities",
-        "invalid-capabilities": "drop_capabilities",
-        "cap-sys-admin": "drop_cap_sys_admin",
-        "sys-admin-capability": "drop_cap_sys_admin",
-        "env-var-secret": "env_var_secret",
-        "envvar-secret": "env_var_secret",
-        "liveness-port": "liveness_port",
-        "readiness-port": "readiness_port",
-        "startup-port": "startup_port",
-    }
-    return mapping.get(key, key)
+from src.common.policy_ids import normalise_policy_id
 
 app = typer.Typer(help="Prioritise verified patches using heuristic scoring.")
 
@@ -84,6 +37,11 @@ def schedule(
         "--risk",
         help="Optional risk store JSON; if present, overrides default metrics per id.",
     ),
+    policy_metrics: Optional[Path] = typer.Option(
+        Path("data/policy_metrics.json"),
+        "--policy-metrics",
+        help="Optional policy-level probability/expected_time metrics.",
+    ),
     alpha: float = typer.Option(
         1.0,
         help="Weight applied to wait time in score.",
@@ -92,10 +50,15 @@ def schedule(
         EPSILON,
         help="Lower bound used for expected time denominator.",
     ),
+    kev_weight: float = typer.Option(
+        1.0,
+        help="Additional priority added when a candidate is KEV-listed.",
+    ),
 ) -> None:
     verified_records = _load_array(verified, "verified")
     detection_map = _load_detection_policies(detections)
     risk_map = _load_risk_map(risk) if risk else {}
+    policy_metrics_map = _load_policy_metrics(policy_metrics) if policy_metrics else {}
 
     candidates: List[PatchCandidate] = []
     for record in verified_records:
@@ -105,7 +68,7 @@ def schedule(
             continue
         patch_id = str(record.get("id"))
         policy_id = detection_map.get(patch_id, {}).get("policy_id")
-        metrics = _compute_metrics(patch_id, policy_id, risk_map)
+        metrics = _compute_metrics(patch_id, policy_id, risk_map, policy_metrics_map)
         candidates.append(
             PatchCandidate(
                 id=patch_id,
@@ -118,8 +81,8 @@ def schedule(
             )
         )
 
-    ordered = schedule_patches(candidates, alpha=alpha, epsilon=epsilon)
-    output = [candidate.to_output(alpha=alpha, epsilon=epsilon) for candidate in ordered]
+    ordered = schedule_patches(candidates, alpha=alpha, epsilon=epsilon, kev_weight=kev_weight)
+    output = [candidate.to_output(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight) for candidate in ordered]
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(output, indent=2), encoding="utf-8")
@@ -145,7 +108,7 @@ def _load_detection_policies(path: Path) -> Dict[str, Dict[str, Any]]:
             continue
         detection_id = str(record.get("id"))
         mapping[detection_id] = {
-            "policy_id": _normalise_policy_id(record.get("policy_id")),
+            "policy_id": normalise_policy_id(record.get("policy_id")),
         }
     return mapping
 
@@ -193,10 +156,25 @@ def _load_risk_map(path: Optional[Path]) -> Dict[str, Dict[str, Any]]:
     return result
 
 
-def _compute_metrics(patch_id: str, policy_id: Any, risk_map: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+def _compute_metrics(
+    patch_id: str,
+    policy_id: Any,
+    risk_map: Dict[str, Dict[str, Any]],
+    policy_metrics_map: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
     if patch_id in risk_map:
         return risk_map[patch_id]
-    policy = _normalise_policy_id(policy_id)
+    policy = normalise_policy_id(policy_id)
+    if policy in policy_metrics_map:
+        metrics = policy_metrics_map[policy]
+        return {
+            "risk": metrics.get("risk", _default_risk(policy)),
+            "probability": metrics.get("probability", 0.9),
+            "expected_time": metrics.get("expected_time", 10.0),
+            "wait": metrics.get("wait", 0.0),
+            "kev": metrics.get("kev", policy in {"no_privileged", "drop_capabilities", "drop_cap_sys_admin"}),
+            "explore": metrics.get("explore", 0.0),
+        }
     risk_lookup = {
         "no_privileged": 85.0,
         "no_latest_tag": 50.0,
@@ -222,6 +200,41 @@ def _compute_metrics(patch_id: str, policy_id: Any, risk_map: Dict[str, Dict[str
         "kev": kev_flag,
         "explore": 0.0,
     }
+
+
+def _default_risk(policy: str) -> float:
+    return {
+        "no_privileged": 85.0,
+        "drop_capabilities": 85.0,
+        "drop_cap_sys_admin": 85.0,
+        "no_latest_tag": 50.0,
+        "run_as_non_root": 70.0,
+    }.get(policy, 40.0)
+
+
+def _load_policy_metrics(path: Optional[Path]) -> Dict[str, Dict[str, Any]]:
+    if not path or not path.exists():
+        return {}
+    try:
+        with path.open(encoding="utf-8") as handle:
+            data = json.load(handle)
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    result: Dict[str, Dict[str, Any]] = {}
+    for policy, entry in data.items():
+        if not isinstance(entry, dict):
+            continue
+        result[str(normalise_policy_id(policy))] = {
+            "risk": float(entry.get("risk", _default_risk(policy))),
+            "probability": float(entry.get("probability", 0.9)),
+            "expected_time": float(entry.get("expected_time", 10.0)),
+            "wait": float(entry.get("wait", 0.0)),
+            "kev": bool(entry.get("kev", normalise_policy_id(policy) in {"no_privileged", "drop_capabilities", "drop_cap_sys_admin"})),
+            "explore": float(entry.get("explore", 0.0)),
+        }
+    return result
 
 
 if __name__ == "__main__":  # pragma: no cover

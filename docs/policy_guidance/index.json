@@ -20,12 +20,14 @@
   {
     "id": "pod_security_baseline_network#1",
     "policies": [
-      "no_host_path",
+      "no_host_network",
+      "no_host_pid",
+      "no_host_ipc",
       "no_host_ports"
     ],
-    "source": "Kubernetes Pod Security Standards - Baseline Profile",
-    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#baseline",
-    "text": "The Baseline profile limits host access to reduce privilege escalation paths. Avoid `hostPath` volumes unless combined with a read-only root filesystem and narrow subPath rules. Services should prefer cluster networking; remove `hostPort` mappings so the kubelet cannot bind privileged ports on the node. Where host networking is unavoidable, document the exception and add compensating controls."
+    "source": "Kubernetes Pod Security Standards (Baseline)",
+    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+    "text": "Avoid using host namespaces and host networking in workloads that do not require it. The Baseline profile forbids hostNetwork/hostPID/hostIPC by default."
   },
   {
     "id": "pod_security_nonroot#1",
@@ -33,19 +35,21 @@
       "run_as_non_root",
       "run_as_user"
     ],
-    "source": "Kubernetes Pod Security Standards - Restricted Profile",
-    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted",
-    "text": "Restricted pods must run as non-root users. Set `securityContext.runAsNonRoot: true` and provide an explicit numeric `runAsUser` greater than zero (for example, `1000`). Avoid inheriting the root user from the container image. This guidance enforces least privilege and aligns with the Kubernetes Pod Security Restricted profile."
+    "source": "Kubernetes Pod Security Standards (Restricted)",
+    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+    "text": "Ensure containers are not running as the root user. Configure `spec.template.spec.securityContext.runAsNonRoot: true` or set a non-zero `runAsUser`/`runAsGroup` value. Pod Security Restricted level requires non-root containers and forbid privilege escalation via UID 0."
   },
   {
     "id": "pod_security_restricted#1",
     "policies": [
-      "no_privileged",
       "drop_capabilities",
+      "read_only_root_fs",
+      "no_privileged",
+      "no_allow_privilege_escalation",
       "enforce_seccomp"
     ],
-    "source": "Kubernetes Pod Security Standards - Restricted Profile",
-    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted",
-    "text": "The Restricted profile prohibits privileged workloads and requires pods to run with a locked-down securityContext. Containers must set `privileged: false`, block privilege escalation, and restrict Linux capabilities to the minimal set, typically dropping `NET_RAW`, `SYS_ADMIN`, and similar sensitive flags. Seccomp must use `RuntimeDefault` or a custom profile that is at least as strict. These controls limit the blast radius if the container is compromised and align with the Kubernetes Pod Security Restricted guidance."
+    "source": "Kubernetes Pod Security Standards (Restricted)",
+    "citation": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+    "text": "The Restricted profile builds on the Baseline requirements and enforces defence-in-depth controls such as mandatory capability drop and seccomp profiles. Containers must not run with `securityContext.privileged: true` and must disallow privilege escalation while using a read-only root filesystem."
   }
 ]

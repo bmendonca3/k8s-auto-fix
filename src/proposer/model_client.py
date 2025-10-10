@@ -40,7 +40,7 @@ class ModelClient:
         self.auth_header = options.auth_header
         self.auth_scheme = options.auth_scheme
 
-    def request_patch(self, prompt: str) -> str:
+    def request_patch(self, prompt: str) -> Dict[str, Any]:
         payload = {
             "model": self.model,
             "messages": [
@@ -59,7 +59,8 @@ class ModelClient:
                     response = client.post(self.endpoint, json=payload)
                     response.raise_for_status()
                 data = response.json()
-                return self._extract_content(data)
+                content, usage = self._extract_content_and_usage(data)
+                return {"content": content, "usage": usage}
             except (httpx.HTTPError, RuntimeError, ValueError) as exc:
                 last_error = exc
                 if attempt >= self.retries:
@@ -94,7 +95,7 @@ class ModelClient:
         return base + jitter
 
     @staticmethod
-    def _extract_content(data: Dict[str, Any]) -> str:
+    def _extract_content_and_usage(data: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         choices = data.get("choices")
         if not choices:
             raise RuntimeError("Model response missing 'choices'")
@@ -107,7 +108,9 @@ class ModelClient:
         content = message["content"]
         if not isinstance(content, str):
             raise RuntimeError("Model message content must be string")
-        return content
+        usage = data.get("usage")
+        usage_dict = usage if isinstance(usage, dict) else {}
+        return content, usage_dict
 
     @staticmethod
     def _normalise_endpoint(url: str) -> str:

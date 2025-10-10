@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterable, List, Sequence
 
 import yaml
+import subprocess
 
 
 DEFAULT_RAW_DIR = Path("docs/policy_guidance/raw")
@@ -55,6 +56,8 @@ def parse_front_matter(raw_text: str) -> tuple[dict, str]:
 def chunk_text(body: str, max_chars: int = MAX_CHARS) -> Iterable[str]:
     paragraphs = [para.strip() for para in body.split("\n\n") if para.strip()]
     for paragraph in paragraphs:
+        if paragraph.lstrip().startswith("#"):
+            continue
         if len(paragraph) <= max_chars:
             yield paragraph
             continue
@@ -105,6 +108,26 @@ def write_index(chunks: Sequence[GuidanceChunk], index_path: Path) -> None:
     index_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
+def fetch_remote_sources(sources: Sequence[str], destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    for url in sources:
+        if not url:
+            continue
+        filename = url.rstrip("/").split("/")[-1] or "guidance.md"
+        target_path = destination / filename
+        try:
+            result = subprocess.run(
+                ["curl", "-fsSL", url],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            print(f"Warning: failed to download {url}: {exc}")
+            continue
+        target_path.write_text(result.stdout, encoding="utf-8")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build the policy guidance retrieval index.")
     parser.add_argument(
@@ -119,11 +142,25 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_INDEX_PATH,
         help="Output JSON file for the compiled guidance index.",
     )
+    parser.add_argument(
+        "--fetch",
+        action="append",
+        default=None,
+        help="Optional URL to download and place in the raw guidance directory (can be repeated).",
+    )
+    parser.add_argument(
+        "--fetch-destination",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Destination directory for downloaded guidance sources (default: raw dir).",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if args.fetch:
+        fetch_remote_sources(args.fetch, args.fetch_destination)
     chunks = build_index(args.raw_dir)
     write_index(chunks, args.out)
     print(f"Wrote {len(chunks)} guidance chunk(s) to {args.out}")

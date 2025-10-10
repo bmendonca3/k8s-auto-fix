@@ -68,6 +68,13 @@ def detect(
         "kyverno",
         help="Command used to invoke Kyverno.",
     ),
+    jobs: int = typer.Option(
+        1,
+        "--jobs",
+        "-j",
+        min=1,
+        help="Number of parallel workers to use when scanning manifests.",
+    ),
 ) -> None:
     search_paths = inputs or [Path("data/manifests")]
     manifests = _collect_from_inputs(search_paths)
@@ -84,7 +91,7 @@ def detect(
         kyverno_cmd=kyverno_cmd,
         policies_dir=policies_dir,
     )
-    results = detector.detect(manifests)
+    results = detector.detect(manifests, jobs=jobs)
     detector.write_results(results, out)
     typer.echo(f"Detected {len(results)} violation(s). Report written to {out.resolve()}")
 

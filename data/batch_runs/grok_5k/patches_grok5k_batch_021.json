@@ -7,6 +7,63 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 2 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "value": "docker.io/bitnami/git:2.42.0-debian-12-r0"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "value": "curlimages/curl:8.4.0"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
@@ -17,7 +74,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "image": "busybox:stable",
+                  "securityContext": {
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "privileged": false,
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "image": "busybox:stable",
+                  "securityContext": {
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "privileged": false,
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext",
         "value": {
           "capabilities": {
             "drop": [
@@ -30,12 +205,14 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -49,17 +226,17 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/privileged",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext",
         "value": {
           "capabilities": {
             "drop": [
@@ -72,12 +249,14 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -91,15 +270,81 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/privileged",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/privileged",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 516,
+      "completion_tokens": 366,
+      "total_tokens": 5433,
+      "prompt_tokens_details": {
+        "text_tokens": 516,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 340
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 4551,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00842",
@@ -109,21 +354,46 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
+        "value": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
+        "value": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
           "readOnlyRootFilesystem": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -141,18 +411,7 @@
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
           "readOnlyRootFilesystem": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -167,7 +426,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -181,12 +558,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -200,20 +577,76 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 560,
+      "completion_tokens": 209,
+      "total_tokens": 2634,
+      "prompt_tokens_details": {
+        "text_tokens": 560,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 194
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1865,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00843",
@@ -223,21 +656,46 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
+        "value": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
+        "value": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
           "readOnlyRootFilesystem": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -255,18 +713,7 @@
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
           "readOnlyRootFilesystem": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -281,7 +728,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -295,12 +860,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -314,20 +879,76 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 560,
+      "completion_tokens": 209,
+      "total_tokens": 2304,
+      "prompt_tokens_details": {
+        "text_tokens": 560,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 181
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1535,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00844",
@@ -337,21 +958,17 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
           "runAsNonRoot": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -369,18 +986,7 @@
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
           "runAsNonRoot": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -395,7 +1001,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -409,12 +1133,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -428,20 +1152,76 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 567,
+      "completion_tokens": 42,
+      "total_tokens": 1798,
+      "prompt_tokens_details": {
+        "text_tokens": 567,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 194
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1189,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00845",
@@ -451,21 +1231,17 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
           "runAsNonRoot": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -483,18 +1259,7 @@
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
           "runAsNonRoot": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -509,7 +1274,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -523,12 +1406,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -542,20 +1425,76 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 567,
+      "completion_tokens": 42,
+      "total_tokens": 1315,
+      "prompt_tokens_details": {
+        "text_tokens": 567,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 349
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 706,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00846",
@@ -565,6 +1504,20 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/resources",
         "value": {
           "requests": {
@@ -581,18 +1534,7 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -602,34 +1544,9 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
-        "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
-          "limits": {
-            "cpu": "500m",
-            "memory": "256Mi"
-          }
-        }
-      },
-      {
-        "op": "add",
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -639,7 +1556,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -653,12 +1688,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -672,20 +1707,58 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 598,
+      "completion_tokens": 161,
+      "total_tokens": 1551,
+      "prompt_tokens_details": {
+        "text_tokens": 598,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 340
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 792,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00847",
@@ -695,6 +1768,20 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/resources",
         "value": {
           "requests": {
@@ -711,18 +1798,7 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -732,34 +1808,9 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
-        "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
-          "limits": {
-            "cpu": "500m",
-            "memory": "256Mi"
-          }
-        }
-      },
-      {
-        "op": "add",
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -769,7 +1820,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -783,12 +1952,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -802,20 +1971,58 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 598,
+      "completion_tokens": 161,
+      "total_tokens": 1241,
+      "prompt_tokens_details": {
+        "text_tokens": 598,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 340
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 482,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00848",
@@ -825,6 +2032,20 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/resources",
         "value": {
           "requests": {
@@ -841,18 +2062,7 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -862,34 +2072,9 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
-        "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
-          "limits": {
-            "cpu": "500m",
-            "memory": "256Mi"
-          }
-        }
-      },
-      {
-        "op": "add",
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -899,7 +2084,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -913,12 +2216,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -932,20 +2235,58 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 598,
+      "completion_tokens": 161,
+      "total_tokens": 1208,
+      "prompt_tokens_details": {
+        "text_tokens": 598,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 351
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 449,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00849",
@@ -955,6 +2296,20 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/resources",
         "value": {
           "requests": {
@@ -971,18 +2326,7 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -992,34 +2336,9 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/resources",
-        "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
-          "limits": {
-            "cpu": "500m",
-            "memory": "256Mi"
-          }
-        }
-      },
-      {
-        "op": "add",
         "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -1029,7 +2348,125 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "initContainers": [
+                {
+                  "name": "git",
+                  "env": [
+                    {
+                      "name": "GIT_REPOSITORY",
+                      "value": "github.com/tektoncd/plumbing"
+                    },
+                    {
+                      "name": "GIT_REVISION",
+                      "value": "main"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "containers": [
+                {
+                  "name": "trigger",
+                  "env": [
+                    {
+                      "name": "SINK_URL",
+                      "value": "el-image-builder.default.svc.cluster.local:8080"
+                    },
+                    {
+                      "name": "TARGET_IMAGE",
+                      "value": "gcr.io/tekton-releases/dogfooding/buildx-gcloud"
+                    },
+                    {
+                      "name": "CONTEXT_PATH",
+                      "value": "tekton/images/buildx-gcloud"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "image": "busybox:stable"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -1043,12 +2480,12 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -1062,20 +2499,58 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "busybox:stable"
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/initContainers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/image",
         "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 598,
+      "completion_tokens": 161,
+      "total_tokens": 1269,
+      "prompt_tokens_details": {
+        "text_tokens": 598,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 340
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 510,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00850",
@@ -1083,6 +2558,28 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "diyblockchain/k8s-demo:v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
       {
         "op": "replace",
         "path": "/spec/containers/0/image",
@@ -1103,7 +2600,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1129,8 +2628,50 @@
         "op": "add",
         "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 437,
+      "completion_tokens": 128,
+      "total_tokens": 2058,
+      "prompt_tokens_details": {
+        "text_tokens": 437,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1493,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00851",
@@ -1138,6 +2679,39 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -1154,7 +2728,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -1190,8 +2765,45 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "diyblockchain/k8s-demo:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 472,
+      "completion_tokens": 178,
+      "total_tokens": 1918,
+      "prompt_tokens_details": {
+        "text_tokens": 472,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 249
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1268,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00852",
@@ -1199,6 +2811,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -1215,7 +2834,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1251,8 +2871,45 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "diyblockchain/k8s-demo:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 479,
+      "completion_tokens": 41,
+      "total_tokens": 1485,
+      "prompt_tokens_details": {
+        "text_tokens": 479,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 965,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00853",
@@ -1289,7 +2946,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1320,8 +2979,36 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "diyblockchain/k8s-demo:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 510,
+      "completion_tokens": 77,
+      "total_tokens": 1163,
+      "prompt_tokens_details": {
+        "text_tokens": 510,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 249
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 576,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00854",
@@ -1333,13 +3020,13 @@
         "op": "add",
         "path": "/spec/containers/0/resources",
         "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
           "limits": {
             "cpu": "500m",
             "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
           }
         }
       },
@@ -1358,7 +3045,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1389,8 +3078,36 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "diyblockchain/k8s-demo:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 510,
+      "completion_tokens": 40,
+      "total_tokens": 1200,
+      "prompt_tokens_details": {
+        "text_tokens": 510,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 650,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00855",
@@ -1398,6 +3115,32 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "nginx:1.25"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
       {
         "op": "replace",
         "path": "/spec/containers/0/image",
@@ -1418,7 +3161,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1444,8 +3189,36 @@
         "op": "add",
         "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 391,
+      "completion_tokens": 146,
+      "total_tokens": 1370,
+      "prompt_tokens_details": {
+        "text_tokens": 391,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 833,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00856",
@@ -1453,6 +3226,24 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          },
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -1469,7 +3260,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -1505,8 +3297,45 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 433,
+      "completion_tokens": 101,
+      "total_tokens": 3596,
+      "prompt_tokens_details": {
+        "text_tokens": 433,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 3062,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00857",
@@ -1514,6 +3343,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -1530,7 +3366,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1566,8 +3403,45 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 440,
+      "completion_tokens": 41,
+      "total_tokens": 1105,
+      "prompt_tokens_details": {
+        "text_tokens": 440,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 624,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00858",
@@ -1604,7 +3478,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1635,8 +3511,36 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 471,
+      "completion_tokens": 77,
+      "total_tokens": 1038,
+      "prompt_tokens_details": {
+        "text_tokens": 471,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 490,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00859",
@@ -1648,13 +3552,13 @@
         "op": "add",
         "path": "/spec/containers/0/resources",
         "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
           "limits": {
             "cpu": "500m",
             "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
           }
         }
       },
@@ -1673,7 +3577,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1704,8 +3610,36 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 471,
+      "completion_tokens": 40,
+      "total_tokens": 902,
+      "prompt_tokens_details": {
+        "text_tokens": 471,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 213
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 391,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00860",
@@ -1716,7 +3650,58 @@
       {
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
+        "value": "centaurusinfra/test1_maskrcnn:v1.0"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/requests",
+        "value": {
+          "cpu": "4",
+          "memory": "16Gi"
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/limits/cpu",
+        "value": "8"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/limits/memory",
+        "value": "32Gi"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/volumes/0",
+        "value": {
+          "name": "remote-data",
+          "emptyDir": {}
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/volumes/1",
+        "value": {
+          "name": "remote-results",
+          "emptyDir": {}
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/image",
         "value": "centaurusinfra/test1_maskrcnn:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1733,7 +3718,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1759,8 +3746,51 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "nvidia.com/gpu": 2,
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 659,
+      "completion_tokens": 288,
+      "total_tokens": 3650,
+      "prompt_tokens_details": {
+        "text_tokens": 659,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 184
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2703,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00861",
@@ -1768,6 +3798,58 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/requests",
+        "value": {
+          "cpu": "100m",
+          "memory": "128Mi"
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/limits/cpu",
+        "value": "100m"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/limits/memory",
+        "value": "128Mi"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/volumeMounts/-",
+        "value": {
+          "mountPath": "/tmp",
+          "name": "tmp"
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/volumes/-",
+        "value": {
+          "name": "tmp",
+          "emptyDir": {}
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -1784,7 +3866,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -1796,6 +3879,11 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1820,8 +3908,46 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "centaurusinfra/test1_maskrcnn:stable"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "nvidia.com/gpu": 2,
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 693,
+      "completion_tokens": 309,
+      "total_tokens": 4570,
+      "prompt_tokens_details": {
+        "text_tokens": 693,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 471
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 3568,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00862",
@@ -1829,6 +3955,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -1845,7 +3978,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1860,6 +3994,11 @@
       },
       {
         "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
@@ -1881,8 +4020,46 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "centaurusinfra/test1_maskrcnn:stable"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "nvidia.com/gpu": 2,
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 700,
+      "completion_tokens": 40,
+      "total_tokens": 2346,
+      "prompt_tokens_details": {
+        "text_tokens": 700,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 184
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1606,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00863",
@@ -1891,6 +4068,23 @@
     "hardened": true,
     "patch": [
       {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/requests",
+        "value": {
+          "cpu": "100m",
+          "memory": "128Mi"
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources/limits",
+        "value": {
+          "nvidia.com/gpu": "2",
+          "cpu": "500m",
+          "memory": "256Mi"
+        }
+      },
+      {
         "op": "replace",
         "path": "/spec/template/spec/containers/0/resources",
         "value": {
@@ -1920,13 +4114,20 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1951,8 +4152,36 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "centaurusinfra/test1_maskrcnn:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 731,
+      "completion_tokens": 109,
+      "total_tokens": 1828,
+      "prompt_tokens_details": {
+        "text_tokens": 731,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 471
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 988,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00864",
@@ -1961,6 +4190,24 @@
     "hardened": true,
     "patch": [
       {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/requests",
+        "value": {
+          "cpu": "100m",
+          "memory": "128Mi"
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/limits/cpu",
+        "value": "500m"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources/limits/memory",
+        "value": "256Mi"
+      },
+      {
         "op": "replace",
         "path": "/spec/template/spec/containers/0/resources",
         "value": {
@@ -1990,13 +4237,20 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -2021,8 +4275,36 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "centaurusinfra/test1_maskrcnn:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 731,
+      "completion_tokens": 121,
+      "total_tokens": 2897,
+      "prompt_tokens_details": {
+        "text_tokens": 731,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 484
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2045,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00865",
@@ -2030,6 +4312,32 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "nginx:1.21.6"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
       {
         "op": "replace",
         "path": "/spec/containers/0/image",
@@ -2050,7 +4358,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -2076,8 +4386,50 @@
         "op": "add",
         "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 392,
+      "completion_tokens": 148,
+      "total_tokens": 1176,
+      "prompt_tokens_details": {
+        "text_tokens": 392,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 636,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00866",
@@ -2085,6 +4437,44 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/securityContext",
+        "value": {
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -2101,7 +4491,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -2137,8 +4528,45 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 434,
+      "completion_tokens": 203,
+      "total_tokens": 2263,
+      "prompt_tokens_details": {
+        "text_tokens": 434,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1626,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00867",
@@ -2146,6 +4574,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -2162,7 +4597,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -2198,8 +4634,45 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 441,
+      "completion_tokens": 41,
+      "total_tokens": 1166,
+      "prompt_tokens_details": {
+        "text_tokens": 441,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 684,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00868",
@@ -2236,7 +4709,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -2267,8 +4742,36 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 472,
+      "completion_tokens": 40,
+      "total_tokens": 919,
+      "prompt_tokens_details": {
+        "text_tokens": 472,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 407,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00869",
@@ -2305,7 +4808,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -2336,8 +4841,36 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 472,
+      "completion_tokens": 77,
+      "total_tokens": 1006,
+      "prompt_tokens_details": {
+        "text_tokens": 472,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 225
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 457,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00870",
@@ -2348,42 +4881,12 @@
       {
         "op": "replace",
         "path": "/spec/containers/0/image",
-        "value": "k8s.gcr.io/pause:stable"
+        "value": "k8s.gcr.io/pause:3.9"
       },
       {
         "op": "replace",
         "path": "/spec/initContainers/0/image",
-        "value": "k8s.gcr.io/pause:stable"
-      },
-      {
-        "op": "add",
-        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
-        "value": "NET_RAW"
-      },
-      {
-        "op": "add",
-        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
-        "value": "NET_ADMIN"
-      },
-      {
-        "op": "add",
-        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_ADMIN"
-      },
-      {
-        "op": "add",
-        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_MODULE"
-      },
-      {
-        "op": "add",
-        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_PTRACE"
-      },
-      {
-        "op": "add",
-        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_CHROOT"
+        "value": "k8s.gcr.io/pause:3.9"
       },
       {
         "op": "add",
@@ -2392,47 +4895,29 @@
       },
       {
         "op": "add",
-        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
-        "value": "NET_RAW"
-      },
-      {
-        "op": "add",
-        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
-        "value": "NET_ADMIN"
-      },
-      {
-        "op": "add",
-        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_ADMIN"
-      },
-      {
-        "op": "add",
-        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_MODULE"
-      },
-      {
-        "op": "add",
-        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_PTRACE"
-      },
-      {
-        "op": "add",
-        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
-        "value": "SYS_CHROOT"
-      },
-      {
-        "op": "add",
         "path": "/spec/initContainers/0/securityContext/privileged",
         "value": false
-      }
-    ]
-  },
-  {
-    "id": "00871",
-    "policy_id": "no_latest_tag",
-    "source": "grok",
-    "hardened": true,
-    "patch": [
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "10m",
+            "memory": "32Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "10m",
+            "memory": "32Mi"
+          }
+        }
+      },
       {
         "op": "replace",
         "path": "/spec/containers/0/image",
@@ -2475,8 +4960,187 @@
       },
       {
         "op": "add",
+        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
+        "value": "NET_RAW"
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
+        "value": "NET_ADMIN"
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_ADMIN"
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_MODULE"
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_PTRACE"
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_CHROOT"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      }
+    ],
+    "model_usage": {
+      "prompt_tokens": 499,
+      "completion_tokens": 199,
+      "total_tokens": 1815,
+      "prompt_tokens_details": {
+        "text_tokens": 499,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 147
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1117,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
+  },
+  {
+    "id": "00871",
+    "policy_id": "no_latest_tag",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "k8s.gcr.io/pause:3.9"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/initContainers/0/image",
+        "value": "k8s.gcr.io/pause:3.9"
+      },
+      {
+        "op": "add",
         "path": "/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/privileged",
+        "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "1m",
+            "memory": "2Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "1m",
+            "memory": "2Mi"
+          }
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/initContainers/0/image",
+        "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
+        "value": "NET_RAW"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
+        "value": "NET_ADMIN"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_ADMIN"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_MODULE"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_PTRACE"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/capabilities/drop/-",
+        "value": "SYS_CHROOT"
       },
       {
         "op": "add",
@@ -2510,10 +5174,71 @@
       },
       {
         "op": "add",
-        "path": "/spec/initContainers/0/securityContext/privileged",
-        "value": false
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 500,
+      "completion_tokens": 251,
+      "total_tokens": 3120,
+      "prompt_tokens_details": {
+        "text_tokens": 500,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2369,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00872",
@@ -2528,13 +5253,13 @@
       },
       {
         "op": "add",
-        "path": "/spec/containers/0/securityContext/privileged",
-        "value": false
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       },
       {
         "op": "add",
-        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
-        "value": true
+        "path": "/spec/containers/0/securityContext/privileged",
+        "value": false
       },
       {
         "op": "add",
@@ -2610,8 +5335,64 @@
         "op": "replace",
         "path": "/spec/initContainers/0/image",
         "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 534,
+      "completion_tokens": 69,
+      "total_tokens": 1809,
+      "prompt_tokens_details": {
+        "text_tokens": 534,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1206,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00873",
@@ -2708,8 +5489,64 @@
         "op": "replace",
         "path": "/spec/initContainers/0/image",
         "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 535,
+      "completion_tokens": 132,
+      "total_tokens": 1511,
+      "prompt_tokens_details": {
+        "text_tokens": 535,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 844,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00874",
@@ -2733,11 +5570,6 @@
       },
       {
         "op": "add",
-        "path": "/spec/containers/0/securityContext/privileged",
-        "value": false
-      },
-      {
-        "op": "add",
         "path": "/spec/initContainers/0/resources",
         "value": {
           "requests": {
@@ -2749,6 +5581,11 @@
             "memory": "256Mi"
           }
         }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/privileged",
+        "value": false
       },
       {
         "op": "add",
@@ -2824,8 +5661,46 @@
         "op": "replace",
         "path": "/spec/initContainers/0/image",
         "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 572,
+      "completion_tokens": 153,
+      "total_tokens": 1327,
+      "prompt_tokens_details": {
+        "text_tokens": 572,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 313
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 602,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00875",
@@ -2849,11 +5724,6 @@
       },
       {
         "op": "add",
-        "path": "/spec/containers/0/securityContext/privileged",
-        "value": false
-      },
-      {
-        "op": "add",
         "path": "/spec/initContainers/0/resources",
         "value": {
           "requests": {
@@ -2865,6 +5735,11 @@
             "memory": "256Mi"
           }
         }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/privileged",
+        "value": false
       },
       {
         "op": "add",
@@ -2940,8 +5815,46 @@
         "op": "replace",
         "path": "/spec/initContainers/0/image",
         "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 573,
+      "completion_tokens": 216,
+      "total_tokens": 1650,
+      "prompt_tokens_details": {
+        "text_tokens": 573,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 313
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 861,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00876",
@@ -2951,26 +5864,12 @@
     "patch": [
       {
         "op": "add",
-        "path": "/spec/containers/0/resources",
-        "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
-          "limits": {
-            "cpu": "500m",
-            "memory": "256Mi"
-          }
-        }
-      },
-      {
-        "op": "add",
         "path": "/spec/containers/0/securityContext/privileged",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/initContainers/0/resources",
+        "path": "/spec/containers/0/resources",
         "value": {
           "requests": {
             "cpu": "100m",
@@ -2986,6 +5885,20 @@
         "op": "add",
         "path": "/spec/initContainers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
       },
       {
         "op": "add",
@@ -3056,8 +5969,46 @@
         "op": "replace",
         "path": "/spec/initContainers/0/image",
         "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 572,
+      "completion_tokens": 216,
+      "total_tokens": 1795,
+      "prompt_tokens_details": {
+        "text_tokens": 572,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 325
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1007,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00877",
@@ -3067,26 +6018,12 @@
     "patch": [
       {
         "op": "add",
-        "path": "/spec/containers/0/resources",
-        "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
-          "limits": {
-            "cpu": "500m",
-            "memory": "256Mi"
-          }
-        }
-      },
-      {
-        "op": "add",
         "path": "/spec/containers/0/securityContext/privileged",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/initContainers/0/resources",
+        "path": "/spec/containers/0/resources",
         "value": {
           "requests": {
             "cpu": "100m",
@@ -3102,6 +6039,20 @@
         "op": "add",
         "path": "/spec/initContainers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
       },
       {
         "op": "add",
@@ -3172,8 +6123,46 @@
         "op": "replace",
         "path": "/spec/initContainers/0/image",
         "value": "k8s.gcr.io/pause:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/initContainers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 573,
+      "completion_tokens": 216,
+      "total_tokens": 1950,
+      "prompt_tokens_details": {
+        "text_tokens": 573,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 313
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1161,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00878",
@@ -3181,6 +6170,53 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "256Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "1Gi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/volumeMounts/4",
+        "value": {
+          "mountPath": "/tmp",
+          "name": "tmp"
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/volumes/-",
+        "value": {
+          "name": "tmp",
+          "emptyDir": {}
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -3197,7 +6233,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -3228,8 +6265,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 994,
+      "completion_tokens": 268,
+      "total_tokens": 4125,
+      "prompt_tokens_details": {
+        "text_tokens": 994,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2863,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00879",
@@ -3237,6 +6311,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -3253,7 +6334,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -3284,8 +6366,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 1001,
+      "completion_tokens": 40,
+      "total_tokens": 2616,
+      "prompt_tokens_details": {
+        "text_tokens": 1001,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 147
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1575,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "00880",
@@ -3322,7 +6441,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -3348,7 +6469,35 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 1032,
+      "completion_tokens": 79,
+      "total_tokens": 1883,
+      "prompt_tokens_details": {
+        "text_tokens": 1032,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 772
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 772,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   }
 ]

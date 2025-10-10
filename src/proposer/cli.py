@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import math
 import random
 import re
+import statistics
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -18,6 +21,7 @@ import yaml
 from .guidance_store import GuidanceStore
 from .guards import PatchError, extract_json_array
 from .model_client import ClientOptions, ModelClient
+from src.common.policy_ids import normalise_policy_id
 from src.verifier.jsonpatch_guard import validate_paths_exist
 
 app = typer.Typer(help="Generate JSON patches from detections using configurable backends.")
@@ -49,6 +53,11 @@ def propose(
         "-j",
         min=1,
         help="Number of parallel workers to use (default: 1).",
+    ),
+    metrics_out: Optional[Path] = typer.Option(
+        None,
+        "--metrics-out",
+        help="Optional path to write proposer telemetry (latency, token usage).",
     ),
 ) -> None:
     detections_data = _load_json(detections)
@@ -103,6 +112,9 @@ def propose(
     out.write_text(json.dumps(patches, indent=2), encoding="utf-8")
     typer.echo(f"Generated {len(patches)} patch(es) to {out.resolve()}")
 
+    if metrics_out is not None:
+        _write_proposer_metrics(metrics_out, patches)
+
 
 def _generate_patch_record(
     record: Dict[str, Any],
@@ -134,6 +146,9 @@ def _generate_patch_record(
 
     patch_ops: Optional[List[Dict[str, Any]]] = None
     rule_guard_ops: List[Dict[str, Any]] = []
+    generation_usage: Optional[Dict[str, Any]] = None
+    overall_start = time.perf_counter()
+    generation_latency_ms: Optional[int] = None
     if local_generator.source != "rules":
         try:
             rule_guard_ops = _rule_based_patch(detection)
@@ -144,17 +159,21 @@ def _generate_patch_record(
     errors: List[str] = []
     while attempts < max_attempts and patch_ops is None:
         attempts += 1
+        attempt_start = time.perf_counter()
         try:
             detection_for_prompt = dict(detection)
             if errors:
                 detection_for_prompt["retry_feedback"] = "; ".join(errors[-3:])
-            raw_patch = local_generator(detection_for_prompt, local_rng)
-            if isinstance(raw_patch, str):
-                patch_list = extract_json_array(raw_patch)
+            generation = local_generator(detection_for_prompt, local_rng)
+            if isinstance(generation, dict):
+                raw_patch = generation.get("content")
+                generation_usage = generation.get("usage")
             else:
-                patch_list = raw_patch
+                raw_patch = generation
+            patch_list = extract_json_array(raw_patch) if isinstance(raw_patch, str) else raw_patch
             validate_paths_exist(manifest_yaml, patch_list)
             patch_ops = patch_list
+            generation_latency_ms = int((time.perf_counter() - attempt_start) * 1000)
         except Exception as exc:  # noqa: BLE001
             errors.append(str(exc))
 
@@ -177,6 +196,9 @@ def _generate_patch_record(
         except PatchError:
             patch_ops = rule_guard_ops
             hardened = True
+    total_latency_ms = int((time.perf_counter() - overall_start) * 1000)
+    if generation_latency_ms is None:
+        generation_latency_ms = total_latency_ms
 
     result: Dict[str, Any] = {
         "id": detection_id,
@@ -184,7 +206,11 @@ def _generate_patch_record(
         "source": local_generator.source,
         "hardened": hardened,
         "patch": patch_ops,
+        "latency_ms": generation_latency_ms,
+        "total_latency_ms": total_latency_ms,
     }
+    if generation_usage and local_generator.source != "rules":
+        result["model_usage"] = generation_usage
     if errors:
         result["attempt_errors"] = errors
     return result
@@ -232,75 +258,13 @@ def _normalise_detection(record: Dict[str, Any], base_dir: Path) -> Dict[str, An
         else:
             raise typer.BadParameter("Detection must include manifest_yaml or manifest_path")
     original_policy = str(record["policy_id"]) if "policy_id" in record else ""
-    policy_id = _normalise_policy_id(original_policy)
+    policy_id = normalise_policy_id(original_policy)
     return {
         "id": str(record["id"]),
         "policy_id": policy_id,
         "violation_text": str(record["violation_text"]),
         "manifest_yaml": manifest_yaml,
     }
-
-
-def _normalise_policy_id(policy: str) -> str:
-    key = (policy or "").strip().lower()
-    mapping = {
-        "no_latest_tag": "no_latest_tag",
-        "latest-tag": "no_latest_tag",
-        "privileged-container": "no_privileged",
-        "privilege-escalation-container": "drop_capabilities",
-        "no_privileged": "no_privileged",
-        "no-read-only-root-fs": "read_only_root_fs",
-        "check-requests-limits": "set_requests_limits",
-        "unset-cpu-requirements": "set_requests_limits",
-        "unset-memory-requirements": "set_requests_limits",
-        "run-as-non-root": "run_as_non_root",
-        "check-runasnonroot": "run_as_non_root",
-        "allow-privilege-escalation": "no_allow_privilege_escalation",
-        "allow-privilege-escalation-container": "no_allow_privilege_escalation",
-        "hostnetwork": "no_host_network",
-        "host-network": "no_host_network",
-        "hostpid": "no_host_pid",
-        "host-pid": "no_host_pid",
-        "hostipc": "no_host_ipc",
-        "host-ipc": "no_host_ipc",
-        "dangerous-capabilities": "drop_capabilities",
-        "invalid-capabilities": "drop_capabilities",
-        "cap-sys-admin": "drop_cap_sys_admin",
-        "sys-admin-capability": "drop_cap_sys_admin",
-        "hostpath": "no_host_path",
-        "host-path": "no_host_path",
-        "hostpath-volume": "no_host_path",
-        "disallow-hostpath": "no_host_path",
-        "hostports": "no_host_ports",
-        "host-ports": "no_host_ports",
-        "host-port": "no_host_ports",
-        "disallow-hostports": "no_host_ports",
-        "run-as-user": "run_as_user",
-        "check-runasuser": "run_as_user",
-        "requires-runasuser": "run_as_user",
-        "seccomp": "enforce_seccomp",
-        "requires-seccomp": "enforce_seccomp",
-        "seccomp-profile": "enforce_seccomp",
-        "drop-capabilities": "drop_capabilities",
-        "linux-capabilities": "drop_capabilities",
-        "invalid-capabilities-set": "drop_capabilities",
-        "drop-net-raw-capability": "drop_capabilities",
-        "dangling-service": "dangling_service",
-        "non-existent-service-account": "non_existent_service_account",
-        "pdb-unhealthy-pod-eviction-policy": "pdb_unhealthy_eviction_policy",
-        "job-ttl-seconds-after-finished": "job_ttl_after_finished",
-        "unsafe-sysctls": "unsafe_sysctls",
-        "no-anti-affinity": "no_anti_affinity",
-        "docker-sock": "no_host_path",
-        "sensitive-host-mounts": "no_host_path",
-        "deprecated-service-account-field": "deprecated_service_account_field",
-        "env-var-secret": "env_var_secret",
-        "envvar-secret": "env_var_secret",
-        "liveness-port": "liveness_port",
-        "readiness-port": "readiness_port",
-        "startup-port": "startup_port",
-    }
-    return mapping.get(key, key)
 
 
 class _GeneratorWrapper:
@@ -552,6 +516,504 @@ def _merge_patch_ops(primary: List[Dict[str, Any]], guard: List[Dict[str, Any]])
     return merged
 
 
+def _patch_cronjob_defaults(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    kind = obj.get("kind")
+    if not isinstance(kind, str) or kind.lower() != "cronjob":
+        raise PatchError("not a CronJob resource")
+
+    spec = obj.get("spec")
+    if not isinstance(spec, dict):
+        raise PatchError("cronjob spec missing")
+
+    job_template = spec.get("jobTemplate")
+    if not isinstance(job_template, dict):
+        raise PatchError("cronjob jobTemplate missing")
+
+    ops: List[Dict[str, Any]] = []
+
+    schedule = spec.get("schedule")
+    if not isinstance(schedule, str) or not schedule.strip():
+        op = "replace" if "schedule" in spec else "add"
+        ops.append({"op": op, "path": "/spec/schedule", "value": "0 0 * * *"})
+
+    job_spec = job_template.get("spec") if isinstance(job_template.get("spec"), dict) else None
+    direct_template = job_template.get("template") if isinstance(job_template.get("template"), dict) else None
+
+    job_spec_mut: Optional[Dict[str, Any]] = job_spec.copy() if isinstance(job_spec, dict) else None
+    if direct_template is not None:
+        if job_spec_mut is None:
+            job_spec_mut = {"template": copy.deepcopy(direct_template)}
+            ops.append(
+                {
+                    "op": "add",
+                    "path": "/spec/jobTemplate/spec",
+                    "value": copy.deepcopy(job_spec_mut),
+                }
+            )
+        elif "template" not in job_spec_mut:
+            job_spec_mut = dict(job_spec_mut)
+            job_spec_mut["template"] = copy.deepcopy(direct_template)
+            ops.append(
+                {
+                    "op": "add",
+                    "path": "/spec/jobTemplate/spec/template",
+                    "value": copy.deepcopy(direct_template),
+                }
+            )
+        if "template" in job_template:
+            ops.append({"op": "remove", "path": "/spec/jobTemplate/template"})
+
+    template_obj: Optional[Dict[str, Any]] = None
+    updated_template = job_template.get("spec")
+    if isinstance(updated_template, dict) and isinstance(updated_template.get("template"), dict):
+        template_obj = updated_template["template"]
+    elif direct_template is not None:
+        template_obj = direct_template
+
+    if not isinstance(template_obj, dict):
+        raise PatchError("cronjob template unavailable")
+
+    template_spec = template_obj.get("spec") if isinstance(template_obj.get("spec"), dict) else None
+    if isinstance(template_spec, dict):
+        restart_policy = template_spec.get("restartPolicy")
+        if restart_policy not in {"OnFailure", "Never"}:
+            op = "replace" if "restartPolicy" in template_spec else "add"
+            ops.append(
+                {
+                    "op": op,
+                    "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+                    "value": "OnFailure",
+                }
+            )
+    else:
+        ops.append(
+            {
+                "op": "add",
+                "path": "/spec/jobTemplate/spec/template/spec",
+                "value": {"restartPolicy": "OnFailure"},
+            }
+        )
+
+    if not ops:
+        raise PatchError("cronjob already canonical")
+
+    return ops
+
+
+def _patch_cronjob_apiversion(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if obj.get("kind", "").lower() != "cronjob":
+        raise PatchError("not a CronJob resource")
+
+    api_version = obj.get("apiVersion")
+    if api_version == "batch/v1":
+        raise PatchError("cronjob API version already v1")
+
+    return [
+        {
+            "op": "replace" if api_version is not None else "add",
+            "path": "/apiVersion",
+            "value": "batch/v1",
+        }
+    ]
+
+
+def _patch_cronjob_ephemeral_metadata(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if obj.get("kind", "").lower() != "cronjob":
+        raise PatchError("not a CronJob resource")
+
+    spec = obj.get("spec")
+    job_template = spec.get("jobTemplate") if isinstance(spec, dict) else None
+    template_spec = None
+    if isinstance(job_template, dict):
+        jt_spec = job_template.get("spec")
+        if isinstance(jt_spec, dict):
+            template = jt_spec.get("template")
+            if isinstance(template, dict):
+                template_spec = template.get("spec")
+
+    if not isinstance(template_spec, dict):
+        raise PatchError("cronjob template spec missing")
+
+    volumes = template_spec.get("volumes")
+    if not isinstance(volumes, list):
+        raise PatchError("cronjob volumes unavailable")
+
+    ops: List[Dict[str, Any]] = []
+    base_path = "/spec/jobTemplate/spec/template/spec/volumes"
+    for idx, volume in enumerate(volumes):
+        if not isinstance(volume, dict):
+            continue
+        ephemeral = volume.get("ephemeral")
+        if not isinstance(ephemeral, dict):
+            continue
+        vct = ephemeral.get("volumeClaimTemplate")
+        if not isinstance(vct, dict):
+            continue
+        metadata = vct.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        if "clusterName" in metadata:
+            ops.append(
+                {
+                    "op": "remove",
+                    "path": f"{base_path}/{idx}/ephemeral/volumeClaimTemplate/metadata/clusterName",
+                }
+            )
+            remaining = dict(metadata)
+            remaining.pop("clusterName", None)
+            if not remaining:
+                ops.append(
+                    {
+                        "op": "remove",
+                        "path": f"{base_path}/{idx}/ephemeral/volumeClaimTemplate/metadata",
+                    }
+                )
+
+    if not ops:
+        raise PatchError("cronjob metadata already compliant")
+
+    return ops
+
+
+DNS_SUBDOMAIN_RE = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$")
+DNS_LABEL_RE = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+LABEL_VALUE_RE = re.compile(r"^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$")
+SECRET_KEY_RE = re.compile(r"^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$")
+PLACEHOLDER_PATTERN = re.compile(r"(\{\{[^}]+\}\}|\$\{[^}]+\}|<<[^>]+>>|__[^_]+__|\[\[[^\]]+\]\]|%%[^%]+%%)")
+RESOURCE_NAME_KEYS = (
+    "app.kubernetes.io/name",
+    "app.kubernetes.io/instance",
+    "app.kubernetes.io/component",
+    "job-name",
+    "app",
+    "name",
+)
+MEMORY_MULTIPLIERS = {
+    "Ei": 1024**6,
+    "Pi": 1024**5,
+    "Ti": 1024**4,
+    "Gi": 1024**3,
+    "Mi": 1024**2,
+    "Ki": 1024,
+    "E": 10**18,
+    "P": 10**15,
+    "T": 10**12,
+    "G": 10**9,
+    "M": 10**6,
+    "K": 10**3,
+}
+
+
+def _json_pointer_escape(token: str) -> str:
+    return token.replace("~", "~0").replace("/", "~1")
+
+
+def _looks_like_placeholder(value: str) -> bool:
+    return bool(PLACEHOLDER_PATTERN.search(value))
+
+
+def _sanitize_dns_label(value: str, default: str) -> str:
+    stripped = value.strip()
+    if stripped and DNS_LABEL_RE.match(stripped) and not _looks_like_placeholder(stripped):
+        return stripped
+    candidate = stripped.lower()
+    candidate = re.sub(r"[^a-z0-9-]+", "-", candidate)
+    candidate = re.sub(r"-{2,}", "-", candidate).strip("-")
+    if not candidate:
+        candidate = default
+    candidate = candidate[:63].strip("-")
+    if not candidate:
+        candidate = default
+    if not DNS_LABEL_RE.match(candidate):
+        return default
+    return candidate
+
+
+def _sanitize_dns_subdomain(value: str, default: str) -> str:
+    stripped = value.strip()
+    if stripped and DNS_SUBDOMAIN_RE.match(stripped) and not _looks_like_placeholder(stripped):
+        return stripped
+    candidate = stripped.lower()
+    candidate = re.sub(r"[^a-z0-9\.-]+", "-", candidate)
+    candidate = re.sub(r"-{2,}", "-", candidate).strip(".-")
+    if not candidate:
+        candidate = default
+    parts: List[str] = []
+    for part in candidate.split("."):
+        part = part.strip("-")
+        if not part:
+            continue
+        part = part[:63].strip("-")
+        if part:
+            parts.append(part)
+    if not parts:
+        parts = [default]
+    candidate = ".".join(parts)
+    if len(candidate) > 253:
+        candidate = candidate[:253].rstrip(".-")
+    if not candidate or not DNS_SUBDOMAIN_RE.match(candidate):
+        candidate = default
+    return candidate
+
+
+def _sanitize_generate_name(value: str) -> str:
+    stripped = value.strip()
+    if stripped.endswith("-") and DNS_LABEL_RE.match(stripped[:-1]) and not _looks_like_placeholder(stripped):
+        return stripped
+    base = _sanitize_dns_label(stripped.rstrip("-"), default="placeholder")
+    base = base[:62].rstrip("-")
+    if not base:
+        base = "placeholder"
+    return f"{base}-"
+
+
+def _sanitize_label_value(value: str) -> str:
+    stripped = value.strip()
+    if LABEL_VALUE_RE.match(stripped) and not _looks_like_placeholder(stripped):
+        return stripped
+    candidate = stripped.lower()
+    candidate = re.sub(r"[^a-z0-9_.-]+", "-", candidate)
+    candidate = re.sub(r"-{2,}", "-", candidate).strip("-")
+    if not candidate:
+        candidate = "placeholder"
+    if len(candidate) > 63:
+        candidate = candidate[:63].rstrip("-")
+    if not candidate or not LABEL_VALUE_RE.match(candidate):
+        candidate = "placeholder"
+    return candidate
+
+
+def _sanitize_secret_key(value: str) -> str:
+    stripped = value.strip()
+    if SECRET_KEY_RE.match(stripped) and not _looks_like_placeholder(stripped):
+        return stripped
+    candidate = stripped.lower()
+    candidate = re.sub(r"[^a-z0-9_.-]+", "_", candidate)
+    candidate = re.sub(r"_{2,}", "_", candidate).strip("_.")
+    if not candidate:
+        candidate = "value"
+    candidate = candidate[:253].strip("_.")
+    if not candidate or not SECRET_KEY_RE.match(candidate):
+        candidate = "value"
+    return candidate
+
+
+def _append_replace_op(ops: List[Dict[str, Any]], seen: set[str], path: str, value: Any) -> None:
+    json_path = path or "/"
+    if json_path in seen:
+        for entry in ops:
+            if entry["path"] == json_path:
+                entry["value"] = value
+                return
+    ops.append({"op": "replace", "path": json_path, "value": value})
+    seen.add(json_path)
+
+
+def _sanitize_placeholder_value(value: str, segments: Tuple[str, ...]) -> Optional[str]:
+    if not segments:
+        return None
+    key = segments[-1]
+    parent = segments[-2] if len(segments) >= 2 else ""
+    grandparent = segments[-3] if len(segments) >= 3 else ""
+    great_grandparent = segments[-4] if len(segments) >= 4 else ""
+
+    if parent == "metadata" and key == "namespace":
+        sanitized = _sanitize_dns_label(value, default="default")
+        return sanitized if sanitized != value else None
+    if parent == "metadata" and key == "name":
+        sanitized = _sanitize_dns_subdomain(value, default="placeholder")
+        return sanitized if sanitized != value else None
+    if parent == "metadata" and key == "generateName":
+        sanitized = _sanitize_generate_name(value)
+        return sanitized if sanitized != value else None
+    if parent in {"labels", "matchLabels"}:
+        sanitized = _sanitize_label_value(value)
+        return sanitized if sanitized != value else None
+    if len(segments) >= 4 and segments[-2] == "values" and segments[-4] == "matchExpressions":
+        sanitized = _sanitize_label_value(value)
+        return sanitized if sanitized != value else None
+    if key == "secretName":
+        sanitized = _sanitize_dns_subdomain(value, default="placeholder-secret")
+        return sanitized if sanitized != value else None
+    if parent in {"secretKeyRef", "secretRef"} and key == "name":
+        sanitized = _sanitize_dns_subdomain(value, default="placeholder-secret")
+        return sanitized if sanitized != value else None
+    if parent == "secretKeyRef" and key == "key":
+        sanitized = _sanitize_secret_key(value)
+        return sanitized if sanitized != value else None
+    if grandparent == "imagePullSecrets" and key == "name":
+        sanitized = _sanitize_dns_subdomain(value, default="placeholder-secret")
+        return sanitized if sanitized != value else None
+    return None
+
+
+def _collect_placeholder_sanitisation(
+    node: Any,
+    *,
+    path: str = "",
+    segments: Tuple[str, ...] = (),
+    ops: Optional[List[Dict[str, Any]]] = None,
+    seen: Optional[set[str]] = None,
+) -> List[Dict[str, Any]]:
+    if ops is None:
+        ops = []
+    if seen is None:
+        seen = set()
+    if isinstance(node, dict):
+        for key, value in node.items():
+            child_segments = segments + (key,)
+            escaped = _json_pointer_escape(key)
+            child_path = f"{path}/{escaped}" if path else f"/{escaped}"
+            if isinstance(value, str):
+                sanitized = _sanitize_placeholder_value(value, child_segments)
+                if sanitized is not None:
+                    _append_replace_op(ops, seen, child_path, sanitized)
+            else:
+                _collect_placeholder_sanitisation(value, path=child_path, segments=child_segments, ops=ops, seen=seen)
+    elif isinstance(node, list):
+        for idx, item in enumerate(node):
+            child_segments = segments + (str(idx),)
+            child_path = f"{path}/{idx}" if path else f"/{idx}"
+            if isinstance(item, str):
+                sanitized = _sanitize_placeholder_value(item, child_segments)
+                if sanitized is not None:
+                    _append_replace_op(ops, seen, child_path, sanitized)
+            else:
+                _collect_placeholder_sanitisation(item, path=child_path, segments=child_segments, ops=ops, seen=seen)
+    return ops
+
+
+def _sanitize_namespace(value: str) -> str:
+    return _sanitize_dns_label(value, default="default")
+
+
+def _patch_namespace_placeholders(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if not isinstance(obj, dict):
+        raise PatchError("resource manifest missing metadata map")
+    ops = _collect_placeholder_sanitisation(obj)
+    if not ops:
+        raise PatchError("no placeholders to sanitise")
+    return ops
+
+
+def _derive_resource_name(obj: Dict[str, Any]) -> str:
+    metadata = obj.get("metadata") if isinstance(obj, dict) else None
+    candidates: List[str] = []
+    if isinstance(metadata, dict):
+        existing = metadata.get("name")
+        if isinstance(existing, str) and existing.strip():
+            return _sanitize_dns_subdomain(existing, default="placeholder")
+        labels = metadata.get("labels")
+        if isinstance(labels, dict):
+            for key in RESOURCE_NAME_KEYS:
+                value = labels.get(key)
+                if isinstance(value, str) and value.strip():
+                    candidates.append(value)
+        annotations = metadata.get("annotations")
+        if isinstance(annotations, dict):
+            release = annotations.get("meta.helm.sh/release-name")
+            if isinstance(release, str) and release.strip():
+                candidates.append(release)
+        generate_name = metadata.get("generateName")
+        if isinstance(generate_name, str) and generate_name.strip():
+            candidates.append(generate_name.rstrip("-"))
+    spec_template_labels = _resolve_path(obj, "/spec/template/metadata/labels")
+    if isinstance(spec_template_labels, dict):
+        for key in RESOURCE_NAME_KEYS:
+            value = spec_template_labels.get(key)
+            if isinstance(value, str) and value.strip():
+                candidates.append(value)
+    kind = obj.get("kind") if isinstance(obj, dict) else None
+    if isinstance(kind, str) and kind.strip():
+        candidates.append(kind)
+    for candidate in candidates:
+        if isinstance(candidate, str) and candidate.strip() and not _looks_like_placeholder(candidate):
+            return _sanitize_dns_subdomain(candidate, default="placeholder")
+    return "placeholder"
+
+
+def _patch_missing_metadata_name(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    metadata = obj.get("metadata")
+    if not isinstance(metadata, dict):
+        raise PatchError("resource metadata missing")
+    current = metadata.get("name")
+    if isinstance(current, str) and current.strip():
+        raise PatchError("resource already named")
+    candidate = _derive_resource_name(obj)
+    op = "replace" if "name" in metadata else "add"
+    return [
+        {
+            "op": op,
+            "path": "/metadata/name",
+            "value": candidate,
+        }
+    ]
+
+
+def _patch_job_restart_policy(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if obj.get("kind", "").lower() != "job":
+        raise PatchError("not a Job resource")
+
+    spec = obj.get("spec")
+    if not isinstance(spec, dict):
+        raise PatchError("job spec missing")
+
+    template = spec.get("template")
+    if not isinstance(template, dict):
+        raise PatchError("job template missing")
+
+    template_spec = template.get("spec")
+    path_base = "/spec/template/spec"
+
+    if not isinstance(template_spec, dict):
+        return [
+            {
+                "op": "add",
+                "path": path_base,
+                "value": {"restartPolicy": "OnFailure"},
+            }
+        ]
+
+    restart_policy = template_spec.get("restartPolicy")
+    if restart_policy in {"OnFailure", "Never"}:
+        raise PatchError("restartPolicy already compliant")
+
+    op = "replace" if "restartPolicy" in template_spec else "add"
+    return [
+        {
+            "op": op,
+            "path": f"{path_base}/restartPolicy",
+            "value": "OnFailure",
+        }
+    ]
+
+
+def _patch_mount_propagation(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    ops: List[Dict[str, Any]] = []
+    for base_path, containers in _find_containers(obj):
+        for idx, container in enumerate(containers):
+            mounts = container.get("volumeMounts")
+            if not isinstance(mounts, list):
+                continue
+            for mount_index, mount in enumerate(mounts):
+                if not isinstance(mount, dict):
+                    continue
+                propagation = mount.get("mountPropagation")
+                if propagation == "Bidirectional" or (
+                    isinstance(propagation, str) and propagation not in {"", "HostToContainer", "None"}
+                ):
+                    ops.append(
+                        {
+                            "op": "replace",
+                            "path": f"{base_path}/{idx}/volumeMounts/{mount_index}/mountPropagation",
+                            "value": "HostToContainer",
+                        }
+                    )
+    if ops:
+        return ops
+    raise PatchError("no mount propagation adjustments required")
+
+
 def _patch_dangling_service(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     if obj.get("kind") != "Service":
         raise PatchError("dangling-service fix expects a Service resource")
@@ -681,6 +1143,81 @@ def _patch_deprecated_service_account_field(obj: Dict[str, Any]) -> List[Dict[st
     raise PatchError("no deprecated serviceAccount field found")
 
 
+def _patch_missing_volumes(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    claim_template_names: set[str] = set()
+    spec_root = obj.get("spec")
+    if isinstance(spec_root, dict):
+        templates = spec_root.get("volumeClaimTemplates")
+        if isinstance(templates, list):
+            for template in templates:
+                if not isinstance(template, dict):
+                    continue
+                metadata = template.get("metadata")
+                if isinstance(metadata, dict):
+                    template_name = metadata.get("name")
+                    if isinstance(template_name, str):
+                        claim_template_names.add(template_name)
+    missing_by_spec: Dict[str, set[str]] = {}
+    for base_path, containers in _find_containers(obj):
+        spec_path = base_path.rsplit("/", 1)[0]
+        spec_obj = _resolve_path(obj, spec_path)
+        if not isinstance(spec_obj, dict):
+            continue
+        volumes = spec_obj.get("volumes")
+        existing = {entry.get("name") for entry in volumes} if isinstance(volumes, list) else set()
+        existing = {name for name in existing if isinstance(name, str)}
+        existing |= claim_template_names
+        missing = missing_by_spec.setdefault(spec_path, set())
+        for container in containers:
+            volume_mounts = container.get("volumeMounts")
+            if not isinstance(volume_mounts, list):
+                continue
+            for mount in volume_mounts:
+                if not isinstance(mount, dict):
+                    continue
+                mount_name = mount.get("name")
+                if not isinstance(mount_name, str):
+                    continue
+                if mount_name in existing:
+                    continue
+                missing.add(mount_name)
+    ops: List[Dict[str, Any]] = []
+    for spec_path, names in missing_by_spec.items():
+        if not names:
+            continue
+        spec_obj = _resolve_path(obj, spec_path)
+        if not isinstance(spec_obj, dict):
+            continue
+        volumes_path = f"{spec_path}/volumes"
+        volumes_list = spec_obj.get("volumes")
+        if isinstance(volumes_list, list):
+            existing_names = {
+                entry.get("name")
+                for entry in volumes_list
+                if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+            }
+        else:
+            existing_names = set()
+        existing_names |= claim_template_names
+        additions: List[Dict[str, Any]] = []
+        for name in sorted(names):
+            sanitized = _sanitize_dns_label(name, default="volume")
+            if sanitized in existing_names:
+                continue
+            additions.append({"name": sanitized, "emptyDir": {}})
+            existing_names.add(sanitized)
+        if not additions:
+            continue
+        if isinstance(volumes_list, list):
+            for entry in additions:
+                ops.append({"op": "add", "path": f"{volumes_path}/-", "value": entry})
+        else:
+            ops.append({"op": "add", "path": volumes_path, "value": additions})
+    if ops:
+        return ops
+    raise PatchError("no missing volumes detected")
+
+
 def _build_pod_anti_affinity(labels: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(labels, dict):
         return None
@@ -765,6 +1302,7 @@ def _derive_secret_ref(env_name: str) -> Tuple[str, str]:
 def _patch_env_var_secret(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     containers_info = _find_containers(obj)
     secret_candidates = _collect_secret_names(obj)
+    ops: List[Dict[str, Any]] = []
     for base_path, containers in containers_info:
         for idx, container in enumerate(containers):
             env_list = container.get("env")
@@ -784,29 +1322,39 @@ def _patch_env_var_secret(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
                     continue
                 spec_path = base_path.rsplit("/", 1)[0]
                 spec_obj = _resolve_path(obj, spec_path)
+                value_hint = env_entry.get("value") if isinstance(env_entry.get("value"), str) else None
+                if isinstance(existing_value_from, dict):
+                    config_map_ref = existing_value_from.get("configMapKeyRef")
+                    if isinstance(config_map_ref, dict):
+                        value_hint = value_hint or config_map_ref.get("name") or config_map_ref.get("key")
+                    field_ref = existing_value_from.get("fieldRef")
+                    if isinstance(field_ref, dict):
+                        value_hint = value_hint or field_ref.get("fieldPath")
                 secret_name, secret_key = _select_secret_reference(
                     env_name=name,
-                    env_value=env_entry.get("value"),
+                    env_value=value_hint,
                     spec=spec_obj,
                     container=container,
                     available_names=secret_candidates,
                 )
-                replacement = {
-                    "name": name,
-                    "valueFrom": {
-                        "secretKeyRef": {
-                            "name": secret_name,
-                            "key": secret_key,
-                        }
-                    },
+                replacement = dict(env_entry)
+                replacement.pop("value", None)
+                replacement["valueFrom"] = {
+                    "secretKeyRef": {
+                        "name": secret_name,
+                        "key": secret_key,
+                    }
                 }
-                return [
+                ops.append(
                     {
                         "op": "replace",
                         "path": f"{base_path}/{idx}/env/{env_idx}",
                         "value": replacement,
                     }
-                ]
+                )
+                secret_candidates.add(secret_name)
+    if ops:
+        return ops
     raise PatchError("no secret-like environment variable found")
 
 
@@ -832,6 +1380,79 @@ def _lookup_port_by_name(ports: Any, name: str) -> Optional[int]:
         if entry.get("name") == name and isinstance(entry.get("containerPort"), int):
             return entry["containerPort"]
     return None
+
+
+def _parse_cpu_quantity(value: Any) -> Optional[float]:
+    if not isinstance(value, str):
+        return None
+    candidate = value.strip()
+    try:
+        if candidate.endswith("m"):
+            return float(candidate[:-1]) / 1000.0
+        return float(candidate)
+    except ValueError:
+        return None
+
+
+def _parse_memory_quantity(value: Any) -> Optional[float]:
+    if not isinstance(value, str):
+        return None
+    candidate = value.strip()
+    for suffix in sorted(MEMORY_MULTIPLIERS, key=len, reverse=True):
+        if candidate.endswith(suffix):
+            number = candidate[: -len(suffix)]
+            try:
+                return float(number) * MEMORY_MULTIPLIERS[suffix]
+            except ValueError:
+                return None
+    try:
+        return float(candidate)
+    except ValueError:
+        return None
+
+
+def _requests_exceed_limit(resource: str, request_value: Any, limit_value: Any) -> bool:
+    if resource == "cpu":
+        req = _parse_cpu_quantity(request_value)
+        limit = _parse_cpu_quantity(limit_value)
+    else:
+        req = _parse_memory_quantity(request_value)
+        limit = _parse_memory_quantity(limit_value)
+    if req is None or limit is None:
+        return False
+    return req > limit + 1e-9
+
+
+def _patch_requests_within_limits(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    ops: List[Dict[str, Any]] = []
+    for base_path, containers in _find_containers(obj):
+        for idx, container in enumerate(containers):
+            resources = container.get("resources")
+            if not isinstance(resources, dict):
+                continue
+            limits = resources.get("limits")
+            requests = resources.get("requests")
+            if not isinstance(limits, dict) or not isinstance(requests, dict):
+                continue
+            for resource in ("cpu", "memory", "ephemeral-storage"):
+                if resource not in limits or resource not in requests:
+                    continue
+                limit_value = limits.get(resource)
+                request_value = requests.get(resource)
+                if not isinstance(limit_value, str) or not isinstance(request_value, str):
+                    continue
+                if not _requests_exceed_limit("cpu" if resource == "cpu" else "memory", request_value, limit_value):
+                    continue
+                ops.append(
+                    {
+                        "op": "replace",
+                        "path": f"{base_path}/{idx}/resources/requests/{resource}",
+                        "value": limit_value,
+                    }
+                )
+    if ops:
+        return ops
+    raise PatchError("no request/limit adjustments needed")
 
 
 def _probe_port_exists(ports: Any, target: int, port_name: Optional[str]) -> bool:
@@ -896,9 +1517,18 @@ def _augment_with_guardrails(obj: Dict[str, Any], ops: List[Dict[str, Any]], pol
     manifest_for_guards = simulated if simulated is not None else obj
 
     guard_strategies = [
+        ("", _patch_cronjob_defaults),
+        ("", _patch_cronjob_apiversion),
+        ("", _patch_cronjob_ephemeral_metadata),
+        ("", _patch_namespace_placeholders),
+        ("", _patch_missing_metadata_name),
+        ("", _patch_missing_volumes),
+        ("", _patch_mount_propagation),
+        ("", _patch_job_restart_policy),
         ("drop_capabilities", _patch_drop_capabilities),
         ("no_latest_tag", _patch_no_latest),
         ("set_requests_limits", _patch_set_requests_limits),
+        ("", _patch_requests_within_limits),
         ("run_as_non_root", _patch_run_as_non_root),
         ("no_allow_privilege_escalation", _patch_no_allow_privilege_escalation),
         ("read_only_root_fs", _patch_read_only_root_fs),
@@ -1224,16 +1854,20 @@ def _patch_set_requests_limits(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
             if requests is None:
                 missing_requests = {"cpu": "100m", "memory": "128Mi"}
             else:
-                if "cpu" not in requests:
+                cpu_val = requests.get("cpu")
+                if not isinstance(cpu_val, str) or not cpu_val.strip():
                     missing_requests["cpu"] = "100m"
-                if "memory" not in requests:
+                memory_val = requests.get("memory")
+                if not isinstance(memory_val, str) or not memory_val.strip():
                     missing_requests["memory"] = "128Mi"
             if limits is None:
                 missing_limits = {"cpu": "500m", "memory": "256Mi"}
             else:
-                if "cpu" not in limits:
+                cpu_limit = limits.get("cpu")
+                if not isinstance(cpu_limit, str) or not cpu_limit.strip():
                     missing_limits["cpu"] = "500m"
-                if "memory" not in limits:
+                memory_limit = limits.get("memory")
+                if not isinstance(memory_limit, str) or not memory_limit.strip():
                     missing_limits["memory"] = "256Mi"
 
             if missing_requests and missing_limits:
@@ -1545,6 +2179,76 @@ def _find_containers(obj: Dict[str, Any]) -> List[tuple[str, List[Dict[str, Any]
 
     visit(obj.get("spec"), "/spec")
     return results
+
+
+def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
+    records: List[Dict[str, Any]] = []
+    latencies: List[int] = []
+    tokens_prompt: List[float] = []
+    tokens_completion: List[float] = []
+    tokens_total: List[float] = []
+
+    for entry in patches:
+        record = {
+            "id": entry.get("id"),
+            "policy_id": entry.get("policy_id"),
+            "source": entry.get("source"),
+            "latency_ms": entry.get("total_latency_ms"),
+        }
+        latency = entry.get("total_latency_ms")
+        if isinstance(latency, (int, float)):
+            latencies.append(int(latency))
+        usage = entry.get("model_usage") if isinstance(entry.get("model_usage"), dict) else None
+        if isinstance(usage, dict):
+            prompt = usage.get("prompt_tokens")
+            completion = usage.get("completion_tokens")
+            total = usage.get("total_tokens")
+            if isinstance(prompt, (int, float)):
+                record["prompt_tokens"] = prompt
+                tokens_prompt.append(float(prompt))
+            if isinstance(completion, (int, float)):
+                record["completion_tokens"] = completion
+                tokens_completion.append(float(completion))
+            if isinstance(total, (int, float)):
+                record["total_tokens"] = total
+                tokens_total.append(float(total))
+        records.append(record)
+
+    summary: Dict[str, Any] = {"count": len(records)}
+    if latencies:
+        summary["latency_ms"] = {
+            "mean": statistics.mean(latencies),
+            "p95": _percentile(latencies, 95),
+            "max": max(latencies),
+        }
+    if tokens_total:
+        summary["tokens"] = {
+            "prompt": sum(tokens_prompt),
+            "completion": sum(tokens_completion),
+            "total": sum(tokens_total),
+        }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"records": records, "summary": summary}
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _percentile(values: List[int], percentile: float) -> float:
+    if not values:
+        return 0.0
+    if not 0 <= percentile <= 100:
+        raise ValueError("percentile must be between 0 and 100")
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return float(ordered[0])
+    rank = (len(ordered) - 1) * (percentile / 100.0)
+    lower = math.floor(rank)
+    upper = math.ceil(rank)
+    if lower == upper:
+        return float(ordered[int(rank)])
+    lower_value = ordered[lower]
+    upper_value = ordered[upper]
+    return float(lower_value + (upper_value - lower_value) * (rank - lower))
 
 
 GUIDANCE_DIR = Path(__file__).resolve().parents[2] / "docs" / "policy_guidance"

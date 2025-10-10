@@ -7,9 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import time
+
 import jsonpatch
 import yaml
 
+from src.common.policy_ids import normalise_policy_id
 from src.detector.detector import Detector
 from src.proposer.guards import PatchError
 
@@ -23,6 +26,8 @@ class VerificationResult:
     patched_yaml: Optional[str]
     errors: List[str]
     ok_rescan: bool = True
+    latency_ms: Optional[int] = None
+    kubectl_ms: Optional[int] = None
 
     @property
     def accepted(self) -> bool:
@@ -55,6 +60,7 @@ class Verifier:
         policy_id: str,
     ) -> VerificationResult:
         errors: List[str] = []
+        verify_start = time.perf_counter()
         try:
             base_obj = self._load_manifest(manifest_yaml)
         except PatchError as exc:
@@ -73,7 +79,7 @@ class Verifier:
         ok_safety, safety_errors = self._check_safety(patched_obj, policy_id)
         errors.extend(safety_errors)
 
-        ok_schema, schema_error = self._kubectl_dry_run(patched_yaml)
+        ok_schema, schema_error, kubectl_ms = self._kubectl_dry_run(patched_yaml)
         if not ok_schema:
             if schema_error:
                 errors.append(f"kubectl dry-run failed: {schema_error}")
@@ -96,6 +102,8 @@ class Verifier:
             patched_yaml=patched_yaml if ok_schema and ok_policy and ok_safety and ok_rescan else None,
             errors=errors,
             ok_rescan=ok_rescan,
+            latency_ms=int((time.perf_counter() - verify_start) * 1000),
+            kubectl_ms=kubectl_ms,
         )
 
     def _load_manifest(self, manifest_yaml: str) -> Dict[str, Any]:
@@ -118,7 +126,8 @@ class Verifier:
         except Exception as exc:  # pragma: no cover - unexpected
             raise PatchError(str(exc)) from exc
 
-    def _kubectl_dry_run(self, manifest_yaml: str) -> Tuple[bool, Optional[str]]:
+    def _kubectl_dry_run(self, manifest_yaml: str) -> Tuple[bool, Optional[str], int]:
+        start = time.perf_counter()
         try:
             completed = subprocess.run(
                 [self.kubectl_cmd, "apply", "-f", "-", "--dry-run=server"],
@@ -129,20 +138,20 @@ class Verifier:
             )
         except FileNotFoundError:
             message = "kubectl executable not found"
-            return (not self.require_kubectl, message if self.require_kubectl else None)
+            return (not self.require_kubectl, message if self.require_kubectl else None, int((time.perf_counter() - start) * 1000))
         except subprocess.CalledProcessError as exc:
             stderr = (exc.stderr or b"").decode("utf-8", errors="ignore").strip()
             stdout = (exc.stdout or b"").decode("utf-8", errors="ignore").strip()
             detail = stderr or stdout or str(exc)
             if self.require_kubectl:
-                return (False, detail)
-            return (True, None)
+                return (False, detail, int((time.perf_counter() - start) * 1000))
+            return (True, None, int((time.perf_counter() - start) * 1000))
         except Exception as exc:  # pragma: no cover - unexpected
             detail = str(exc)
             if self.require_kubectl:
-                return (False, detail)
-            return (True, None)
-        return (completed.returncode == 0, None)
+                return (False, detail, int((time.perf_counter() - start) * 1000))
+            return (True, None, int((time.perf_counter() - start) * 1000))
+        return (completed.returncode == 0, None, int((time.perf_counter() - start) * 1000))
 
     def _check_policy(self, policy_id: str, manifest: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors: List[str] = []
@@ -160,6 +169,48 @@ class Verifier:
                 security = container.get("securityContext")
                 if isinstance(security, dict) and security.get("privileged") is True:
                     errors.append("container remains privileged")
+            return (not errors, errors)
+
+        if policy_id == "read_only_root_fs":
+            for container in containers:
+                security = container.get("securityContext")
+                if isinstance(security, dict):
+                    if security.get("readOnlyRootFilesystem") is not True:
+                        errors.append("readOnlyRootFilesystem not enforced")
+                else:
+                    errors.append("securityContext missing for container")
+            return (not errors, errors)
+
+        if policy_id == "run_as_non_root":
+            for container in containers:
+                security = container.get("securityContext") if isinstance(container, dict) else None
+                run_as_non_root = security.get("runAsNonRoot") if isinstance(security, dict) else None
+                run_as_user = security.get("runAsUser") if isinstance(security, dict) else None
+                if run_as_non_root is True:
+                    continue
+                if isinstance(run_as_user, int) and run_as_user != 0:
+                    continue
+                errors.append("container still permitted to run as root")
+            return (not errors, errors)
+
+        if policy_id == "set_requests_limits":
+            for container in containers:
+                resources = container.get("resources") if isinstance(container, dict) else None
+                if not isinstance(resources, dict):
+                    errors.append("resources block missing for container")
+                    continue
+                requests = resources.get("requests")
+                limits = resources.get("limits")
+                for scope, block in (("requests", requests), ("limits", limits)):
+                    if not isinstance(block, dict):
+                        errors.append(f"{scope} missing for container")
+                        continue
+                    cpu = block.get("cpu")
+                    memory = block.get("memory")
+                    if not isinstance(cpu, str) or not cpu.strip():
+                        errors.append(f"{scope}.cpu missing or empty")
+                    if not isinstance(memory, str) or not memory.strip():
+                        errors.append(f"{scope}.memory missing or empty")
             return (not errors, errors)
 
         if policy_id == "no_host_path":
@@ -360,7 +411,10 @@ class Verifier:
     def _check_safety(self, manifest: Dict[str, Any], policy_id: str) -> Tuple[bool, List[str]]:
         errors: List[str] = []
         containers = self._collect_containers(manifest)
-        if not containers:
+        init_containers = self._collect_containers(manifest, container_types=("initContainers",))
+        ephemeral_containers = self._collect_containers(manifest, container_types=("ephemeralContainers",))
+
+        if not containers and not init_containers and not ephemeral_containers:
             allowed = {
                 "dangling_service",
                 "non_existent_service_account",
@@ -370,11 +424,11 @@ class Verifier:
                 "no_anti_affinity",
                 "job_ttl_after_finished",
             }
-            if self._normalise_policy_id(policy_id) not in allowed:
+            if normalise_policy_id(policy_id) not in allowed:
                 errors.append("no containers found in manifest")
                 return (False, errors)
             return (True, errors)
-        for container in containers:
+        for container in containers + init_containers + ephemeral_containers:
             image = container.get("image")
             if not isinstance(image, str) or not image.strip():
                 errors.append("container image missing or empty")
@@ -383,15 +437,21 @@ class Verifier:
                 errors.append("privileged container detected")
         return (not errors, errors)
 
-    def _collect_containers(self, manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _collect_containers(
+        self,
+        manifest: Dict[str, Any],
+        *,
+        container_types: Tuple[str, ...] = ("containers", "initContainers", "ephemeralContainers"),
+    ) -> List[Dict[str, Any]]:
         containers: List[Dict[str, Any]] = []
 
         def visit(spec: Any) -> None:
             if not isinstance(spec, dict):
                 return
-            raw_containers = spec.get("containers")
-            if isinstance(raw_containers, list):
-                containers.extend([c for c in raw_containers if isinstance(c, dict)])
+            for ctype in container_types:
+                raw_containers = spec.get(ctype)
+                if isinstance(raw_containers, list):
+                    containers.extend([c for c in raw_containers if isinstance(c, dict)])
             template = spec.get("template")
             if isinstance(template, dict):
                 visit(template.get("spec"))
@@ -501,62 +561,12 @@ class Verifier:
                 policies_dir=self.policies_dir,
             )
             results = detector.detect([Path(tmp.name)])
-            target_norm = self._normalise_policy_id(targeted_policy)
+            target_norm = normalise_policy_id(targeted_policy)
             for r in results:
                 rule = (r.rule or "").strip().lower() if r.rule else ""
-                if self._normalise_policy_id(rule) == target_norm:
+                if normalise_policy_id(rule) == target_norm:
                     return False
             return True
-
-    @staticmethod
-    def _normalise_policy_id(policy: str) -> str:
-        key = (policy or "").strip().lower()
-        mapping = {
-            "no_latest_tag": "no_latest_tag",
-            "latest-tag": "no_latest_tag",
-            "privileged-container": "no_privileged",
-            "privilege-escalation-container": "drop_capabilities",
-            "no_privileged": "no_privileged",
-            "no-read-only-root-fs": "read_only_root_fs",
-            "check-requests-limits": "set_requests_limits",
-            "unset-cpu-requirements": "set_requests_limits",
-            "unset-memory-requirements": "set_requests_limits",
-            "run-as-non-root": "run_as_non_root",
-            "check-runasnonroot": "run_as_non_root",
-            "hostpath": "no_host_path",
-            "host-path": "no_host_path",
-            "hostpath-volume": "no_host_path",
-            "disallow-hostpath": "no_host_path",
-            "hostports": "no_host_ports",
-            "host-port": "no_host_ports",
-            "host-ports": "no_host_ports",
-            "disallow-hostports": "no_host_ports",
-            "run-as-user": "run_as_user",
-            "check-runasuser": "run_as_user",
-            "requires-runasuser": "run_as_user",
-            "seccomp": "enforce_seccomp",
-            "seccomp-profile": "enforce_seccomp",
-            "requires-seccomp": "enforce_seccomp",
-            "drop-capabilities": "drop_capabilities",
-            "linux-capabilities": "drop_capabilities",
-            "invalid-capabilities": "drop_capabilities",
-            "drop-net-raw-capability": "drop_capabilities",
-            "cap-sys-admin": "drop_cap_sys_admin",
-            "sys-admin-capability": "drop_cap_sys_admin",
-            "dangling-service": "dangling_service",
-            "non-existent-service-account": "non_existent_service_account",
-            "pdb-unhealthy-pod-eviction-policy": "pdb_unhealthy_eviction_policy",
-            "job-ttl-seconds-after-finished": "job_ttl_after_finished",
-            "unsafe-sysctls": "unsafe_sysctls",
-            "no-anti-affinity": "no_anti_affinity",
-            "deprecated-service-account-field": "deprecated_service_account_field",
-            "env-var-secret": "env_var_secret",
-            "envvar-secret": "env_var_secret",
-            "liveness-port": "liveness_port",
-            "readiness-port": "readiness_port",
-            "startup-port": "startup_port",
-        }
-        return mapping.get(key, key)
 
 
 __all__ = ["Verifier", "VerificationResult"]

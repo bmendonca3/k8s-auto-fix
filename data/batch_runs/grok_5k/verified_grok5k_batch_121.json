@@ -7,7 +7,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    env: test\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    imagePullPolicy: IfNotPresent\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    env: test\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    imagePullPolicy: IfNotPresent\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -20,7 +20,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"nginx\" is invalid: spec.template.metadata.labels: Invalid value: null: `selector` does not match template `labels`"
     ]
   },
   {
@@ -33,7 +33,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"nginx\" is invalid: spec.template.metadata.labels: Invalid value: null: `selector` does not match template `labels`"
     ]
   },
   {
@@ -46,7 +46,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"nginx\" is invalid: spec.template.metadata.labels: Invalid value: null: `selector` does not match template `labels`"
     ]
   },
   {
@@ -59,73 +59,63 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"nginx\" is invalid: spec.template.metadata.labels: Invalid value: null: `selector` does not match template `labels`"
     ]
   },
   {
     "id": "04846",
     "policy_id": "no_latest_tag",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: etcd-job\nspec:\n  template:\n    metadata:\n      name: etcd-job\n    spec:\n      containers:\n      - name: etcd-job\n        image: tenstartups/etcdctl:stable\n        env:\n        - name: ETCDCTL_ENDPOINT\n          value: http://example-etcd-cluster-client-service:2379\n        command:\n        - etcdctl\n        - mkdir\n        - pod-list\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "04847",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: etcd-job\nspec:\n  template:\n    metadata:\n      name: etcd-job\n    spec:\n      containers:\n      - name: etcd-job\n        image: tenstartups/etcdctl:stable\n        env:\n        - name: ETCDCTL_ENDPOINT\n          value: http://example-etcd-cluster-client-service:2379\n        command:\n        - etcdctl\n        - mkdir\n        - pod-list\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "04848",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: etcd-job\nspec:\n  template:\n    metadata:\n      name: etcd-job\n    spec:\n      containers:\n      - name: etcd-job\n        image: tenstartups/etcdctl:stable\n        env:\n        - name: ETCDCTL_ENDPOINT\n          value: http://example-etcd-cluster-client-service:2379\n        command:\n        - etcdctl\n        - mkdir\n        - pod-list\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "04849",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: etcd-job\nspec:\n  template:\n    metadata:\n      name: etcd-job\n    spec:\n      containers:\n      - name: etcd-job\n        image: tenstartups/etcdctl:stable\n        env:\n        - name: ETCDCTL_ENDPOINT\n          value: http://example-etcd-cluster-client-service:2379\n        command:\n        - etcdctl\n        - mkdir\n        - pod-list\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "04850",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: etcd-job\nspec:\n  template:\n    metadata:\n      name: etcd-job\n    spec:\n      containers:\n      - name: etcd-job\n        image: tenstartups/etcdctl:stable\n        env:\n        - name: ETCDCTL_ENDPOINT\n          value: http://example-etcd-cluster-client-service:2379\n        command:\n        - etcdctl\n        - mkdir\n        - pod-list\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "04851",
@@ -135,7 +125,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources: {}\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -146,7 +136,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources: {}\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -157,7 +147,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources:\n          limits:\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -168,7 +158,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: paymentservice\n  labels:\n    app: paymentservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: paymentservice\n  template:\n    metadata:\n      labels:\n        app: paymentservice\n    spec:\n      containers:\n      - name: paymentservice\n        image: puzyrevyaroslav/hipster_frontend:v0.0.2\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        env:\n        - name: PORT\n          value: '8080'\n        - name: PRODUCT_CATALOG_SERVICE_ADDR\n          value: productcatalogservice:3550\n        - name: CURRENCY_SERVICE_ADDR\n          value: currencyservice:7000\n        - name: CART_SERVICE_ADDR\n          value: cartservice:7070\n        - name: RECOMMENDATION_SERVICE_ADDR\n          value: recommendationservice:8080\n        - name: SHIPPING_SERVICE_ADDR\n          value: shippingservice:50051\n        - name: CHECKOUT_SERVICE_ADDR\n          value: checkoutservice:5050\n        - name: AD_SERVICE_ADDR\n          value: adservice:9555\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -181,7 +171,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -194,7 +184,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -207,7 +197,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -220,7 +210,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -233,7 +223,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -246,7 +236,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -259,7 +249,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -272,7 +262,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -285,7 +275,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -298,7 +288,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -311,7 +301,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -324,7 +314,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -337,7 +327,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -350,7 +340,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The StatefulSet \"mysql\" is invalid: \n* spec.template.spec.containers[0].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.containers[0].resources.requests: Invalid value: \"1Gi\": must be less than or equal to memory limit of 256Mi\n* spec.template.spec.containers[1].volumeMounts[0].name: Not found: \"data\"\n* spec.template.spec.initContainers[1].volumeMounts[0].name: Not found: \"data\""
     ]
   },
   {
@@ -361,7 +351,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
     "errors": []
   },
   {
@@ -372,7 +362,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n",
     "errors": []
   },
   {
@@ -383,7 +373,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n      securityContext:\n        runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -394,7 +384,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
     "errors": []
   },
   {
@@ -405,98 +395,84 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: discord-voice-log-bot-deployment\n  labels:\n    app: discord-voice-log-bot\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: discord-voice-log-bot\n  template:\n    metadata:\n      labels:\n        app: discord-voice-log-bot\n    spec:\n      containers:\n      - name: discord-voice-log-bot\n        image: quay.io/satackey/discord-voice-log-bot:stable\n        volumeMounts:\n        - name: bot-config\n          mountPath: /app/configs\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: bot-config\n        secret:\n          secretName: discord-voice-log-bot-secret\n          items:\n          - key: config\n            path: config.ini\n",
     "errors": []
   },
   {
     "id": "04874",
     "policy_id": "no_latest_tag",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "04875",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "04876",
     "policy_id": "drop_capabilities",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "04877",
     "policy_id": "no_privileged",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "04878",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n      securityContext:\n        runAsNonRoot: true\n",
+    "errors": []
   },
   {
     "id": "04879",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "04880",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: controller-manager\n  namespace: system\n  labels:\n    control-plane: controller-manager\nspec:\n  selector:\n    matchLabels:\n      control-plane: controller-manager\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        control-plane: controller-manager\n    spec:\n      containers:\n      - command:\n        - /manager\n        args:\n        - --leader-elect\n        - --metrics-bind-addr=127.0.0.1:8080\n        - --feature-gates=MachinePool=false\n        image: controller:stable\n        name: manager\n        env:\n        - name: NO_PROXY\n          value: 127.0.0.1,localhost\n        ports:\n        - containerPort: 9440\n          name: healthz\n          protocol: TCP\n        readinessProbe:\n          httpGet:\n            path: /readyz\n            port: healthz\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n        volumeMounts:\n        - mountPath: /var/run/docker.sock\n          name: dockersock\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      serviceAccountName: manager\n      volumes:\n      - name: dockersock\n        emptyDir: {}\n",
+    "errors": []
   }
 ]

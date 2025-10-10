@@ -9,6 +9,13 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
         "value": {
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
           "runAsNonRoot": true,
           "privileged": false,
           "capabilities": {
@@ -21,7 +28,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -52,8 +60,31 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 578,
+      "completion_tokens": 43,
+      "total_tokens": 1305,
+      "prompt_tokens_details": {
+        "text_tokens": 578,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 684,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03202",
@@ -64,11 +95,113 @@
       {
         "op": "replace",
         "path": "/spec/jobTemplate/template/spec/containers/0/image",
-        "value": "funkypenguin/grinpool-services:stable"
+        "value": "funkypenguin/grinpool-services:v1.0"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        }
       },
       {
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "value": "funkypenguin/grinpool-services:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "blockvalidator",
+                  "image": "funkypenguin/grinpool-services:stable",
+                  "command": [
+                    "/usr/local/bin/blockValidator.py"
+                  ],
+                  "env": [
+                    {
+                      "name": "MYSQL_ROOT_PASSWORD",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "mysql-pass",
+                          "key": "password"
+                        }
+                      }
+                    }
+                  ],
+                  "securityContext": {
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "privileged": false,
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext",
         "value": {
           "capabilities": {
             "drop": [
@@ -81,12 +214,14 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -100,15 +235,57 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/privileged",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 463,
+      "completion_tokens": 165,
+      "total_tokens": 2782,
+      "prompt_tokens_details": {
+        "text_tokens": 463,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 181
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2154,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03203",
@@ -120,19 +297,25 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "readOnlyRootFilesystem": true,
-          "privileged": false,
+          "allowPrivilegeEscalation": false,
           "capabilities": {
             "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
+              "ALL"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false
         }
       },
       {
@@ -147,7 +330,83 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "blockvalidator",
+                  "image": "funkypenguin/grinpool-services:stable",
+                  "command": [
+                    "/usr/local/bin/blockValidator.py"
+                  ],
+                  "env": [
+                    {
+                      "name": "MYSQL_ROOT_PASSWORD",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "mysql-pass",
+                          "key": "password"
+                        }
+                      }
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -161,15 +420,52 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "replace",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "funkypenguin/grinpool-services:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 498,
+      "completion_tokens": 96,
+      "total_tokens": 2029,
+      "prompt_tokens_details": {
+        "text_tokens": 498,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 194
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1435,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03204",
@@ -179,21 +475,17 @@
     "patch": [
       {
         "op": "add",
+        "path": "/spec/jobTemplate/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
           "runAsNonRoot": true,
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -208,7 +500,83 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "blockvalidator",
+                  "image": "funkypenguin/grinpool-services:stable",
+                  "command": [
+                    "/usr/local/bin/blockValidator.py"
+                  ],
+                  "env": [
+                    {
+                      "name": "MYSQL_ROOT_PASSWORD",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "mysql-pass",
+                          "key": "password"
+                        }
+                      }
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -222,15 +590,52 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "replace",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "funkypenguin/grinpool-services:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 505,
+      "completion_tokens": 42,
+      "total_tokens": 1714,
+      "prompt_tokens_details": {
+        "text_tokens": 505,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 194
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1167,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03205",
@@ -256,18 +661,7 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -277,7 +671,83 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "blockvalidator",
+                  "image": "funkypenguin/grinpool-services:stable",
+                  "command": [
+                    "/usr/local/bin/blockValidator.py"
+                  ],
+                  "env": [
+                    {
+                      "name": "MYSQL_ROOT_PASSWORD",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "mysql-pass",
+                          "key": "password"
+                        }
+                      }
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -291,15 +761,43 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "replace",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "funkypenguin/grinpool-services:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 536,
+      "completion_tokens": 81,
+      "total_tokens": 1051,
+      "prompt_tokens_details": {
+        "text_tokens": 536,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 194
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 434,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03206",
@@ -311,13 +809,13 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/resources",
         "value": {
-          "requests": {
-            "cpu": "100m",
-            "memory": "128Mi"
-          },
           "limits": {
             "cpu": "500m",
             "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
           }
         }
       },
@@ -325,18 +823,7 @@
         "op": "add",
         "path": "/spec/jobTemplate/template/spec/containers/0/securityContext",
         "value": {
-          "privileged": false,
-          "capabilities": {
-            "drop": [
-              "NET_RAW",
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_MODULE",
-              "SYS_PTRACE",
-              "SYS_CHROOT"
-            ]
-          },
-          "allowPrivilegeEscalation": false
+          "privileged": false
         }
       },
       {
@@ -346,7 +833,83 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/capabilities",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "blockvalidator",
+                  "image": "funkypenguin/grinpool-services:stable",
+                  "command": [
+                    "/usr/local/bin/blockValidator.py"
+                  ],
+                  "env": [
+                    {
+                      "name": "MYSQL_ROOT_PASSWORD",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "mysql-pass",
+                          "key": "password"
+                        }
+                      }
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
             "NET_RAW",
@@ -360,15 +923,43 @@
       },
       {
         "op": "add",
-        "path": "/spec/jobTemplate/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
         "op": "replace",
-        "path": "/spec/jobTemplate/template/spec/containers/0/image",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/image",
         "value": "funkypenguin/grinpool-services:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 536,
+      "completion_tokens": 81,
+      "total_tokens": 1161,
+      "prompt_tokens_details": {
+        "text_tokens": 536,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 277
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 544,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03207",
@@ -376,6 +967,35 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/volumeMounts",
+        "value": [
+          {
+            "mountPath": "/tmp",
+            "name": "tmp-volume"
+          },
+          {
+            "mountPath": "/tmp/certs",
+            "name": "eventstreams-pem-file"
+          }
+        ]
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/volumes/-",
+        "value": {
+          "name": "tmp-volume",
+          "emptyDir": {}
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -392,7 +1012,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -404,6 +1025,11 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -423,8 +1049,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 2356,
+      "completion_tokens": 166,
+      "total_tokens": 5026,
+      "prompt_tokens_details": {
+        "text_tokens": 2356,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2504,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03208",
@@ -432,6 +1095,27 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -448,7 +1132,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -460,6 +1145,11 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -479,8 +1169,31 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 2363,
+      "completion_tokens": 117,
+      "total_tokens": 3983,
+      "prompt_tokens_details": {
+        "text_tokens": 2363,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1503,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03209",
@@ -517,13 +1230,20 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -543,8 +1263,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 2394,
+      "completion_tokens": 79,
+      "total_tokens": 2775,
+      "prompt_tokens_details": {
+        "text_tokens": 2394,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 2134
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 302,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03210",
@@ -581,13 +1329,20 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -607,8 +1362,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 2394,
+      "completion_tokens": 79,
+      "total_tokens": 2864,
+      "prompt_tokens_details": {
+        "text_tokens": 2394,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 2147
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 391,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03211",
@@ -616,6 +1399,38 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false,
+          "privileged": false,
+          "runAsNonRoot": true,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -632,7 +1447,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -663,8 +1479,31 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 525,
+      "completion_tokens": 180,
+      "total_tokens": 2583,
+      "prompt_tokens_details": {
+        "text_tokens": 525,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 184
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1878,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03212",
@@ -672,6 +1511,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -688,7 +1534,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -719,8 +1566,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 532,
+      "completion_tokens": 23,
+      "total_tokens": 1454,
+      "prompt_tokens_details": {
+        "text_tokens": 532,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 184
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 899,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03213",
@@ -757,7 +1641,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -783,7 +1669,38 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
+    ],
+    "model_usage": {
+      "prompt_tokens": 572,
+      "completion_tokens": 79,
+      "total_tokens": 1094,
+      "prompt_tokens_details": {
+        "text_tokens": 572,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 316
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 443,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    },
+    "attempt_errors": [
+      "no top-level JSON array"
     ]
   },
   {
@@ -821,7 +1738,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -847,8 +1766,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 563,
+      "completion_tokens": 79,
+      "total_tokens": 1227,
+      "prompt_tokens_details": {
+        "text_tokens": 563,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 303
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 585,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03215",
@@ -856,6 +1803,52 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/securityContext/runAsUser",
+        "value": 1000
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/securityContext/fsGroup",
+        "value": 1000
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext/allowPrivilegeEscalation",
+        "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "256Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -872,7 +1865,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -903,8 +1897,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 568,
+      "completion_tokens": 269,
+      "total_tokens": 3361,
+      "prompt_tokens_details": {
+        "text_tokens": 568,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2524,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03216",
@@ -912,6 +1943,16 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/securityContext/runAsUser",
+        "value": 1000
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/securityContext/fsGroup",
+        "value": 1000
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -928,7 +1969,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -959,8 +2001,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 575,
+      "completion_tokens": 67,
+      "total_tokens": 2237,
+      "prompt_tokens_details": {
+        "text_tokens": 575,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1595,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03217",
@@ -997,7 +2076,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1023,8 +2104,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 606,
+      "completion_tokens": 79,
+      "total_tokens": 1737,
+      "prompt_tokens_details": {
+        "text_tokens": 606,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 348
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1052,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03218",
@@ -1061,7 +2170,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1087,8 +2198,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 606,
+      "completion_tokens": 79,
+      "total_tokens": 1253,
+      "prompt_tokens_details": {
+        "text_tokens": 606,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 348
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 568,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03219",
@@ -1096,6 +2235,37 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/image",
+        "value": "controller:v1.0.0"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/3/value",
+        "value": "quay.io/cincinnati/cincinnati:v1.0.0"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        }
+      },
       {
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
@@ -1116,7 +2286,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1142,8 +2314,50 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 534,
+      "completion_tokens": 200,
+      "total_tokens": 3928,
+      "prompt_tokens_details": {
+        "text_tokens": 534,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 3194,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03220",
@@ -1151,6 +2365,44 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          },
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -1167,7 +2419,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -1203,8 +2456,45 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "controller:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 575,
+      "completion_tokens": 212,
+      "total_tokens": 2691,
+      "prompt_tokens_details": {
+        "text_tokens": 575,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1904,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03221",
@@ -1212,6 +2502,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -1228,7 +2525,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1264,15 +2562,7 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "controller:stable"
-      }
-    ]
-  },
-  {
-    "id": "03222",
-    "policy_id": "set_requests_limits",
-    "source": "grok",
-    "hardened": true,
-    "patch": [
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/resources",
@@ -1284,6 +2574,51 @@
           "limits": {
             "cpu": "500m",
             "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      }
+    ],
+    "model_usage": {
+      "prompt_tokens": 582,
+      "completion_tokens": 23,
+      "total_tokens": 1190,
+      "prompt_tokens_details": {
+        "text_tokens": 582,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 585,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
+  },
+  {
+    "id": "03222",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
           }
         }
       },
@@ -1302,7 +2637,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1333,8 +2670,36 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "controller:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 613,
+      "completion_tokens": 42,
+      "total_tokens": 1114,
+      "prompt_tokens_details": {
+        "text_tokens": 613,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 353
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 459,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03223",
@@ -1371,7 +2736,9 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1402,8 +2769,36 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "controller:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 613,
+      "completion_tokens": 79,
+      "total_tokens": 1165,
+      "prompt_tokens_details": {
+        "text_tokens": 613,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 353
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 473,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03224",
@@ -1414,7 +2809,38 @@
       {
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
+        "value": "hyperledger/sawtooth-shell:1.2.6"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/image",
         "value": "hyperledger/sawtooth-shell:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1431,7 +2857,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1457,8 +2885,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 485,
+      "completion_tokens": 159,
+      "total_tokens": 1663,
+      "prompt_tokens_details": {
+        "text_tokens": 485,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1019,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03225",
@@ -1466,6 +2922,53 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/volumes",
+        "value": [
+          {
+            "name": "sawtooth-keys",
+            "emptyDir": {}
+          }
+        ]
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/workingDir",
+        "value": "/etc/sawtooth/keys"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/volumeMounts",
+        "value": [
+          {
+            "mountPath": "/etc/sawtooth/keys",
+            "name": "sawtooth-keys"
+          }
+        ]
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -1482,7 +2985,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -1494,6 +2998,11 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1518,7 +3027,47 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "hyperledger/sawtooth-shell:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
+    ],
+    "model_usage": {
+      "prompt_tokens": 626,
+      "completion_tokens": 260,
+      "total_tokens": 4816,
+      "prompt_tokens_details": {
+        "text_tokens": 626,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 3930,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    },
+    "attempt_errors": [
+      "bad path or conflict: member 'volumes' not found in {'containers': [{'name': 'pbft-keys-generator', 'image': 'hyperledger/sawtooth-shell', 'command': ['bash'], 'args': ['-c', \"for i in {0..4}; do sawadm keygen -q pbft${i}; done && cd /etc/sawtooth/keys/ && grep '' * | sed 's/\\\\.//' | sed 's/:/: /'\"]}]}"
     ]
   },
   {
@@ -1527,6 +3076,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext",
@@ -1543,7 +3099,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -1555,6 +3112,11 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1579,8 +3141,45 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "hyperledger/sawtooth-shell:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 529,
+      "completion_tokens": 40,
+      "total_tokens": 1360,
+      "prompt_tokens_details": {
+        "text_tokens": 529,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 791,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03227",
@@ -1617,13 +3216,20 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1648,8 +3254,36 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "hyperledger/sawtooth-shell:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 560,
+      "completion_tokens": 79,
+      "total_tokens": 1442,
+      "prompt_tokens_details": {
+        "text_tokens": 560,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 299
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 803,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03228",
@@ -1686,13 +3320,20 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/restartPolicy",
+        "value": "OnFailure"
       },
       {
         "op": "add",
@@ -1717,8 +3358,36 @@
         "op": "replace",
         "path": "/spec/template/spec/containers/0/image",
         "value": "hyperledger/sawtooth-shell:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 560,
+      "completion_tokens": 79,
+      "total_tokens": 1336,
+      "prompt_tokens_details": {
+        "text_tokens": 560,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 313
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 697,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03229",
@@ -1727,13 +3396,18 @@
     "hardened": true,
     "patch": [
       {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext/privileged",
+        "value": false
+      },
+      {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
         "value": true
       },
       {
-        "op": "replace",
-        "path": "/spec/template/spec/containers/0/securityContext/privileged",
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       },
       {
@@ -1752,10 +3426,42 @@
       },
       {
         "op": "add",
-        "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
-        "value": false
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 580,
+      "completion_tokens": 257,
+      "total_tokens": 2249,
+      "prompt_tokens_details": {
+        "text_tokens": 580,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1412,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03230",
@@ -1764,6 +3470,21 @@
     "hardened": true,
     "patch": [
       {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext/privileged",
+        "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
@@ -1778,16 +3499,43 @@
         }
       },
       {
-        "op": "replace",
-        "path": "/spec/template/spec/containers/0/securityContext/privileged",
-        "value": false
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
       },
       {
         "op": "add",
-        "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
-        "value": false
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 577,
+      "completion_tokens": 257,
+      "total_tokens": 2288,
+      "prompt_tokens_details": {
+        "text_tokens": 577,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 189
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1454,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03231",
@@ -1802,6 +3550,46 @@
       },
       {
         "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
+        "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/seccompProfile",
+        "value": {
+          "type": "RuntimeDefault"
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/capabilities",
+        "value": {
+          "drop": [
+            "ALL"
+          ]
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/capabilities",
         "value": {
           "drop": [
@@ -1816,10 +3604,42 @@
       },
       {
         "op": "add",
-        "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
-        "value": false
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 572,
+      "completion_tokens": 272,
+      "total_tokens": 2653,
+      "prompt_tokens_details": {
+        "text_tokens": 572,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 359
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1809,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03232",
@@ -1828,14 +3648,14 @@
     "hardened": true,
     "patch": [
       {
-        "op": "add",
-        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
-        "value": true
-      },
-      {
         "op": "replace",
         "path": "/spec/template/spec/containers/0/securityContext/privileged",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       },
       {
         "op": "add",
@@ -1855,8 +3675,45 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 587,
+      "completion_tokens": 70,
+      "total_tokens": 2830,
+      "prompt_tokens_details": {
+        "text_tokens": 587,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 147
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 2173,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03233",
@@ -1865,6 +3722,11 @@
     "hardened": true,
     "patch": [
       {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext/privileged",
+        "value": false
+      },
+      {
         "op": "add",
         "path": "/spec/template/spec/containers/0/resources",
         "value": {
@@ -1877,11 +3739,6 @@
             "memory": "256Mi"
           }
         }
-      },
-      {
-        "op": "replace",
-        "path": "/spec/template/spec/containers/0/securityContext/privileged",
-        "value": false
       },
       {
         "op": "add",
@@ -1901,8 +3758,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 618,
+      "completion_tokens": 112,
+      "total_tokens": 1377,
+      "prompt_tokens_details": {
+        "text_tokens": 618,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 359
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 647,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03234",
@@ -1911,6 +3796,11 @@
     "hardened": true,
     "patch": [
       {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext/privileged",
+        "value": false
+      },
+      {
         "op": "add",
         "path": "/spec/template/spec/containers/0/resources",
         "value": {
@@ -1923,11 +3813,6 @@
             "memory": "256Mi"
           }
         }
-      },
-      {
-        "op": "replace",
-        "path": "/spec/template/spec/containers/0/securityContext/privileged",
-        "value": false
       },
       {
         "op": "add",
@@ -1947,8 +3832,36 @@
         "op": "add",
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 618,
+      "completion_tokens": 112,
+      "total_tokens": 1360,
+      "prompt_tokens_details": {
+        "text_tokens": 618,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 359
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 630,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03235",
@@ -1994,7 +3907,25 @@
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 724,
+      "completion_tokens": 79,
+      "total_tokens": 1316,
+      "prompt_tokens_details": {
+        "text_tokens": 724,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 513,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03236",
@@ -2040,7 +3971,25 @@
         "path": "/spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 724,
+      "completion_tokens": 79,
+      "total_tokens": 1252,
+      "prompt_tokens_details": {
+        "text_tokens": 724,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 191
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 449,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03237",
@@ -2048,6 +3997,20 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -2064,7 +4027,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -2095,8 +4059,45 @@
         "op": "add",
         "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "10Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "10Gi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 611,
+      "completion_tokens": 75,
+      "total_tokens": 1515,
+      "prompt_tokens_details": {
+        "text_tokens": 611,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 829,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03238",
@@ -2104,6 +4105,13 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -2120,7 +4128,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -2151,8 +4160,45 @@
         "op": "add",
         "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "10Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "10Gi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 618,
+      "completion_tokens": 24,
+      "total_tokens": 1586,
+      "prompt_tokens_details": {
+        "text_tokens": 618,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 190
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 944,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03239",
@@ -2160,6 +4206,28 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "nginx:1.25.3"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
       {
         "op": "replace",
         "path": "/spec/containers/0/image",
@@ -2180,7 +4248,9 @@
             ]
           },
           "privileged": false,
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
         }
       },
       {
@@ -2206,8 +4276,50 @@
         "op": "add",
         "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
         "value": false
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/readOnlyRootFilesystem",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 392,
+      "completion_tokens": 125,
+      "total_tokens": 1271,
+      "prompt_tokens_details": {
+        "text_tokens": 392,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 754,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   },
   {
     "id": "03240",
@@ -2215,6 +4327,34 @@
     "source": "grok",
     "hardened": true,
     "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "runAsNonRoot": true,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      },
       {
         "op": "add",
         "path": "/spec/containers/0/securityContext",
@@ -2231,7 +4371,8 @@
               "SYS_CHROOT"
             ]
           },
-          "allowPrivilegeEscalation": false
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
         }
       },
       {
@@ -2267,7 +4408,44 @@
         "op": "replace",
         "path": "/spec/containers/0/image",
         "value": "nginx:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext/runAsNonRoot",
+        "value": true
       }
-    ]
+    ],
+    "model_usage": {
+      "prompt_tokens": 434,
+      "completion_tokens": 153,
+      "total_tokens": 1954,
+      "prompt_tokens_details": {
+        "text_tokens": 434,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 193
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1367,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      },
+      "num_sources_used": 0
+    }
   }
 ]

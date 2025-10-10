@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .schedule import EPSILON, PatchCandidate, schedule_patches
+from src.common.policy_ids import normalise_policy_id
 
 
 DB_SCHEMA = """
@@ -74,55 +75,12 @@ def _learn_priors(verified: List[dict], det_map: Dict[str, Dict[str, Any]]) -> D
     return {k: (succ / total) if total > 0 else 0.9 for k, (total, succ) in counts.items()}
 
 
-def _normalise_policy_id(policy: Optional[str]) -> str:
-    key = (policy or "").strip().lower()
-    mapping = {
-        "no_latest_tag": "no_latest_tag",
-        "latest-tag": "no_latest_tag",
-        "privileged-container": "no_privileged",
-        "privilege-escalation-container": "no_privileged",
-        "no_privileged": "no_privileged",
-        "no-read-only-root-fs": "read_only_root_fs",
-        "check-requests-limits": "set_requests_limits",
-        "unset-cpu-requirements": "set_requests_limits",
-        "unset-memory-requirements": "set_requests_limits",
-        "run-as-non-root": "run_as_non_root",
-        "check-runasnonroot": "run_as_non_root",
-        "hostnetwork": "no_host_network",
-        "host-network": "no_host_network",
-        "hostpid": "no_host_pid",
-        "host-pid": "no_host_pid",
-        "hostipc": "no_host_ipc",
-        "host-ipc": "no_host_ipc",
-        "hostpath": "no_host_path",
-        "host-path": "no_host_path",
-        "hostpath-volume": "no_host_path",
-        "disallow-hostpath": "no_host_path",
-        "hostports": "no_host_ports",
-        "host-port": "no_host_ports",
-        "host-ports": "no_host_ports",
-        "disallow-hostports": "no_host_ports",
-        "run-as-user": "run_as_user",
-        "check-runasuser": "run_as_user",
-        "requires-runasuser": "run_as_user",
-        "seccomp": "enforce_seccomp",
-        "seccomp-profile": "enforce_seccomp",
-        "requires-seccomp": "enforce_seccomp",
-        "drop-capabilities": "drop_capabilities",
-        "linux-capabilities": "drop_capabilities",
-        "invalid-capabilities": "drop_capabilities",
-        "cap-sys-admin": "drop_cap_sys_admin",
-        "sys-admin-capability": "drop_cap_sys_admin",
-    }
-    return mapping.get(key, key)
-
-
 def _map_detection_policies(detections: List[dict]) -> Dict[str, Dict[str, Any]]:
     mapping: Dict[str, Dict[str, Any]] = {}
     for d in detections:
         if not isinstance(d, dict):
             continue
-        mapping[str(d.get("id"))] = {"policy_id": _normalise_policy_id(d.get("policy_id"))}
+        mapping[str(d.get("id"))] = {"policy_id": normalise_policy_id(d.get("policy_id"))}
     return mapping
 
 
@@ -189,16 +147,17 @@ def pick_next(
         (_id, policy, _state, attempts, _max_attempts, enq, last_upd, risk, prob, et, kev, wait) = r
         elapsed = max(0.0, now - enq)
         wait_hours = elapsed / 3600.0
-        pc = PatchCandidate(
-            id=str(_id),
-            risk=float(risk),
-            probability=float(prob),
-            expected_time=float(et),
-            wait=float(wait_hours),
-            kev=bool(kev),
-            explore=0.0,
+        candidates.append(
+            PatchCandidate(
+                id=str(_id),
+                risk=float(risk),
+                probability=float(prob),
+                expected_time=float(et),
+                wait=float(wait_hours),
+                kev=bool(kev),
+                explore=0.0,
+            )
         )
-        candidates.append(pc)
         by_id[str(_id)] = r
     if not candidates:
         return None
@@ -217,6 +176,7 @@ def pick_next(
         max_attempts=int(r[4]),
         state=str(r[2]),
     )
+
 
 
 

@@ -9,48 +9,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import typer
 import yaml
 
-
-def _normalise_policy_id(policy: Optional[str]) -> str:
-    key = (policy or "").strip().lower()
-    mapping = {
-        "no_latest_tag": "no_latest_tag",
-        "latest-tag": "no_latest_tag",
-        "privileged-container": "no_privileged",
-        "privilege-escalation-container": "no_privileged",
-        "no_privileged": "no_privileged",
-        "no-read-only-root-fs": "read_only_root_fs",
-        "check-requests-limits": "set_requests_limits",
-        "unset-cpu-requirements": "set_requests_limits",
-        "unset-memory-requirements": "set_requests_limits",
-        "run-as-non-root": "run_as_non_root",
-        "check-runasnonroot": "run_as_non_root",
-        "hostnetwork": "no_host_network",
-        "host-network": "no_host_network",
-        "hostpid": "no_host_pid",
-        "host-pid": "no_host_pid",
-        "hostipc": "no_host_ipc",
-        "host-ipc": "no_host_ipc",
-        "hostpath": "no_host_path",
-        "host-path": "no_host_path",
-        "hostpath-volume": "no_host_path",
-        "disallow-hostpath": "no_host_path",
-        "hostports": "no_host_ports",
-        "host-port": "no_host_ports",
-        "host-ports": "no_host_ports",
-        "disallow-hostports": "no_host_ports",
-        "run-as-user": "run_as_user",
-        "check-runasuser": "run_as_user",
-        "requires-runasuser": "run_as_user",
-        "seccomp": "enforce_seccomp",
-        "seccomp-profile": "enforce_seccomp",
-        "requires-seccomp": "enforce_seccomp",
-        "drop-capabilities": "drop_capabilities",
-        "linux-capabilities": "drop_capabilities",
-        "invalid-capabilities": "drop_capabilities",
-        "cap-sys-admin": "drop_cap_sys_admin",
-        "sys-admin-capability": "drop_cap_sys_admin",
-    }
-    return mapping.get(key, key)
+from src.common.policy_ids import normalise_policy_id
 
 
 def build(
@@ -100,7 +59,7 @@ def build(
         if not isinstance(record, dict):
             continue
         detection_id = str(record.get("id"))
-        policy_id = _normalise_policy_id(record.get("policy_id"))
+        policy_id = normalise_policy_id(record.get("policy_id"))
         images = id_to_images.get(detection_id, [])
         metrics = _compute_risk(policy_id, images, image_vulns, epss_map, kev_set)
         output.append({"id": detection_id, **metrics})

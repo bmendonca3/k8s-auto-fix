@@ -7,139 +7,120 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: cowweb\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: cowweb\n  template:\n    metadata:\n      labels:\n        app: cowweb\n    spec:\n      containers:\n      - name: cowweb\n        image: phx.ocir.io/orasejapan/handsontest-001/cowweb:v1.0\n        ports:\n        - name: api\n          containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /cowsay/ping\n            port: api\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        livenessProbe:\n          httpGet:\n            path: /cowsay/ping\n            port: api\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: cowweb\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: cowweb\n  template:\n    metadata:\n      labels:\n        app: cowweb\n    spec:\n      containers:\n      - name: cowweb\n        image: phx.ocir.io/orasejapan/handsontest-001/cowweb:v1.0\n        ports:\n        - name: api\n          containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /cowsay/ping\n            port: api\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        livenessProbe:\n          httpGet:\n            path: /cowsay/ping\n            port: api\n          initialDelaySeconds: 15\n          periodSeconds: 20\n        imagePullPolicy: Always\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
     "id": "03522",
     "policy_id": "env_var_secret",
     "accepted": false,
-    "ok_schema": false,
+    "ok_schema": true,
     "ok_policy": false,
     "ok_safety": true,
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "environment variable AAA_SECRET_DATA_WITH_CM_ENV must use secretKeyRef",
-      "kubectl dry-run failed"
+      "environment variable AAA_SECRET_DATA_WITH_CM_ENV must use secretKeyRef"
     ]
   },
   {
     "id": "03523",
     "policy_id": "no_latest_tag",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine:stable\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          valueFrom:\n            secretKeyRef:\n              name: aaa-secret-data-direct-env-secret\n              key: aaa_secret_data_direct_env\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "03524",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine:stable\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          valueFrom:\n            secretKeyRef:\n              name: aaa-secret-data-direct-env-secret\n              key: aaa_secret_data_direct_env\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "errors": []
   },
   {
     "id": "03525",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine:stable\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          valueFrom:\n            secretKeyRef:\n              name: aaa-secret-data-direct-env-secret\n              key: aaa_secret_data_direct_env\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      securityContext:\n        runAsNonRoot: true\n",
+    "errors": []
   },
   {
     "id": "03526",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine:stable\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          valueFrom:\n            secretKeyRef:\n              name: aaa-secret-data-direct-env-secret\n              key: aaa_secret_data_direct_env\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "03527",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vault-test-aaa\n  namespace: aaa\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: vault\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: vault\n        app: aaa\n      annotations:\n        vault.security.banzaicloud.io/vault-role: aaa\n        vault.security.banzaicloud.io/vault-skip-verify: 'true'\n        vault.security.banzaicloud.io/vault-path: kubernetes\n        vault.security.banzaicloud.io/vault-ct-configmap: aaa-consul-template\n    spec:\n      serviceAccountName: aaa\n      containers:\n      - name: alpine\n        image: alpine:stable\n        command:\n        - sh\n        - -c\n        - 'echo Direct Env : $AAA_SECRET_DATA_DIRECT_ENV && echo From ConfigMap Env\n          :  $AAA_SECRET_DATA_WITH_CM_ENV && echo From Secret Env :  $AAA_SECRET_DATA_WITH_SECRET_ENV\n          && echo From Mount File : $(cat /vault/secret/AAA_SECRET_DATA_WITH_MOUNT_FILE)\n          && echo going to sleep... && sleep 10000'\n        env:\n        - name: AAA_SECRET_DATA_DIRECT_ENV\n          valueFrom:\n            secretKeyRef:\n              name: aaa-secret-data-direct-env-secret\n              key: aaa_secret_data_direct_env\n        - name: AAA_SECRET_DATA_WITH_CM_ENV\n          valueFrom:\n            configMapKeyRef:\n              name: key-configmap\n              key: AAA_SECRET_DATA_WITH_CM_ENV\n        - name: AAA_SECRET_DATA_WITH_SECRET_ENV\n          valueFrom:\n            secretKeyRef:\n              name: key-secret\n              key: AAA_SECRET_DATA_WITH_SECRET_ENV\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "03528",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "03529",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "03530",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "03531",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: label-sync\nspec:\n  template:\n    metadata:\n      labels:\n        name: label-sync\n    spec:\n      containers:\n      - name: label-sync\n        image: gcr.io/k8s-prow/label_sync:v20190615-f3db6c682\n        args:\n        - --config=/etc/config/labels.yaml\n        - --confirm=true\n        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n        - --token=/etc/github/oauth\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: label-config\n      restartPolicy: OnFailure\n",
+    "errors": []
   },
   {
     "id": "03532",
@@ -149,7 +130,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: demogaurav.azurecr.io/blue-nginx:1\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 200m\n            memory: 200Mi\n          limits:\n            cpu: 500m\n            memory: 500Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: demogaurav.azurecr.io/blue-nginx:1\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 200m\n            memory: 200Mi\n          limits:\n            cpu: 500m\n            memory: 500Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n      securityContext:\n        seccompProfile:\n          type: RuntimeDefault\n",
     "errors": []
   },
   {
@@ -160,7 +141,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: demogaurav.azurecr.io/blue-nginx:1\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 200m\n            memory: 200Mi\n          limits:\n            cpu: 500m\n            memory: 500Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: demogaurav.azurecr.io/blue-nginx:1\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 200m\n            memory: 200Mi\n          limits:\n            cpu: 500m\n            memory: 500Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n      securityContext:\n        runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -171,7 +152,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -182,7 +163,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -193,7 +174,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -204,41 +185,47 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: frontend\nspec:\n  containers:\n  - name: app\n    image: images.my-company.example/app:v4\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n  - name: log-aggregator\n    image: images.my-company.example/log-aggregator:v6\n    resources:\n      requests:\n        memory: 64Mi\n        cpu: 250m\n      limits:\n        memory: 128Mi\n        cpu: 500m\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n  securityContext:\n    runAsNonRoot: true\n",
     "errors": []
   },
   {
     "id": "03538",
     "policy_id": "no_latest_tag",
-    "accepted": true,
-    "ok_schema": true,
+    "accepted": false,
+    "ok_schema": false,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n",
-    "errors": []
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed: The Deployment \"notification\" is invalid: spec.template.spec.containers[0].resources.requests: Invalid value: \"300Mi\": must be less than or equal to memory limit of 256Mi"
+    ]
   },
   {
     "id": "03539",
     "policy_id": "read_only_root_fs",
-    "accepted": true,
-    "ok_schema": true,
+    "accepted": false,
+    "ok_schema": false,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
-    "errors": []
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed: The Deployment \"notification\" is invalid: spec.template.spec.containers[0].resources.requests: Invalid value: \"300Mi\": must be less than or equal to memory limit of 256Mi"
+    ]
   },
   {
     "id": "03540",
     "policy_id": "run_as_non_root",
-    "accepted": true,
-    "ok_schema": true,
+    "accepted": false,
+    "ok_schema": false,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: notification\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: notification\n      version: v1\n  template:\n    metadata:\n      labels:\n        app: notification\n        version: v1\n    spec:\n      containers:\n      - name: notification\n        image: stocktradersjilv2/notification:stable\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: MQ_USR\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: user\n        - name: MQ_PWD\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: password\n        - name: MQ_VIRTUAL_HOST\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: vhost\n        - name: MQ_HOST_NAME\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: host\n        - name: MQ_PORT\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: port\n        - name: MQ_QUEUE\n          valueFrom:\n            secretKeyRef:\n              name: rbq\n              key: queue\n        - name: TENANT_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tenenatid\n        - name: API_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: apikey\n        - name: REGION\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: region\n        - name: TAG_NAME\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: tag\n        - name: ALERT_MSG_URL\n          valueFrom:\n            secretKeyRef:\n              name: ibmcloudpush\n              key: alertmsgurl\n        resources:\n          requests:\n            cpu: 200m\n            memory: 300Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
-    "errors": []
+    "patched_yaml": null,
+    "errors": [
+      "kubectl dry-run failed: The Deployment \"notification\" is invalid: spec.template.spec.containers[0].resources.requests: Invalid value: \"300Mi\": must be less than or equal to memory limit of 256Mi"
+    ]
   },
   {
     "id": "03541",
@@ -250,34 +237,30 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"notification\" is invalid: spec.template.spec.containers[0].resources.requests: Invalid value: \"300Mi\": must be less than or equal to memory limit of 256Mi"
     ]
   },
   {
     "id": "03542",
     "policy_id": "env_var_secret",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          valueFrom:\n            secretKeyRef:\n              name: nats-secret\n              key: server-url\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          valueFrom:\n            secretKeyRef:\n              name: minio-secret\n              key: access-key\n        - name: MINIO_SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: minio-secret-key-secret\n              key: minio_secret_key\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        securityContext:\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "03543",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: minio-secret-key-secret\n              key: minio_secret_key\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n",
+    "errors": []
   },
   {
     "id": "03544",
@@ -289,34 +272,30 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: Error from server (BadRequest): error when creating \"STDIN\": Deployment in version \"v1\" cannot be handled as a Deployment: strict decoding error: unknown field \"spec.template.spec.securityContext.allowPrivilegeEscalation\""
     ]
   },
   {
     "id": "03545",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: minio-secret-key-secret\n              key: minio_secret_key\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "03546",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nulog-inference-service\n  namespace: opni-system\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nulog-inference-service\n  template:\n    metadata:\n      labels:\n        app: nulog-inference-service\n    spec:\n      containers:\n      - name: nulog-inference-service\n        image: rancher/opni-inference-service:v0.1.1\n        imagePullPolicy: Always\n        env:\n        - name: NATS_SERVER_URL\n          value: nats://nats_client:%NATS_PASSWORD%@nats-client.opni-system.svc:4222\n        - name: ES_ENDPOINT\n          value: https://opendistro-es-client-service.opni-system.svc.cluster.local:9200\n        - name: MINIO_ENDPOINT\n          value: http://minio.opni-system.svc.cluster.local:9000\n        - name: MINIO_ACCESS_KEY\n          value: '%MINIO_ACCESS_KEY%'\n        - name: MINIO_SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: minio-secret-key-secret\n              key: minio_secret_key\n        - name: MODEL_THRESHOLD\n          value: '0.5'\n        - name: MIN_LOG_TOKENS\n          value: '5'\n        resources:\n          limits:\n            nvidia.com/gpu: 1\n            cpu: 500m\n            memory: 256Mi\n          requests:\n            cpu: 100m\n            memory: 128Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "03547",
@@ -326,7 +305,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
     "errors": []
   },
   {
@@ -337,7 +316,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
     "errors": []
   },
   {
@@ -348,7 +327,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
     "errors": []
   },
   {
@@ -359,7 +338,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
     "errors": []
   },
   {
@@ -370,7 +349,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: glusterfs\nspec:\n  containers:\n  - name: glusterfs\n    image: nginx:stable\n    volumeMounts:\n    - mountPath: /mnt/glusterfs\n      name: glusterfsvol\n    resources:\n      limits:\n        cpu: 500m\n        memory: 256Mi\n      requests:\n        cpu: 100m\n        memory: 128Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n  volumes:\n  - name: glusterfsvol\n    glusterfs:\n      endpoints: glusterfs-cluster\n      path: kube_vol\n      readOnly: true\n",
     "errors": []
   },
   {
@@ -381,7 +360,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -392,7 +371,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -403,7 +382,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -414,7 +393,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -425,7 +404,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -436,7 +415,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -447,7 +426,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -458,7 +437,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: restrictedvolumes18\nspec:\n  containers:\n  - image: k8s.gcr.io/pause:stable\n    name: container1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  initContainers:\n  - image: k8s.gcr.io/pause:stable\n    name: initcontainer1\n    securityContext:\n      allowPrivilegeEscalation: false\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  volumes:\n  - name: volume-storageos\n    storageos:\n      volumeName: test\n",
     "errors": []
   },
   {
@@ -469,7 +448,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-ingress-controller\n  labels:\n    k8s-app: nginx-ingress-lb\nspec:\n  replicas: 1\n  selector:\n    k8s-app: nginx-ingress-lb\n  template:\n    metadata:\n      labels:\n        k8s-app: nginx-ingress-lb\n        name: nginx-ingress-lb\n    spec:\n      containers:\n      - image: gcr.io/google_containers/nginx-ingress-controller:0.62\n        name: nginx-ingress-lb\n        imagePullPolicy: Always\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 10249\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        ports:\n        - containerPort: 80\n          hostPort: 80\n        - containerPort: 443\n          hostPort: 443\n        args:\n        - /nginx-ingress-controller\n        - --default-backend-service=default/default-http-backend\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: nginx-ingress-controller\n  labels:\n    k8s-app: nginx-ingress-lb\nspec:\n  replicas: 1\n  selector:\n    k8s-app: nginx-ingress-lb\n  template:\n    metadata:\n      labels:\n        k8s-app: nginx-ingress-lb\n        name: nginx-ingress-lb\n    spec:\n      containers:\n      - image: gcr.io/google_containers/nginx-ingress-controller:0.62\n        name: nginx-ingress-lb\n        imagePullPolicy: Always\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 10249\n            scheme: HTTP\n          initialDelaySeconds: 30\n          timeoutSeconds: 5\n        env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        ports:\n        - containerPort: 80\n          hostPort: 80\n        - containerPort: 443\n          hostPort: 443\n        args:\n        - /nginx-ingress-controller\n        - --default-backend-service=default/default-http-backend\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n",
     "errors": []
   }
 ]

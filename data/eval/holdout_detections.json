@@ -1,0 +1,79 @@
+[
+  {
+    "id": "001",
+    "manifest_path": "data/eval/holdout/holdout_host_path.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-hostpath\nspec:\n  containers:\n  - name: app\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    volumeMounts:\n    - name: data\n      mountPath: /data\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n  volumes:\n  - name: data\n    hostPath:\n      path: /var/lib/data\n",
+    "policy_id": "hostpath-volume",
+    "violation_text": "volume uses hostPath"
+  },
+  {
+    "id": "002",
+    "manifest_path": "data/eval/holdout/holdout_host_port.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-hostport\nspec:\n  containers:\n  - name: api\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    ports:\n    - containerPort: 8080\n      hostPort: 30080\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "host-ports",
+    "violation_text": "container exposes hostPort"
+  },
+  {
+    "id": "003",
+    "manifest_path": "data/eval/holdout/holdout_no_latest.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-no-latest\nspec:\n  containers:\n  - name: web\n    image: nginx:latest\n    ports:\n    - containerPort: 80\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"web\" is using an invalid container image, \"nginx:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "004",
+    "manifest_path": "data/eval/holdout/holdout_privileged.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-privileged\nspec:\n  containers:\n  - name: worker\n    image: ubuntu:22.04\n    securityContext:\n      privileged: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      capabilities:\n        drop:\n        - ALL\n    command:\n    - sleep\n    - '3600'\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"worker\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "005",
+    "manifest_path": "data/eval/holdout/holdout_privileged.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-privileged\nspec:\n  containers:\n  - name: worker\n    image: ubuntu:22.04\n    securityContext:\n      privileged: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      capabilities:\n        drop:\n        - ALL\n    command:\n    - sleep\n    - '3600'\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"worker\" is privileged"
+  },
+  {
+    "id": "006",
+    "manifest_path": "data/eval/holdout/holdout_read_only_root_fs.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-readonly\nspec:\n  containers:\n  - name: web\n    image: nginx:1.25\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n    securityContext:\n      runAsNonRoot: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"web\" does not have a read-only root file system"
+  },
+  {
+    "id": "007",
+    "manifest_path": "data/eval/holdout/holdout_run_as_non_root.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-run-as-non-root\nspec:\n  containers:\n  - name: app\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n    securityContext:\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "008",
+    "manifest_path": "data/eval/holdout/holdout_run_as_non_root.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-run-as-non-root\nspec:\n  containers:\n  - name: app\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 200m\n        memory: 256Mi\n    securityContext:\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "check-runasnonroot",
+    "violation_text": "validation error: Containers must set securityContext.runAsNonRoot=true. rule check-runasnonroot failed at path /spec/containers/0/securityContext/runAsNonRoot/"
+  },
+  {
+    "id": "009",
+    "manifest_path": "data/eval/holdout/holdout_set_requests_limits.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-resources\nspec:\n  containers:\n  - name: worker\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"worker\" has cpu request 0"
+  },
+  {
+    "id": "010",
+    "manifest_path": "data/eval/holdout/holdout_set_requests_limits.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-resources\nspec:\n  containers:\n  - name: worker\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"worker\" has memory limit 0"
+  },
+  {
+    "id": "011",
+    "manifest_path": "data/eval/holdout/holdout_set_requests_limits.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: holdout-resources\nspec:\n  containers:\n  - name: worker\n    image: busybox:1.36\n    command:\n    - sleep\n    - '3600'\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n",
+    "policy_id": "check-requests-limits",
+    "violation_text": "validation error: Containers must define resource requests and limits. rule check-requests-limits failed at path /spec/containers/0/resources/"
+  }
+]

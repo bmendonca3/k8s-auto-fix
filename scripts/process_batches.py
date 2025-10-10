@@ -56,8 +56,17 @@ def process_batches(
     resume: bool,
     run_proposer: bool,
     run_verifier: bool,
+    allowed_suffixes: Optional[set[str]] = None,
 ) -> None:
     detections_paths = list(_iter_detections(detections_glob))
+
+    if allowed_suffixes:
+        filtered: List[Path] = []
+        for path in detections_paths:
+            suffix = path.stem.split("_batch_")[-1]
+            if suffix in allowed_suffixes:
+                filtered.append(path)
+        detections_paths = filtered
 
     patches_dir.mkdir(parents=True, exist_ok=True)
     verified_dir.mkdir(parents=True, exist_ok=True)
@@ -121,6 +130,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--resume", action="store_true", help="Skip batches whose outputs exist.")
     parser.add_argument(
+        "--batch",
+        action="append",
+        dest="batches",
+        help="Restrict processing to specific batch suffixes (e.g. 017). Repeatable.",
+    )
+    parser.add_argument(
         "--proposer-extra",
         nargs=argparse.REMAINDER,
         help="Extra arguments passed after '--' to the proposer CLI.",
@@ -148,6 +163,19 @@ def main() -> None:
     if args.verifier_extra:
         verifier_extra.extend(args.verifier_extra)
 
+    allowed_suffixes: Optional[set[str]] = None
+    if args.batches:
+        allowed_suffixes = set()
+        for entry in args.batches:
+            if not entry:
+                continue
+            candidate = Path(entry)
+            if candidate.suffix == ".json":
+                suffix = candidate.stem.split("_batch_")[-1]
+            else:
+                suffix = entry.split("_batch_")[-1]
+            allowed_suffixes.add(suffix)
+
     run_proposer = not args.verify_only
     run_verifier = not args.propose_only
 
@@ -162,6 +190,7 @@ def main() -> None:
         resume=args.resume,
         run_proposer=run_proposer,
         run_verifier=run_verifier,
+        allowed_suffixes=allowed_suffixes,
     )
 
 

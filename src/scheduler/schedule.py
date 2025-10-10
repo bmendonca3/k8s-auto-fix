@@ -21,10 +21,10 @@ class PatchCandidate:
         kev_value = kev_weight if self.kev else 0.0
         return (self.risk * self.probability) / denominator + self.explore + alpha * self.wait + kev_value
 
-    def to_output(self, alpha: float, epsilon: float) -> dict:
+    def to_output(self, alpha: float, epsilon: float, kev_weight: float = 1.0) -> dict:
         return {
             "id": self.id,
-            "score": round(self.score(alpha=alpha, epsilon=epsilon), 6),
+            "score": round(self.score(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight), 6),
             "R": self.risk,
             "p": self.probability,
             "Et": self.expected_time,

@@ -2,54 +2,46 @@
   {
     "id": "04641",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\n  namespace: workshop-303\nspec:\n  containers:\n  - name: first-container\n    image: fedora:29\n    command:\n    - sleep\n    - '36000'\n    env:\n    - name: SECRET_USERNAME\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: username\n    - name: SECRET_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: password\n    volumeMounts:\n    - name: my-configmap\n      mountPath: /config\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n  volumes:\n  - name: my-configmap\n    configMap:\n      name: my-configmap\n",
+    "errors": []
   },
   {
     "id": "04642",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\n  namespace: workshop-303\nspec:\n  containers:\n  - name: first-container\n    image: fedora:29\n    command:\n    - sleep\n    - '36000'\n    env:\n    - name: SECRET_USERNAME\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: username\n    - name: SECRET_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: password\n    volumeMounts:\n    - name: my-configmap\n      mountPath: /config\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n  volumes:\n  - name: my-configmap\n    configMap:\n      name: my-configmap\n",
+    "errors": []
   },
   {
     "id": "04643",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: my-pod\n  namespace: workshop-303\nspec:\n  containers:\n  - name: first-container\n    image: fedora:29\n    command:\n    - sleep\n    - '36000'\n    env:\n    - name: SECRET_USERNAME\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: username\n    - name: SECRET_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-secret\n          key: password\n    volumeMounts:\n    - name: my-configmap\n      mountPath: /config\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n  volumes:\n  - name: my-configmap\n    configMap:\n      name: my-configmap\n",
+    "errors": []
   },
   {
     "id": "04644",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: selenium-node-chrome\n  namespace: selenium\n  labels:\n    app: selenium-node\n    browser: chrome\nspec:\n  selector:\n    matchLabels:\n      app: selenium-node\n      browser: chrome\n  template:\n    metadata:\n      labels:\n        app: selenium-node\n        browser: chrome\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: cloud.google.com/gke-preemptible\n                operator: DoesNotExist\n              - key: eks.amazonaws.com/capacityType\n                operator: NotIn\n                values:\n                - SPOT\n              - key: kubernetes.azure.com/scalesetpriority\n                operator: NotIn\n                values:\n                - spot\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: selenium-node-chrome\n        image: selenium/node-chrome:90.0\n        ports:\n        - containerPort: 5555\n        - containerPort: 5900\n        - containerPort: 7900\n        env:\n        - name: JAVA_OPTS\n          value: -Xmx512m -Dselenium.LOGGER.level=WARNING\n        - name: SE_OPTS\n          value: ''\n        - name: SE_EVENT_BUS_HOST\n          value: selenium-hub\n        - name: SE_EVENT_BUS_PUBLISH_PORT\n          value: '4442'\n        - name: SE_EVENT_BUS_SUBSCRIBE_PORT\n          value: '4443'\n        - name: VNC_NO_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: vnc-no-password-secret\n              key: vnc_no_password\n        readinessProbe:\n          httpGet:\n            path: /status\n            port: 5555\n          initialDelaySeconds: 10\n        livenessProbe:\n          httpGet:\n            path: /status\n            port: 5555\n          initialDelaySeconds: 30\n        resources:\n          limits:\n            cpu: 500m\n            memory: 1Gi\n          requests:\n            cpu: 300m\n            memory: 615Mi\n        volumeMounts:\n        - name: dshm\n          mountPath: /dev/shm\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n      volumes:\n      - name: dshm\n        emptyDir:\n          medium: Memory\n",
+    "errors": []
   },
   {
     "id": "04645",
@@ -59,7 +51,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
     "errors": []
   },
   {
@@ -70,7 +62,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      securityContext:\n        runAsNonRoot: true\n",
     "errors": []
   },
   {
@@ -81,7 +73,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
     "errors": []
   },
   {
@@ -92,7 +84,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20200409-becd20a71\n        args:\n        - --github-workers=5\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --slack-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --gcs-workers=1\n        - --kubernetes-gcs-workers=1\n        - --kubeconfig=/etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
     "errors": []
   },
   {
@@ -103,7 +95,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          runAsNonRoot: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
     "errors": []
   },
   {
@@ -114,7 +106,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          runAsNonRoot: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
     "errors": []
   },
   {
@@ -125,7 +117,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          seccompProfile:\n            type: RuntimeDefault\n          runAsNonRoot: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
     "errors": []
   },
   {
@@ -136,7 +128,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: kube2iam\n  namespace: kube-system\n  labels:\n    application: kube2iam\n    version: 0.10.7\nspec:\n  selector:\n    matchLabels:\n      application: kube2iam\n  template:\n    metadata:\n      labels:\n        application: kube2iam\n        version: 0.10.7\n    spec:\n      serviceAccountName: kube2iam\n      containers:\n      - image: registry.opensource.zalan.do/teapot/kube2iam:0.10.7\n        name: kube2iam\n        args:\n        - --auto-discover-base-arn\n        - --verbose\n        - --node=$(NODE_NAME)\n        env:\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        ports:\n        - containerPort: 8181\n          hostPort: 8181\n          name: http\n        securityContext:\n          privileged: false\n          runAsNonRoot: true\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8181\n          timeoutSeconds: 3\n        resources:\n          requests:\n            cpu: 25m\n            memory: 100Mi\n            ephemeral-storage: 256Mi\n          limits:\n            cpu: 25m\n            memory: 100Mi\n",
     "errors": []
   },
   {
@@ -149,7 +141,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"web-app\" is invalid: spec.template.metadata.labels: Invalid value: {\"app\":\"myapp\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -162,7 +154,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"web-app\" is invalid: spec.template.metadata.labels: Invalid value: {\"app\":\"myapp\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -175,7 +167,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"web-app\" is invalid: spec.template.metadata.labels: Invalid value: {\"app\":\"myapp\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -188,34 +180,30 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"web-app\" is invalid: spec.template.metadata.labels: Invalid value: {\"app\":\"myapp\"}: `selector` does not match template `labels`"
     ]
   },
   {
     "id": "04657",
     "policy_id": "read_only_root_fs",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n        name: nvidiaheartbeat\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: false\n          readOnlyRootFilesystem: true\n          allowPrivilegeEscalation: false\n          seccompProfile:\n            type: RuntimeDefault\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          runAsNonRoot: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: nvidia-driver\n        emptyDir: {}\n      - name: dev\n        emptyDir: {}\n",
+    "errors": []
   },
   {
     "id": "04658",
     "policy_id": "drop_capabilities",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: nvidiaheartbeat\n  namespace: default\nspec:\n  selector:\n    matchLabels:\n      name: nvidiaheartbeat\n  template:\n    metadata:\n      name: nvidiaheartbeat\n      labels:\n        nvidiaheartbeat-node: pod\n        name: nvidiaheartbeat\n    spec:\n      containers:\n      - name: nvidiaheartbeat\n        image: nvidia/cuda:8.0\n        command:\n        - bash\n        - -c\n        - bash -c 'while true; do nvidia-smi | grep Tesla | wc -l; sleep 10; done'\n        securityContext:\n          privileged: false\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n          seccompProfile:\n            type: RuntimeDefault\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          runAsNonRoot: true\n        volumeMounts:\n        - mountPath: /usr/local/nvidia\n          name: nvidia-driver\n        - mountPath: /dev\n          name: dev\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: nvidia-driver\n        hostPath:\n          path: /opt/nvidia-driver/current\n      - name: dev\n        hostPath:\n          path: /dev\n",
+    "errors": []
   },
   {
     "id": "04659",
@@ -227,7 +215,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The DaemonSet \"nvidiaheartbeat\" is invalid: spec.template.metadata.labels: Invalid value: {\"nvidiaheartbeat-node\":\"pod\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -240,7 +228,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The DaemonSet \"nvidiaheartbeat\" is invalid: spec.template.metadata.labels: Invalid value: {\"nvidiaheartbeat-node\":\"pod\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -253,7 +241,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The DaemonSet \"nvidiaheartbeat\" is invalid: spec.template.metadata.labels: Invalid value: {\"nvidiaheartbeat-node\":\"pod\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -266,7 +254,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The DaemonSet \"nvidiaheartbeat\" is invalid: spec.template.metadata.labels: Invalid value: {\"nvidiaheartbeat-node\":\"pod\"}: `selector` does not match template `labels`"
     ]
   },
   {
@@ -277,7 +265,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      privileged: false\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -288,7 +276,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      readOnlyRootFilesystem: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -299,7 +287,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    securityContext:\n      runAsNonRoot: true\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n",
     "errors": []
   },
   {
@@ -310,7 +298,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -321,7 +309,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-8112\nspec:\n  containers:\n  - name: nginx\n    image: nginx:stable\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m\n        memory: 256Mi\n    securityContext:\n      privileged: false\n      capabilities:\n        drop:\n        - NET_RAW\n        - NET_ADMIN\n        - SYS_ADMIN\n        - SYS_MODULE\n        - SYS_PTRACE\n        - SYS_CHROOT\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -334,47 +322,41 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: Error from server (BadRequest): error when creating \"STDIN\": Deployment in version \"v1\" cannot be handled as a Deployment: strict decoding error: unknown field \"spec.template.spec.securityContext.allowPrivilegeEscalation\""
     ]
   },
   {
     "id": "04669",
     "policy_id": "run_as_non_root",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      securityContext:\n        runAsNonRoot: true\n",
+    "errors": []
   },
   {
     "id": "04670",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "04671",
     "policy_id": "set_requests_limits",
-    "accepted": false,
-    "ok_schema": false,
+    "accepted": true,
+    "ok_schema": true,
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": null,
-    "errors": [
-      "kubectl dry-run failed"
-    ]
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: kube-state-metrics-deployment\n  namespace: monitoring\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: kube-state-metrics\n  template:\n    metadata:\n      labels:\n        app: kube-state-metrics\n    spec:\n      containers:\n      - name: kube-state-metrics\n        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "errors": []
   },
   {
     "id": "04672",
@@ -386,7 +368,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"controller-manager\" is invalid: \n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": prefix part a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')\n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')"
     ]
   },
   {
@@ -399,7 +381,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"controller-manager\" is invalid: \n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": prefix part a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')\n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')"
     ]
   },
   {
@@ -412,7 +394,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"controller-manager\" is invalid: \n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": prefix part a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')\n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')"
     ]
   },
   {
@@ -425,7 +407,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"controller-manager\" is invalid: \n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": prefix part a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')\n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')"
     ]
   },
   {
@@ -438,7 +420,7 @@
     "ok_rescan": true,
     "patched_yaml": null,
     "errors": [
-      "kubectl dry-run failed"
+      "kubectl dry-run failed: The Deployment \"controller-manager\" is invalid: \n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": prefix part a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')\n* spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key: Invalid value: \"${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}\": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')"
     ]
   },
   {
@@ -449,7 +431,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
     "errors": []
   },
   {
@@ -460,7 +442,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
     "errors": []
   },
   {
@@ -471,7 +453,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
     "errors": []
   },
   {
@@ -482,7 +464,7 @@
     "ok_policy": true,
     "ok_safety": true,
     "ok_rescan": true,
-    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n",
+    "patched_yaml": "apiVersion: v1\nkind: ReplicationController\nmetadata:\n  name: echoheaders-https\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: echoheaders-https\n    spec:\n      containers:\n      - name: echoheaders-https\n        image: gcr.io/google_containers/echoserver:1.10\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
     "errors": []
   }
 ]

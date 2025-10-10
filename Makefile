@@ -22,7 +22,7 @@ kind-up:
 	./scripts/kind_up.sh
 
 detect:
-	$(PYTHON) -m src.detector.cli --in data/manifests --out data/detections.json
+	$(PYTHON) -m src.detector.cli --in data/manifests --out data/detections.json --jobs $(JOBS)
 
 propose:
 	$(PYTHON) -m src.proposer.cli --detections data/detections.json --out data/patches.json --config configs/run.yaml

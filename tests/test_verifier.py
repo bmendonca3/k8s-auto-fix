@@ -48,7 +48,7 @@ spec:
 class VerifierTests(unittest.TestCase):
     def _stub_kubectl(self, verifier: Verifier, value: bool, message: str | None = None) -> None:
         verifier._kubectl_dry_run = types.MethodType(
-            lambda _self, _yaml: (value, message), verifier
+            lambda _self, _yaml: (value, message, 0), verifier
         )
 
     def test_verify_successful_patch(self) -> None:
@@ -177,6 +177,66 @@ spec:
         self.assertTrue(result.ok_safety)
         self.assertTrue(result.ok_rescan)
 
+    def test_verify_run_as_non_root_policy(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: runasnonroot-pod
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_run_as_non_root(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        result = verifier.verify(manifest, patch, "run_as_non_root")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_safety)
+        self.assertTrue(result.ok_rescan)
+
+    def test_verify_read_only_root_fs_policy(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readonlyfs-pod
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_read_only_root_fs(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        result = verifier.verify(manifest, patch, "read_only_root_fs")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_safety)
+        self.assertTrue(result.ok_rescan)
+
+    def test_verify_set_requests_limits_policy(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: requests-limits
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_set_requests_limits(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        result = verifier.verify(manifest, patch, "set_requests_limits")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_safety)
+        self.assertTrue(result.ok_rescan)
+
     def test_verify_enforce_seccomp_policy(self) -> None:
         manifest = """
 apiVersion: v1
@@ -272,6 +332,93 @@ spec:
         self.assertTrue(result.ok_safety)
         self.assertTrue(result.ok_rescan)
 
+    def test_placeholder_sanitisation_expands_identifiers(self) -> None:
+        manifest = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "__RESOURCE__"
+  namespace: "__NAMESPACE__"
+  labels:
+    app: "__APP__"
+spec:
+  selector:
+    matchLabels:
+      app: "__APP__"
+    matchExpressions:
+      - key: tier
+        operator: In
+        values:
+          - "__TIER__"
+  template:
+    metadata:
+      labels:
+        app: "__APP__"
+    spec:
+      imagePullSecrets:
+        - name: "__PULL_SECRET__"
+      volumes:
+        - name: conf
+          secret:
+            secretName: "__SECRET_NAME__"
+      containers:
+        - name: api
+          image: nginx
+          env:
+            - name: APP_SECRET
+              value: foo
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "__EXISTING_SECRET__"
+                  key: "__DB__"
+          envFrom:
+            - secretRef:
+                name: "__SECRET_REF__"
+"""
+        obj = yaml.safe_load(manifest)
+        ops = proposer_cli._patch_namespace_placeholders(obj)
+        patch_map = {entry["path"]: entry["value"] for entry in ops if entry["op"] == "replace"}
+        self.assertEqual(patch_map["/metadata/name"], "resource")
+        self.assertEqual(patch_map["/metadata/namespace"], "namespace")
+        self.assertEqual(patch_map["/metadata/labels/app"], "placeholder")
+        self.assertEqual(patch_map["/spec/selector/matchLabels/app"], "placeholder")
+        self.assertEqual(patch_map["/spec/selector/matchExpressions/0/values/0"], "placeholder")
+        self.assertEqual(patch_map["/spec/template/metadata/labels/app"], "placeholder")
+        self.assertEqual(patch_map["/spec/template/spec/imagePullSecrets/0/name"], "pull-secret")
+        self.assertEqual(patch_map["/spec/template/spec/volumes/0/secret/secretName"], "secret-name")
+        self.assertEqual(
+            patch_map["/spec/template/spec/containers/0/env/1/valueFrom/secretKeyRef/name"],
+            "existing-secret",
+        )
+        self.assertEqual(
+            patch_map["/spec/template/spec/containers/0/env/1/valueFrom/secretKeyRef/key"],
+            "db",
+        )
+        self.assertEqual(
+            patch_map["/spec/template/spec/containers/0/envFrom/0/secretRef/name"],
+            "secret-ref",
+        )
+
+    def test_missing_metadata_name_guard_infers_from_labels(self) -> None:
+        manifest = """
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: gitops-runner
+spec:
+  template:
+    spec:
+      containers:
+        - name: runner
+          image: busybox
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_missing_metadata_name(obj)
+        self.assertEqual(patch[0]["path"], "/metadata/name")
+        self.assertEqual(patch[0]["value"], "gitops-runner")
+
     def test_verify_env_var_secret_policy(self) -> None:
         manifest = """
 apiVersion: v1
@@ -292,6 +439,68 @@ spec:
         self._stub_kubectl(verifier, True)
         result = verifier.verify(manifest, patch, "env_var_secret")
         self.assertTrue(result.accepted)
+
+    def test_env_var_secret_converts_multiple_variables(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-secret
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+      env:
+        - name: APP_SECRET
+          value: supersecret
+        - name: DB_PASSWORD
+          value: admin
+        - name: TOKEN
+          valueFrom:
+            configMapKeyRef:
+              name: config-source
+              key: token
+  volumes:
+    - name: shared
+      secret:
+        secretName: existing-secret
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_env_var_secret(obj)
+        self.assertEqual(len(patch), 2)
+        first_ref = patch[0]["value"]["valueFrom"]["secretKeyRef"]
+        second_ref = patch[1]["value"]["valueFrom"]["secretKeyRef"]
+        self.assertEqual(first_ref["name"], "existing-secret")
+        self.assertEqual(second_ref["name"], "existing-secret")
+        self.assertEqual({first_ref["key"], second_ref["key"]}, {"app_secret", "db_password"})
+
+    def test_env_var_secret_converts_configmap_reference(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-secret
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+      env:
+        - name: API_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: api-password
+  volumes:
+    - name: shared
+      secret:
+        secretName: shared-secret
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_env_var_secret(obj)
+        self.assertEqual(len(patch), 1)
+        secret_ref = patch[0]["value"]["valueFrom"]["secretKeyRef"]
+        self.assertEqual(secret_ref["name"], "shared-secret")
+        self.assertEqual(secret_ref["key"], "api_password")
 
     def test_env_var_secret_reuses_existing_secret(self) -> None:
         manifest = """
@@ -359,6 +568,49 @@ spec:
         self._stub_kubectl(verifier, True)
         result = verifier.verify(manifest, patch, "env_var_secret")
         self.assertTrue(result.accepted)
+
+    def test_missing_volumes_guard_seeds_emptydir(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-missing
+spec:
+  containers:
+    - name: app
+      image: nginx
+      volumeMounts:
+        - name: data
+          mountPath: /data
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_missing_volumes(obj)
+        self.assertEqual(patch[0]["path"], "/spec/volumes")
+        self.assertEqual(patch[0]["value"], [{"name": "data", "emptyDir": {}}])
+
+    def test_requests_within_limits_guard_clamps_values(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-adjust
+spec:
+  containers:
+    - name: app
+      image: nginx
+      resources:
+        limits:
+          cpu: "100m"
+          memory: 256Mi
+        requests:
+          cpu: "200m"
+          memory: 1Gi
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_requests_within_limits(obj)
+        paths = {entry["path"]: entry["value"] for entry in patch}
+        self.assertEqual(paths["/spec/containers/0/resources/requests/cpu"], "100m")
+        self.assertEqual(paths["/spec/containers/0/resources/requests/memory"], "256Mi")
 
     def test_verify_liveness_port_policy(self) -> None:
         manifest = """
@@ -569,6 +821,27 @@ spec:
         self._stub_kubectl(verifier, True)
         result = verifier.verify(manifest, patch, "no_latest_tag")
         self.assertTrue(result.accepted)
+
+    def test_cronjob_defaults_guard(self) -> None:
+        manifest = """
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly
+spec:
+  jobTemplate:
+    template:
+      spec:
+        containers:
+          - name: app
+            image: nginx:latest
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_cronjob_defaults(obj)
+        paths = {op["path"] for op in patch}
+        self.assertIn("/spec/schedule", paths)
+        self.assertIn("/spec/jobTemplate/spec/template/spec/restartPolicy", paths)
+        self.assertIn("/spec/jobTemplate/template", paths)
 
     def test_verify_pdb_policy(self) -> None:
         manifest = """

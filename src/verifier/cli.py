@@ -65,6 +65,17 @@ def verify(
         "--include-errors/--no-include-errors",
         help="Include verifier error messages in the output JSON.",
     ),
+    ids: Optional[List[str]] = typer.Option(
+        None,
+        "--id",
+        help="Only verify patches matching these detection ids (repeatable).",
+    ),
+    limit: Optional[int] = typer.Option(
+        None,
+        "--limit",
+        min=1,
+        help="Stop after verifying this many patches (after applying any id filters).",
+    ),
     jobs: int = typer.Option(
         1,
         "--jobs",
@@ -76,6 +87,27 @@ def verify(
     patch_records = _load_array(patches, "patches")
     detection_map = _load_detections(detections)
 
+    ids_set = {str(entry) for entry in ids} if ids else None
+    filtered_records: List[Dict[str, Any]] = list(patch_records)
+    if ids_set:
+        typer.echo(f"Filtering patches to ids: {', '.join(sorted(ids_set))}")
+        filtered_records = []
+        for record in patch_records:
+            record_id = record.get("id")
+            if record_id is None:
+                continue
+            if str(record_id) in ids_set:
+                filtered_records.append(record)
+        if not filtered_records:
+            raise typer.BadParameter("No patches matched the provided ids.")
+
+    if limit is not None:
+        filtered_records = filtered_records[:limit]
+        if not filtered_records:
+            raise typer.BadParameter("No patches remain after applying the limit.")
+
+    patch_records = filtered_records
+
     verifier_kwargs = {
         "kubectl_cmd": kubectl_cmd,
         "require_kubectl": require_kubectl,
@@ -86,7 +118,8 @@ def verify(
     }
 
     results: List[Dict[str, Any]] = []
-    if jobs <= 1:
+    total = len(patch_records)
+    if jobs <= 1 or total <= 1:
         verifier = Verifier(**verifier_kwargs)
         for record in patch_records:
             results.append(
@@ -100,7 +133,7 @@ def verify(
                 )
             )
     else:
-        jobs = min(jobs, len(patch_records))
+        jobs = min(jobs, total)
         with ThreadPoolExecutor(max_workers=jobs) as executor:
             futures = []
             for record in patch_records:
@@ -157,6 +190,10 @@ def _verify_record(
         "ok_rescan": result.ok_rescan,
         "patched_yaml": result.patched_yaml,
     }
+    if result.latency_ms is not None:
+        record_out["latency_ms"] = result.latency_ms
+    if result.kubectl_ms is not None:
+        record_out["kubectl_ms"] = result.kubectl_ms
     if include_errors:
         record_out["errors"] = result.errors
     return record_out
