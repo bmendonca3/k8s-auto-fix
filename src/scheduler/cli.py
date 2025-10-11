@@ -54,6 +54,10 @@ def schedule(
         1.0,
         help="Additional priority added when a candidate is KEV-listed.",
     ),
+    explore_weight: float = typer.Option(
+        1.0,
+        help="Weight applied to the exploration bonus when computing scores.",
+    ),
 ) -> None:
     verified_records = _load_array(verified, "verified")
     detection_map = _load_detection_policies(detections)
@@ -81,8 +85,17 @@ def schedule(
             )
         )
 
-    ordered = schedule_patches(candidates, alpha=alpha, epsilon=epsilon, kev_weight=kev_weight)
-    output = [candidate.to_output(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight) for candidate in ordered]
+    ordered = schedule_patches(
+        candidates,
+        alpha=alpha,
+        epsilon=epsilon,
+        kev_weight=kev_weight,
+        explore_weight=explore_weight,
+    )
+    output = [
+        candidate.to_output(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight, explore_weight=explore_weight)
+        for candidate in ordered
+    ]
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(output, indent=2), encoding="utf-8")

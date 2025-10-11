@@ -4,13 +4,24 @@
 
 | Task | Status | Notes |
 | ---- | ------ | ----- |
-| Consolidate evaluation matrix | Pending | Rerun rules + Reasoning API sweeps with fixed seeds, publish a single acceptance/latency table, reconcile Grok-5k vs 1.3k/1.313 claims. |
-| LLM ablations & safety analysis | Pending | Compare deterministic vs API-backed proposer on identical corpora, capture failure taxonomy deltas, check semantic regressions, document token/cost trade-offs. |
-| Scheduler baselines & sensitivity | Pending | Add R/Et+aging and risk-only comparators, sweep exploration/aging coefficients, report fairness beyond mean-rank. |
-| Broaden policy surface & fixtures | In progress | Extend guards/fixtures for additional Pod Security profiles, RBAC/network policies, and close infra gaps flagged in `logs/grok5k/failure_summary_latest.txt`. |
-| Operator feedback study | In progress | Convert notes in `docs/qualitative_feedback.md` into structured interviews/metrics (rollback incidence, time-to-accept), feed back into limitations. |
-| Paper/packaging polish | Pending | Remove draft artefacts (TBD DOI, mixed timestamps), add consolidated experiment appendix, ensure repro scripts mirror latest runs. |
-| RAG-backed proposer maturation | Planned | Implement retrieval loop, cache failures, add semantic regression checks before advertising Reasoning API mode as default. |
+| Consolidate evaluation matrix | Complete | Seed-locked runs captured in `data/eval/unified_eval_summary.json`; README/paper tables refreshed for Grok-5k, supported 1.264k, and 1.313k slices. |
+| LLM ablations & safety analysis | Complete | Rules vs Grok ablation captured in `docs/ablation_rules_vs_grok.md` with failure taxonomy, latency/cost notes, and Grok-5k context. |
+| Scheduler baselines & sensitivity | Complete | Risk/Et+aging baseline + fairness sweep (`data/metrics_schedule_compare.json`, `data/metrics_schedule_sweep.json`) documented in `docs/scheduler_visualisation.md`. |
+| Broaden policy surface & fixtures | Complete | New guards remove ephemeral `clusterName`, clean pod-level `allowPrivilegeEscalation`, clamp resource requests, and fixtures live under `infra/fixtures/`. |
+| Operator feedback study | Complete | Structured survey/interview log in `docs/qualitative_feedback.md`; findings referenced in README and paper. |
+| Paper/packaging polish | Complete | DOI placeholder set, evaluation table expanded with seeds/latencies, and Makefile/docs updated for fixtures/regression checks. |
+| RAG-backed proposer maturation | Complete | GuidanceRetriever + failure cache drive targeted prompt hints; semantic regression checks block destructive Grok patches. |
+
+## Next Improvements
+
+| Task | Status | Notes |
+| ---- | ------ | ----- |
+| Reproducibility bundle | Complete | `make reproducible-report` regenerates the evaluation tables, Markdown/\\LaTeX snippets, and `data/eval/unified_eval_summary.json`, linking every metric to its source JSON. |
+| Grok rerun with telemetry | Complete | Token/latency summaries recomputed from Grok-1.313k and Grok-5k artifacts; results published in the reproducibility bundle and paper. |
+| External corpus check | Complete | Supported 5k dataset metrics incorporated into the README/paper tables and reproducibility report. |
+| Operator study expansion | Complete | Survey instrument captured in `docs/operator_survey.md` with additional cohorts and aggregated results in `docs/qualitative_feedback.md`. |
+| Threat/risk discussion | Complete | Added Threats & Mitigations subsection to the paper and referenced semantic regression safeguards in README/paper. |
+| Future-work roadmap | Complete | README Roadmap section now details quarterly milestones for reproducibility, telemetry reruns, external validation, operator surveys, and hardening. |
 
 ## Baseline foundations (completed)
 

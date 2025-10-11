@@ -133,13 +133,15 @@ def extract_rank_summary(schedule: Optional[Dict[str, object]]) -> Optional[str]
     base = summary.get("baseline", {})
     fifo = summary.get("fifo", {})
     risk_only = summary.get("risk_only", {})
-    if not isinstance(base, dict) or not isinstance(fifo, dict) or not isinstance(risk_only, dict):
+    risk_time = summary.get("risk_time", {})
+    if not all(isinstance(entry, dict) for entry in (base, fifo, risk_only, risk_time)):
         return None
     return (
         "- **Scheduler comparison** – `make benchmark-scheduler` ranks the top "
         f"{top_n} high-risk items at mean rank {base.get('mean_rank_top_n')} (median {base.get('median_rank_top_n')}, "
-        f"P95 {base.get('p95_rank_top_n')}) for both bandit and risk-only modes, while FIFO slips to mean "
-        f"{fifo.get('mean_rank_top_n')} (P95 {fifo.get('p95_rank_top_n')})."
+        f"P95 {base.get('p95_rank_top_n')}). Risk-only remaps preserve the same ordering, while the "
+        f"`risk/Et+aging` baseline averages {risk_time.get('mean_rank_top_n')} (P95 {risk_time.get('p95_rank_top_n')}). "
+        f"FIFO slips to mean {fifo.get('mean_rank_top_n')} (P95 {fifo.get('p95_rank_top_n')})."
     )
 
 

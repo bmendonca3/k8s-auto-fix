@@ -14,15 +14,26 @@ Artifacts:
 - Patches: `tmp/patches_secondary.json`
 - Verification log: `tmp/verified_secondary.json`
 
-## Extended Sweep (token-instrumented)
+## Extended Sweep (updated, seed-locked)
 
-- **Scope**: 1,264 detections from `data/detections_supported.json` aligned with rule coverage.
-- **Result**: 1,217 / 1,264 accepted (96.28%). Remaining rejects stem from real-cluster gaps (forbidden pods, missing DaemonSet controllers, etc.).
+- **Scope**: 1,264 detections from `data/batch_runs/secondary_supported/detections.json` aligned with rule coverage.
+- **Result**: 1,264 / 1,264 accepted (100.00%) after normalising `sensitive-host-mounts`/`docker-sock` to the `no_host_path` guard.
 - **Telemetry artifacts**:
-  - Proposer metrics: `tmp/proposer_metrics_supported.json`
-  - Verifier results: `tmp/verified_supported.json`
-  - Scheduler output (with policy metrics): `tmp/schedule_supported.json`
-- **Policy metrics**: `data/policy_metrics.json` now reflects measured acceptance probabilities and expected runtimes for scheduler consumption.
+  - Proposer output: `data/batch_runs/secondary_supported/patches_rules.json`
+  - Verifier results: `data/batch_runs/secondary_supported/verified_rules.json`
+  - Metrics roll-up: `data/batch_runs/secondary_supported/metrics_rules.json`
+  - Historical proposer/verifier telemetry (pre-seed run): `proposer_metrics.json`, `verified.json`
+- **Policy metrics**: `data/policy_metrics.json` now reflects the latest acceptance probabilities and expected runtimes for scheduler consumption.
+
+## Extended 5k Sweep
+
+- **Scope**: 5,000 curated manifests (`data/detections_supported_5000.json`) processed in rules mode.
+- **Result**: 4,972 / 5,000 accepted (99.44%). Residual rejections underline namespace/RBAC assumptions tracked in `logs/grok5k/failure_summary_latest.txt`.
+- **Artifacts**:
+  - Patches: `data/patches_rules_5000.json`
+  - Verifier output: `data/verified_rules_5000.json`
+  - Metrics: `data/metrics_rules_5000.json`
+- **Notes**: This dataset feeds the reproducibility bundle and provides the “external” data point referenced in the paper table.
 
 Next steps:
 - Promote these runs into `data/batch_runs/secondary_*` for archival.

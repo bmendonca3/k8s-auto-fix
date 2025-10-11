@@ -48,7 +48,7 @@ def _build_candidates(
             continue
         patch_id = str(record.get("id"))
         policy_id = detection_map.get(patch_id, {}).get("policy_id")
-        metrics = _compute_metrics(patch_id, policy_id, risk_map)
+        metrics = _compute_metrics(patch_id, policy_id, risk_map, {})
         candidate = PatchCandidate(
             id=patch_id,
             risk=metrics["risk"],
@@ -186,11 +186,14 @@ def compare_schedulers(
     *,
     alpha: float,
     epsilon: float,
+    explore_weight: float,
     top_n: int,
 ) -> Dict[str, object]:
     candidates, metadata, detection_index = _build_candidates(verified_path, detections_path, risk_path)
 
-    baseline_order = [c.id for c in schedule_patches(candidates, alpha=alpha, epsilon=epsilon)]
+    baseline_order = [
+        c.id for c in schedule_patches(candidates, alpha=alpha, epsilon=epsilon, explore_weight=explore_weight)
+    ]
     fifo_order = _order_by(
         baseline_order,
         metadata,
@@ -201,11 +204,26 @@ def compare_schedulers(
         metadata,
         key_fn=lambda _id, meta: (-meta["risk"], meta["detection_index"]),
     )
+    def _score_risk_over_time(candidate: PatchCandidate) -> float:
+        denom = max(candidate.expected_time, epsilon)
+        return candidate.risk / denom + alpha * candidate.wait
+
+    risk_time_candidates = sorted(
+        candidates,
+        key=lambda cand: (
+            _score_risk_over_time(cand),
+            -metadata.get(cand.id, {}).get("risk", 0.0),
+            detection_index.get(cand.id, len(metadata)),
+        ),
+        reverse=True,
+    )
+    risk_time_order = [c.id for c in risk_time_candidates]
 
     rank_maps = {
         "baseline": {patch_id: idx + 1 for idx, patch_id in enumerate(baseline_order)},
         "fifo": {patch_id: idx + 1 for idx, patch_id in enumerate(fifo_order)},
         "risk_only": {patch_id: idx + 1 for idx, patch_id in enumerate(risk_only_order)},
+        "risk_time": {patch_id: idx + 1 for idx, patch_id in enumerate(risk_time_order)},
     }
 
     top_candidates = sorted(
@@ -223,12 +241,14 @@ def compare_schedulers(
                 "baseline_rank": rank_maps["baseline"][patch_id],
                 "fifo_rank": rank_maps["fifo"][patch_id],
                 "risk_only_rank": rank_maps["risk_only"][patch_id],
+                "risk_time_rank": rank_maps["risk_time"][patch_id],
             }
         )
 
     baseline_scores = [rank_maps["baseline"][item["id"]] for item in top_rankings]
     fifo_scores = [rank_maps["fifo"][item["id"]] for item in top_rankings]
     risk_only_scores = [rank_maps["risk_only"][item["id"]] for item in top_rankings]
+    risk_time_scores = [rank_maps["risk_time"][item["id"]] for item in top_rankings]
 
     summary = {
         "total_candidates": len(metadata),
@@ -248,6 +268,11 @@ def compare_schedulers(
             "median_rank_top_n": statistics.median(risk_only_scores) if risk_only_scores else 0,
             "p95_rank_top_n": _percentile(risk_only_scores, 95.0),
         },
+        "risk_time": {
+            "mean_rank_top_n": _mean(risk_time_scores),
+            "median_rank_top_n": statistics.median(risk_time_scores) if risk_time_scores else 0,
+            "p95_rank_top_n": _percentile(risk_time_scores, 95.0),
+        },
     }
 
     result = {
@@ -256,6 +281,7 @@ def compare_schedulers(
             "baseline": baseline_order,
             "fifo": fifo_order,
             "risk_only": risk_only_order,
+            "risk_time": risk_time_order,
         },
         "top_risk_positions": top_rankings,
     }
@@ -264,6 +290,7 @@ def compare_schedulers(
         "baseline": _compute_telemetry(baseline_order, metadata),
         "fifo": _compute_telemetry(fifo_order, metadata),
         "risk_only": _compute_telemetry(risk_only_order, metadata),
+        "risk_time": _compute_telemetry(risk_time_order, metadata),
     }
 
     if out_path:
@@ -316,6 +343,12 @@ def parse_args() -> argparse.Namespace:
         default=50,
         help="Top-N high risk items to analyse (default: 50).",
     )
+    parser.add_argument(
+        "--explore-weight",
+        type=float,
+        default=1.0,
+        help="Weight applied to exploration bonuses when computing the baseline score (default: 1.0).",
+    )
     return parser.parse_args()
 
 
@@ -328,6 +361,7 @@ def main() -> None:
         out_path=args.out,
         alpha=args.alpha,
         epsilon=args.epsilon,
+        explore_weight=args.explore_weight,
         top_n=args.top_n,
     )
     if args.out is None:

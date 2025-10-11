@@ -39,6 +39,8 @@ _POLICY_NORMALISATION_MAP = {
     "host-pid": "no_host_pid",
     "hostipc": "no_host_ipc",
     "host-ipc": "no_host_ipc",
+    "sensitive-host-mounts": "no_host_path",
+    "docker-sock": "no_host_path",
     # Pod security context
     "run-as-non-root": "run_as_non_root",
     "check-runasnonroot": "run_as_non_root",
@@ -65,6 +67,9 @@ _POLICY_NORMALISATION_MAP = {
     "job-ttl-seconds-after-finished": "job_ttl_after_finished",
     "unsafe-sysctls": "unsafe_sysctls",
     "no-anti-affinity": "no_anti_affinity",
+    # Service port validation
+    "invalid-target-ports": "invalid_target_ports",
+    "invalid_target_ports": "invalid_target_ports",
 }
 
 
@@ -79,4 +84,3 @@ def normalise_policy_id(policy: Optional[str]) -> str:
 
 
 __all__ = ["normalise_policy_id"]
-

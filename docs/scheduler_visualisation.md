@@ -6,15 +6,17 @@
 | --- | --- | --- | --- |
 | Threat-guided (bandit) | 25.50 | 25.50 | 48.00 |
 | Risk-only | 25.50 | 25.50 | 48.00 |
-| FIFO | 326.58 | 308.50 | 880.00 |
+| Risk/Et+aging | 42.22 | 25.50 | 124.00 |
+| FIFO | 365.18 | 422.50 | 620.00 |
 
 ## Telemetry (Hours)
 
 | Strategy | Throughput/hr | Risk Reduction/hr | Top-risk Wait Mean | Top-risk Wait Median | Top-risk Wait P95 |
 | --- | --- | --- | --- | --- | --- |
-| Threat-guided (bandit) | 6.00 | 242.56 | 10.83 | 10.83 | 20.67 |
-| Risk-only | 6.00 | 242.56 | 10.83 | 10.83 | 20.67 |
-| FIFO | 6.00 | 242.56 | 102.11 | 105.83 | 174.00 |
+| Threat-guided (bandit) | 6.00 | 247.16 | 6.83 | 6.83 | 13.00 |
+| Risk-only | 6.00 | 247.16 | 6.83 | 6.83 | 13.00 |
+| Risk/Et+aging | 6.00 | 247.16 | 6.83 | 6.83 | 13.00 |
+| FIFO | 6.00 | 247.16 | 64.66 | 70.50 | 102.33 |
 
 ## Representative Rank Deltas (Top-risk Detections)
 
@@ -30,3 +32,13 @@
 | 305 | no_privileged | 85.00 | 6 | 305 | 299 |
 | 306 | no_privileged | 85.00 | 7 | 306 | 299 |
 | 335 | no_privileged | 85.00 | 8 | 335 | 327 |
+
+## Risk-band wait percentiles (α sweep)
+
+A sweep across $\alpha \in \{0.0, 0.5, 1.0, 2.0\}$ and exploration weights $\in \{0.0, 0.5, 1.0\}$ yields consistent fairness profiles:
+
+- High-risk quartile: median wait 17.25 h (P95 32.78 h)
+- Mid-risk band: median wait 69.08 h (P95 100.06 h)
+- Low-risk band: median wait 120.92 h (P95 136.44 h)
+
+The raw measurements live in `data/metrics_schedule_sweep.json`.

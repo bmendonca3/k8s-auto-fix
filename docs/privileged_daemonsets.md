@@ -16,7 +16,10 @@ Large swaths of the Grok 5k corpus include privileged DaemonSets (CNI plugins, C
 ## Current Status
 - Cilium, Longhorn, and similar DaemonSets now validate after guardrail rewrites.
 - No pending privileged-container rejects remain in Grok 5k.
+- Placeholder RBAC bindings (`infra/fixtures/rbac/placeholder_clusterroles.yaml`) seed service accounts/roles referenced by CNIs and CSI DaemonSets so RBAC checks pass during dry-run.
+- NetworkPolicies under `infra/fixtures/network_policies/` provide a baseline default-deny posture for smoke tests while keeping DNS egress open.
 
 ## Next Steps
 - Expand fixture coverage if new corpora introduce additional privileged workloads.
 - Revisit policy exceptions only if a workload cannot function without full privileges and the operator has opted-in.
+- Continue trimming infrastructure rejects from `logs/grok5k/failure_summary_latest.txt` by removing invalid `clusterName` metadata and clamping over-sized resource requests before verification.

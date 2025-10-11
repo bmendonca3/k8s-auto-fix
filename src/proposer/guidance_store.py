@@ -74,5 +74,8 @@ class GuidanceStore:
             return ""
         return "\n\n".join(snippet.render() for snippet in snippets)
 
+    def policies(self) -> List[str]:
+        return list(self._entries.keys())
+
 
 __all__ = ["GuidanceStore", "GuidanceSnippet"]

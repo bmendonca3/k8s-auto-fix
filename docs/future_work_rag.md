@@ -21,4 +21,5 @@ Outline post-release exploration for augmenting proposer prompts with dynamic co
 - Guidance indexer automation to keep corpus fresh.
 
 ## Status
-- Not in scope for current release; document and revisit after telemetry work.
+- Guidance snippets are chunked and retrieved via `GuidanceRetriever`, backed by a failure cache that feeds policy-aware prompt hints.
+- Semantic regression guardrails block destructive Grok patches (container/volume removals) until the LLM path passes regression checks.

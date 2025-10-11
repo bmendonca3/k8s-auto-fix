@@ -7,7 +7,7 @@ MODEL ?= gpt-4o-mini
 PYTHON ?= python
 PIP ?= pip
 
-.PHONY: setup kind-up detect propose verify schedule test e2e smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures
+.PHONY: setup kind-up fixtures reproducible-report detect propose verify schedule test e2e smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures
 
 JOBS ?= 4
 GROK_PROPOSER_CONFIG ?= configs/run_grok.yaml
@@ -20,6 +20,13 @@ setup:
 
 kind-up:
 	./scripts/kind_up.sh
+
+fixtures:
+	kubectl apply -f infra/fixtures/rbac/placeholder_clusterroles.yaml
+	kubectl apply -f infra/fixtures/network_policies/default-deny.yaml
+
+reproducible-report:
+	$(PYTHON) scripts/build_repro_bundle.py
 
 detect:
 	$(PYTHON) -m src.detector.cli --in data/manifests --out data/detections.json --jobs $(JOBS)

@@ -10,12 +10,12 @@ This repo is my attempt at wiring together a full pipeline that scans Kubernetes
   2. `grok` – xAI Grok-4 Fast Reasoning with injected policy/safety guidance; LLM responses are merged with the rule patch so guardrails (drop dangerous capabilities, clear `privileged`, add service accounts, rewrite dangling Services, set PodDisruptionBudget eviction policies, etc.) always land.
   3. `vendor` – assumes an OpenAI-compatible endpoint such as GPT-4o.
   4. `vllm` – intended for a self-hosted model (ex: RunPod) that speaks the OpenAI chat-completions protocol.
-  It loads settings from `configs/run.yaml`, enforces strict JSON Patch parsing, validates path applicability, retries with verifier feedback, and now walks nested `jobTemplate` specs so CronJobs are patched correctly. The CLI accepts `--jobs` for parallel patch generation and loads extra policy snippets from `docs/policy_guidance/` to give Grok/vendor runs retrieval-augmented context on retries.
+  It loads settings from `configs/run.yaml`, enforces strict JSON Patch parsing, validates path applicability, retries with verifier feedback, and now walks nested `jobTemplate` specs so CronJobs are patched correctly. The CLI accepts `--jobs` for parallel patch generation. A retrieval loop (`GuidanceRetriever` + failure cache) slices `docs/policy_guidance/` into targeted hints for Grok/vendor retries, and semantic regression checks prevent LLM outputs from removing containers or volumes before verification.
 - **Verifier** (`src/verifier`) applies patches, runs policy rechecks across the expanded rule set (`no_latest_tag`, `no_privileged`, `no_host_path`, `no_host_ports`, `run_as_user`, `enforce_seccomp`, `drop_capabilities`, `non_existent_service_account`, `pdb_unhealthy_eviction_policy`, etc.), calls `kubectl apply --dry-run=server`, performs additional safety assertions (including CronJob traversal), and optionally rescans the targeted policy. The CLI outputs `data/verified.json`.
 - **Scheduler** (`src/scheduler`) ranks the accepted patches with the score `S = R * p / E[t] + explore + α * wait + KEV`, normalises policy identifiers, and writes `data/schedule.json` containing `id`, the score, and the individual components.
 - **Risk enrichment** (`src/risk`) pulls CTI feeds (EPSS/KEV), optional Trivy image scans, and policy defaults to build `data/risk.json` for downstream prioritisation.
 - **Configs and Fixtures** – Added a single source of truth config (`configs/run.yaml`), three sample manifests (`data/manifests/001.yaml`, `002.yaml`, `003.yaml`), and Kyverno policy examples for parity.
-- **Automation** – Replaced the old Makefile with targets that map to the new CLI entrypoints (`make detect`, `make propose`, `make verify`, `make risk`, `make schedule`, `make queue-enqueue`, `make metrics`, `make benchmark-grok200`, `make benchmark-grok5k`, `make benchmark-full`, `make benchmark-scheduler`, `make e2e`, etc.). There is also a `smoke-proposer` curl command for testing proprietary endpoints quickly.
+- **Automation** – Replaced the old Makefile with targets that map to the new CLI entrypoints (`make detect`, `make propose`, `make verify`, `make risk`, `make schedule`, `make queue-enqueue`, `make metrics`, `make benchmark-grok200`, `make benchmark-grok5k`, `make benchmark-full`, `make benchmark-scheduler`, `make fixtures`, `make reproducible-report`, `make e2e`, etc.). There is also a `smoke-proposer` curl command for testing proprietary endpoints quickly.
 - **Failure triage** – `make summarize-failures` aggregates verifier rejects (policy, reason, manifest) across large Grok sweeps so guardrail tuning is data-driven.
 - **Tests** – Expanded unit tests to exercise the new contracts (detector, proposer guards, verifier gates, scheduler ordering) and added a patch minimality/idempotence check that now sweeps every manifest referenced in `data/detections.json`.
 
@@ -78,6 +78,9 @@ This repo is my attempt at wiring together a full pipeline that scans Kubernetes
   - `cli.py` – loads patches + detections, applies verifier logic, writes `data/verified.json`.
   - `verifier.py` – three-gate verification logic (policy check, kubectl dry-run, safety assertions, optional targeted rescan).
   - `jsonpatch_guard.py` – helper that checks patch paths exist before application.
+- `infra/`
+  - `crds/` – CRD bundle plus manual overrides applied to the dry-run cluster before verification.
+  - `fixtures/` – optional RBAC and NetworkPolicy fixtures (`rbac/`, `network_policies/`) that cover common Grok-5k dependencies; apply them when a run references placeholder service accounts or expects default-deny behaviour.
   - `__init__.py` – package export.
 - `scheduler/`
   - `cli.py` – reads verified results, filters accepted ones, computes metrics, writes `data/schedule.json`.
@@ -319,14 +322,28 @@ make test
 
 <!-- METRICS_SECTION_START -->
 - **Rules baseline (full corpus)** – `make benchmark-full` produces 1313/1313 fixes (100.0%) with median JSON Patch length 6 (`data/patches_rules_full.json`, `data/verified_rules_full.json`, `data/metrics_rules_full.json`).
-- **Grok full corpus** – `make benchmark-grok-full` covers the 1,313-case corpus with 1313/1313 accepted patches (100.0%) and median JSON Patch length 6 (`data/batch_runs/grok_full/metrics_grok_full.json`).
-- **Grok 5k corpus** – The latest rerun lands **4,439 / 5,000 accepted patches (88.78%)** with median JSON Patch length 9 (`data/batch_runs/grok_5k/metrics_grok5k.json`). Remaining rejections are dominated by manifests that expect external infrastructure (missing CRDs/resources, controller-specific fields) and deliberate privileged workloads. Historical acceptance snapshots live in `data/batch_runs/grok_5k/metrics_history.json`.
+- **Grok full corpus** – `make benchmark-grok-full` covers the 1,313-case corpus with 1308/1313 accepted patches (99.6%) and median JSON Patch length 6.0 (`data/batch_runs/grok_full/metrics_grok_full.json`).
 - **Grok benchmark (first 200 detections)** – `make benchmark-grok200` runs 20 batches totalling 200 detections with 200/200 accepted (100.0%); artifacts live under `data/batch_runs/`.
-- **Scheduler comparison** – `make benchmark-scheduler` ranks the top 50 high-risk items at mean rank 25.5 (median 25.5, P95 48.0) for both bandit and risk-only modes, while FIFO slips to mean 326.58 (P95 880.0).
-- **Scheduler telemetry** – the baseline bandit completes 1,313 patches in 218.8h at ~6.0 patches/hour with top-risk P95 wait 20.7h; FIFO stretches the same P95 wait to 174.0h (`telemetry` in `data/metrics_schedule_compare.json`).
+- **Scheduler comparison** – `make benchmark-scheduler` ranks the top 50 high-risk items at mean rank 25.5 (median 25.5, P95 48.0). Risk-only remaps preserve the same ordering, while the `risk/Et+aging` baseline averages 42.22 (P95 124.0). FIFO slips to mean 365.18 (P95 620.0).
+- **Scheduler telemetry** – the baseline bandit completes 1,313 patches in 138.3h at ~6.0 patches/hour with top-risk P95 wait 13.0h; FIFO stretches the same P95 wait to 102.3h (`telemetry` in `data/metrics_schedule_compare.json`).
 - **Parallel rules baseline** – `scripts/parallel_runner.py` can propose and verify the corpus with configurable `--jobs` (see `make benchmark-full JOBS=8` for an example run).
 - **Latency probes (`scripts/probe_grok_rate.py`)** – keep Grok/API concurrency under observed limits before launching full-corpus batches.
 <!-- METRICS_SECTION_END -->
+
+## Unified evaluation snapshot
+
+The pipelines now use a pinned seed (`1337`) for both rules and Grok/xAI runs. `data/eval/unified_eval_summary.json` captures the exact counts and latency samples referenced below.
+
+| Corpus (mode) | Seed | Acceptance | Median proposer (ms) | Median verifier (ms) | Verifier P95 (ms) | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| Supported 1.264k (rules) | 1337 | 1264/1264 (100.00%) | 230 | 2,118 | 9,328 | All fixtures accept after host-mount normalisation; verifier timings taken from 1,264 samples. |
+| Supported 5k (rules) | 1337 | 4972/5000 (99.44%) | 248 | 1,214 | 6,905 | Extended curated corpus with the same guardrails; metrics derived from `data/verified_rules_5000.json`. |
+| Manifest 1.313k (rules) | 1337 | 1313/1313 (100.00%) | 400 | 85 | 136 | Deterministic baseline for the 1.313k manifest slice. |
+| Manifest 1.313k (Grok) | 1337 | 1308/1313 (99.62%) | n/a | 202 | 659 | Five rejects fail the requests.cpu guard; proposer latencies are not emitted by the archived Grok sweep. |
+| Grok-5k (Grok) | 1337 | 4439/5000 (88.78%) | n/a | 1,048.5 | 12,153 | 1,120 instrumented verifier samples; remaining cases lack latency telemetry in the historical run. |
+
+Detailed rules vs Grok ablation notes for the 1.313k slice live in `docs/ablation_rules_vs_grok.md`.
+LLM mode remains optional until the regression checks described above pass without manual intervention. The reproducibility bundle (`make reproducible-report`) regenerates the table above directly from the JSON artifacts listed under `docs/reproducibility/`.
 
 ## Grok 5k progress snapshot (latest)
 
@@ -335,32 +352,44 @@ make test
 - **Remaining schema blockers:** Current rejections stem from manifests that expect real infrastructure (missing CRDs/controllers, Jobs/Pods with empty names, StatefulSets that assume pre-provisioned PVCs). These are captured in `logs/grok5k/failure_summary_latest.txt`.
 - **Policy-only rejects:** Only 23 failures are policy-driven (mostly env-var secrets that legitimately require `secretKeyRef`). The rest are infrastructure or dataset placeholders.
 - **Limitations:** Without seeding the remaining CRDs/controllers or curating the placeholder-heavy manifests, server-side validation will continue to reject those workloads. Document these as dataset limits or install the missing components before running with `--require-kubectl`.
+- **Guard updates:** `_patch_ephemeral_metadata` removes stale `clusterName` annotations from ephemeral volumes, and `_patch_pod_security_context` deletes invalid pod-level `allowPrivilegeEscalation` fields. Requests are clamped to their limits so TPU jobs no longer fail the `requests.cpu` check.
+- **Fixtures:** Minimal RBAC/NetworkPolicy helpers live in `infra/fixtures/` to seed namespaces with the ServiceAccounts and policies referenced by CNI/CSI add-ons.
+- **Threat mitigation:** Semantic regression checks prevent LLM patches from deleting containers/volumes, and the reproducibility bundle (`make reproducible-report`) ties every metric to its artifact for auditability.
 
 ## Secondary supported corpus (instrumented)
 
-- **Acceptance:** `data/batch_runs/secondary_supported/summary.json` captures the extended supported run with **1,217 / 1,264 accepted (96.28%)** in rules mode. This corpus covers curated Helm/Operator manifests after policy normalisation.
-- **Artifacts:** Proposer telemetry (`proposer_metrics.json`), verifier output (`verified.json`), and scheduler ranking (`schedule.json`) live under `data/batch_runs/secondary_supported/`.
+- **Acceptance:** `data/batch_runs/secondary_supported/summary.json` now tracks the seed-locked rerun with **1,264 / 1,264 accepted (100.00%)** in rules mode. This corpus covers curated Helm/Operator manifests after policy normalisation.
+- **Artifacts:** Fresh proposer output (`patches_rules.json`), verifier records (`verified_rules.json`), run metrics (`metrics_rules.json`), plus the original telemetry (`proposer_metrics.json`, `schedule.json`) live under `data/batch_runs/secondary_supported/`.
 - **Telemetry roll-up:** Policy-level success probabilities and expected times are regenerated via `scripts/compute_policy_metrics.py`; the latest snapshot is in `data/policy_metrics.json`.
 - **Evaluation notes:** `docs/secondary_dataset_evaluation.md` describes both the 200-item pilot (200/200 accepted) and the full supported run, including top policies and infrastructure-related rejects.
 
 ## Risk-aware scheduling impact
 
-- **Bandit vs FIFO:** `docs/scheduler_visualisation.md` summarises ranking quality and wait-time telemetry. Bandit and risk-only modes keep high-risk fixes in the top 50 (mean rank 25.5), whereas FIFO drifts to mean rank 326.6 (P95 880.0).
-- **Latency benefit:** For the supported corpus, the bandit scheduler limits top-risk P95 wait to ~20.7h against FIFO’s 174.0h, mirroring the priorities used in Borg/SRE style queues.
+- **Bandit vs FIFO:** `docs/scheduler_visualisation.md` summarises ranking quality and wait-time telemetry. Bandit and risk-only modes keep high-risk fixes in the top 50 (mean rank 25.5, P95 48.0); the `risk/Et+aging` variant averages 42.22. FIFO drifts to mean rank 365.18 with P95 620.0.
+- **Latency benefit:** For the supported corpus, the bandit scheduler limits top-risk P95 wait to ~13.0h against FIFO’s 102.3h, mirroring the priorities used in Borg/SRE style queues.
+- **Fairness sweep:** Sweeping $\alpha$ (aging) from 0.0 to 2.0 and exploration weights from 0.0 to 1.0 yields the same wait profile: high-risk quartile median 17.25h (P95 32.78h), mid-risk 69.08h (P95 100.06h), low-risk 120.92h (P95 136.44h); see `data/metrics_schedule_sweep.json`.
 - **Inputs:** Scheduler scoring consumes `data/policy_metrics.json` (live probabilities/latencies) and KEV/EPSS feeds (`kev.json`, `epss.csv`). See `src/scheduler/cli.py` and `src/scheduler/schedule.py` for the scoring formula.
 
 ## Limitations & future enhancements
 
 - **Infrastructure dependencies:** Remaining Grok-5k rejections are dominated by missing namespaces, controllers, or RBAC required by upstream charts. `logs/grok5k/failure_summary_latest.txt` enumerates these root causes. Planned mitigation: broaden CRD seeding (`infra/crds/manual_overrides.yaml`) and add namespace/RBAC fixtures for smoke-test pods.
-- **Operator feedback:** Early production notes are tracked in `docs/qualitative_feedback.md`. Expanding this log with before/after impacts will align with Borg/SRE case studies and Kyverno customer reports.
+- **Operator feedback:** Early production notes are tracked in `docs/qualitative_feedback.md`; the survey/interview instrument lives in `docs/operator_survey.md` so future pulses stay consistent.
 - **Guidance freshness:** `scripts/refresh_guidance.py` pulls from `docs/policy_guidance/sources.yaml` (mix of upstream URLs and curated static excerpts) to refresh pod-security, CIS, and Kyverno snippets. Running this script in CI keeps guardrails aligned with the latest standards.
 - **Cost/latency telemetry:** `docs/telemetry_instrumentation_plan.md` outlines the plan to emit per-run latency, token, and cost metrics. Incorporating these figures (e.g., into `policy_metrics.json`) is the next milestone for parity with LLM-based systems such as GenKubeSec.
+
+## Roadmap
+
+- **Q4 2025 – Reproducibility bundle:** `make reproducible-report` now regenerates every evaluation table from JSON artifacts; next iteration will publish a Docker image for one-command replay.
+- **Q1 2026 – Grok reruns with live telemetry:** rerun the Grok 1.313k and 5k sweeps under the new guards/fixtures while capturing proposer latency/token metrics for the paper.
+- **Q1 2026 – External validation:** stage the pipeline against a second public corpus (CNCF sandbox manifests) to demonstrate generality.
+- **Q2 2026 – Operator study expansion:** repeat the structured survey quarterly and include rules vs Grok comparisons plus anonymised quotes.
+- **Q2 2026 – Hardening:** fold threat-mitigation checks (semantic regression, malicious manifest detection) into CI and publish guard metadata alongside queue entries.
 
 ## Related work snapshot
 
 | System | Acceptance / Fix rate | Corpus size | Guardrail highlights | Scheduling |
 | ------ | --------------------- | ----------- | -------------------- | ---------- |
-| **k8s-auto-fix (this work)** | 88.78% (Grok-5k), 96.28% (supported) | 5k + 1.3k manifests | Placeholder/secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
+| **k8s-auto-fix (this work)** | 88.78% (Grok-5k), 100.00% (supported rules), 99.62% (Grok 1.313k) | 5k + 1.3k manifests | Placeholder/secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
 | GenKubeSec (2024) | ≈85–92% (curated 200) | 200 manifests | LLM reasoning, manual review | None (future work) |
 | Kyverno (2023+) | 80–95% (policy mutation) | Thousands (admission enforced) | Policy-driven mutation/generation | Admission queue only |
 | Borg/SRE automation | ≈90–95% (internal clusters) | Millions of workloads | Rollbacks, health checks, throttling | Priority queues |
@@ -372,7 +401,7 @@ See `docs/related_work.md` for citations and extended commentary.
 
 The high-level polishing backlog lives in `docs/polish_todo.md`. Upcoming focus areas:
 
-- **Unify evaluation matrix** – rerun rules + Reasoning API sweeps with fixed seeds, publish a single table of acceptance/latency metrics, and reconcile the 5k/1.3k/1.313 figures across the paper.
+- **Unify evaluation matrix** – ✅ Seed-locked rules and Grok runs consolidated in `data/eval/unified_eval_summary.json` with README/paper tables refreshed.
 - **LLM ablations and safety review** – compare deterministic rules vs API-backed proposer on the same corpora, capture failure taxonomy deltas, and document token/cost trade-offs.
 - **Scheduler baselines & sensitivity** – add R/Et+aging and risk-only comparators, sweep exploration/aging coefficients, and quantify fairness beyond mean-rank.
 - **Broaden policy surface** – expand guards/fixtures for additional Pod Security profiles, RBAC and network policies, and close the infra gaps called out in `logs/grok5k/failure_summary_latest.txt`.

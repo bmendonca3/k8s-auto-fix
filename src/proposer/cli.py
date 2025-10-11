@@ -8,7 +8,7 @@ import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from functools import lru_cache
 
@@ -21,6 +21,7 @@ import yaml
 from .guidance_store import GuidanceStore
 from .guards import PatchError, extract_json_array
 from .model_client import ClientOptions, ModelClient
+from .retriever import GuidanceRetriever, FailureCache
 from src.common.policy_ids import normalise_policy_id
 from src.verifier.jsonpatch_guard import validate_paths_exist
 
@@ -175,7 +176,9 @@ def _generate_patch_record(
             patch_ops = patch_list
             generation_latency_ms = int((time.perf_counter() - attempt_start) * 1000)
         except Exception as exc:  # noqa: BLE001
-            errors.append(str(exc))
+            message = str(exc)
+            errors.append(message)
+            FAILURE_CACHE.record(detection_id, message)
 
     hardened = local_generator.source == "rules"
     if patch_ops is None:
@@ -196,9 +199,15 @@ def _generate_patch_record(
         except PatchError:
             patch_ops = rule_guard_ops
             hardened = True
+
+    if local_generator.source != "rules":
+        _assert_no_semantic_regression(patch_ops)
+
     total_latency_ms = int((time.perf_counter() - overall_start) * 1000)
     if generation_latency_ms is None:
         generation_latency_ms = total_latency_ms
+
+    FAILURE_CACHE.clear(detection_id)
 
     result: Dict[str, Any] = {
         "id": detection_id,
@@ -330,19 +339,25 @@ def _build_prompt(detection: Dict[str, Any]) -> str:
         "- Prefer secure defaults: replace hostPath volumes with emptyDir: {} unless explicitly instructed otherwise."
     )
     feedback = detection.get("retry_feedback")
+    failure_hint = ""
     if isinstance(feedback, str) and feedback.strip():
-        sections.append(f"Verifier feedback: {feedback}")
-    guidance = _policy_guidance(policy_id)
+        failure_hint = feedback.strip()
+        sections.append(f"Verifier feedback: {failure_hint}")
+    else:
+        failure_hint = FAILURE_CACHE.lookup(detection.get("id", ""))
+        if failure_hint:
+            sections.append(f"Verifier feedback: {failure_hint}")
+    guidance = _policy_guidance(policy_id, failure_hint or None)
     if guidance:
         sections.append(f"Guidance:\n{guidance}")
     sections.append("Return ONLY a valid RFC6902 JSON Patch array.")
     return "\n\n".join(sections)
 
 
-def _policy_guidance(policy_id: str) -> str:
-    store_guidance = GUIDANCE_STORE.render(policy_id)
-    if store_guidance:
-        return store_guidance
+def _policy_guidance(policy_id: str, failure_hint: Optional[str] = None) -> str:
+    retrieved = GUIDANCE_RETRIEVER.retrieve(policy_id, failure_hint)
+    if retrieved:
+        return retrieved
     key = (policy_id or "").lower()
     external = _load_external_guidance(key)
     if external:
@@ -516,6 +531,22 @@ def _merge_patch_ops(primary: List[Dict[str, Any]], guard: List[Dict[str, Any]])
     return merged
 
 
+def _assert_no_semantic_regression(patch_ops: Sequence[Dict[str, Any]]) -> None:
+    for op in patch_ops:
+        if not isinstance(op, dict):
+            continue
+        if op.get("op") != "remove":
+            continue
+        path = op.get("path")
+        if not isinstance(path, str):
+            continue
+        normalized = path.rstrip("/")
+        if normalized.endswith("/containers") or "/containers/" in normalized:
+            raise PatchError("semantic regression: refusing to remove container definitions in LLM mode")
+        if normalized.endswith("/volumes") or "/volumes/" in normalized:
+            raise PatchError("semantic regression: refusing to remove volume definitions in LLM mode")
+
+
 def _patch_cronjob_defaults(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     kind = obj.get("kind")
     if not isinstance(kind, str) or kind.lower() != "cronjob":
@@ -673,6 +704,34 @@ def _patch_cronjob_ephemeral_metadata(obj: Dict[str, Any]) -> List[Dict[str, Any
         raise PatchError("cronjob metadata already compliant")
 
     return ops
+
+
+def _patch_ephemeral_metadata(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    ops: List[Dict[str, Any]] = []
+    for base_path, volumes in _find_volumes(obj):
+        for idx, volume in enumerate(volumes):
+            if not isinstance(volume, dict):
+                continue
+            ephemeral = volume.get("ephemeral")
+            if not isinstance(ephemeral, dict):
+                continue
+            vct = ephemeral.get("volumeClaimTemplate")
+            if not isinstance(vct, dict):
+                continue
+            metadata = vct.get("metadata")
+            if not isinstance(metadata, dict):
+                continue
+            metadata_path = f"{base_path}/{idx}/ephemeral/volumeClaimTemplate/metadata"
+            if "clusterName" not in metadata:
+                continue
+            ops.append({"op": "remove", "path": f"{metadata_path}/clusterName"})
+            remaining = dict(metadata)
+            remaining.pop("clusterName", None)
+            if not remaining:
+                ops.append({"op": "remove", "path": metadata_path})
+    if ops:
+        return ops
+    raise PatchError("ephemeral metadata already compliant")
 
 
 DNS_SUBDOMAIN_RE = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$")
@@ -986,6 +1045,28 @@ def _patch_job_restart_policy(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
             "value": "OnFailure",
         }
     ]
+
+
+def _patch_pod_security_context(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    ops: List[Dict[str, Any]] = []
+    for spec_path, spec in _find_pod_specs(obj):
+        if not isinstance(spec, dict):
+            continue
+        security = spec.get("securityContext")
+        if not isinstance(security, dict):
+            continue
+        context_path = f"{spec_path}/securityContext"
+        removed = False
+        if "allowPrivilegeEscalation" in security:
+            ops.append({"op": "remove", "path": f"{context_path}/allowPrivilegeEscalation"})
+            removed = True
+        if removed:
+            remaining = {key: value for key, value in security.items() if key != "allowPrivilegeEscalation"}
+            if not remaining:
+                ops.append({"op": "remove", "path": context_path})
+    if ops:
+        return ops
+    raise PatchError("pod securityContext already compliant")
 
 
 def _patch_mount_propagation(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -1520,11 +1601,13 @@ def _augment_with_guardrails(obj: Dict[str, Any], ops: List[Dict[str, Any]], pol
         ("", _patch_cronjob_defaults),
         ("", _patch_cronjob_apiversion),
         ("", _patch_cronjob_ephemeral_metadata),
+        ("", _patch_ephemeral_metadata),
         ("", _patch_namespace_placeholders),
         ("", _patch_missing_metadata_name),
         ("", _patch_missing_volumes),
         ("", _patch_mount_propagation),
         ("", _patch_job_restart_policy),
+        ("", _patch_pod_security_context),
         ("drop_capabilities", _patch_drop_capabilities),
         ("no_latest_tag", _patch_no_latest),
         ("set_requests_limits", _patch_set_requests_limits),
@@ -2253,6 +2336,8 @@ def _percentile(values: List[int], percentile: float) -> float:
 
 GUIDANCE_DIR = Path(__file__).resolve().parents[2] / "docs" / "policy_guidance"
 GUIDANCE_STORE = GuidanceStore.default()
+GUIDANCE_RETRIEVER = GuidanceRetriever(GUIDANCE_STORE)
+FAILURE_CACHE = FailureCache()
 
 
 if __name__ == "__main__":  # pragma: no cover

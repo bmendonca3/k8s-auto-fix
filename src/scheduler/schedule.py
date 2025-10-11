@@ -16,15 +16,29 @@ class PatchCandidate:
     kev: bool = False
     explore: float = 0.0
 
-    def score(self, alpha: float = 1.0, epsilon: float = EPSILON, kev_weight: float = 1.0) -> float:
+    def score(
+        self,
+        alpha: float = 1.0,
+        epsilon: float = EPSILON,
+        kev_weight: float = 1.0,
+        explore_weight: float = 1.0,
+    ) -> float:
         denominator = max(self.expected_time, epsilon)
         kev_value = kev_weight if self.kev else 0.0
-        return (self.risk * self.probability) / denominator + self.explore + alpha * self.wait + kev_value
+        return (
+            (self.risk * self.probability) / denominator
+            + explore_weight * self.explore
+            + alpha * self.wait
+            + kev_value
+        )
 
-    def to_output(self, alpha: float, epsilon: float, kev_weight: float = 1.0) -> dict:
+    def to_output(self, alpha: float, epsilon: float, kev_weight: float = 1.0, explore_weight: float = 1.0) -> dict:
         return {
             "id": self.id,
-            "score": round(self.score(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight), 6),
+            "score": round(
+                self.score(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight, explore_weight=explore_weight),
+                6,
+            ),
             "R": self.risk,
             "p": self.probability,
             "Et": self.expected_time,
@@ -39,6 +53,7 @@ def schedule_patches(
     alpha: float = 1.0,
     epsilon: float = EPSILON,
     kev_weight: float = 1.0,
+    explore_weight: float = 1.0,
 ) -> List[PatchCandidate]:
     candidates = [
         patch if isinstance(patch, PatchCandidate) else _coerce_patch_candidate(patch)
@@ -46,7 +61,12 @@ def schedule_patches(
     ]
     return sorted(
         candidates,
-        key=lambda candidate: candidate.score(alpha=alpha, epsilon=epsilon, kev_weight=kev_weight),
+        key=lambda candidate: candidate.score(
+            alpha=alpha,
+            epsilon=epsilon,
+            kev_weight=kev_weight,
+            explore_weight=explore_weight,
+        ),
         reverse=True,
     )
 
