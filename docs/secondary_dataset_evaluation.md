@@ -28,12 +28,12 @@ Artifacts:
 ## Extended 5k Sweep
 
 - **Scope**: 5,000 curated manifests (`data/detections_supported_5000.json`) processed in rules mode.
-- **Result**: 4,972 / 5,000 accepted (99.44%). Residual rejections underline namespace/RBAC assumptions tracked in `logs/grok5k/failure_summary_latest.txt`.
+- **Result**: 4,677 / 5,000 accepted (93.54%). Residual rejections underline namespace/RBAC assumptions plus workload-specific controllers that remain out of scope; the failure set is tracked in `logs/grok5k/failure_summary_latest.txt`.
 - **Artifacts**:
   - Patches: `data/patches_rules_5000.json`
   - Verifier output: `data/verified_rules_5000.json`
   - Metrics: `data/metrics_rules_5000.json`
-- **Notes**: This dataset feeds the reproducibility bundle and provides the “external” data point referenced in the paper table.
+- **Notes**: This dataset feeds the reproducibility bundle and provides the “external” data point referenced in the paper table. Historical latency telemetry was not captured during the archived sweep; only acceptance figures are published.
 
 Next steps:
 - Promote these runs into `data/batch_runs/secondary_*` for archival.

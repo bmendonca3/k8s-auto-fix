@@ -315,22 +315,57 @@ kind: Service
 metadata:
   name: orphan-service
   namespace: demo
+  labels:
+    app: orphan
 spec:
   type: ClusterIP
-  selector:
-    app: missing
   ports:
     - port: 80
       targetPort: 8080
 """
         obj = yaml.safe_load(manifest)
-        patch = proposer_cli._patch_dangling_service(obj)
+        selector_hint = proposer_cli._assert_service_safety(obj)
+        patch = proposer_cli._patch_dangling_service(obj, selector_hint=selector_hint)
         verifier = Verifier(require_kubectl=False)
         self._stub_kubectl(verifier, True)
         result = verifier.verify(manifest, patch, "dangling_service")
         self.assertTrue(result.accepted)
         self.assertTrue(result.ok_safety)
         self.assertTrue(result.ok_rescan)
+
+    def test_dangling_service_requires_manual_review_when_selector_exists(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Service
+metadata:
+  name: existing-selector
+spec:
+  type: ClusterIP
+  selector:
+    app: existing
+  ports:
+    - port: 443
+      targetPort: 8443
+"""
+        obj = yaml.safe_load(manifest)
+        with self.assertRaises(proposer_cli.PatchError):
+            proposer_cli._assert_service_safety(obj)
+
+    def test_dangling_service_rejects_nodeport(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-svc
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+"""
+        obj = yaml.safe_load(manifest)
+        with self.assertRaises(proposer_cli.PatchError):
+            proposer_cli._assert_service_safety(obj)
 
     def test_placeholder_sanitisation_expands_identifiers(self) -> None:
         manifest = """
@@ -785,6 +820,8 @@ spec:
     metadata:
       labels:
         app: demo
+      annotations:
+        k8s-auto-fix.dev/allow-default-service-account: "true"
     spec:
       serviceAccountName: missing-account
       containers:
@@ -792,11 +829,36 @@ spec:
           image: nginx:1.23
 """
         obj = yaml.safe_load(manifest)
+        proposer_cli._assert_service_account_safety(obj)
         patch = proposer_cli._patch_non_existent_service_account(obj)
         verifier = Verifier(require_kubectl=False)
         self._stub_kubectl(verifier, True)
         result = verifier.verify(manifest, patch, "non_existent_service_account")
         self.assertTrue(result.accepted)
+
+    def test_service_account_patch_requires_opt_in(self) -> None:
+        manifest = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+spec:
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      serviceAccountName: missing-account
+      containers:
+        - name: app
+          image: nginx:1.23
+"""
+        obj = yaml.safe_load(manifest)
+        with self.assertRaises(proposer_cli.PatchError):
+            proposer_cli._assert_service_account_safety(obj)
 
     def test_verify_cronjob_policy(self) -> None:
         manifest = """

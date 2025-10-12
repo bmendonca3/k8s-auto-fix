@@ -272,16 +272,26 @@ class Verifier:
             return (not errors, errors)
 
         if policy_id == "dangling_service":
+            metadata = manifest.get("metadata")
+            if not isinstance(metadata, dict):
+                errors.append("service metadata missing after patch")
+                return (False, errors)
             spec = manifest.get("spec")
             if not isinstance(spec, dict):
                 errors.append("service spec missing after patch")
                 return (False, errors)
-            if spec.get("type") != "ExternalName":
-                errors.append("service type not ExternalName")
-            if "selector" in spec:
-                errors.append("service still defines a selector")
-            if not isinstance(spec.get("externalName"), str):
-                errors.append("externalName missing")
+            service_type = spec.get("type")
+            if isinstance(service_type, str) and service_type and service_type.lower() != "clusterip":
+                errors.append(f"service type must remain ClusterIP, found {service_type!r}")
+            selector = spec.get("selector")
+            if not (
+                isinstance(selector, dict)
+                and selector
+                and all(isinstance(value, str) and value.strip() for value in selector.values())
+            ):
+                errors.append("service selector missing after patch")
+            if "externalName" in spec:
+                errors.append("externalName should not be set for ClusterIP services")
             return (not errors, errors)
 
         if policy_id == "non_existent_service_account":

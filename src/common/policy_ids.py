@@ -33,6 +33,8 @@ _POLICY_NORMALISATION_MAP = {
     "host-port": "no_host_ports",
     "host-ports": "no_host_ports",
     "disallow-hostports": "no_host_ports",
+    "ssh-port": "ssh_port",
+    "ssh_port": "ssh_port",
     "hostnetwork": "no_host_network",
     "host-network": "no_host_network",
     "hostpid": "no_host_pid",
@@ -58,6 +60,8 @@ _POLICY_NORMALISATION_MAP = {
     # Secret / env policies
     "env-var-secret": "env_var_secret",
     "envvar-secret": "env_var_secret",
+    "duplicate-env-var": "duplicate_env_var",
+    "duplicate_env_var": "duplicate_env_var",
     # ServiceAccount / dangling service
     "dangling-service": "dangling_service",
     "non-existent-service-account": "non_existent_service_account",
@@ -70,6 +74,9 @@ _POLICY_NORMALISATION_MAP = {
     # Service port validation
     "invalid-target-ports": "invalid_target_ports",
     "invalid_target_ports": "invalid_target_ports",
+    # Selector alignment
+    "mismatching-selector": "mismatching_selector",
+    "mismatching_selector": "mismatching_selector",
 }
 
 

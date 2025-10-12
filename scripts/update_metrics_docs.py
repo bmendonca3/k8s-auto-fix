@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import math
 from dataclasses import dataclass
@@ -17,8 +18,16 @@ PAPER_MARKERS = ("% METRICS_EVAL_START", "% METRICS_EVAL_END")
 
 
 def load_json(path: Path) -> Optional[object]:
+    def _open(path: Path):
+        if path.exists():
+            return path.open("r", encoding="utf-8")
+        gz_path = path.with_suffix(path.suffix + ".gz")
+        if gz_path.exists():
+            return gzip.open(gz_path, "rt", encoding="utf-8")
+        raise FileNotFoundError
+
     try:
-        with path.open("r", encoding="utf-8") as handle:
+        with _open(path) as handle:
             return json.load(handle)
     except FileNotFoundError:
         return None

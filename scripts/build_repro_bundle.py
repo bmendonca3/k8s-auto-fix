@@ -1,41 +1,88 @@
 #!/usr/bin/env python3
-"""Generate the reproducibility bundle (JSON + Markdown + LaTeX) from source artifacts."""
+"""Rebuild the reproducibility bundle (JSON + Markdown + LaTeX) from recorded metrics."""
 
 from __future__ import annotations
 
+import gzip
 import json
 import math
 import statistics
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
-DOC_DIR = ROOT / "docs" / "reproducibility"
+DOCS_DIR = ROOT / "docs" / "reproducibility"
 
 
 @dataclass(frozen=True)
-class DatasetSpec:
+class DatasetConfig:
     dataset: str
     mode: str
     seed: Optional[int]
     note: str
     metrics_path: Path
-    verified_path: Optional[Path] = None
     patches_path: Optional[Path] = None
+    verified_path: Optional[Path] = None
 
+    def build_summary(self) -> Dict[str, Any]:
+        for candidate in (self.metrics_path, self.patches_path, self.verified_path):
+            if candidate is not None and not _artifact_exists(candidate):
+                raise FileNotFoundError(f"Required artifact missing: {candidate}")
 
-def _ensure_exists(path: Path) -> None:
-    if not path.exists():
-        raise FileNotFoundError(f"Required artifact missing: {path}")
+        metrics = _load_json(self.metrics_path)
+        proposer_stats = _summarise_patches(self.patches_path)
+        verifier_stats = _summarise_verified(self.verified_path)
+        acceptance = _derive_acceptance(metrics)
+
+        median_ops = metrics.get("median_patch_ops")
+        if median_ops is None:
+            median_ops = proposer_stats.get("median_patch_ops")
+
+        return {
+            "dataset": self.dataset,
+            "mode": self.mode,
+            "seed": self.seed,
+            "note": self.note,
+            "total": acceptance["total"],
+            "accepted": acceptance["accepted"],
+            "acceptance_rate": acceptance["rate"],
+            "median_patch_ops": median_ops,
+            "proposer_latency_ms": {
+                key: proposer_stats.get(key)
+                for key in ("count", "median_ms", "p95_ms")
+            },
+            "verify_latency_ms": verifier_stats,
+            "token_usage": proposer_stats.get("token_usage"),
+            "sources": {
+                "metrics": _rel_path(self.metrics_path),
+                "patches": _rel_path(self.patches_path),
+                "verified": _rel_path(self.verified_path),
+            },
+        }
 
 
 def _load_json(path: Path) -> Any:
-    _ensure_exists(path)
-    with path.open("r", encoding="utf-8") as handle:
+    with _open_json(path) as handle:
         return json.load(handle)
+
+
+def _artifact_exists(path: Path) -> bool:
+    if path.exists():
+        return True
+    gz_path = path.with_suffix(path.suffix + ".gz")
+    return gz_path.exists()
+
+
+def _open_json(path: Path):
+    if path.exists():
+        return path.open("r", encoding="utf-8")
+    gz_path = path.with_suffix(path.suffix + ".gz")
+    if gz_path.exists():
+        return gzip.open(gz_path, "rt", encoding="utf-8")
+    raise FileNotFoundError(path)
 
 
 def _safe_median(values: Sequence[float]) -> float:
@@ -53,42 +100,56 @@ def _percentile(values: Sequence[float], percentile: float) -> float:
     rank = (len(ordered) - 1) * (percentile / 100.0)
     lower = math.floor(rank)
     upper = math.ceil(rank)
-    if lower == upper:
-        return ordered[lower]
     lower_value = ordered[lower]
     upper_value = ordered[upper]
+    if lower == upper:
+        return lower_value
     return lower_value + (upper_value - lower_value) * (rank - lower)
 
 
 def _summarise_verified(path: Optional[Path]) -> Dict[str, Any]:
-    if path is None:
-        return {"count": 0, "median_ms": None, "p95_ms": None}
+    summary: Dict[str, Any] = {"count": 0, "median_ms": None, "p95_ms": None}
+    if path is None or not path.exists():
+        return summary
+
     data = _load_json(path)
-    latencies = [
-        float(entry["latency_ms"])
-        for entry in data
-        if isinstance(entry, dict) and isinstance(entry.get("latency_ms"), (int, float))
-    ]
-    if not latencies:
-        return {"count": 0, "median_ms": None, "p95_ms": None}
-    return {
-        "count": len(latencies),
-        "median_ms": round(_safe_median(latencies), 2),
-        "p95_ms": round(_percentile(latencies, 95.0), 2),
-    }
+    if not isinstance(data, Iterable):
+        return summary
+
+    latencies: List[float] = []
+    for entry in data:
+        if not isinstance(entry, dict):
+            continue
+        latency = entry.get("total_latency_ms")
+        if latency is None:
+            latency = entry.get("latency_ms")
+        if latency is None:
+            latency = entry.get("verify_latency_ms")
+        if isinstance(latency, (int, float)):
+            latencies.append(float(latency))
+
+    if latencies:
+        summary["median_ms"] = round(_safe_median(latencies), 2)
+        summary["p95_ms"] = round(_percentile(latencies, 95.0), 2)
+    summary["count"] = len(latencies)
+    return summary
 
 
 def _summarise_patches(path: Optional[Path]) -> Dict[str, Any]:
-    if path is None:
-        return {
-            "count": 0,
-            "median_ms": None,
-            "p95_ms": None,
-            "token_usage": None,
-            "median_patch_ops": None,
-        }
+    summary: Dict[str, Any] = {
+        "count": 0,
+        "median_ms": None,
+        "p95_ms": None,
+        "token_usage": None,
+        "median_patch_ops": None,
+    }
+    if path is None or not path.exists():
+        return summary
 
     data = _load_json(path)
+    if not isinstance(data, Iterable):
+        return summary
+
     latencies: List[float] = []
     patch_lengths: List[int] = []
     prompt_tokens = 0.0
@@ -99,7 +160,10 @@ def _summarise_patches(path: Optional[Path]) -> Dict[str, Any]:
     for entry in data:
         if not isinstance(entry, dict):
             continue
+
         latency = entry.get("total_latency_ms")
+        if latency is None:
+            latency = entry.get("latency_ms")
         if isinstance(latency, (int, float)):
             latencies.append(float(latency))
 
@@ -117,46 +181,37 @@ def _summarise_patches(path: Optional[Path]) -> Dict[str, Any]:
             total_tokens += total
             usage_samples += 1
 
-    token_usage = None
+    if latencies:
+        summary["median_ms"] = round(_safe_median(latencies), 2)
+        summary["p95_ms"] = round(_percentile(latencies, 95.0), 2)
+    summary["count"] = len(latencies)
+
+    if patch_lengths:
+        summary["median_patch_ops"] = round(
+            _safe_median([float(length) for length in patch_lengths]),
+            2,
+        )
+
     if usage_samples:
-        token_usage = {
+        summary["token_usage"] = {
             "prompt": prompt_tokens,
             "completion": completion_tokens,
             "total": total_tokens,
             "mean_per_patch": total_tokens / usage_samples if usage_samples else 0.0,
         }
 
-    median_latency = round(_safe_median(latencies), 2) if latencies else None
-    p95_latency = round(_percentile(latencies, 95.0), 2) if latencies else None
-    median_patch_ops = (
-        round(_safe_median([float(length) for length in patch_lengths]), 2)
-        if patch_lengths
-        else None
-    )
-
-    return {
-        "count": len(latencies),
-        "median_ms": median_latency,
-        "p95_ms": p95_latency,
-        "token_usage": token_usage,
-        "median_patch_ops": median_patch_ops,
-    }
+    return summary
 
 
 def _derive_acceptance(metrics: Dict[str, Any]) -> Dict[str, Optional[float]]:
     total = metrics.get("detections") or metrics.get("total")
     accepted = metrics.get("accepted")
     if accepted is None:
-        auto_fix = metrics.get("auto_fix")
-        if isinstance(auto_fix, (int, float)):
-            accepted = auto_fix
+        accepted = metrics.get("auto_fix")
 
     rate = metrics.get("auto_fix_rate")
     if rate is None and accepted is not None and total:
         rate = float(accepted) / float(total)
-
-    if accepted is not None and isinstance(accepted, float):
-        accepted = round(accepted)
 
     return {
         "total": int(total) if isinstance(total, (int, float)) else None,
@@ -169,42 +224,6 @@ def _rel_path(path: Optional[Path]) -> Optional[str]:
     if path is None:
         return None
     return str(path.relative_to(ROOT))
-
-
-def summarise_dataset(spec: DatasetSpec) -> Dict[str, Any]:
-    metrics = _load_json(spec.metrics_path)
-    acceptance = _derive_acceptance(metrics)
-
-    proposer_stats = _summarise_patches(spec.patches_path)
-    verifier_stats = _summarise_verified(spec.verified_path)
-
-    median_ops = metrics.get("median_patch_ops")
-    if median_ops is None:
-        median_ops = proposer_stats.get("median_patch_ops")
-
-    summary: Dict[str, Any] = {
-        "dataset": spec.dataset,
-        "mode": spec.mode,
-        "seed": spec.seed,
-        "note": spec.note,
-        "total": acceptance["total"],
-        "accepted": acceptance["accepted"],
-        "acceptance_rate": acceptance["rate"],
-        "median_patch_ops": median_ops,
-        "proposer_latency_ms": {
-            key: proposer_stats.get(key)
-            for key in ("count", "median_ms", "p95_ms")
-        },
-        "verify_latency_ms": verifier_stats,
-        "token_usage": proposer_stats.get("token_usage"),
-        "sources": {
-            "metrics": _rel_path(spec.metrics_path),
-            "patches": _rel_path(spec.patches_path),
-            "verified": _rel_path(spec.verified_path),
-        },
-    }
-
-    return summary
 
 
 def _format_acceptance(entry: Dict[str, Any]) -> str:
@@ -256,10 +275,7 @@ def _escape_latex(text: str) -> str:
         "~": r"\textasciitilde{}",
         "^": r"\textasciicircum{}",
     }
-    escaped = []
-    for char in text:
-        escaped.append(replacements.get(char, char))
-    return "".join(escaped)
+    return "".join(replacements.get(char, char) for char in text)
 
 
 def _format_acceptance_latex(entry: Dict[str, Any]) -> str:
@@ -271,23 +287,21 @@ def _format_acceptance_latex(entry: Dict[str, Any]) -> str:
     if rate is None or rate != rate:
         return f"{accepted}/{total}"
     percentage = f"{rate * 100:.2f}"
-    return f"{accepted}/{total} ({percentage}\\%)"
+    return rf"{accepted}/{total} ({percentage}\%)"
 
 
 def _format_note_latex(note: str) -> str:
     return _escape_latex(note)
 
 
-def write_summary_json(results: List[Dict[str, Any]]) -> None:
+def _write_summary_json(results: List[Dict[str, Any]]) -> None:
     output_path = DATA_DIR / "eval" / "unified_eval_summary.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as handle:
-        json.dump(results, handle, indent=2)
+    output_path.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
 
 
-def write_markdown(results: List[Dict[str, Any]]) -> None:
-    DOC_DIR.mkdir(parents=True, exist_ok=True)
-
+def _write_markdown(results: List[Dict[str, Any]]) -> None:
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
     lines = [
         "# Reproducibility Report",
         "",
@@ -300,11 +314,11 @@ def write_markdown(results: List[Dict[str, Any]]) -> None:
     ]
 
     for entry in results:
-        sources: List[str] = []
-        for key in ("metrics", "patches", "verified"):
-            path = entry["sources"].get(key)
-            if path:
-                sources.append(f"`{path}`")
+        sources = [
+            f"`{path}`"
+            for key, path in entry["sources"].items()
+            if path is not None
+        ]
         artifact_cell = "<br/>".join(sources) if sources else "n/a"
         lines.append(
             "| {dataset} | {mode} | {seed} | {acceptance} | {prop} | {verify} | {p95} | {tokens} | {artifacts} |".format(
@@ -331,14 +345,14 @@ def write_markdown(results: List[Dict[str, Any]]) -> None:
         ]
     )
 
-    (DOC_DIR / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (DOCS_DIR / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def write_latex_table(results: List[Dict[str, Any]]) -> None:
+def _write_latex(results: List[Dict[str, Any]]) -> None:
     lines = [
         r"\begin{tabularx}{\textwidth}{@{}l c c c c c X@{}}",
         r"\toprule",
-        r"\textbf{Corpus (mode)} & \textbf{Seed} & \textbf{Acceptance} & \textbf{Median proposer (ms)} & \textbf{Median verifier (ms)} & \textbf{Verifier P95 (ms)} & \textbf{Notes} \\",  # Header row
+        r"\textbf{Corpus (mode)} & \textbf{Seed} & \textbf{Acceptance} & \textbf{Median proposer (ms)} & \textbf{Median verifier (ms)} & \textbf{Verifier P95 (ms)} & \textbf{Notes} \\",
         r"\midrule",
     ]
 
@@ -352,7 +366,7 @@ def write_latex_table(results: List[Dict[str, Any]]) -> None:
         verifier_p95 = _escape_latex(_format_latency_p95(entry.get("verify_latency_ms")))
         note = _format_note_latex(entry["note"])
 
-        row = f"{dataset} ({mode}) & {seed} & {acceptance} & {proposer} & {verifier} & {verifier_p95} & {note} \\\\"  # LaTeX row
+        row = rf"{dataset} ({mode}) & {seed} & {acceptance} & {proposer} & {verifier} & {verifier_p95} & {note} \\"
         lines.append(row)
 
     lines.extend(
@@ -362,62 +376,66 @@ def write_latex_table(results: List[Dict[str, Any]]) -> None:
         ]
     )
 
-    (DOC_DIR / "tables.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (DOCS_DIR / "tables.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def main() -> None:
-    specs: List[DatasetSpec] = [
-        DatasetSpec(
+def _build_results() -> List[Dict[str, Any]]:
+    configs: List[DatasetConfig] = [
+        DatasetConfig(
             dataset="Supported 1.264k",
             mode="rules",
             seed=1337,
             note="Curated Helm/Operator corpus with host-mount normalisation.",
             metrics_path=DATA_DIR / "batch_runs" / "secondary_supported" / "metrics_rules.json",
-            verified_path=DATA_DIR / "batch_runs" / "secondary_supported" / "verified_rules.json",
             patches_path=DATA_DIR / "batch_runs" / "secondary_supported" / "patches_rules.json",
+            verified_path=DATA_DIR / "batch_runs" / "secondary_supported" / "verified_rules.json",
         ),
-        DatasetSpec(
+        DatasetConfig(
             dataset="Supported 5k",
             mode="rules",
             seed=1337,
             note="Extended supported corpus (5,000 curated manifests).",
             metrics_path=DATA_DIR / "metrics_rules_5000.json",
-            verified_path=DATA_DIR / "verified_rules_5000.json",
             patches_path=DATA_DIR / "patches_rules_5000.json",
+            verified_path=DATA_DIR / "verified_rules_5000.json",
         ),
-        DatasetSpec(
+        DatasetConfig(
             dataset="Manifest 1.313k",
             mode="rules",
             seed=1337,
             note="Full manifest slice in deterministic rules mode.",
             metrics_path=DATA_DIR / "metrics_rules_full.json",
-            verified_path=DATA_DIR / "verified_rules_full.json",
             patches_path=DATA_DIR / "patches_rules_full.json",
+            verified_path=DATA_DIR / "verified_rules_full.json",
         ),
-        DatasetSpec(
+        DatasetConfig(
             dataset="Manifest 1.313k",
             mode="grok",
             seed=1337,
             note="Grok/xAI with guardrail merge (five TPU jobs rejected).",
             metrics_path=DATA_DIR / "batch_runs" / "grok_full" / "metrics_grok_full.json",
-            verified_path=DATA_DIR / "batch_runs" / "grok_full" / "verified_grok_full.json",
             patches_path=DATA_DIR / "batch_runs" / "grok_full" / "patches_grok_full.json",
+            verified_path=DATA_DIR / "batch_runs" / "grok_full" / "verified_grok_full.json",
         ),
-        DatasetSpec(
+        DatasetConfig(
             dataset="Grok-5k",
             mode="grok",
             seed=1337,
             note="Five-thousand manifest sweep with telemetry instrumentation.",
             metrics_path=DATA_DIR / "batch_runs" / "grok_5k" / "metrics_grok5k.json",
-            verified_path=DATA_DIR / "batch_runs" / "grok_5k" / "verified_grok5k.json",
             patches_path=DATA_DIR / "batch_runs" / "grok_5k" / "patches_grok5k.json",
+            verified_path=DATA_DIR / "batch_runs" / "grok_5k" / "verified_grok5k.json",
         ),
     ]
 
-    results = [summarise_dataset(spec) for spec in specs]
-    write_summary_json(results)
-    write_markdown(results)
-    write_latex_table(results)
+    return [config.build_summary() for config in configs]
+
+
+def main() -> None:
+    results = _build_results()
+    _write_summary_json(results)
+    _write_markdown(results)
+    _write_latex(results)
 
 
 if __name__ == "__main__":

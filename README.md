@@ -10,7 +10,7 @@ This repo is my attempt at wiring together a full pipeline that scans Kubernetes
   2. `grok` – xAI Grok-4 Fast Reasoning with injected policy/safety guidance; LLM responses are merged with the rule patch so guardrails (drop dangerous capabilities, clear `privileged`, add service accounts, rewrite dangling Services, set PodDisruptionBudget eviction policies, etc.) always land.
   3. `vendor` – assumes an OpenAI-compatible endpoint such as GPT-4o.
   4. `vllm` – intended for a self-hosted model (ex: RunPod) that speaks the OpenAI chat-completions protocol.
-  It loads settings from `configs/run.yaml`, enforces strict JSON Patch parsing, validates path applicability, retries with verifier feedback, and now walks nested `jobTemplate` specs so CronJobs are patched correctly. The CLI accepts `--jobs` for parallel patch generation. A retrieval loop (`GuidanceRetriever` + failure cache) slices `docs/policy_guidance/` into targeted hints for Grok/vendor retries, and semantic regression checks prevent LLM outputs from removing containers or volumes before verification.
+  It loads settings from `configs/run.yaml`, enforces strict JSON Patch parsing, validates path applicability, retries with verifier feedback, and now walks nested `jobTemplate` specs so CronJobs are patched correctly. The CLI accepts `--jobs` for parallel patch generation. A retrieval loop (`GuidanceRetriever` + failure cache) slices `docs/policy_guidance/` into targeted hints for Grok/vendor retries, and semantic regression checks prevent LLM outputs from removing containers or volumes before verification. Risk-sensitive guards now refuse to convert Services to `ExternalName` without clear selectors and require `k8s-auto-fix.dev/allow-default-service-account=true` before normalising service accounts.
 - **Verifier** (`src/verifier`) applies patches, runs policy rechecks across the expanded rule set (`no_latest_tag`, `no_privileged`, `no_host_path`, `no_host_ports`, `run_as_user`, `enforce_seccomp`, `drop_capabilities`, `non_existent_service_account`, `pdb_unhealthy_eviction_policy`, etc.), calls `kubectl apply --dry-run=server`, performs additional safety assertions (including CronJob traversal), and optionally rescans the targeted policy. The CLI outputs `data/verified.json`.
 - **Scheduler** (`src/scheduler`) ranks the accepted patches with the score `S = R * p / E[t] + explore + α * wait + KEV`, normalises policy identifiers, and writes `data/schedule.json` containing `id`, the score, and the individual components.
 - **Risk enrichment** (`src/risk`) pulls CTI feeds (EPSS/KEV), optional Trivy image scans, and policy defaults to build `data/risk.json` for downstream prioritisation.
@@ -51,6 +51,8 @@ This repo is my attempt at wiring together a full pipeline that scans Kubernetes
 - `queue.db` – SQLite-backed persistent queue populated from accepted patches.
 - `metrics.json` – aggregated KPIs (`detections`, `patches`, `verified`, `accepted`, `auto_fix_rate`, `median_patch_ops`, `failed_policy`, `failed_schema`, `failed_safety`, `failed_rescan`).
 - `batch_runs/` – evaluation artifacts. Notably `patches_grok200_batch_*.json`, `verified_grok200_batch_*.json`, `patches_grok200.json`, `verified_grok200.json`, `metrics_grok200.json`, and `results_grok200.json` capture a 20×10 Grok run (200 detections) with rule-merged guardrails and server-side dry-run validation. `grok_full/` mirrors the 1,313-case Grok sweep (`detections_grok_full_batch_*.json`, `patches_grok_full_batch_*.json`, `verified_grok_full_batch_*.json`, plus merged `patches_grok_full.json`, `verified_grok_full.json`, `metrics_grok_full.json`).
+- `grok5k_telemetry.json` – proposer telemetry derived from the Grok-5k sweep (per-patch token usage plus aggregate summary).
+- `grok1k_telemetry.json` – telemetry index for the 1.313k Grok/xAI slice (records enumerate generated patches; latency capture not yet available).
 
 ### scripts/
 - `kind_up.sh` – small helper to spin up a local kind cluster (control-plane only) and set the kubectl context.
@@ -174,7 +176,7 @@ This repo is my attempt at wiring together a full pipeline that scans Kubernetes
      --labels data/eval/holdout_labels.json \
      --out data/eval/detector_metrics.json
    ```
-   The bundled hold-out set spans the core policies we currently remediate (`no_latest_tag`, `no_privileged`, `drop_capabilities`, `read_only_root_fs`, `run_as_non_root`, `set_requests_limits`, `no_host_path`, `no_host_ports`) and reports overall/per-policy precision, recall, and F1.
+   The bundled hold-out set spans the core policies we currently remediate (`no_latest_tag`, `no_privileged`, `drop_capabilities`, `read_only_root_fs`, `run_as_non_root`, `set_requests_limits`, `no_host_path`, `no_host_ports`) and reports overall/per-policy precision, recall, and F1. The latest run lands precision=1.00, recall=1.00, F1=1.00 overall with eight true positives and zero false positives/negatives (see `data/eval/detector_metrics.json`).
 
 6. **Latency snapshot**
    ```bash
@@ -321,8 +323,8 @@ make test
 ## Current metrics (Oct 2025)
 
 <!-- METRICS_SECTION_START -->
-- **Rules baseline (full corpus)** – `make benchmark-full` produces 1313/1313 fixes (100.0%) with median JSON Patch length 6 (`data/patches_rules_full.json`, `data/verified_rules_full.json`, `data/metrics_rules_full.json`).
-- **Grok full corpus** – `make benchmark-grok-full` covers the 1,313-case corpus with 1308/1313 accepted patches (99.6%) and median JSON Patch length 6.0 (`data/batch_runs/grok_full/metrics_grok_full.json`).
+- **Rules baseline (full corpus)** – `make benchmark-full` produces 13589/13656 fixes (99.5%) with median JSON Patch length 8 (`data/patches_rules_full.json`, `data/verified_rules_full.json`, `data/metrics_rules_full.json`).
+- **Grok full corpus** – `make benchmark-grok-full` covers the 1,313-case corpus with 1313/1313 accepted patches (100.0%) and median JSON Patch length 6 (`data/batch_runs/grok_full/metrics_grok_full.json`).
 - **Grok benchmark (first 200 detections)** – `make benchmark-grok200` runs 20 batches totalling 200 detections with 200/200 accepted (100.0%); artifacts live under `data/batch_runs/`.
 - **Scheduler comparison** – `make benchmark-scheduler` ranks the top 50 high-risk items at mean rank 25.5 (median 25.5, P95 48.0). Risk-only remaps preserve the same ordering, while the `risk/Et+aging` baseline averages 42.22 (P95 124.0). FIFO slips to mean 365.18 (P95 620.0).
 - **Scheduler telemetry** – the baseline bandit completes 1,313 patches in 138.3h at ~6.0 patches/hour with top-risk P95 wait 13.0h; FIFO stretches the same P95 wait to 102.3h (`telemetry` in `data/metrics_schedule_compare.json`).
@@ -336,11 +338,11 @@ The pipelines now use a pinned seed (`1337`) for both rules and Grok/xAI runs. `
 
 | Corpus (mode) | Seed | Acceptance | Median proposer (ms) | Median verifier (ms) | Verifier P95 (ms) | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| Supported 1.264k (rules) | 1337 | 1264/1264 (100.00%) | 230 | 2,118 | 9,328 | All fixtures accept after host-mount normalisation; verifier timings taken from 1,264 samples. |
-| Supported 5k (rules) | 1337 | 4972/5000 (99.44%) | 248 | 1,214 | 6,905 | Extended curated corpus with the same guardrails; metrics derived from `data/verified_rules_5000.json`. |
-| Manifest 1.313k (rules) | 1337 | 1313/1313 (100.00%) | 400 | 85 | 136 | Deterministic baseline for the 1.313k manifest slice. |
-| Manifest 1.313k (Grok) | 1337 | 1308/1313 (99.62%) | n/a | 202 | 659 | Five rejects fail the requests.cpu guard; proposer latencies are not emitted by the archived Grok sweep. |
-| Grok-5k (Grok) | 1337 | 4439/5000 (88.78%) | n/a | 1,048.5 | 12,153 | 1,120 instrumented verifier samples; remaining cases lack latency telemetry in the historical run. |
+| Supported 1.264k (rules) | 1337 | 1264/1264 (100.00%) | 29.00 | 242.00 | 517.85 | All fixtures accept after host-mount normalisation; latency samples come from the seeded rerun. |
+| Supported 5k (rules) | 1337 | 4677/5000 (93.54%) | n/a | n/a | n/a | Extended curated corpus with the same guardrails; verifier telemetry is not emitted by the archived sweep. |
+| Manifest 1.313k (rules) | 1337 | 13589/13656 (99.51%) | 5.00 | 77.00 | 178.40 | Deterministic baseline for the 1.313k manifest slice. |
+| Manifest 1.313k (Grok) | 1337 | 1313/1313 (100.00%) | n/a | n/a | n/a | Latest Grok rerun succeeds across the slice; the archived artifacts omit proposer/verifier timing. |
+| Grok-5k (Grok) | 1337 | 4439/5000 (88.78%) | n/a | n/a | n/a | Instrumented batches cover 5k manifests; timing telemetry was not recorded in the historical run. |
 
 Detailed rules vs Grok ablation notes for the 1.313k slice live in `docs/ablation_rules_vs_grok.md`.
 LLM mode remains optional until the regression checks described above pass without manual intervention. The reproducibility bundle (`make reproducible-report`) regenerates the table above directly from the JSON artifacts listed under `docs/reproducibility/`.
@@ -389,7 +391,7 @@ LLM mode remains optional until the regression checks described above pass witho
 
 | System | Acceptance / Fix rate | Corpus size | Guardrail highlights | Scheduling |
 | ------ | --------------------- | ----------- | -------------------- | ---------- |
-| **k8s-auto-fix (this work)** | 88.78% (Grok-5k), 100.00% (supported rules), 99.62% (Grok 1.313k) | 5k + 1.3k manifests | Placeholder/secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
+| **k8s-auto-fix (this work)** | 88.78% (Grok-5k), 93.54% / 100.00% (supported rules), 100.00% (Grok 1.313k) | 5k + 1.3k manifests | Placeholder/secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
 | GenKubeSec (2024) | ≈85–92% (curated 200) | 200 manifests | LLM reasoning, manual review | None (future work) |
 | Kyverno (2023+) | 80–95% (policy mutation) | Thousands (admission enforced) | Policy-driven mutation/generation | Admission queue only |
 | Borg/SRE automation | ≈90–95% (internal clusters) | Millions of workloads | Rollbacks, health checks, throttling | Priority queues |

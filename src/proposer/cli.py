@@ -25,7 +25,25 @@ from .retriever import GuidanceRetriever, FailureCache
 from src.common.policy_ids import normalise_policy_id
 from src.verifier.jsonpatch_guard import validate_paths_exist
 
+POLICIES_REQUIRE_MANIFEST_PATH = {"job_ttl_after_finished"}
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+SERVICE_SELECTOR_LABEL_CANDIDATES = (
+    "app.kubernetes.io/name",
+    "app.kubernetes.io/component",
+    "app",
+    "component",
+    "name",
+)
+SERVICE_ACCOUNT_ALLOW_ANNOTATION = "k8s-auto-fix.dev/allow-default-service-account"
+
 app = typer.Typer(help="Generate JSON patches from detections using configurable backends.")
+
+
+def _is_truthy(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return bool(value)
 
 
 @app.command()
@@ -253,21 +271,27 @@ def _normalise_detection(record: Dict[str, Any], base_dir: Path) -> Dict[str, An
     if missing:
         raise typer.BadParameter(f"Detection missing required fields: {', '.join(sorted(missing))}")
 
+    original_policy = str(record["policy_id"]) if "policy_id" in record else ""
+    policy_id = normalise_policy_id(original_policy)
+
     manifest_yaml = record.get("manifest_yaml")
-    if manifest_yaml is None:
+    should_reload = policy_id in POLICIES_REQUIRE_MANIFEST_PATH
+    if manifest_yaml is None or should_reload:
         manifest_path = record.get("manifest_path")
         if manifest_path:
             candidate = Path(manifest_path)
             if not candidate.is_absolute():
-                candidate = (base_dir / candidate).resolve()
+                base_candidate = (base_dir / candidate).resolve()
+                if base_candidate.exists():
+                    candidate = base_candidate
+                else:
+                    candidate = (REPO_ROOT / candidate).resolve()
             try:
                 manifest_yaml = candidate.read_text(encoding="utf-8")
             except OSError as exc:
                 raise typer.BadParameter(f"Failed to read manifest {manifest_path}: {exc}") from exc
         else:
             raise typer.BadParameter("Detection must include manifest_yaml or manifest_path")
-    original_policy = str(record["policy_id"]) if "policy_id" in record else ""
-    policy_id = normalise_policy_id(original_policy)
     return {
         "id": str(record["id"]),
         "policy_id": policy_id,
@@ -400,11 +424,11 @@ def _policy_guidance(policy_id: str, failure_hint: Optional[str] = None) -> str:
         )
     if key == "dangling_service":
         return (
-            "Convert the Service into an ExternalName service. Remove any selector/ports/clusterIP fields, set spec.type to \"ExternalName\", and add spec.externalName pointing at the appropriate in-cluster DNS name."
+            "Ensure the Service stays ClusterIP-backed and targets a stable label. Prefer reusing metadata.labels (e.g. app=...) to populate spec.selector, and do not remove ports or clusterIP entries. If no safe selector exists, leave the Service for manual review."
         )
     if key == "non_existent_service_account":
         return (
-            "Ensure every Pod spec uses a valid ServiceAccount. Prefer switching serviceAccountName/serviceAccount to \"default\" when the referenced account does not exist."
+            f"Ensure every Pod spec uses an existing ServiceAccount. Only switch serviceAccountName/serviceAccount to \"default\" when the manifest opts in via the annotation {SERVICE_ACCOUNT_ALLOW_ANNOTATION}=true."
         )
     if key == "pdb_unhealthy_eviction_policy":
         return (
@@ -461,7 +485,8 @@ def _rule_based_patch(detection: Dict[str, Any]) -> List[Dict[str, Any]]:
     policy_id = detection["policy_id"]
     obj = yaml.safe_load(manifest_yaml) or {}
     if policy_id == "dangling_service":
-        ops = _patch_dangling_service(obj)
+        selector_hint = _assert_service_safety(obj)
+        ops = _patch_dangling_service(obj, selector_hint=selector_hint)
     elif policy_id == "no_latest_tag":
         ops = _patch_no_latest(obj)
     elif policy_id == "no_privileged":
@@ -493,6 +518,7 @@ def _rule_based_patch(detection: Dict[str, Any]) -> List[Dict[str, Any]]:
     elif policy_id == "drop_capabilities":
         ops = _patch_drop_capabilities(obj)
     elif policy_id == "non_existent_service_account":
+        _assert_service_account_safety(obj)
         ops = _patch_non_existent_service_account(obj)
     elif policy_id == "pdb_unhealthy_eviction_policy":
         ops = _patch_pdb_unhealthy_eviction(obj)
@@ -512,6 +538,14 @@ def _rule_based_patch(detection: Dict[str, Any]) -> List[Dict[str, Any]]:
         ops = _patch_probe_port(obj, "readiness")
     elif policy_id == "startup_port":
         ops = _patch_probe_port(obj, "startup")
+    elif policy_id == "invalid_target_ports":
+        ops = _patch_invalid_target_ports(obj)
+    elif policy_id == "mismatching_selector":
+        ops = _patch_mismatching_selector(obj)
+    elif policy_id == "ssh_port":
+        ops = _patch_ssh_port(obj)
+    elif policy_id == "duplicate_env_var":
+        ops = _patch_duplicate_env_var(obj)
     else:
         raise PatchError(f"no rule available for policy {policy_id}")
 
@@ -826,8 +860,10 @@ def _sanitize_generate_name(value: str) -> str:
     return f"{base}-"
 
 
-def _sanitize_label_value(value: str) -> str:
+def _sanitize_label_token(value: str) -> str:
     stripped = value.strip()
+    if _looks_like_placeholder(stripped):
+        return "placeholder"
     if LABEL_VALUE_RE.match(stripped) and not _looks_like_placeholder(stripped):
         return stripped
     candidate = stripped.lower()
@@ -886,10 +922,10 @@ def _sanitize_placeholder_value(value: str, segments: Tuple[str, ...]) -> Option
         sanitized = _sanitize_generate_name(value)
         return sanitized if sanitized != value else None
     if parent in {"labels", "matchLabels"}:
-        sanitized = _sanitize_label_value(value)
+        sanitized = _sanitize_label_token(value)
         return sanitized if sanitized != value else None
     if len(segments) >= 4 and segments[-2] == "values" and segments[-4] == "matchExpressions":
-        sanitized = _sanitize_label_value(value)
+        sanitized = _sanitize_label_token(value)
         return sanitized if sanitized != value else None
     if key == "secretName":
         sanitized = _sanitize_dns_subdomain(value, default="placeholder-secret")
@@ -1095,36 +1131,90 @@ def _patch_mount_propagation(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     raise PatchError("no mount propagation adjustments required")
 
 
-def _patch_dangling_service(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _assert_service_safety(obj: Dict[str, Any]) -> tuple[str, str]:
     if obj.get("kind") != "Service":
         raise PatchError("dangling-service fix expects a Service resource")
+    metadata = obj.get("metadata")
     spec = obj.get("spec")
+    if not isinstance(metadata, dict):
+        raise PatchError("service metadata missing; manual review required")
     if not isinstance(spec, dict):
-        raise PatchError("service spec missing")
-    metadata = obj.get("metadata") or {}
+        raise PatchError("service spec missing; manual review required")
+    service_type = spec.get("type")
+    if isinstance(service_type, str) and service_type and service_type.lower() != "clusterip":
+        raise PatchError(f"refusing to modify {service_type!r} services; manual review required")
+    selector = spec.get("selector")
+    if isinstance(selector, dict) and selector:
+        raise PatchError("service already defines a selector; manual review required")
+    labels = metadata.get("labels")
+    if isinstance(labels, dict):
+        for key in SERVICE_SELECTOR_LABEL_CANDIDATES:
+            value = labels.get(key)
+            if isinstance(value, str) and value.strip():
+                return key, value.strip()
     name = metadata.get("name")
-    if not isinstance(name, str) or not name:
-        raise PatchError("service name unavailable")
-    namespace = metadata.get("namespace") or "default"
-    external_name = f"{name}.{namespace}.svc.cluster.local"
+    if isinstance(name, str) and name.strip():
+        return "app", _sanitize_dns_label(name, default="service")
+    raise PatchError("no selector candidates available; manual review required")
 
+
+def _patch_dangling_service(obj: Dict[str, Any], *, selector_hint: tuple[str, str]) -> List[Dict[str, Any]]:
+    label_key, label_value = selector_hint
+    spec = obj.get("spec")
+    metadata = obj.get("metadata")
     ops: List[Dict[str, Any]] = []
-    type_path = "/spec/type"
-    if spec.get("type") != "ExternalName":
+
+    if not isinstance(spec, dict):
+        spec = {}
+        ops.append({"op": "add", "path": "/spec", "value": {}})
+
+    if not isinstance(metadata, dict):
+        metadata = {}
+        ops.append({"op": "add", "path": "/metadata", "value": {}})
+
+    labels = metadata.get("labels")
+    escaped_label_key = _json_pointer_escape(label_key)
+    if not isinstance(labels, dict):
+        labels = {}
+        ops.append({"op": "add", "path": "/metadata/labels", "value": {label_key: label_value}})
+    else:
+        if labels.get(label_key) != label_value:
+            op = "replace" if label_key in labels else "add"
+            ops.append({"op": op, "path": f"/metadata/labels/{escaped_label_key}", "value": label_value})
+
+    selector = spec.get("selector")
+    if not isinstance(selector, dict):
+        ops.append({"op": "add", "path": "/spec/selector", "value": {label_key: label_value}})
+    else:
+        # Guard already ensures selector is empty or missing.
+        ops.append({"op": "replace", "path": "/spec/selector", "value": {label_key: label_value}})
+
+    service_type = spec.get("type")
+    if not isinstance(service_type, str) or not service_type.strip():
         op = "replace" if "type" in spec else "add"
-        ops.append({"op": op, "path": type_path, "value": "ExternalName"})
-    if "selector" in spec:
-        ops.append({"op": "remove", "path": "/spec/selector"})
-    if "ports" in spec:
-        ops.append({"op": "remove", "path": "/spec/ports"})
-    if "clusterIP" in spec:
-        ops.append({"op": "remove", "path": "/spec/clusterIP"})
-    if spec.get("externalName") != external_name:
-        op = "replace" if "externalName" in spec else "add"
-        ops.append({"op": op, "path": "/spec/externalName", "value": external_name})
+        ops.append({"op": op, "path": "/spec/type", "value": "ClusterIP"})
+
     if not ops:
-        raise PatchError("service already uses ExternalName")
+        raise PatchError("service selector already populated; manual review required")
     return ops
+
+
+def _assert_service_account_safety(obj: Dict[str, Any]) -> None:
+    specs = _find_pod_specs(obj)
+    if not specs:
+        raise PatchError("no pod specs located for service account policy")
+    for spec_path, spec in specs:
+        if not isinstance(spec, dict):
+            continue
+        sa_name = spec.get("serviceAccountName") or spec.get("serviceAccount")
+        if sa_name in (None, "default"):
+            continue
+        metadata = _get_metadata_for_spec(obj, spec_path)
+        annotations = metadata.get("annotations") if isinstance(metadata, dict) else None
+        if not isinstance(annotations, dict) or not _is_truthy(annotations.get(SERVICE_ACCOUNT_ALLOW_ANNOTATION)):
+            raise PatchError(
+                f"service account rewrite requires opt-in via annotation {SERVICE_ACCOUNT_ALLOW_ANNOTATION}=true"
+            )
 
 
 def _patch_non_existent_service_account(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -1170,22 +1260,41 @@ def _patch_pdb_unhealthy_eviction(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def _patch_job_ttl_after_finished(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
-    if obj.get("kind", "").lower() != "job":
-        raise PatchError("policy expects a Job resource")
-    spec = obj.get("spec")
-    if not isinstance(spec, dict):
-        raise PatchError("job spec missing")
-    current = spec.get("ttlSecondsAfterFinished")
-    if isinstance(current, int) and current > 0:
-        raise PatchError("ttlSecondsAfterFinished already set")
-    op = "replace" if "ttlSecondsAfterFinished" in spec else "add"
-    return [
-        {
-            "op": op,
-            "path": "/spec/ttlSecondsAfterFinished",
-            "value": 3600,
-        }
-    ]
+    kind = (obj.get("kind") or "").lower()
+    if kind == "job":
+        spec = obj.get("spec")
+        if not isinstance(spec, dict):
+            raise PatchError("job spec missing")
+        current = spec.get("ttlSecondsAfterFinished")
+        if isinstance(current, int) and current > 0:
+            raise PatchError("ttlSecondsAfterFinished already set")
+        op = "replace" if "ttlSecondsAfterFinished" in spec else "add"
+        return [
+            {
+                "op": op,
+                "path": "/spec/ttlSecondsAfterFinished",
+                "value": 3600,
+            }
+        ]
+    if kind == "cronjob":
+        spec = obj.get("spec")
+        if not isinstance(spec, dict):
+            raise PatchError("cronjob spec missing")
+        job_template = spec.get("jobTemplate")
+        if not isinstance(job_template, dict):
+            raise PatchError("job template missing")
+        job_spec = job_template.get("spec")
+        if not isinstance(job_spec, dict):
+            raise PatchError("job template spec missing")
+        if "ttlSecondsAfterFinished" not in job_spec:
+            raise PatchError("no ttlSecondsAfterFinished to remove")
+        return [
+            {
+                "op": "remove",
+                "path": "/spec/jobTemplate/spec/ttlSecondsAfterFinished",
+            }
+        ]
+    raise PatchError("policy expects a Job or CronJob resource")
 
 
 def _patch_unsafe_sysctls(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -1318,6 +1427,197 @@ def _build_pod_anti_affinity(labels: Dict[str, Any]) -> Optional[Dict[str, Any]]
     return None
 
 
+def _metadata_path_for_spec(spec_path: str) -> str:
+    if spec_path.endswith("/spec"):
+        return f"{spec_path[:-4]}metadata"
+    return f"{spec_path}/metadata"
+
+
+def _controller_path_for_spec(spec_path: str) -> str:
+    marker = "/template/spec"
+    if marker in spec_path:
+        return spec_path[: spec_path.rfind(marker)]
+    return spec_path
+
+
+def _ensure_label_for_spec(obj: Dict[str, Any], spec_path: str, ops: List[Dict[str, Any]]) -> Dict[str, str]:
+    metadata = _get_metadata_for_spec(obj, spec_path)
+    metadata_path = _metadata_path_for_spec(spec_path)
+    labels_path = f"{metadata_path}/labels"
+
+    if isinstance(metadata, dict):
+        labels = metadata.get("labels")
+        if isinstance(labels, dict):
+            for key, value in labels.items():
+                if isinstance(key, str) and isinstance(value, str) and key and value:
+                    return {key: value}
+    else:
+        ops.append({"op": "add", "path": metadata_path, "value": {}})
+        metadata = {}
+
+    existing_labels = metadata.get("labels") if isinstance(metadata, dict) else None
+    fallback_key = "app"
+    name_hint = metadata.get("name") if isinstance(metadata, dict) else None
+    fallback_value = (
+        _sanitize_dns_label(name_hint, default="workload") if isinstance(name_hint, str) and name_hint.strip() else "workload"
+    )
+
+    if not isinstance(existing_labels, dict):
+        ops.append({"op": "add", "path": labels_path, "value": {fallback_key: fallback_value}})
+        return {fallback_key: fallback_value}
+
+    existing_value = existing_labels.get(fallback_key)
+    if isinstance(existing_value, str) and existing_value.strip():
+        return {fallback_key: existing_value}
+
+    op = "replace" if fallback_key in existing_labels else "add"
+    ops.append({"op": op, "path": f"{labels_path}/{fallback_key}", "value": fallback_value})
+    return {fallback_key: fallback_value}
+
+
+def _sanitize_label_value(raw: Any) -> Optional[str]:
+    if isinstance(raw, str):
+        candidate = raw.strip()
+    elif isinstance(raw, (int, float)):
+        candidate = str(int(raw))
+    else:
+        return None
+    if not candidate:
+        return None
+    return _sanitize_label_token(candidate)
+
+
+def _patch_mismatching_selector(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    root_spec = obj.get("spec")
+    if not isinstance(root_spec, dict):
+        metadata = obj.get("metadata") if isinstance(obj, dict) else {}
+        name_hint = ""
+        if isinstance(metadata, dict):
+            if isinstance(metadata.get("labels"), dict):
+                labels_dict = metadata.get("labels") or {}
+                if isinstance(labels_dict, dict):
+                    for value in labels_dict.values():
+                        if isinstance(value, str) and value.strip():
+                            name_hint = value
+                            break
+            if not name_hint and isinstance(metadata.get("name"), str):
+                name_hint = metadata.get("name")
+        fallback = _sanitize_dns_label(name_hint or "workload", default="workload")
+        spec_payload = {
+            "selector": {"matchLabels": {"app": fallback}},
+            "template": {
+                "metadata": {"labels": {"app": fallback}},
+                "spec": {},
+            },
+        }
+        return [{"op": "add", "path": "/spec", "value": spec_payload}]
+
+    specs_info = _find_pod_specs(obj)
+    if not specs_info:
+        spec_obj = obj.get("spec")
+        if isinstance(spec_obj, dict):
+            specs_info = [("/spec/template/spec", spec_obj.get("template", {}).get("spec") or {})]
+    ops: List[Dict[str, Any]] = []
+    for spec_path, _ in specs_info:
+        controller_path = _controller_path_for_spec(spec_path)
+        selector_path = f"{controller_path}/selector"
+        template_path = f"{controller_path}/template"
+        template = _resolve_path(obj, template_path)
+        if not isinstance(template, dict):
+            ops.append({"op": "add", "path": template_path, "value": {"metadata": {}, "spec": {}}})
+        selector = _resolve_path(obj, selector_path)
+        if not isinstance(selector, dict):
+            sanitized_labels = _ensure_label_for_spec(obj, spec_path, ops)
+            ops.append({"op": "add", "path": selector_path, "value": {"matchLabels": sanitized_labels}})
+            continue
+
+        match_labels = selector.get("matchLabels")
+        sanitized_labels: Dict[str, str] = {}
+        if isinstance(match_labels, dict):
+            for key, value in match_labels.items():
+                if not isinstance(key, str) or not key:
+                    continue
+                sanitized_value = _sanitize_label_value(value)
+                if sanitized_value is None:
+                    continue
+                sanitized_labels[key] = sanitized_value
+
+        if not sanitized_labels:
+            sanitized_labels = _ensure_label_for_spec(obj, spec_path, ops)
+        else:
+            metadata_path = _metadata_path_for_spec(spec_path)
+            labels_path = f"{metadata_path}/labels"
+            metadata = _resolve_path(obj, metadata_path)
+            if not isinstance(metadata, dict):
+                ops.append({"op": "add", "path": metadata_path, "value": {"labels": sanitized_labels}})
+            else:
+                existing_labels = metadata.get("labels")
+                if not isinstance(existing_labels, dict):
+                    ops.append({"op": "add", "path": labels_path, "value": sanitized_labels})
+                else:
+                    for key, value in sanitized_labels.items():
+                        existing_value = existing_labels.get(key)
+                        if existing_value == value:
+                            continue
+                        op = "replace" if key in existing_labels else "add"
+                        ops.append(
+                            {
+                                "op": op,
+                                "path": f"{labels_path}/{_json_pointer_escape(key)}",
+                                "value": value,
+                            }
+                        )
+
+        match_labels_path = f"{selector_path}/matchLabels"
+        if isinstance(match_labels, dict):
+            if match_labels != sanitized_labels:
+                ops.append(
+                    {
+                        "op": "replace",
+                        "path": match_labels_path,
+                        "value": sanitized_labels,
+                    }
+                )
+        else:
+            ops.append(
+                {
+                    "op": "add",
+                    "path": match_labels_path,
+                    "value": sanitized_labels,
+                }
+            )
+
+        match_expressions = selector.get("matchExpressions")
+        if isinstance(match_expressions, list):
+            for idx, expr in enumerate(match_expressions):
+                if not isinstance(expr, dict):
+                    continue
+                values = expr.get("values")
+                if not isinstance(values, list):
+                    continue
+                new_values: List[str] = []
+                changed = False
+                for value in values:
+                    sanitized_value = _sanitize_label_value(value)
+                    if sanitized_value is None:
+                        continue
+                    new_values.append(sanitized_value)
+                    if sanitized_value != value:
+                        changed = True
+                if changed:
+                    ops.append(
+                        {
+                            "op": "replace",
+                            "path": f"{selector_path}/matchExpressions/{idx}/values",
+                            "value": new_values,
+                        }
+                    )
+
+    if ops:
+        return ops
+    raise PatchError("no mismatching selectors found")
+
+
 def _patch_no_anti_affinity(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     specs_info = _find_pod_specs(obj)
     ops: List[Dict[str, Any]] = []
@@ -1327,6 +1627,9 @@ def _patch_no_anti_affinity(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
         metadata = _get_metadata_for_spec(obj, spec_path)
         labels = metadata.get("labels") if isinstance(metadata, dict) else {}
         preferred_entry = _build_pod_anti_affinity(labels or {})
+        if preferred_entry is None:
+            fallback_labels = _ensure_label_for_spec(obj, spec_path, ops)
+            preferred_entry = _build_pod_anti_affinity(fallback_labels)
         if preferred_entry is None:
             continue
         affinity_path = f"{spec_path}/affinity"
@@ -1439,6 +1742,45 @@ def _patch_env_var_secret(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     raise PatchError("no secret-like environment variable found")
 
 
+def _patch_duplicate_env_var(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    containers_info = _find_containers(obj)
+    ops: List[Dict[str, Any]] = []
+    for base_path, containers in containers_info:
+        for c_idx, container in enumerate(containers):
+            env_list = container.get("env")
+            if not isinstance(env_list, list):
+                continue
+            seen: Dict[str, int] = {}
+            to_remove: List[int] = []
+            for env_idx, env_entry in enumerate(env_list):
+                if not isinstance(env_entry, dict):
+                    continue
+                name = env_entry.get("name")
+                if not isinstance(name, str):
+                    continue
+                key = name.strip()
+                if not key:
+                    continue
+                if key in seen:
+                    to_remove.append(env_idx)
+                else:
+                    seen[key] = env_idx
+            if to_remove:
+                for idx in sorted(to_remove, reverse=True):
+                    ops.append({"op": "remove", "path": f"{base_path}/{c_idx}/env/{idx}"})
+            if ops:
+                return ops
+    raise PatchError("no duplicate environment variables found")
+
+
+_NAMED_PORT_FALLBACKS: Dict[str, int] = {
+    "http": 80,
+    "https": 443,
+    "grpc": 9090,
+    "metrics": 9090,
+}
+
+
 def _normalise_probe_port(port: Any, ports: Any) -> Tuple[int, Optional[str]]:
     if isinstance(port, int):
         return port, None
@@ -1449,6 +1791,10 @@ def _normalise_probe_port(port: Any, ports: Any) -> Tuple[int, Optional[str]]:
         mapped = _lookup_port_by_name(ports, candidate)
         if mapped is not None:
             return mapped, candidate
+        fallback = _NAMED_PORT_FALLBACKS.get(candidate.lower())
+        if fallback is not None:
+            return fallback, candidate
+        return 8080, candidate
     raise PatchError("unsupported probe port value")
 
 
@@ -1587,6 +1933,97 @@ def _patch_probe_port(obj: Dict[str, Any], probe_kind: str) -> List[Dict[str, An
     if ops:
         return ops
     raise PatchError(f"no {probe_kind} probe missing container port found")
+
+
+def _contains_alpha(value: str) -> bool:
+    return any(char.isalpha() for char in value)
+
+
+def _normalise_port_name(value: Any, prefix: str = "port") -> Optional[str]:
+    if isinstance(value, str):
+        trimmed = value.strip()
+        if not trimmed:
+            return prefix
+        if _contains_alpha(trimmed):
+            return None
+        return f"{prefix}-{trimmed}"
+    if isinstance(value, (int, float)):
+        return f"{prefix}-{int(value)}"
+    return None
+
+
+def _normalise_target_port_value(value: Any) -> Optional[Any]:
+    if isinstance(value, str):
+        trimmed = value.strip()
+        if not trimmed:
+            return None
+        if trimmed.isdigit():
+            return int(trimmed)
+        if _contains_alpha(trimmed):
+            return None
+        return f"port-{trimmed}"
+    if isinstance(value, (int, float)):
+        return int(value)
+    return None
+
+
+def _patch_invalid_target_ports(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    ops: List[Dict[str, Any]] = []
+
+    for base_path, containers in _find_containers(obj):
+        for c_idx, container in enumerate(containers):
+            ports = container.get("ports")
+            if not isinstance(ports, list):
+                continue
+            for p_idx, port in enumerate(ports):
+                if not isinstance(port, dict):
+                    continue
+                current_name = port.get("name")
+                replacement = _normalise_port_name(current_name)
+                if replacement is None or replacement == current_name:
+                    continue
+                op = "replace" if "name" in port else "add"
+                ops.append(
+                    {
+                        "op": op,
+                        "path": f"{base_path}/{c_idx}/ports/{p_idx}/name",
+                        "value": replacement,
+                    }
+                )
+
+    spec = obj.get("spec")
+    if isinstance(spec, dict):
+        ports = spec.get("ports")
+        if isinstance(ports, list):
+            for idx, port in enumerate(ports):
+                if not isinstance(port, dict):
+                    continue
+                port_name = port.get("name")
+                replacement_name = _normalise_port_name(port_name)
+                if replacement_name is not None and replacement_name != port_name:
+                    op = "replace" if "name" in port else "add"
+                    ops.append(
+                        {
+                            "op": op,
+                            "path": f"/spec/ports/{idx}/name",
+                            "value": replacement_name,
+                        }
+                    )
+                target_port = port.get("targetPort")
+                replacement_target = _normalise_target_port_value(target_port)
+                if replacement_target is not None and replacement_target != target_port:
+                    op = "replace" if "targetPort" in port else "add"
+                    ops.append(
+                        {
+                            "op": op,
+                            "path": f"/spec/ports/{idx}/targetPort",
+                            "value": replacement_target,
+                        }
+                    )
+
+    if ops:
+        return ops
+    raise PatchError("no invalid port names or targetPorts found")
 
 
 def _augment_with_guardrails(obj: Dict[str, Any], ops: List[Dict[str, Any]], policy_id: str) -> List[Dict[str, Any]]:
@@ -2075,6 +2512,33 @@ def _patch_no_host_ports(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     if ops:
         return ops
     raise PatchError("no hostPort fields found")
+
+
+def _patch_ssh_port(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    containers_info = _find_containers(obj)
+    ops: List[Dict[str, Any]] = []
+    for base_path, containers in containers_info:
+        for c_idx, container in enumerate(containers):
+            ports = container.get("ports")
+            if not isinstance(ports, list):
+                continue
+            for p_idx, port in enumerate(ports):
+                if not isinstance(port, dict):
+                    continue
+                container_port = port.get("containerPort")
+                if isinstance(container_port, int) and container_port == 22:
+                    ops.append({"op": "remove", "path": f"{base_path}/{c_idx}/ports/{p_idx}"})
+                    break
+                if isinstance(container_port, str) and container_port.strip() == "22":
+                    ops.append({"op": "remove", "path": f"{base_path}/{c_idx}/ports/{p_idx}"})
+                    break
+            if ops:
+                break
+        if ops:
+            break
+    if ops:
+        return ops
+    raise PatchError("no ssh port entries found")
 
 
 def _patch_run_as_user(obj: Dict[str, Any]) -> List[Dict[str, Any]]:

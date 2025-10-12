@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -102,9 +103,18 @@ def schedule(
     typer.echo(f"Scheduled {len(output)} patch(es) to {out.resolve()}")
 
 
+def _open_json(path: Path):
+    if path.exists():
+        return path.open("r", encoding="utf-8")
+    gz_path = path.with_suffix(path.suffix + ".gz")
+    if gz_path.exists():
+        return gzip.open(gz_path, "rt", encoding="utf-8")
+    raise FileNotFoundError(path)
+
+
 def _load_array(path: Path, kind: str) -> List[Any]:
     try:
-        with path.open("r", encoding="utf-8") as handle:
+        with _open_json(path) as handle:
             data = json.load(handle)
     except FileNotFoundError as exc:
         raise typer.BadParameter(f"{kind.title()} file not found: {path}") from exc
@@ -130,9 +140,7 @@ def _load_risk_map(path: Optional[Path]) -> Dict[str, Dict[str, Any]]:
     if not path:
         return {}
     try:
-        with path.open("r", encoding="utf-8") as handle:
-            import json
-
+        with _open_json(path) as handle:
             data = json.load(handle)
     except FileNotFoundError:
         return {}
