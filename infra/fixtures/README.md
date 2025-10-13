@@ -8,3 +8,7 @@ kubectl apply -f infra/fixtures/network_policies/default-deny.yaml
 ```
 
 They're intentionally minimal and non-destructive.
+
+## Manifests
+
+`infra/fixtures/manifests/` contains drift-prone examples (CronJob scanner, Bitnami PostgreSQL StatefulSet) used to reproduce detector/proposer/verifier edge cases. Apply them selectively when debugging a specific failure mode.
