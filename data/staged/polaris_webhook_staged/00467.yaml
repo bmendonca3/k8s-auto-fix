@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:46:31Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pgadmin4
+    app.kubernetes.io/version: "9.8"
+    helm.sh/chart: pgadmin4-1.50.0
+  name: release-name-pgadmin4
+  namespace: default
+  uid: 4a0c3c56-a3a8-46b8-a6a8-176d1f59b4b0
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: pgadmin4
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 98898618a428e0aa6d5525c3cfd24ec2d7f159362180ead330a833c9649bb315
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: pgadmin4
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+          value: "False"
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: chart@domain.com
+        - name: PGADMIN_DEFAULT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: release-name-pgadmin4
+        image: docker.io/dpage/pgadmin4:9.8
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /misc/ping
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: pgadmin4
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /misc/ping
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /misc/ping
+            port: http
+            scheme: HTTP
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/pgadmin
+          name: pgadmin-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 5050
+        runAsGroup: 5050
+        runAsUser: 5050
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: pgadmin-data
+        persistentVolumeClaim:
+          claimName: release-name-pgadmin4
+status: {}

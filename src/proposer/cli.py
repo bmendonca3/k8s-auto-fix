@@ -25,6 +25,71 @@ from .retriever import GuidanceRetriever, FailureCache
 from src.common.policy_ids import normalise_policy_id
 from src.verifier.jsonpatch_guard import validate_paths_exist
 
+# --- JSON Pointer sanitization helpers (acceptance improvements) ---
+def _rfc6901_escape(segment: str) -> str:
+    return segment.replace("~", "~0").replace("/", "~1")
+
+
+def _decode_percent(s: str) -> str:
+    try:
+        from urllib.parse import unquote
+        return unquote(s)
+    except Exception:
+        return s
+
+
+def _sanitize_pointer(path: str) -> str:
+    if not isinstance(path, str) or not path.startswith("/"):
+        return path
+    raw = _decode_percent(path)
+    parts = raw.split("/")
+    anchors = (
+        ["metadata", "annotations"],
+        ["metadata", "labels"],
+        ["spec", "selector"],
+        ["spec", "template", "metadata", "labels"],
+        ["spec", "template", "metadata", "annotations"],
+    )
+    def match_anchor(prefix):
+        n = len(prefix)
+        if len(parts) <= 1 + n:
+            return None
+        if [p for p in parts[1:1+n]] == prefix:
+            return 1 + n
+        return None
+    join_from = None
+    for pref in anchors:
+        idx = match_anchor(pref)
+        if idx is not None:
+            join_from = idx
+            break
+    if join_from is not None and join_from < len(parts):
+        head = parts[:join_from]
+        tail = parts[join_from:]
+        tail_key = "/".join(tail)
+        escaped_tail = _rfc6901_escape(tail_key)
+        encoded = "/".join(head + [escaped_tail])
+    else:
+        escaped = [_rfc6901_escape(seg) for seg in parts[1:]]
+        encoded = "/" + "/".join(escaped)
+    return encoded
+
+
+def _sanitize_patch_paths(patch_ops):
+    if not isinstance(patch_ops, list):
+        return patch_ops
+    out = []
+    for op in patch_ops:
+        if not isinstance(op, dict):
+            out.append(op)
+            continue
+        op2 = dict(op)
+        for key in ("path", "from"):
+            if key in op2 and isinstance(op2[key], str):
+                op2[key] = _sanitize_pointer(op2[key])
+        out.append(op2)
+    return out
+
 POLICIES_REQUIRE_MANIFEST_PATH = {"job_ttl_after_finished"}
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -190,6 +255,7 @@ def _generate_patch_record(
             else:
                 raw_patch = generation
             patch_list = extract_json_array(raw_patch) if isinstance(raw_patch, str) else raw_patch
+            patch_list = _sanitize_patch_paths(patch_list)
             validate_paths_exist(manifest_yaml, patch_list)
             patch_ops = patch_list
             generation_latency_ms = int((time.perf_counter() - attempt_start) * 1000)
@@ -360,7 +426,8 @@ def _build_prompt(detection: Dict[str, Any]) -> str:
         "- Never leave securityContext.privileged set to true; set it to false for every container.\n"
         "- Always supply concrete CPU and memory values when creating resources.requests or resources.limits (e.g. cpu 100m, memory 128Mi).\n"
         "- When configuring securityContext.capabilities, drop NET_RAW, NET_ADMIN, SYS_ADMIN, SYS_MODULE, SYS_PTRACE, SYS_CHROOT and remove them from capabilities.add.\n"
-        "- Prefer secure defaults: replace hostPath volumes with emptyDir: {} unless explicitly instructed otherwise."
+        "- Prefer secure defaults: replace hostPath volumes with emptyDir: {} unless explicitly instructed otherwise.\n"
+        "- Use RFC6901 JSON Pointer encoding in patch paths: escape '~' as '~0' and '/' as '~1' within key names (do NOT use URL encoding)."
     )
     feedback = detection.get("retry_feedback")
     failure_hint = ""
@@ -2459,22 +2526,54 @@ def _patch_drop_cap_sys_admin(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
             sec = container.get("securityContext")
             if not isinstance(sec, dict):
                 path = f"{base_path}/{idx}/securityContext"
-                return [{"op": "add", "path": path, "value": {"capabilities": {"drop": ["SYS_ADMIN"]}}}]
+                return [
+                    {
+                        "op": "add",
+                        "path": path,
+                        "value": {
+                            "capabilities": {
+                                "drop": ["SYS_ADMIN"],
+                            },
+                            "allowPrivilegeEscalation": False,
+                        },
+                    }
+                ]
             caps = sec.get("capabilities")
+            ops: List[Dict[str, Any]] = []
             if not isinstance(caps, dict):
                 path = f"{base_path}/{idx}/securityContext/capabilities"
-                return [{"op": "add", "path": path, "value": {"drop": ["SYS_ADMIN"]}}]
-            drop = caps.get("drop")
-            if isinstance(drop, list):
-                if "SYS_ADMIN" not in drop:
-                    path = f"{base_path}/{idx}/securityContext/capabilities/drop/-"
-                    return [{"op": "add", "path": path, "value": "SYS_ADMIN"}]
+                ops.append({"op": "add", "path": path, "value": {"drop": ["SYS_ADMIN"]}})
             else:
-                path = f"{base_path}/{idx}/securityContext/capabilities/drop"
-                return [{"op": "add", "path": path, "value": ["SYS_ADMIN"]}]
+                drop = caps.get("drop")
+                if isinstance(drop, list):
+                    if "SYS_ADMIN" not in [str(item).upper() for item in drop]:
+                        path = f"{base_path}/{idx}/securityContext/capabilities/drop/-"
+                        ops.append({"op": "add", "path": path, "value": "SYS_ADMIN"})
+                else:
+                    path = f"{base_path}/{idx}/securityContext/capabilities/drop"
+                    ops.append({"op": "add", "path": path, "value": ["SYS_ADMIN"]})
+                add_list = caps.get("add")
+                if isinstance(add_list, list):
+                    for pos in reversed(range(len(add_list))):
+                        if str(add_list[pos]).upper() == "SYS_ADMIN":
+                            ops.append(
+                                {
+                                    "op": "remove",
+                                    "path": f"{base_path}/{idx}/securityContext/capabilities/add/{pos}",
+                                }
+                            )
+            if isinstance(sec, dict):
+                if sec.get("allowPrivilegeEscalation") is not False:
+                    path = f"{base_path}/{idx}/securityContext/allowPrivilegeEscalation"
+                    op = "replace" if "allowPrivilegeEscalation" in sec else "add"
+                    ops.append({"op": op, "path": path, "value": False})
+            if ops:
+                return ops
     raise PatchError("no container found to drop CAP_SYS_ADMIN")
 
 DANGEROUS_CAPABILITIES = ("NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT")
+DROP_BASE_CAPABILITIES = ("ALL",) + DANGEROUS_CAPABILITIES
+DROP_BASE_CAPABILITIES_SET = {cap.upper() for cap in DROP_BASE_CAPABILITIES}
 
 
 def _patch_no_host_path(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -2588,18 +2687,25 @@ def _patch_drop_capabilities(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
             caps_path = f"{security_path}/capabilities"
             caps = security.get("capabilities") if isinstance(security, dict) else None
             if not isinstance(caps, dict):
-                container_ops.append({"op": "add", "path": caps_path, "value": {"drop": list(DANGEROUS_CAPABILITIES)}})
-                caps = {"drop": list(DANGEROUS_CAPABILITIES)}
+                container_ops.append(
+                    {"op": "add", "path": caps_path, "value": {"drop": list(DROP_BASE_CAPABILITIES)}}
+                )
+                caps = {"drop": list(DROP_BASE_CAPABILITIES)}
             drop = caps.get("drop")
             if isinstance(drop, list):
-                missing = [cap for cap in DANGEROUS_CAPABILITIES if cap not in drop]
+                drop_upper = {str(cap).upper() for cap in drop if isinstance(cap, str)}
+                missing = [cap for cap in DROP_BASE_CAPABILITIES if cap not in drop_upper]
                 for cap in missing:
                     container_ops.append({"op": "add", "path": f"{caps_path}/drop/-", "value": cap})
             else:
-                container_ops.append({"op": "add", "path": f"{caps_path}/drop", "value": list(DANGEROUS_CAPABILITIES)})
+                container_ops.append({"op": "add", "path": f"{caps_path}/drop", "value": list(DROP_BASE_CAPABILITIES)})
             add_list = caps.get("add")
             if isinstance(add_list, list):
-                filtered = [cap for cap in add_list if cap not in DANGEROUS_CAPABILITIES]
+                filtered = [
+                    cap
+                    for cap in add_list
+                    if not (isinstance(cap, str) and cap.upper() in DROP_BASE_CAPABILITIES_SET)
+                ]
                 if filtered != add_list:
                     container_ops.append({"op": "replace", "path": f"{caps_path}/add", "value": filtered})
             if security.get("privileged") is not False:

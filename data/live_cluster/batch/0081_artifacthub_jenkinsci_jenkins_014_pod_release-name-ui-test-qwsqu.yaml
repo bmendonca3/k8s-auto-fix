@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: release-name-ui-test-qwsqu
+  namespace: default
+  annotations:
+    helm.sh/hook: test-success
+spec:
+  initContainers:
+  - name: test-framework
+    image: docker.io/bats/bats:1.12.0
+    command:
+    - bash
+    - -c
+    args:
+    - '# copy bats to tools dir
+
+      set -ex
+
+      cp -R /opt/bats /tools/bats/
+
+      '
+    volumeMounts:
+    - mountPath: /tools
+      name: tools
+  containers:
+  - name: release-name-ui-test
+    image: docker.io/jenkins/jenkins:2.516.3-jdk21
+    command:
+    - /tools/bats/bin/bats
+    - -t
+    - /tests/run.sh
+    volumeMounts:
+    - mountPath: /tests
+      name: tests
+      readOnly: true
+    - mountPath: /tools
+      name: tools
+  volumes:
+  - name: tests
+    configMap:
+      name: release-name-jenkins-tests
+  - name: tools
+    emptyDir: {}
+  restartPolicy: Never

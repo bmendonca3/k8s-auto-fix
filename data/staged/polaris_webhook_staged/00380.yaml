@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  creationTimestamp: "2025-10-20T18:45:32Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.10.0
+    helm.sh/chart: longhorn-1.10.0
+  name: longhorn-uninstall
+  namespace: default
+  uid: a9df542f-6266-43ff-a121-9dee03ee03a8
+spec:
+  activeDeadlineSeconds: 900
+  backoffLimit: 1
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: a9df542f-6266-43ff-a121-9dee03ee03a8
+  suspend: false
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: longhorn
+        app.kubernetes.io/version: v1.10.0
+        batch.kubernetes.io/controller-uid: a9df542f-6266-43ff-a121-9dee03ee03a8
+        batch.kubernetes.io/job-name: longhorn-uninstall
+        controller-uid: a9df542f-6266-43ff-a121-9dee03ee03a8
+        helm.sh/chart: longhorn-1.10.0
+        job-name: longhorn-uninstall
+      name: longhorn-uninstall
+    spec:
+      containers:
+      - command:
+        - longhorn-manager
+        - uninstall
+        - --force
+        env:
+        - name: LONGHORN_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: longhornio/longhorn-manager:v1.10.0
+        imagePullPolicy: IfNotPresent
+        name: longhorn-uninstall
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      priorityClassName: longhorn-critical
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: longhorn-service-account
+      serviceAccountName: longhorn-service-account
+      terminationGracePeriodSeconds: 30
+status: {}

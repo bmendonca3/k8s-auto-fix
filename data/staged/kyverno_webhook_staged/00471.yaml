@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: hook-succeeded
+  creationTimestamp: "2025-10-20T21:11:40Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pgadmin4
+    app.kubernetes.io/version: "9.8"
+    helm.sh/chart: pgadmin4-1.50.0
+  name: release-name-pgadmin4-test-connection
+  namespace: default
+  uid: 4e51070a-9c85-4758-b1a4-c50cb1ccdca8
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - -ec
+    - |
+      response=$(wget -qSO - http://${PGADMIN_HOST}:${PGADMIN_PORT} 2>&1)
+      check=$(echo $response | grep -c '200 OK'); echo $check; if [[ $check -gt 0 ]]; then echo "Response OK"; else exit 1; fi
+    env:
+    - name: PGADMIN_HOST
+      value: release-name-pgadmin4
+    - name: PGADMIN_PORT
+      value: "80"
+    image: docker.io/busybox:latest
+    imagePullPolicy: Always
+    name: wget
+    resources: {}
+    securityContext:
+      readOnlyRootFilesystem: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-7bnpr
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 5051
+    runAsGroup: 5051
+    runAsNonRoot: true
+    runAsUser: 5051
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 10
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 10
+  volumes:
+  - name: kube-api-access-7bnpr
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  phase: Pending
+  qosClass: BestEffort

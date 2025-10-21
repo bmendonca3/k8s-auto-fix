@@ -3,7 +3,7 @@ import unittest
 
 import yaml
 
-from src.verifier.verifier import Verifier
+from src.verifier.verifier import Verifier, VerifierGates
 from src.proposer import cli as proposer_cli
 
 PRIVILEGED_MANIFEST = """
@@ -44,6 +44,37 @@ spec:
             image: artifacthub/scanner:latest
 """
 
+CAPABILITIES_MANIFEST = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: caps
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+      securityContext:
+        capabilities:
+          drop:
+            - NET_RAW
+            - SYS_ADMIN
+"""
+
+HOSTPATH_WHITELIST_MANIFEST = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-whitelist
+spec:
+  containers:
+    - name: agent
+      image: nginx:1.23
+  volumes:
+    - name: service-account-ca
+      hostPath:
+        path: /var/run/secrets/kubernetes.io/serviceaccount
+"""
+
 
 class VerifierTests(unittest.TestCase):
     def _stub_kubectl(self, verifier: Verifier, value: bool, message: str | None = None) -> None:
@@ -73,6 +104,28 @@ class VerifierTests(unittest.TestCase):
         self.assertFalse(result.ok_policy)
         self.assertFalse(result.ok_safety)
         self.assertTrue(result.ok_rescan)
+
+    def test_policy_gate_can_be_disabled(self) -> None:
+        verifier = Verifier(require_kubectl=False, gates=VerifierGates(policy=False))
+        self._stub_kubectl(verifier, True)
+        # Patch leaves :latest intact, which would normally fail policy gate.
+        patch = [{"op": "replace", "path": "/spec/containers/0/image", "value": "nginx:latest"}]
+        result = verifier.verify(LATEST_MANIFEST, patch, "no_latest_tag")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_policy)
+        self.assertTrue(result.ok_schema)
+
+    def test_kubectl_gate_can_be_disabled(self) -> None:
+        verifier = Verifier(require_kubectl=True, gates=VerifierGates(kubectl=False))
+
+        def boom(_self: Verifier, _yaml: str) -> tuple[bool, str | None, int]:
+            raise AssertionError("kubectl gate should be disabled")
+
+        verifier._kubectl_dry_run = types.MethodType(boom, verifier)  # type: ignore[assignment]
+        patch = [{"op": "replace", "path": "/spec/containers/0/image", "value": "nginx:stable"}]
+        result = verifier.verify(LATEST_MANIFEST, patch, "no_latest_tag")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_schema)
 
     def test_verify_schema_failure(self) -> None:
         verifier = Verifier()
@@ -176,6 +229,70 @@ spec:
         self.assertTrue(result.accepted)
         self.assertTrue(result.ok_safety)
         self.assertTrue(result.ok_rescan)
+
+    def test_drop_capabilities_requires_all(self) -> None:
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        patch = [{"op": "replace", "path": "/spec/containers/0/securityContext/capabilities/drop", "value": ["NET_RAW", "SYS_ADMIN"]}]
+        result = verifier.verify(CAPABILITIES_MANIFEST, patch, "drop_capabilities")
+        self.assertFalse(result.accepted)
+        self.assertIn("capabilities.drop must include ALL", "\n".join(result.errors))
+
+    def test_drop_capabilities_accepts_all(self) -> None:
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        patch = [
+            {
+                "op": "replace",
+                "path": "/spec/containers/0/securityContext/capabilities/drop",
+                "value": [
+                    "ALL",
+                    "NET_RAW",
+                    "NET_ADMIN",
+                    "SYS_ADMIN",
+                    "SYS_MODULE",
+                    "SYS_PTRACE",
+                    "SYS_CHROOT",
+                ],
+            },
+            {
+                "op": "add",
+                "path": "/spec/containers/0/securityContext/allowPrivilegeEscalation",
+                "value": False,
+            },
+        ]
+        result = verifier.verify(CAPABILITIES_MANIFEST, patch, "drop_capabilities")
+        self.assertTrue(result.accepted)
+
+    def test_no_host_path_allows_whitelist(self) -> None:
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        # No-op patch: manifest already uses an allowlisted hostPath path.
+        patch: list[dict[str, object]] = []
+        result = verifier.verify(HOSTPATH_WHITELIST_MANIFEST, patch, "no_host_path")
+        self.assertTrue(result.accepted)
+
+    def test_no_host_path_rejects_non_whitelist(self) -> None:
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-not-allowed
+spec:
+  containers:
+    - name: agent
+      image: nginx:1.23
+  volumes:
+    - name: data
+      hostPath:
+        path: /var/lib/data
+"""
+        patch: list[dict[str, object]] = []
+        result = verifier.verify(manifest, patch, "no_host_path")
+        self.assertFalse(result.accepted)
+        self.assertTrue(any("not in whitelist" in err for err in result.errors))
 
     def test_verify_run_as_non_root_policy(self) -> None:
         manifest = """

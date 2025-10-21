@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:27Z"
+  generation: 1
+  labels:
+    app: longhorn-ui
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.10.0
+    helm.sh/chart: longhorn-1.10.0
+  name: longhorn-ui
+  namespace: default
+  uid: f26b92f4-1c78-4e45-b2ad-d59be7e60766
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: longhorn-ui
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: longhorn-ui
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: longhorn
+        app.kubernetes.io/version: v1.10.0
+        helm.sh/chart: longhorn-1.10.0
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - longhorn-ui
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - env:
+        - name: LONGHORN_MANAGER_IP
+          value: http://longhorn-backend:9500
+        - name: LONGHORN_UI_PORT
+          value: "8000"
+        image: longhornio/longhorn-ui:v1.10.0
+        imagePullPolicy: IfNotPresent
+        name: longhorn-ui
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/cache/nginx/
+          name: nginx-cache
+        - mountPath: /var/config/nginx/
+          name: nginx-config
+        - mountPath: /var/run/
+          name: var-run
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: longhorn-ui-service-account
+      serviceAccountName: longhorn-ui-service-account
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: nginx-cache
+      - emptyDir: {}
+        name: nginx-config
+      - emptyDir: {}
+        name: var-run
+status: {}

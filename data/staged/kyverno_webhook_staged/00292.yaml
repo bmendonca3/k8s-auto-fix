@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:19Z"
+  generation: 1
+  labels:
+    app: harbor
+    app.kubernetes.io/component: jobservice
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.14.0
+    chart: harbor
+    component: jobservice
+    heritage: Helm
+    release: release-name
+  name: release-name-harbor-jobservice
+  namespace: default
+  uid: 407f3f20-c07a-40bb-997c-66fb4f1c60a3
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: harbor
+      component: jobservice
+      release: release-name
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: 244ec50e63efe66fc3ec84e285fa0e8c83e019830b4462a17e81bc3b0745982a
+        checksum/configmap-env: 1c2af1daccf2ab6f5e6433b5d6de46e5b3610a14ef6337b0c14980f428212ea0
+        checksum/secret: 837d754c99f5985f960d8aed969e7884560427df8584bf6d1706a2915a66b198
+        checksum/secret-core: c412b2f1985d742be1ff1d9f161c9ea9a1bf4d2b525a362636620f5ce60ad18a
+      labels:
+        app: harbor
+        app.kubernetes.io/component: jobservice
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: harbor
+        app.kubernetes.io/part-of: harbor
+        app.kubernetes.io/version: 2.14.0
+        chart: harbor
+        component: jobservice
+        heritage: Helm
+        release: release-name
+    spec:
+      containers:
+      - env:
+        - name: CORE_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: secret
+              name: release-name-harbor-core
+        envFrom:
+        - configMapRef:
+            name: release-name-harbor-jobservice-env
+        - secretRef:
+            name: release-name-harbor-jobservice
+        image: goharbor/harbor-jobservice:v2.14.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/v1/stats
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: jobservice
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/v1/stats
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/jobservice/config.yml
+          name: jobservice-config
+          subPath: config.yml
+        - mountPath: /var/log/jobs
+          name: job-logs
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 10000
+        runAsUser: 10000
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: jobservice-config
+      - emptyDir: {}
+        name: job-logs
+status: {}

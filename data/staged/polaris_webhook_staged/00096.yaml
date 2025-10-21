@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:42:16Z"
+  generation: 1
+  labels:
+    app: workflow-controller
+    app.kubernetes.io/component: workflow-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: argo-workflows-workflow-controller
+    app.kubernetes.io/part-of: argo-workflows
+    app.kubernetes.io/version: v3.7.2
+    helm.sh/chart: argo-workflows-0.45.26
+  name: release-name-argo-workflows-workflow-controller
+  namespace: default
+  uid: 8acd9d47-61ab-4e72-8120-0338ed689051
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: argo-workflows-workflow-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: workflow-controller
+        app.kubernetes.io/component: workflow-controller
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: argo-workflows-workflow-controller
+        app.kubernetes.io/part-of: argo-workflows
+        app.kubernetes.io/version: v3.7.2
+        helm.sh/chart: argo-workflows-0.45.26
+    spec:
+      containers:
+      - args:
+        - --configmap
+        - release-name-argo-workflows-workflow-controller-configmap
+        - --executor-image
+        - quay.io/argoproj/argoexec:v3.7.2
+        - --loglevel
+        - info
+        - --gloglevel
+        - "0"
+        - --log-format
+        - text
+        command:
+        - workflow-controller
+        env:
+        - name: ARGO_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: LEADER_ELECTION_IDENTITY
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: LEADER_ELECTION_DISABLE
+          value: "true"
+        image: quay.io/argoproj/workflow-controller:v3.7.2
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 6060
+            scheme: HTTP
+          initialDelaySeconds: 90
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: controller
+        ports:
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        - containerPort: 6060
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: release-name-argo-workflows-workflow-controller
+      serviceAccountName: release-name-argo-workflows-workflow-controller
+      terminationGracePeriodSeconds: 30
+status: {}

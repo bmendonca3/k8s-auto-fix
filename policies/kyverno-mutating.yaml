@@ -1,0 +1,221 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: harden-workload-containers
+  annotations:
+    policies.kyverno.io/title: Harden workload containers
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/description: |
+      Mutates common Kubernetes workload resources to enforce baseline security
+      context and resource defaults comparable to the deterministic rules in k8s-auto-fix.
+spec:
+  validationFailureAction: audit
+  background: false
+  rules:
+    - name: enforce-pod-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "*"
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "512Mi"
+            initContainers:
+              - (name): "*"
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "512Mi"
+    - name: harden-pod-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "*"
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 65534
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop:
+                      - ALL
+                      - NET_RAW
+                      - NET_ADMIN
+                      - SYS_ADMIN
+                      - SYS_MODULE
+                      - SYS_PTRACE
+                      - SYS_CHROOT
+                    seccompProfile:
+                      type: RuntimeDefault
+            initContainers:
+              - (name): "*"
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 65534
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop:
+                      - ALL
+                      - NET_RAW
+                      - NET_ADMIN
+                      - SYS_ADMIN
+                      - SYS_MODULE
+                      - SYS_PTRACE
+                      - SYS_CHROOT
+                  seccompProfile:
+                    type: RuntimeDefault
+    - name: enforce-template-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - ReplicaSet
+                - StatefulSet
+                - DaemonSet
+                - Job
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "*"
+                    resources:
+                      requests:
+                        cpu: "100m"
+                        memory: "256Mi"
+                      limits:
+                        cpu: "500m"
+                        memory: "512Mi"
+                initContainers:
+                  - (name): "*"
+                    resources:
+                      requests:
+                        cpu: "100m"
+                        memory: "256Mi"
+                      limits:
+                        cpu: "500m"
+                        memory: "512Mi"
+    - name: harden-template-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - ReplicaSet
+                - StatefulSet
+                - DaemonSet
+                - Job
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "*"
+                    securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 65534
+                      privileged: false
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities:
+                        drop:
+                          - ALL
+                          - NET_RAW
+                          - NET_ADMIN
+                          - SYS_ADMIN
+                          - SYS_MODULE
+                          - SYS_PTRACE
+                          - SYS_CHROOT
+                      seccompProfile:
+                        type: RuntimeDefault
+    - name: enforce-cronjob-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - CronJob
+      mutate:
+        patchStrategicMerge:
+          spec:
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - (name): "*"
+                        resources:
+                          requests:
+                            cpu: "100m"
+                            memory: "256Mi"
+                          limits:
+                            cpu: "500m"
+                            memory: "512Mi"
+                initContainers:
+                  - (name): "*"
+                    resources:
+                          requests:
+                            cpu: "100m"
+                            memory: "256Mi"
+                          limits:
+                            cpu: "500m"
+                            memory: "512Mi"
+    - name: harden-cronjob-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - CronJob
+      mutate:
+        patchStrategicMerge:
+          spec:
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - (name): "*"
+                        securityContext:
+                          runAsNonRoot: true
+                          runAsUser: 65534
+                          privileged: false
+                          allowPrivilegeEscalation: false
+                          readOnlyRootFilesystem: true
+                          capabilities:
+                            drop:
+                              - ALL
+                              - NET_RAW
+                              - NET_ADMIN
+                              - SYS_ADMIN
+                              - SYS_MODULE
+                              - SYS_PTRACE
+                              - SYS_CHROOT
+                        seccompProfile:
+                          type: RuntimeDefault
+                              - SYS_CHROOT
+                          seccompProfile:
+                            type: RuntimeDefault

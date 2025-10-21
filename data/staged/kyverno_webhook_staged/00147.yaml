@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tracker
+  labels:
+    helm.sh/chart: artifact-hub-1.21.0
+    app.kubernetes.io/name: artifact-hub
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 1.21.0
+    app.kubernetes.io/managed-by: Helm
+spec:
+  jobTemplate:
+    template:
+      metadata:
+        labels:
+          helm.sh/chart: artifact-hub-1.21.0
+          app.kubernetes.io/name: artifact-hub
+          app.kubernetes.io/instance: release-name
+          app.kubernetes.io/version: 1.21.0
+          app.kubernetes.io/managed-by: Helm
+      spec:
+        serviceAccountName: default
+        initContainers:
+        - name: check-db-ready
+          image: docker.io/artifacthub/postgres:latest
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: PGHOST
+            value: release-name-postgresql.default
+          - name: PGPORT
+            value: '5432'
+          - name: PGUSER
+            value: postgres
+          command:
+          - sh
+          - -c
+          - until pg_isready; do echo waiting for database; sleep 2; done;
+        containers:
+        - name: tracker
+          image: artifacthub/tracker:v1.21.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: tracker-config
+            mountPath: /home/tracker/.cfg
+            readOnly: true
+        volumes:
+        - name: tracker-config
+          secret:
+            secretName: tracker-config

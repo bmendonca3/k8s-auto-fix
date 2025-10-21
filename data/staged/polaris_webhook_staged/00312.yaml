@@ -1,0 +1,191 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: "2025-10-20T18:44:57Z"
+  generation: 1
+  labels:
+    app: harbor
+    app.kubernetes.io/component: trivy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.14.0
+    chart: harbor
+    component: trivy
+    heritage: Helm
+    release: release-name
+  name: release-name-harbor-trivy
+  namespace: default
+  uid: 149ff37c-d605-4208-9495-a1d4f8d178bc
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: harbor
+      component: trivy
+      release: release-name
+  serviceName: release-name-harbor-trivy
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 6fbc9db4d37c6bc53260a46776f92e1e0390c1d50cd884e19a8d0a3c73deed8f
+      labels:
+        app: harbor
+        app.kubernetes.io/component: trivy
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: harbor
+        app.kubernetes.io/part-of: harbor
+        app.kubernetes.io/version: 2.14.0
+        chart: harbor
+        component: trivy
+        heritage: Helm
+        release: release-name
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: HTTP_PROXY
+        - name: HTTPS_PROXY
+        - name: NO_PROXY
+          value: release-name-harbor-core,release-name-harbor-jobservice,release-name-harbor-database,release-name-harbor-registry,release-name-harbor-portal,release-name-harbor-trivy,release-name-harbor-exporter,127.0.0.1,localhost,.local,.internal
+        - name: SCANNER_LOG_LEVEL
+          value: info
+        - name: SCANNER_TRIVY_CACHE_DIR
+          value: /home/scanner/.cache/trivy
+        - name: SCANNER_TRIVY_REPORTS_DIR
+          value: /home/scanner/.cache/reports
+        - name: SCANNER_TRIVY_DEBUG_MODE
+          value: "false"
+        - name: SCANNER_TRIVY_VULN_TYPE
+          value: os,library
+        - name: SCANNER_TRIVY_TIMEOUT
+          value: 5m0s
+        - name: SCANNER_TRIVY_GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: gitHubToken
+              name: release-name-harbor-trivy
+        - name: SCANNER_TRIVY_SEVERITY
+          value: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+        - name: SCANNER_TRIVY_IGNORE_UNFIXED
+          value: "false"
+        - name: SCANNER_TRIVY_SKIP_UPDATE
+          value: "false"
+        - name: SCANNER_TRIVY_SKIP_JAVA_DB_UPDATE
+          value: "false"
+        - name: SCANNER_TRIVY_DB_REPOSITORY
+          value: mirror.gcr.io/aquasec/trivy-db,ghcr.io/aquasecurity/trivy-db
+        - name: SCANNER_TRIVY_JAVA_DB_REPOSITORY
+          value: mirror.gcr.io/aquasec/trivy-java-db,ghcr.io/aquasecurity/trivy-java-db
+        - name: SCANNER_TRIVY_OFFLINE_SCAN
+          value: "false"
+        - name: SCANNER_TRIVY_SECURITY_CHECKS
+          value: vuln
+        - name: SCANNER_TRIVY_INSECURE
+          value: "false"
+        - name: SCANNER_API_SERVER_ADDR
+          value: :8080
+        - name: SCANNER_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: redisURL
+              name: release-name-harbor-trivy
+        - name: SCANNER_STORE_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: redisURL
+              name: release-name-harbor-trivy
+        - name: SCANNER_JOB_QUEUE_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: redisURL
+              name: release-name-harbor-trivy
+        image: goharbor/trivy-adapter-photon:v2.14.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /probe/healthy
+            port: api-server
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: trivy
+        ports:
+        - containerPort: 8080
+          name: api-server
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /probe/ready
+            port: api-server
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /home/scanner/.cache
+          name: data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 10000
+        runAsUser: 10000
+      terminationGracePeriodSeconds: 30
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      labels:
+        app: harbor
+        chart: harbor
+        heritage: Helm
+        release: release-name
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      volumeMode: Filesystem
+    status:
+      phase: Pending
+status:
+  availableReplicas: 0
+  replicas: 0

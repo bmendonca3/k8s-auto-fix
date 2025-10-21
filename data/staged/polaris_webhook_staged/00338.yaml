@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test-success
+  creationTimestamp: "2025-10-20T18:45:14Z"
+  generation: 1
+  name: release-name-ui-test-qwsqu
+  namespace: default
+  uid: 9b15972d-b67b-4fbe-8971-e54f2c0b19f9
+spec:
+  containers:
+  - command:
+    - /tools/bats/bin/bats
+    - -t
+    - /tests/run.sh
+    image: docker.io/jenkins/jenkins:2.516.3-jdk21
+    imagePullPolicy: IfNotPresent
+    name: release-name-ui-test
+    resources:
+      limits:
+        cpu: 100m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 512Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /tests
+      name: tests
+      readOnly: true
+    - mountPath: /tools
+      name: tools
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-59nqd
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  initContainers:
+  - args:
+    - |
+      # copy bats to tools dir
+      set -ex
+      cp -R /opt/bats /tools/bats/
+    command:
+    - bash
+    - -c
+    image: docker.io/bats/bats:1.12.0
+    imagePullPolicy: IfNotPresent
+    name: test-framework
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /tools
+      name: tools
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-59nqd
+      readOnly: true
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: release-name-jenkins-tests
+    name: tests
+  - emptyDir: {}
+    name: tools
+  - name: kube-api-access-59nqd
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  phase: Pending
+  qosClass: Burstable

@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:46:04Z"
+  generation: 1
+  labels:
+    app: oauth2-proxy
+    app.kubernetes.io/component: authentication-proxy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: oauth2-proxy
+    app.kubernetes.io/part-of: oauth2-proxy
+    app.kubernetes.io/version: 7.12.0
+    helm.sh/chart: oauth2-proxy-8.3.0
+  name: release-name-oauth2-proxy
+  namespace: default
+  uid: 8d13a4b2-e151-4b6f-98a3-ab12f1374115
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: oauth2-proxy
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: c0329892592df8b1519fac51e84aee8cf879bb8e157e5a04f6556b38b5a2435b
+        checksum/google-secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        checksum/redis-secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 8fa6fdae65861caa2986544b8860a5205be1937328c8ec2bad6bad076b9e2425
+      labels:
+        app: oauth2-proxy
+        app.kubernetes.io/component: authentication-proxy
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: oauth2-proxy
+        app.kubernetes.io/part-of: oauth2-proxy
+        app.kubernetes.io/version: 7.12.0
+        helm.sh/chart: oauth2-proxy-8.3.0
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - --http-address=0.0.0.0:4180
+        - --https-address=0.0.0.0:4443
+        - --metrics-address=0.0.0.0:44180
+        - --config=/etc/oauth2_proxy/oauth2_proxy.cfg
+        env:
+        - name: OAUTH2_PROXY_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: client-id
+              name: release-name-oauth2-proxy
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: client-secret
+              name: release-name-oauth2-proxy
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: cookie-secret
+              name: release-name-oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ping
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: oauth2-proxy
+        ports:
+        - containerPort: 4180
+          name: http
+          protocol: TCP
+        - containerPort: 44180
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ready
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 2000
+          runAsNonRoot: true
+          runAsUser: 2000
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/oauth2_proxy/oauth2_proxy.cfg
+          name: configmain
+          subPath: oauth2_proxy.cfg
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: release-name-oauth2-proxy
+      serviceAccountName: release-name-oauth2-proxy
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: release-name-oauth2-proxy
+        name: configmain
+status: {}

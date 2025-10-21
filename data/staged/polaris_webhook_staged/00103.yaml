@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:42:20Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: hub
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: artifact-hub
+    app.kubernetes.io/version: 1.21.0
+    helm.sh/chart: artifact-hub-1.21.0
+  name: hub
+  namespace: default
+  uid: 2cd9b436-b1b9-439f-b26b-de5f43dc4373
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: hub
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: artifact-hub
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8001"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/component: hub
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: artifact-hub
+    spec:
+      containers:
+      - image: artifacthub/hub:v1.21.0
+        imagePullPolicy: IfNotPresent
+        name: hub
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /home/hub/.cfg
+          name: hub-config
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - until pg_isready; do echo waiting for database; sleep 2; done;
+        env:
+        - name: PGHOST
+          value: release-name-postgresql.default
+        - name: PGPORT
+          value: "5432"
+        - name: PGUSER
+          value: postgres
+        image: docker.io/artifacthub/postgres:latest
+        imagePullPolicy: IfNotPresent
+        name: check-db-ready
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - command:
+        - kubectl
+        - wait
+        - --namespace=default
+        - --for=condition=complete
+        - job/db-migrator-install
+        - --timeout=60s
+        image: bitnami/kubectl:1.34
+        imagePullPolicy: IfNotPresent
+        name: check-db-migrator-run
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: hub
+      serviceAccountName: hub
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: hub-config
+        secret:
+          defaultMode: 420
+          secretName: hub-config
+status: {}

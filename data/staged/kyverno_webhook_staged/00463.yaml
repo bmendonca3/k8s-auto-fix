@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: "2025-10-20T21:11:39Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/version: v0.28.1
+    helm.sh/chart: alertmanager-1.26.0
+  name: release-name-alertmanager
+  namespace: default
+  uid: 378b0587-1e75-46f4-b0ad-b1a8fb2d6a03
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: alertmanager
+  serviceName: ""
+  template:
+    metadata:
+      annotations:
+        checksum/config: 86786111a5a0824db0a26ce4c428c97fc46ba7691960434bc7430b5c2db4bc9c
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: alertmanager
+    spec:
+      containers:
+      - args:
+        - --storage.path=/alertmanager
+        - --config.file=/etc/alertmanager/alertmanager.yml
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        image: quay.io/prometheus/alertmanager:v0.28.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: alertmanager
+        ports:
+        - containerPort: 9093
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/alertmanager
+          name: config
+        - mountPath: /alertmanager
+          name: storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccount: release-name-alertmanager
+      serviceAccountName: release-name-alertmanager
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: config
+      - emptyDir: {}
+        name: storage
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+status:
+  availableReplicas: 0
+  replicas: 0

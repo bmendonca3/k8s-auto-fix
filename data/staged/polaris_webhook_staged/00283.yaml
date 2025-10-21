@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test-success
+  creationTimestamp: "2025-10-20T18:44:38Z"
+  generation: 1
+  labels:
+    app: loki-stack
+    chart: loki-stack-2.10.2
+    heritage: Helm
+    release: release-name
+  name: release-name-loki-stack-test
+  namespace: default
+  uid: b091a4ca-c969-430a-aa27-d463cbadec44
+spec:
+  containers:
+  - args:
+    - /var/lib/loki/test.sh
+    env:
+    - name: LOKI_SERVICE
+      value: release-name-loki
+    - name: LOKI_PORT
+      value: "3100"
+    image: bats/bats:1.8.2
+    imagePullPolicy: IfNotPresent
+    name: test
+    resources:
+      limits:
+        cpu: 100m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 512Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/lib/loki
+      name: tests
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-nrvss
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: release-name-loki-stack-test
+    name: tests
+  - name: kube-api-access-nrvss
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  phase: Pending
+  qosClass: Guaranteed

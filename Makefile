@@ -7,7 +7,7 @@ MODEL ?= gpt-4o-mini
 PYTHON ?= python
 PIP ?= pip
 
-.PHONY: setup kind-up fixtures reproducible-report detect propose verify schedule test e2e smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures
+.PHONY: setup kind-up fixtures reproducible-report detect propose verify schedule test e2e smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
 
 JOBS ?= 4
 GROK_PROPOSER_CONFIG ?= configs/run_grok.yaml
@@ -74,18 +74,28 @@ metrics:
 benchmark-grok200:
 	@echo "Running Grok benchmark across 200 detections"
 	@[ -n "$$XAI_API_KEY" ] || (echo "XAI_API_KEY environment variable is required for Grok mode" >&2; exit 1)
+	@rm -f data/batch_runs/patches_grok200_batch_*.json data/batch_runs/verified_grok200_batch_*.json || true
 	$(PYTHON) -c "import itertools, json, pathlib; root = pathlib.Path('data/batch_runs'); detections = list(itertools.chain.from_iterable(json.load(path.open('r', encoding='utf-8')) for path in sorted(root.glob('detections_grok200_batch_*.json')))); target = root / 'detections_grok200.json'; target.write_text(json.dumps(detections, indent=2), encoding='utf-8'); print(f'Wrote {target} with {len(detections)} detections')"
 	@rm -f data/batch_runs/patches_grok200.json data/batch_runs/verified_grok200.json data/batch_runs/metrics_grok200.json
 	@for f in data/batch_runs/detections_grok200_batch_*.json; do \
 		idx=$$(basename $$f .json | sed 's/[^0-9]//g'); \
+		patches_path=data/batch_runs/patches_grok200_batch_$${idx}.json; \
+		verified_path=data/batch_runs/verified_grok200_batch_$${idx}.json; \
 		echo "Proposing batch $$idx"; \
-		$(PYTHON) -m src.proposer.cli --detections $$f --out data/batch_runs/patches_grok200_batch_$${idx}.json --config $(GROK_PROPOSER_CONFIG); \
-		echo "Verifying batch $$idx"; \
-		$(PYTHON) -m src.verifier.cli --patches data/batch_runs/patches_grok200_batch_$${idx}.json --detections $$f --out data/batch_runs/verified_grok200_batch_$${idx}.json $(GROK_VERIFY_FLAGS); \
+		if $(PYTHON) -m src.proposer.cli --detections $$f --out $$patches_path --config $(GROK_PROPOSER_CONFIG); then \
+		  if [ -f "$$patches_path" ]; then \
+		    echo "Verifying batch $$idx"; \
+		    $(PYTHON) -m src.verifier.cli --patches $$patches_path --detections $$f --out $$verified_path $(GROK_VERIFY_FLAGS); \
+		  else \
+		    echo "[warn] Patches missing for $$idx; skipping verify"; \
+		  fi; \
+		else \
+		  echo "[warn] Proposer failed for $$idx; skipping verify"; \
+		fi; \
 	done
 	$(PYTHON) -c "import itertools, json, pathlib; root = pathlib.Path('data/batch_runs'); patches = list(itertools.chain.from_iterable(json.load(path.open('r', encoding='utf-8')) for path in sorted(root.glob('patches_grok200_batch_*.json')))); verified = list(itertools.chain.from_iterable(json.load(path.open('r', encoding='utf-8')) for path in sorted(root.glob('verified_grok200_batch_*.json')))); (root / 'patches_grok200.json').write_text(json.dumps(patches, indent=2), encoding='utf-8'); (root / 'verified_grok200.json').write_text(json.dumps(verified, indent=2), encoding='utf-8'); print(f'Merged {len(patches)} patches and {len(verified)} verifier records')"
 	$(PYTHON) -m src.eval.metrics --detections data/batch_runs/detections_grok200.json --patches data/batch_runs/patches_grok200.json --verified data/batch_runs/verified_grok200.json --out data/batch_runs/metrics_grok200.json
-	$(PYTHON) scripts/update_metrics_docs.py
+	$(PYTHON) scripts/update_metrics_docs.py || true
 
 benchmark-grok5k:
 	@echo "Running Grok benchmark across 5k detections"
@@ -153,3 +163,30 @@ summarize-failures:
 	$(PYTHON) scripts/summarize_failures.py \
 		--verified-glob "data/batch_runs/grok_5k/verified_grok5k_batch_*.json" \
 		--detections-glob "data/batch_runs/grok_5k/detections_grok5k_batch_*.json"
+
+# Build the IEEE Access paper (outputs to paper/)
+paper:
+	cd paper && pdflatex -interaction=nonstopmode access.tex || true
+	cd paper && pdflatex -interaction=nonstopmode access.tex || true
+
+# Baselines (simulation by default)
+baseline-kyverno:
+	$(PYTHON) scripts/run_kyverno_baseline.py --detections data/detections.json --output data/baselines/kyverno_baseline.csv --simulate
+
+baseline-polaris:
+	$(PYTHON) scripts/run_polaris_baseline.py --detections data/detections.json --output data/baselines/polaris_baseline.csv --simulate
+
+baseline-map:
+	$(PYTHON) scripts/run_mutatingadmission_baseline.py --detections data/detections.json --output data/baselines/map_baseline.csv --simulate
+
+baseline-llmsec:
+	@[ -n "$$OPENAI_API_KEY" ] || (echo "OPENAI_API_KEY is required for LLMSecConfig slice" >&2; exit 0)
+	$(PYTHON) scripts/run_llmsecconfig_slice.py --detections data/detections.json --out data/baselines/llmsecconfig_slice.csv --limit 500
+
+baselines: baseline-kyverno baseline-polaris baseline-map
+
+reproduce-all:
+	bash ./scripts/reproduce_all.sh
+
+live-eval:
+	./scripts/live_cluster_eval.sh

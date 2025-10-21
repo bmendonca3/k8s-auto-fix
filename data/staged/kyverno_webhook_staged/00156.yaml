@@ -1,0 +1,178 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:00Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/version: 1.29.1
+    helm.sh/chart: nginx-22.0.7
+  name: release-name-nginx
+  namespace: default
+  uid: d5b3be03-9d0c-4cc4-a435-d552d69b52c6
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: nginx
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: nginx
+        app.kubernetes.io/version: 1.29.1
+        helm.sh/chart: nginx-22.0.7
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/name: nginx
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - env:
+        - name: BITNAMI_DEBUG
+          value: "false"
+        - name: NGINX_HTTP_PORT_NUMBER
+          value: "8080"
+        - name: NGINX_HTTPS_PORT_NUMBER
+          value: "8443"
+        image: registry-1.docker.io/bitnami/nginx:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: http
+          timeoutSeconds: 5
+        name: nginx
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 150m
+            ephemeral-storage: 2Gi
+            memory: 192Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: empty-dir
+          subPath: tmp-dir
+        - mountPath: /opt/bitnami/nginx/conf
+          name: empty-dir
+          subPath: app-conf-dir
+        - mountPath: /opt/bitnami/nginx/logs
+          name: empty-dir
+          subPath: app-logs-dir
+        - mountPath: /opt/bitnami/nginx/tmp
+          name: empty-dir
+          subPath: app-tmp-dir
+        - mountPath: /certs
+          name: certificate
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - args:
+        - -ec
+        - |
+          #!/bin/bash
+          . /opt/bitnami/scripts/libfs.sh
+          # We copy the logs folder because it has symlinks to stdout and stderr
+          if ! is_dir_empty /opt/bitnami/nginx/logs; then
+            cp -r /opt/bitnami/nginx/logs /emptydir/app-logs-dir
+          fi
+        command:
+        - /bin/bash
+        image: registry-1.docker.io/bitnami/nginx:latest
+        imagePullPolicy: IfNotPresent
+        name: preserve-logs-symlinks
+        resources:
+          limits:
+            cpu: 150m
+            ephemeral-storage: 2Gi
+            memory: 192Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /emptydir
+          name: empty-dir
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+      serviceAccount: release-name-nginx
+      serviceAccountName: release-name-nginx
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: empty-dir
+      - emptyDir: {}
+        name: certificate
+status: {}

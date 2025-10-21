@@ -1,5 +1,5 @@
 """Verifier package for validating proposed JSON patches."""
 
-from .verifier import VerificationResult, Verifier
+from .verifier import VerificationResult, Verifier, VerifierGates
 
-__all__ = ["VerificationResult", "Verifier"]
+__all__ = ["VerificationResult", "Verifier", "VerifierGates"]

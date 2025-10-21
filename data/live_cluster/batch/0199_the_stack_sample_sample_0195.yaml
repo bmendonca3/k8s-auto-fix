@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sabnzbd
+  namespace: usenet
+  annotations:
+    reloader.stakater.com/auto: 'true'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sabnzbd
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sabnzbd
+    spec:
+      containers:
+      - name: sabnzbd
+        image: lscr.io/linuxserver/sabnzbd:3.4.2-ls51
+        env:
+        - name: PGID
+          value: '2000'
+        - name: PUID
+          value: '2000'
+        - name: TZ
+          value: Europe/Zurich
+        - name: DOCKER_MODS
+          value: containeroo/docker-mods:sabnzbd-mkvtoolnix|containeroo/docker-mods:sabnzbd-nzbnotify
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: data
+        - mountPath: /incomplete-downloads
+          name: incomplete-downloads
+        - mountPath: /downloads
+          name: downloads
+        - mountPath: /app/sabnzbd/scripts/merge_subtitles.sh
+          name: merge-subtitles
+          subPath: merge_subtitles.sh
+        - mountPath: /tmp/startup_probe.sh
+          name: sabnzbd-startup
+          subPath: startup_probe.sh
+        startupProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - /tmp/startup_probe.sh
+          initialDelaySeconds: 30
+          failureThreshold: 30
+          timeoutSeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          failureThreshold: 2
+          timeoutSeconds: 5
+          periodSeconds: 30
+        resources: {}
+      restartPolicy: Always
+      automountServiceAccountToken: false
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: sabnzbd-data
+      - name: merge-subtitles
+        configMap:
+          name: merge-subtitles
+          items:
+          - key: merge_subtitles.sh
+            path: merge_subtitles.sh
+          defaultMode: 511
+      - name: sabnzbd-startup
+        configMap:
+          name: sabnzbd-startup
+          items:
+          - key: startup_probe.sh
+            path: startup_probe.sh
+          defaultMode: 511
+      - name: incomplete-downloads
+        hostPath:
+          path: /mnt/disk06/downloads/incomplete
+          type: Directory
+      - name: downloads
+        hostPath:
+          path: /mnt/disk06/downloads/complete
+          type: Directory

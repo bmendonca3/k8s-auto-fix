@@ -1,0 +1,211 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-api-server
+  labels:
+    tier: airflow
+    component: api-server
+    release: release-name
+    chart: airflow-1.18.0
+    heritage: Helm
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      tier: airflow
+      component: api-server
+      release: release-name
+  template:
+    metadata:
+      labels:
+        tier: airflow
+        component: api-server
+        release: release-name
+      annotations:
+        checksum/metadata-secret: 327e091234a14bd54fe663b0f2eb6d8f7b817c2dcfa8b6fc2311334f6a68faf1
+        checksum/pgbouncer-config-secret: 1dae2adc757473469686d37449d076b0c82404f61413b58ae68b3c5e99527688
+        checksum/airflow-config: 8280f1a548335eb4fa2dadaae8a78f009bb408ea8725a2363cc9533a176ec5db
+        checksum/extra-configmaps: e862ea47e13e634cf17d476323784fa27dac20015550c230953b526182f5cac8
+        checksum/extra-secrets: e9582fdd622296c976cbc10a5ba7d6702c28a24fe80795ea5b84ba443a56c827
+    spec:
+      serviceAccountName: release-name-airflow-api-server
+      nodeSelector: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  component: api-server
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations: []
+      topologySpreadConstraints: []
+      restartPolicy: Always
+      securityContext:
+        runAsUser: 50000
+        fsGroup: 0
+      initContainers:
+      - name: wait-for-airflow-migrations
+        resources: {}
+        image: apache/airflow:3.0.2
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: config
+          mountPath: /opt/airflow/airflow.cfg
+          subPath: airflow.cfg
+          readOnly: true
+        - name: config
+          mountPath: /opt/airflow/config/airflow_local_settings.py
+          subPath: airflow_local_settings.py
+          readOnly: true
+        args:
+        - airflow
+        - db
+        - check-migrations
+        - --migration-wait-timeout=60
+        envFrom: []
+        env:
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: release-name-fernet-key
+              key: fernet-key
+        - name: AIRFLOW_HOME
+          value: /opt/airflow
+        - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW_CONN_AIRFLOW_DB
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW__API__SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: release-name-api-secret-key
+              key: api-secret-key
+        - name: AIRFLOW__API_AUTH__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: release-name-jwt-secret
+              key: jwt-secret
+        - name: AIRFLOW__CELERY__BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: release-name-broker-url
+              key: connection
+      containers:
+      - name: api-server
+        image: apache/airflow:3.0.2
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        args:
+        - bash
+        - -c
+        - exec airflow api-server
+        resources: {}
+        volumeMounts:
+        - name: config
+          mountPath: /opt/airflow/airflow.cfg
+          subPath: airflow.cfg
+          readOnly: true
+        - name: config
+          mountPath: /opt/airflow/config/airflow_local_settings.py
+          subPath: airflow_local_settings.py
+          readOnly: true
+        ports:
+        - name: api-server
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /api/v2/version
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v2/version
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /api/v2/version
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 0
+          timeoutSeconds: 20
+          failureThreshold: 6
+          periodSeconds: 10
+        envFrom: []
+        env:
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: release-name-fernet-key
+              key: fernet-key
+        - name: AIRFLOW_HOME
+          value: /opt/airflow
+        - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW_CONN_AIRFLOW_DB
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW__API__SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: release-name-api-secret-key
+              key: api-secret-key
+        - name: AIRFLOW__API_AUTH__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: release-name-jwt-secret
+              key: jwt-secret
+        - name: AIRFLOW__CELERY__BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: release-name-broker-url
+              key: connection
+      volumes:
+      - name: config
+        configMap:
+          name: release-name-config

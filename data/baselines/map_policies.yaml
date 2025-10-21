@@ -1,0 +1,285 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-enforce-workload-security
+spec:
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+          - apps
+          - batch
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+          - deployments
+          - replicasets
+          - statefulsets
+          - daemonsets
+          - jobs
+          - cronjobs
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: |
+          {
+            "spec": {
+              "containers": object.spec.containers != null ?
+                object.spec.containers.map(c, {
+                  "name": c.name,
+                  "securityContext": {
+                    "allowPrivilegeEscalation": false,
+                    "privileged": false,
+                    "readOnlyRootFilesystem": true,
+                    "runAsNonRoot": true,
+                    "runAsUser": 65534,
+                    "seccompProfile": {"type": "RuntimeDefault"},
+                    "capabilities": {
+                      "drop": ["ALL", "NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT"]
+                    }
+                  }
+                }) : null,
+              "initContainers": object.spec.initContainers != null ?
+                object.spec.initContainers.map(c, {
+                  "name": c.name,
+                  "securityContext": {
+                    "allowPrivilegeEscalation": false,
+                    "privileged": false,
+                    "readOnlyRootFilesystem": true,
+                    "runAsNonRoot": true,
+                    "runAsUser": 65534,
+                    "seccompProfile": {"type": "RuntimeDefault"},
+                    "capabilities": {
+                      "drop": ["ALL", "NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT"]
+                    }
+                  }
+                }) : null,
+              "template": has(object.spec.template) && has(object.spec.template.spec) ? {
+                "spec": {
+                  "containers": object.spec.template.spec.containers != null ?
+                    object.spec.template.spec.containers.map(c, {
+                      "name": c.name,
+                      "securityContext": {
+                        "allowPrivilegeEscalation": false,
+                        "privileged": false,
+                        "readOnlyRootFilesystem": true,
+                        "runAsNonRoot": true,
+                        "runAsUser": 65534,
+                        "seccompProfile": {"type": "RuntimeDefault"},
+                        "capabilities": {
+                          "drop": ["ALL", "NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT"]
+                        }
+                      }
+                    }) : null,
+                  "initContainers": object.spec.template.spec.initContainers != null ?
+                    object.spec.template.spec.initContainers.map(c, {
+                      "name": c.name,
+                      "securityContext": {
+                        "allowPrivilegeEscalation": false,
+                        "privileged": false,
+                        "readOnlyRootFilesystem": true,
+                        "runAsNonRoot": true,
+                        "runAsUser": 65534,
+                        "seccompProfile": {"type": "RuntimeDefault"},
+                        "capabilities": {
+                          "drop": ["ALL", "NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT"]
+                        }
+                      }
+                    }) : null
+                }
+              } : null,
+              "jobTemplate": has(object.spec.jobTemplate) && has(object.spec.jobTemplate.spec) &&
+                has(object.spec.jobTemplate.spec.template) && has(object.spec.jobTemplate.spec.template.spec) ? {
+                "spec": {
+                  "template": {
+                    "spec": {
+                      "containers": object.spec.jobTemplate.spec.template.spec.containers != null ?
+                        object.spec.jobTemplate.spec.template.spec.containers.map(c, {
+                          "name": c.name,
+                          "securityContext": {
+                            "allowPrivilegeEscalation": false,
+                            "privileged": false,
+                            "readOnlyRootFilesystem": true,
+                            "runAsNonRoot": true,
+                            "runAsUser": 65534,
+                            "seccompProfile": {"type": "RuntimeDefault"},
+                            "capabilities": {
+                              "drop": ["ALL", "NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT"]
+                            }
+                          }
+                        }) : null,
+                      "initContainers": object.spec.jobTemplate.spec.template.spec.initContainers != null ?
+                        object.spec.jobTemplate.spec.template.spec.initContainers.map(c, {
+                          "name": c.name,
+                          "securityContext": {
+                            "allowPrivilegeEscalation": false,
+                            "privileged": false,
+                            "readOnlyRootFilesystem": true,
+                            "runAsNonRoot": true,
+                            "runAsUser": 65534,
+                            "seccompProfile": {"type": "RuntimeDefault"},
+                            "capabilities": {
+                              "drop": ["ALL", "NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT"]
+                            }
+                          }
+                        }) : null
+                    }
+                  }
+                }
+              } : null
+            }
+          }
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-enforce-workload-security-binding
+spec:
+  policyName: map-enforce-workload-security
+  matchResources:
+    resourceRules:
+      - apiGroups:
+          - ""
+          - apps
+          - batch
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+          - deployments
+          - replicasets
+          - statefulsets
+          - daemonsets
+          - jobs
+          - cronjobs
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-enforce-workload-resources
+spec:
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+          - apps
+          - batch
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+          - deployments
+          - replicasets
+          - statefulsets
+          - daemonsets
+          - jobs
+          - cronjobs
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: |
+          {
+            "spec": {
+              "containers": object.spec.containers != null ?
+                object.spec.containers.map(c, {
+                  "name": c.name,
+                  "resources": {
+                    "requests": {"cpu": "100m", "memory": "256Mi"},
+                    "limits": {"cpu": "500m", "memory": "512Mi"}
+                  }
+                }) : null,
+              "initContainers": object.spec.initContainers != null ?
+                object.spec.initContainers.map(c, {
+                  "name": c.name,
+                  "resources": {
+                    "requests": {"cpu": "100m", "memory": "256Mi"},
+                    "limits": {"cpu": "500m", "memory": "512Mi"}
+                  }
+                }) : null,
+              "template": has(object.spec.template) && has(object.spec.template.spec) ? {
+                "spec": {
+                  "containers": object.spec.template.spec.containers != null ?
+                    object.spec.template.spec.containers.map(c, {
+                      "name": c.name,
+                      "resources": {
+                        "requests": {"cpu": "100m", "memory": "256Mi"},
+                        "limits": {"cpu": "500m", "memory": "512Mi"}
+                      }
+                    }) : null,
+                  "initContainers": object.spec.template.spec.initContainers != null ?
+                    object.spec.template.spec.initContainers.map(c, {
+                      "name": c.name,
+                      "resources": {
+                        "requests": {"cpu": "100m", "memory": "256Mi"},
+                        "limits": {"cpu": "500m", "memory": "512Mi"}
+                      }
+                    }) : null
+                }
+              } : null,
+              "jobTemplate": has(object.spec.jobTemplate) && has(object.spec.jobTemplate.spec) &&
+                has(object.spec.jobTemplate.spec.template) && has(object.spec.jobTemplate.spec.template.spec) ? {
+                "spec": {
+                  "template": {
+                    "spec": {
+                      "containers": object.spec.jobTemplate.spec.template.spec.containers != null ?
+                        object.spec.jobTemplate.spec.template.spec.containers.map(c, {
+                          "name": c.name,
+                          "resources": {
+                            "requests": {"cpu": "100m", "memory": "256Mi"},
+                            "limits": {"cpu": "500m", "memory": "512Mi"}
+                          }
+                        }) : null,
+                      "initContainers": object.spec.jobTemplate.spec.template.spec.initContainers != null ?
+                        object.spec.jobTemplate.spec.template.spec.initContainers.map(c, {
+                          "name": c.name,
+                          "resources": {
+                            "requests": {"cpu": "100m", "memory": "256Mi"},
+                            "limits": {"cpu": "500m", "memory": "512Mi"}
+                          }
+                        }) : null
+                    }
+                  }
+                }
+              } : null
+            }
+          }
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-enforce-workload-resources-binding
+spec:
+  policyName: map-enforce-workload-resources
+  matchResources:
+    resourceRules:
+      - apiGroups:
+          - ""
+          - apps
+          - batch
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+          - deployments
+          - replicasets
+          - statefulsets
+          - daemonsets
+          - jobs
+          - cronjobs

@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  creationTimestamp: "2025-10-20T18:42:47Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: artifact-hub
+    app.kubernetes.io/version: 1.21.0
+    helm.sh/chart: artifact-hub-1.21.0
+  name: scanner
+  namespace: default
+  uid: 9e823b3b-2c94-4d74-a7fe-08b7ce7ac480
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata: {}
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: release-name
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: artifact-hub
+            app.kubernetes.io/version: 1.21.0
+            helm.sh/chart: artifact-hub-1.21.0
+        spec:
+          containers:
+          - image: artifacthub/scanner:v1.21.0
+            imagePullPolicy: IfNotPresent
+            name: scanner
+            resources:
+              limits:
+                cpu: 100m
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /home/scanner/.cfg
+              name: scanner-config
+              readOnly: true
+          dnsPolicy: ClusterFirst
+          initContainers:
+          - command:
+            - sh
+            - -c
+            - until pg_isready; do echo waiting for database; sleep 2; done;
+            env:
+            - name: PGHOST
+              value: release-name-postgresql.default
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: postgres
+            image: docker.io/artifacthub/postgres:latest
+            imagePullPolicy: IfNotPresent
+            name: check-db-ready
+            resources: {}
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccount: default
+          serviceAccountName: default
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - name: scanner-config
+            secret:
+              defaultMode: 420
+              secretName: scanner-config
+  schedule: 15,45 * * * *
+  successfulJobsHistoryLimit: 1
+  suspend: false
+status: {}

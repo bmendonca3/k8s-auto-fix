@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-harbor-redis
+  namespace: default
+  labels:
+    heritage: Helm
+    release: release-name
+    chart: harbor
+    app: harbor
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.14.0
+    component: redis
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  serviceName: release-name-harbor-redis
+  selector:
+    matchLabels:
+      release: release-name
+      app: harbor
+      component: redis
+  template:
+    metadata:
+      labels:
+        heritage: Helm
+        release: release-name
+        chart: harbor
+        app: harbor
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: harbor
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: harbor
+        app.kubernetes.io/version: 2.14.0
+        component: redis
+        app.kubernetes.io/component: redis
+    spec:
+      securityContext:
+        runAsUser: 999
+        fsGroup: 999
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: redis
+        image: goharbor/redis-photon:v2.14.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 300
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/redis
+          subPath: null
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: data
+      labels:
+        heritage: Helm
+        release: release-name
+        chart: harbor
+        app: harbor
+      annotations: null
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

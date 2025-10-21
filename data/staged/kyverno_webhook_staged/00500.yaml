@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:43Z"
+  generation: 1
+  labels:
+    app: statusreconciler
+  name: statusreconciler
+  namespace: default
+  uid: b1c6ae66-5455-4813-a7ed-fbbe78a58e14
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: statusreconciler
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: statusreconciler
+    spec:
+      containers:
+      - args:
+        - --dry-run=false
+        - --continue-on-error=true
+        - --plugin-config=/etc/plugins/plugins.yaml
+        - --config-path=/etc/config/config.yaml
+        - --github-token-path=/etc/github/oauth
+        - --github-endpoint=http://ghproxy
+        - --github-endpoint=https://api.github.com
+        - --job-config-path=/etc/job-config
+        - --denylist=kubernetes/kubernetes
+        image: gcr.io/k8s-prow/status-reconciler:v20210414-378dc3ffc3
+        imagePullPolicy: Always
+        name: statusreconciler
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/github
+          name: oauth
+          readOnly: true
+        - mountPath: /etc/config
+          name: config
+          readOnly: true
+        - mountPath: /etc/job-config
+          name: job-config
+          readOnly: true
+        - mountPath: /etc/plugins
+          name: plugins
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: statusreconciler
+      serviceAccountName: statusreconciler
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: oauth
+      - emptyDir: {}
+        name: config
+      - emptyDir: {}
+        name: job-config
+      - emptyDir: {}
+        name: plugins
+status: {}

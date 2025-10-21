@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:42Z"
+  generation: 1
+  labels:
+    app: drupal
+    appMajor: "8"
+    instance: datasets.lib.unb.ca
+    tier: frontend
+    uri: datasets.lib.unb.ca
+    vcsOwner: unb-libraries
+    vcsRef: prod
+    vcsRepository: datasets.lib.unb.ca
+  name: datasets-lib-unb-ca
+  namespace: prod
+  uid: 660d1fee-f8a2-4b9a-ad7c-11b31c80ff25
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      uri: datasets.lib.unb.ca
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: drupal
+        appMajor: "8"
+        instance: datasets.lib.unb.ca
+        tier: frontend
+        uri: datasets.lib.unb.ca
+        vcsOwner: unb-libraries
+        vcsRef: prod
+        vcsRepository: datasets.lib.unb.ca
+    spec:
+      containers:
+      - env:
+        - name: DEPLOY_ENV
+          value: prod
+        - name: MYSQL_HOSTNAME
+          value: drupal-mysql-lib-unb-ca
+        - name: MYSQL_PORT
+          value: "3306"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: root-password
+              name: mysql
+        - name: NR_INSTALL_KEY
+          valueFrom:
+            secretKeyRef:
+              key: install-key
+              name: newrelic
+        image: '||DEPLOYMENTIMAGE||'
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 100
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: datasets-lib-unb-ca
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app/html/sites/default
+          name: drupal-persistent-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: drupal-persistent-storage
+status: {}

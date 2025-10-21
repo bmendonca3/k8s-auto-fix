@@ -5,7 +5,7 @@ import argparse
 import json
 import math
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 import sys
 
@@ -122,6 +122,97 @@ def _format_band_names(count: int) -> List[str]:
     return labels + extra
 
 
+def _gini(values: Sequence[float]) -> float:
+    if not values:
+        return 0.0
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    if n == 0:
+        return 0.0
+    total = sum(sorted_vals)
+    if total == 0:
+        return 0.0
+    cumulative = 0.0
+    for idx, value in enumerate(sorted_vals, start=1):
+        cumulative += idx * value
+    gini = (2.0 * cumulative) / (n * total) - (n + 1) / n
+    return round(gini, 4)
+
+
+def _starvation_rate(waits_hours: Mapping[str, float], threshold_hours: float) -> float:
+    if not waits_hours:
+        return 0.0
+    starving = sum(1 for value in waits_hours.values() if value > threshold_hours)
+    return round(starving / len(waits_hours), 4)
+
+
+def _head_of_line_share(
+    ordered_ids: Sequence[str],
+    percentile_map: Mapping[str, float],
+    boundaries: Sequence[float],
+    band_labels: Sequence[str],
+    head_fraction: float,
+) -> float:
+    if not ordered_ids:
+        return 0.0
+    head_fraction = min(max(head_fraction, 0.0), 1.0)
+    head_count = max(1, int(math.ceil(len(ordered_ids) * head_fraction)))
+    low_risk_label = band_labels[-1]
+    hits = 0
+    for patch_id in ordered_ids[:head_count]:
+        percentile = percentile_map.get(patch_id, 1.0)
+        band_index = _assign_band(percentile, boundaries)
+        label = band_labels[min(band_index, len(band_labels) - 1)]
+        if label == low_risk_label:
+            hits += 1
+    return round(hits / head_count, 4)
+
+
+def _evaluate_order(
+    mode: str,
+    ordered_ids: Sequence[str],
+    metadata: Mapping[str, Dict[str, object]],
+    percentile_map: Mapping[str, float],
+    boundaries: Sequence[float],
+    band_labels: Sequence[str],
+    starvation_threshold: float,
+    head_fraction: float,
+) -> Dict[str, object]:
+    waits_minutes = _compute_waits(ordered_ids, metadata)
+    waits_hours = {pid: mins / 60.0 for pid, mins in waits_minutes.items()}
+
+    band_waits: Dict[str, List[float]] = {label: [] for label in band_labels}
+    for patch_id in ordered_ids:
+        percentile = percentile_map.get(patch_id, 1.0)
+        band_index = _assign_band(percentile, boundaries)
+        label = band_labels[min(band_index, len(band_labels) - 1)]
+        band_waits[label].append(waits_hours.get(patch_id, 0.0))
+
+    band_stats = {label: _summarise_band(values) for label, values in band_waits.items()}
+    waits_list = list(waits_hours.values())
+    overall_metrics = {
+        "median": round(_percentile(waits_list, 50.0), 4) if waits_list else 0.0,
+        "p90": round(_percentile(waits_list, 90.0), 4) if waits_list else 0.0,
+        "p95": round(_percentile(waits_list, 95.0), 4) if waits_list else 0.0,
+        "gini": _gini(waits_list),
+        "starvation_rate": _starvation_rate(waits_hours, starvation_threshold),
+        "low_risk_head_share": _head_of_line_share(
+            ordered_ids,
+            percentile_map,
+            boundaries,
+            band_labels,
+            head_fraction,
+        ),
+    }
+
+    return {
+        "mode": mode,
+        "order": list(ordered_ids),
+        "band_wait_hours": band_stats,
+        "overall_wait_hours": overall_metrics,
+    }
+
+
 def run_sweep(
     verified_path: Path,
     detections_path: Path,
@@ -130,6 +221,8 @@ def run_sweep(
     explore_weights: Sequence[float],
     epsilon: float,
     risk_quantiles: Sequence[float],
+    starvation_threshold: float,
+    head_fraction: float,
 ) -> List[Dict[str, object]]:
     candidates, metadata = _build_candidates(verified_path, detections_path, risk_path)
     ordered_by_risk = sorted(
@@ -154,31 +247,60 @@ def run_sweep(
                 explore_weight=explore_weight,
             )
             ordered_ids = [candidate.id for candidate in ordered_candidates]
-            waits_minutes = _compute_waits(ordered_ids, metadata)
-            waits_hours = {pid: mins / 60.0 for pid, mins in waits_minutes.items()}
-
-            band_waits: Dict[str, List[float]] = {label: [] for label in band_labels}
-            for patch_id in ordered_ids:
-                percentile = percentile_map.get(patch_id, 1.0)
-                band_index = _assign_band(percentile, boundaries)
-                label = band_labels[min(band_index, len(band_labels) - 1)]
-                band_waits[label].append(waits_hours.get(patch_id, 0.0))
-
-            band_stats = {label: _summarise_band(values) for label, values in band_waits.items()}
-            overall_median = _percentile(list(waits_hours.values()), 50.0) if waits_hours else 0.0
-            overall_p90 = _percentile(list(waits_hours.values()), 90.0) if waits_hours else 0.0
-            results.append(
-                {
-                    "alpha": alpha,
-                    "explore_weight": explore_weight,
-                    "order": ordered_ids,
-                    "band_wait_hours": band_stats,
-                    "overall_wait_hours": {
-                        "median": round(overall_median, 4),
-                        "p90": round(overall_p90, 4),
-                    },
-                }
+            bandit_metrics = _evaluate_order(
+                mode="bandit",
+                ordered_ids=ordered_ids,
+                metadata=metadata,
+                percentile_map=percentile_map,
+                boundaries=boundaries,
+                band_labels=band_labels,
+                starvation_threshold=starvation_threshold,
+                head_fraction=head_fraction,
             )
+            bandit_metrics.update({"alpha": alpha, "explore_weight": explore_weight})
+            results.append(bandit_metrics)
+
+        ordered_risk_et = sorted(
+            candidates,
+            key=lambda candidate: (candidate.risk / max(candidate.expected_time, epsilon)) + alpha * candidate.wait,
+            reverse=True,
+        )
+        metrics_risk_et = _evaluate_order(
+            mode="risk_over_et_aging",
+            ordered_ids=[candidate.id for candidate in ordered_risk_et],
+            metadata=metadata,
+            percentile_map=percentile_map,
+            boundaries=boundaries,
+            band_labels=band_labels,
+            starvation_threshold=starvation_threshold,
+            head_fraction=head_fraction,
+        )
+        metrics_risk_et.update({"alpha": alpha, "explore_weight": 0.0})
+        results.append(metrics_risk_et)
+
+    ordered_risk = [
+        patch_id
+        for patch_id, _meta in sorted(
+            metadata.items(),
+            key=lambda item: (
+                -float(item[1].get("risk", 0.0)),
+                item[1].get("detection_index", 0),
+            ),
+        )
+    ]
+    metrics_risk_only = _evaluate_order(
+        mode="risk_only",
+        ordered_ids=ordered_risk,
+        metadata=metadata,
+        percentile_map=percentile_map,
+        boundaries=boundaries,
+        band_labels=band_labels,
+        starvation_threshold=starvation_threshold,
+        head_fraction=head_fraction,
+    )
+    metrics_risk_only.update({"alpha": None, "explore_weight": None})
+    results.append(metrics_risk_only)
+
     return results
 
 
@@ -210,6 +332,18 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="0.25,0.75",
         help="Comma-separated quantiles (0-1, ascending) that define risk band boundaries (default: 0.25,0.75).",
+    )
+    parser.add_argument(
+        "--starvation-threshold",
+        type=float,
+        default=72.0,
+        help="Threshold in hours beyond which an item is considered starved (default: 72).",
+    )
+    parser.add_argument(
+        "--head-share-fraction",
+        type=float,
+        default=0.1,
+        help="Fraction of the queue considered head-of-line for low-risk share metrics (default: 0.1).",
     )
     parser.add_argument(
         "--out",
@@ -246,6 +380,8 @@ def main() -> None:
         explore_weights=explore_weights,
         epsilon=args.epsilon,
         risk_quantiles=risk_quantiles,
+        starvation_threshold=args.starvation_threshold,
+        head_fraction=args.head_share_fraction,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")

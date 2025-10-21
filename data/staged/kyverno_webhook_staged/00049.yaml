@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: "2025-10-20T21:10:45Z"
+  generation: 1
+  labels:
+    chart: airflow-1.18.0
+    component: redis
+    heritage: Helm
+    release: release-name
+    tier: airflow
+  name: release-name-redis
+  namespace: default
+  uid: 90268007-bd44-4628-969e-cc05da7e253a
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      component: redis
+      release: release-name
+      tier: airflow
+  serviceName: ""
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        component: redis
+        release: release-name
+        tier: airflow
+    spec:
+      affinity: {}
+      containers:
+      - args:
+        - -c
+        - redis-server --requirepass ${REDIS_PASSWORD}
+        command:
+        - /bin/sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: release-name-redis-password
+        image: redis:7.2-bookworm
+        imagePullPolicy: IfNotPresent
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis-db
+          protocol: TCP
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data
+          name: redis-db
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 0
+      serviceAccount: release-name-airflow-redis
+      serviceAccountName: release-name-airflow-redis
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: redis-db
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+status:
+  availableReplicas: 0
+  replicas: 0

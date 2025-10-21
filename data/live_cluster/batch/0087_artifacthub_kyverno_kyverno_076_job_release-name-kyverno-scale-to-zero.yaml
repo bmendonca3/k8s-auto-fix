@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-kyverno-scale-to-zero
+  namespace: default
+  labels:
+    app.kubernetes.io/component: hooks
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: release-name-kyverno
+    app.kubernetes.io/version: 3.5.2
+    helm.sh/chart: kyverno-3.5.2
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: '90'
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      serviceAccountName: kyverno-admission-controller
+      automountServiceAccountToken: true
+      restartPolicy: Never
+      containers:
+      - name: kubectl
+        image: registry.k8s.io/kubectl:v1.32.7
+        imagePullPolicy: null
+        command:
+        - kubectl
+        - scale
+        - -n
+        - default
+        - deployment
+        - -l
+        - app.kubernetes.io/part-of=release-name-kyverno
+        - --replicas=0
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault

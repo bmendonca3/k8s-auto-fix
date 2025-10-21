@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:21Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault-agent-injector
+    component: webhook
+  name: release-name-vault-agent-injector
+  namespace: default
+  uid: 1f50b434-c660-48da-9c09-a1f3c9490057
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: vault-agent-injector
+      component: webhook
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: vault-agent-injector
+        component: webhook
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: release-name
+                app.kubernetes.io/name: vault-agent-injector
+                component: webhook
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - agent-inject
+        - 2>&1
+        env:
+        - name: AGENT_INJECT_LISTEN
+          value: :8080
+        - name: AGENT_INJECT_LOG_LEVEL
+          value: info
+        - name: AGENT_INJECT_VAULT_ADDR
+          value: http://release-name-vault.default.svc:8200
+        - name: AGENT_INJECT_VAULT_AUTH_PATH
+          value: auth/kubernetes
+        - name: AGENT_INJECT_VAULT_IMAGE
+          value: hashicorp/vault:1.20.4
+        - name: AGENT_INJECT_TLS_AUTO
+          value: release-name-vault-agent-injector-cfg
+        - name: AGENT_INJECT_TLS_AUTO_HOSTS
+          value: release-name-vault-agent-injector-svc,release-name-vault-agent-injector-svc.default,release-name-vault-agent-injector-svc.default.svc
+        - name: AGENT_INJECT_LOG_FORMAT
+          value: standard
+        - name: AGENT_INJECT_REVOKE_ON_SHUTDOWN
+          value: "false"
+        - name: AGENT_INJECT_CPU_REQUEST
+          value: 250m
+        - name: AGENT_INJECT_CPU_LIMIT
+          value: 500m
+        - name: AGENT_INJECT_MEM_REQUEST
+          value: 64Mi
+        - name: AGENT_INJECT_MEM_LIMIT
+          value: 128Mi
+        - name: AGENT_INJECT_DEFAULT_TEMPLATE
+          value: map
+        - name: AGENT_INJECT_TEMPLATE_CONFIG_EXIT_ON_RETRY_FAILURE
+          value: "true"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: hashicorp/vault-k8s:1.7.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /health/ready
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: sidecar-injector
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /health/ready
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          failureThreshold: 12
+          httpGet:
+            path: /health/ready
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 100
+      serviceAccount: release-name-vault-agent-injector
+      serviceAccountName: release-name-vault-agent-injector
+      terminationGracePeriodSeconds: 30
+status: {}

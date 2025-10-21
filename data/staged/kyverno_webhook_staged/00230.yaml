@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: hook-succeeded
+  creationTimestamp: "2025-10-20T21:11:12Z"
+  generation: 1
+  name: release-name-ikewa-test
+  namespace: default
+  uid: f0530497-71ac-4492-a86e-518612690b2a
+spec:
+  containers:
+  - command:
+    - sh
+    - -c
+    - |
+      #!/usr/bin/env bash -e
+      curl -XGET --fail --cacert /usr/share/elasticsearch/config/certs/tls.crt -u "elastic:${ELASTIC_PASSWORD}" https://'elasticsearch-master:9200/_cluster/health?wait_for_status=green&timeout=1s'
+    env:
+    - name: ELASTIC_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: elasticsearch-master-credentials
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
+    imagePullPolicy: IfNotPresent
+    name: release-name-mvgmy-test
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /usr/share/elasticsearch/config/certs
+      name: elasticsearch-certs
+      readOnly: true
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-mdtjq
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 1000
+    runAsUser: 1000
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 10
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 10
+  volumes:
+  - emptyDir: {}
+    name: elasticsearch-certs
+  - name: kube-api-access-mdtjq
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  phase: Pending
+  qosClass: BestEffort

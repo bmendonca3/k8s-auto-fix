@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade,pre-rollback
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "5"
+  creationTimestamp: "2025-10-20T18:46:40Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: velero
+    helm.sh/chart: velero-11.0.0
+  name: release-name-velero-upgrade-crds
+  namespace: default
+  uid: 16464cc8-05dc-416b-9c7c-48566fa81c81
+spec:
+  backoffLimit: 3
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 16464cc8-05dc-416b-9c7c-48566fa81c81
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 16464cc8-05dc-416b-9c7c-48566fa81c81
+        batch.kubernetes.io/job-name: release-name-velero-upgrade-crds
+        controller-uid: 16464cc8-05dc-416b-9c7c-48566fa81c81
+        job-name: release-name-velero-upgrade-crds
+      name: velero-upgrade-crds
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -c
+        - /velero install --crds-only --dry-run -o yaml | /tmp/kubectl apply -f -
+        command:
+        - /tmp/sh
+        image: velero/velero:v1.17.0
+        imagePullPolicy: IfNotPresent
+        name: velero
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: crds
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - args:
+        - -c
+        - cp `which sh` /tmp && cp `which kubectl` /tmp
+        command:
+        - /bin/sh
+        image: docker.io/bitnamilegacy/kubectl:1.34
+        imagePullPolicy: IfNotPresent
+        name: kubectl
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: crds
+      restartPolicy: OnFailure
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: release-name-velero-server-upgrade-crds
+      serviceAccountName: release-name-velero-server-upgrade-crds
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: crds
+status: {}

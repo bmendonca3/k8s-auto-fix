@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:42:17Z"
+  generation: 1
+  labels:
+    app: server
+    app.kubernetes.io/component: server
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: argo-workflows-server
+    app.kubernetes.io/part-of: argo-workflows
+    app.kubernetes.io/version: v3.7.2
+    helm.sh/chart: argo-workflows-0.45.26
+  name: release-name-argo-workflows-server
+  namespace: default
+  uid: cc475aba-b38f-4687-abdd-8e9879b47e93
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: argo-workflows-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/cm: bfd06978cb1b4ebca21cb5b49988153e6e6824da4db346a3a9b3ed6b802bb083
+      labels:
+        app: server
+        app.kubernetes.io/component: server
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: argo-workflows-server
+        app.kubernetes.io/part-of: argo-workflows
+        app.kubernetes.io/version: v3.7.2
+        helm.sh/chart: argo-workflows-0.45.26
+    spec:
+      containers:
+      - args:
+        - server
+        - --configmap=release-name-argo-workflows-workflow-controller-configmap
+        - --secure=false
+        - --loglevel
+        - info
+        - --gloglevel
+        - "0"
+        - --log-format
+        - text
+        env:
+        - name: IN_CLUSTER
+          value: "true"
+        - name: ARGO_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: ARGO_BASE_HREF
+          value: /
+        image: quay.io/argoproj/argocli:v3.7.2
+        imagePullPolicy: Always
+        name: argo-server
+        ports:
+        - containerPort: 2746
+          name: web
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 2746
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 20
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: release-name-argo-workflows-server
+      serviceAccountName: release-name-argo-workflows-server
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: tmp
+status: {}

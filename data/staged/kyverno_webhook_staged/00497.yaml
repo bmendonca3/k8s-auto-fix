@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:43Z"
+  generation: 1
+  labels:
+    app: boskos-metrics
+    app.kubernetes.io/part-of: boskos
+  name: boskos-metrics
+  namespace: boskos
+  uid: 5db9df50-0366-43c3-8383-0858e8c8d21e
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: boskos-metrics
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: boskos-metrics
+      namespace: test-pods
+    spec:
+      containers:
+      - args:
+        - --resource-type=gke-perf-preset,gcp-perf-test-project,gcp-project,gke-e2e-test
+        image: gcr.io/k8s-staging-boskos/metrics:v20200819-984516e
+        imagePullPolicy: IfNotPresent
+        name: metrics
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /prometheus
+            port: 8080
+            scheme: HTTP
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}

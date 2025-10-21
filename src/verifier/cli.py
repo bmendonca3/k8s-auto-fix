@@ -7,10 +7,19 @@ from typing import Any, Dict, List, Optional
 
 import typer
 
-from .verifier import Verifier
+from .verifier import Verifier, VerifierGates
 from pathlib import Path as _Path
 
 app = typer.Typer(help="Verify patches against policies, schema, and safety gates.")
+
+_VALID_GATES = {"policy", "safety", "kubectl", "rescan"}
+_GATE_PROFILES = {
+    "full": tuple(),
+    "no-policy": ("policy",),
+    "no-safety": ("safety",),
+    "no-kubectl": ("kubectl",),
+    "no-rescan": ("rescan",),
+}
 
 
 @app.command()
@@ -83,6 +92,16 @@ def verify(
         min=1,
         help="Number of parallel workers to use (default: 1).",
     ),
+    gate_profile: str = typer.Option(
+        "full",
+        "--gate-profile",
+        help="Gate profile to apply (choices: full, no-policy, no-safety, no-kubectl, no-rescan).",
+    ),
+    disable_gate: Optional[List[str]] = typer.Option(
+        None,
+        "--disable-gate",
+        help="Explicit gates to disable (policy, safety, kubectl, rescan). Repeatable.",
+    ),
 ) -> None:
     patch_records = _load_array(patches, "patches")
     detection_map = _load_detections(detections)
@@ -108,6 +127,8 @@ def verify(
 
     patch_records = filtered_records
 
+    gates = _resolve_gate_config(gate_profile, disable_gate)
+
     verifier_kwargs = {
         "kubectl_cmd": kubectl_cmd,
         "require_kubectl": require_kubectl,
@@ -115,6 +136,7 @@ def verify(
         "kube_linter_cmd": kube_linter_cmd,
         "kyverno_cmd": kyverno_cmd,
         "policies_dir": policies_dir,
+        "gates": gates,
     }
 
     results: List[Dict[str, Any]] = []
@@ -197,6 +219,29 @@ def _verify_record(
     if include_errors:
         record_out["errors"] = result.errors
     return record_out
+
+
+def _resolve_gate_config(profile: str, disabled: Optional[List[str]]) -> VerifierGates:
+    profile_key = profile.lower().strip()
+    if profile_key not in _GATE_PROFILES:
+        valid = ", ".join(sorted(_GATE_PROFILES))
+        raise typer.BadParameter(f"Unknown gate profile '{profile}'. Expected one of: {valid}.")
+    disabled_set = set(_GATE_PROFILES[profile_key])
+    if disabled:
+        for entry in disabled:
+            if entry is None:
+                continue
+            gate = entry.lower().strip()
+            if gate not in _VALID_GATES:
+                valid = ", ".join(sorted(_VALID_GATES))
+                raise typer.BadParameter(f"Unknown gate '{entry}'. Expected one of: {valid}.")
+            disabled_set.add(gate)
+    return VerifierGates(
+        policy="policy" not in disabled_set,
+        safety="safety" not in disabled_set,
+        kubectl="kubectl" not in disabled_set,
+        rescan="rescan" not in disabled_set,
+    )
 
 
 def _load_array(path: Path, kind: str) -> List[Any]:

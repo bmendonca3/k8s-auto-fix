@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:41:43Z"
+  generation: 1
+  labels:
+    chart: airflow-1.18.0
+    component: statsd
+    heritage: Helm
+    release: release-name
+    tier: airflow
+  name: release-name-statsd
+  namespace: default
+  uid: 56151535-d53c-4fa3-80a5-90b0addf9e98
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      component: statsd
+      release: release-name
+      tier: airflow
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: statsd
+        release: release-name
+        tier: airflow
+    spec:
+      affinity: {}
+      containers:
+      - args:
+        - --statsd.mapping-config=/etc/statsd-exporter/mappings.yml
+        image: quay.io/prometheus/statsd-exporter:v0.28.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /metrics
+            port: 9102
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: statsd
+        ports:
+        - containerPort: 9125
+          name: statsd-ingest
+          protocol: UDP
+        - containerPort: 9102
+          name: statsd-scrape
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /metrics
+            port: 9102
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/statsd-exporter/mappings.yml
+          name: config
+          subPath: mappings.yml
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 65534
+      serviceAccount: release-name-airflow-statsd
+      serviceAccountName: release-name-airflow-statsd
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: release-name-statsd
+        name: config
+status: {}

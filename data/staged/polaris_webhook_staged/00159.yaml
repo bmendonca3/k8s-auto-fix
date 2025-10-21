@@ -1,0 +1,198 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: "2025-10-20T18:43:09Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: master
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/version: 8.2.2
+    helm.sh/chart: redis-23.1.1
+  name: release-name-redis-master
+  namespace: default
+  uid: 6ce720f2-90cc-4d3c-abd7-fc30c0d76cd2
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: master
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: redis
+  serviceName: release-name-redis-headless
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: 95944ee35a19af37cefd156f19d93e157e578c1dc63ac01ce735ae93090b7580
+        checksum/health: aff24913d801436ea469d8d374b2ddb3ec4c43ee7ab24663d5f8ff1a1b6991a9
+        checksum/scripts: 796326939380261bbef30ebf93cef0ad202f8440491c7bfce6ca532637bd0271
+        checksum/secret: e604af60410e66fdbde895aaa50ef67a9838938e9197616eab6627edea05bc2a
+      labels:
+        app.kubernetes.io/component: master
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/version: 8.2.2
+        helm.sh/chart: redis-23.1.1
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: master
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/name: redis
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - -ec
+        - /opt/bitnami/scripts/start-scripts/start-master.sh
+        command:
+        - /bin/bash
+        env:
+        - name: BITNAMI_DEBUG
+          value: "false"
+        - name: REDIS_REPLICATION_MODE
+          value: master
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "no"
+        - name: REDIS_PASSWORD_FILE
+          value: /opt/bitnami/redis/secrets/redis-password
+        - name: REDIS_TLS_ENABLED
+          value: "no"
+        - name: REDIS_PORT
+          value: "6379"
+        image: registry-1.docker.io/bitnami/redis:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -ec
+            - /health/ping_liveness_local.sh 5
+          failureThreshold: 5
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 6
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -ec
+            - /health/ping_readiness_local.sh 1
+          failureThreshold: 5
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 100m
+            ephemeral-storage: 2Gi
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/bitnami/scripts/start-scripts
+          name: start-scripts
+        - mountPath: /health
+          name: health
+        - mountPath: /opt/bitnami/redis/secrets/
+          name: redis-password
+        - mountPath: /data
+          name: redis-data
+        - mountPath: /opt/bitnami/redis/mounted-etc
+          name: config
+        - mountPath: /opt/bitnami/redis/etc/
+          name: empty-dir
+          subPath: app-conf-dir
+        - mountPath: /tmp
+          name: empty-dir
+          subPath: tmp-dir
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+      serviceAccount: release-name-redis-master
+      serviceAccountName: release-name-redis-master
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 493
+          name: release-name-redis-scripts
+        name: start-scripts
+      - configMap:
+          defaultMode: 493
+          name: release-name-redis-health
+        name: health
+      - name: redis-password
+        secret:
+          defaultMode: 420
+          items:
+          - key: redis-password
+            path: redis-password
+          secretName: release-name-redis
+      - configMap:
+          defaultMode: 420
+          name: release-name-redis-configuration
+        name: config
+      - emptyDir: {}
+        name: empty-dir
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      labels:
+        app.kubernetes.io/component: master
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: redis
+      name: redis-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi
+      volumeMode: Filesystem
+    status:
+      phase: Pending
+status:
+  availableReplicas: 0
+  replicas: 0

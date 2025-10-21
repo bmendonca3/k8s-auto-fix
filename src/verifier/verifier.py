@@ -34,6 +34,19 @@ class VerificationResult:
         return self.ok_policy and self.ok_schema and self.ok_safety and self.ok_rescan
 
 
+@dataclass(frozen=True)
+class VerifierGates:
+    """Toggles for the verifier's safety gates.
+
+    Setting a gate to False skips that check and treats it as passing.
+    """
+
+    policy: bool = True
+    safety: bool = True
+    kubectl: bool = True
+    rescan: bool = True
+
+
 class Verifier:
     def __init__(
         self,
@@ -44,6 +57,7 @@ class Verifier:
         kube_linter_cmd: Optional[str] = None,
         kyverno_cmd: Optional[str] = None,
         policies_dir: Optional[Path] = None,
+        gates: Optional[VerifierGates] = None,
     ) -> None:
         self.kubectl_cmd = kubectl_cmd
         self.require_kubectl = require_kubectl
@@ -51,7 +65,14 @@ class Verifier:
         self.kube_linter_cmd = kube_linter_cmd or "kube-linter"
         self.kyverno_cmd = kyverno_cmd or "kyverno"
         self.policies_dir = policies_dir
+        self.gates = gates or VerifierGates()
         self._dangerous_capabilities = ("NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT")
+        self._required_drop_capabilities = ("ALL",) + self._dangerous_capabilities
+        self._host_path_whitelist = {
+            "/var/run/secrets/kubernetes.io/serviceaccount",
+            "/var/lib/kubelet/pods",
+            "/etc/ssl/certs",
+        }
 
     def verify(
         self,
@@ -73,21 +94,30 @@ class Verifier:
 
         patched_yaml = yaml.safe_dump(patched_obj, sort_keys=False)
 
-        ok_policy, policy_errors = self._check_policy(policy_id, patched_obj)
-        errors.extend(policy_errors)
+        if self.gates.policy:
+            ok_policy, policy_errors = self._check_policy(policy_id, patched_obj)
+            errors.extend(policy_errors)
+        else:
+            ok_policy = True
 
-        ok_safety, safety_errors = self._check_safety(patched_obj, policy_id)
-        errors.extend(safety_errors)
+        if self.gates.safety:
+            ok_safety, safety_errors = self._check_safety(patched_obj, policy_id)
+            errors.extend(safety_errors)
+        else:
+            ok_safety = True
 
-        ok_schema, schema_error, kubectl_ms = self._kubectl_dry_run(patched_yaml)
-        if not ok_schema:
-            if schema_error:
-                errors.append(f"kubectl dry-run failed: {schema_error}")
-            else:
-                errors.append("kubectl dry-run failed")
+        if self.gates.kubectl:
+            ok_schema, schema_error, kubectl_ms = self._kubectl_dry_run(patched_yaml)
+            if not ok_schema:
+                if schema_error:
+                    errors.append(f"kubectl dry-run failed: {schema_error}")
+                else:
+                    errors.append("kubectl dry-run failed")
+        else:
+            ok_schema, schema_error, kubectl_ms = True, None, None
 
         ok_rescan = True
-        if self.enable_rescan and ok_schema and ok_policy and ok_safety:
+        if self.enable_rescan and self.gates.rescan and ok_schema and ok_policy and ok_safety:
             try:
                 ok_rescan = self._rescan_policy_cleared(patched_yaml, policy_id)
             except Exception as exc:  # pragma: no cover - unexpected rescan error
@@ -154,6 +184,7 @@ class Verifier:
         return (completed.returncode == 0, None, int((time.perf_counter() - start) * 1000))
 
     def _check_policy(self, policy_id: str, manifest: Dict[str, Any]) -> Tuple[bool, List[str]]:
+        policy_id = normalise_policy_id(policy_id)
         errors: List[str] = []
         containers = self._collect_containers(manifest)
 
@@ -215,8 +246,16 @@ class Verifier:
 
         if policy_id == "no_host_path":
             for volume in self._collect_volumes(manifest):
-                if isinstance(volume.get("hostPath"), dict):
-                    errors.append("volume still references hostPath")
+                host_path = volume.get("hostPath")
+                if not isinstance(host_path, dict):
+                    continue
+                path_value = host_path.get("path")
+                if not isinstance(path_value, str) or not path_value.strip():
+                    errors.append("hostPath path missing or empty")
+                    continue
+                normalised = path_value.rstrip("/")
+                if normalised not in self._host_path_whitelist:
+                    errors.append(f"hostPath path {path_value!r} not in whitelist")
             return (not errors, errors)
 
         if policy_id == "no_host_ports":
@@ -250,6 +289,33 @@ class Verifier:
                     errors.append("seccompProfile.type not RuntimeDefault")
             return (not errors, errors)
 
+        if policy_id == "drop_cap_sys_admin":
+            for container in containers:
+                security = container.get("securityContext")
+                capabilities = security.get("capabilities") if isinstance(security, dict) else None
+                if not isinstance(capabilities, dict):
+                    errors.append("capabilities not defined")
+                    continue
+                drop = capabilities.get("drop")
+                if not isinstance(drop, list):
+                    errors.append("capabilities.drop missing")
+                else:
+                    drop_upper = {str(cap).upper() for cap in drop if isinstance(cap, str)}
+                    if "SYS_ADMIN" not in drop_upper and "ALL" not in drop_upper:
+                        errors.append("capabilities.drop missing SYS_ADMIN")
+                add_list = capabilities.get("add")
+                if isinstance(add_list, list):
+                    remaining = [
+                        cap
+                        for cap in add_list
+                        if isinstance(cap, str) and cap.upper() == "SYS_ADMIN"
+                    ]
+                    if remaining:
+                        errors.append("capabilities.add must not include SYS_ADMIN")
+                if not isinstance(security, dict) or security.get("allowPrivilegeEscalation") is not False:
+                    errors.append("allowPrivilegeEscalation must be false")
+            return (not errors, errors)
+
         if policy_id == "drop_capabilities":
             for container in containers:
                 security = container.get("securityContext")
@@ -261,14 +327,33 @@ class Verifier:
                 if not isinstance(drop, list):
                     errors.append("capabilities.drop missing")
                 else:
-                    missing = [cap for cap in self._dangerous_capabilities if cap not in drop]
+                    drop_upper = {str(cap).upper() for cap in drop if isinstance(cap, str)}
+                    if "ALL" in drop_upper:
+                        missing = []
+                    else:
+                        missing = [cap for cap in self._required_drop_capabilities if cap not in drop_upper]
                     if missing:
                         errors.append(f"capabilities.drop missing {', '.join(missing)}")
+                    if "ALL" not in drop_upper:
+                        errors.append("capabilities.drop must include ALL")
                 add_list = capabilities.get("add")
                 if isinstance(add_list, list):
-                    remaining = [cap for cap in add_list if cap in self._dangerous_capabilities]
+                    remaining = [
+                        cap
+                        for cap in add_list
+                        if isinstance(cap, str) and cap.upper() in self._required_drop_capabilities
+                    ]
                     if remaining:
                         errors.append(f"capabilities.add still contains {', '.join(remaining)}")
+                if not isinstance(security, dict) or security.get("allowPrivilegeEscalation") is not False:
+                    errors.append("allowPrivilegeEscalation must be false")
+            return (not errors, errors)
+
+        if policy_id == "no_allow_privilege_escalation":
+            for container in containers:
+                security = container.get("securityContext")
+                if not isinstance(security, dict) or security.get("allowPrivilegeEscalation") is not False:
+                    errors.append("allowPrivilegeEscalation must be false")
             return (not errors, errors)
 
         if policy_id == "dangling_service":
@@ -419,6 +504,17 @@ class Verifier:
         return (True, errors)
 
     def _check_safety(self, manifest: Dict[str, Any], policy_id: str) -> Tuple[bool, List[str]]:
+        """
+        First-class safety gates to prevent no-new-violations.
+        
+        These checks ensure patches don't introduce new security regressions:
+        - No privileged containers
+        - No dangerous capabilities in ADD list  
+        - hostPath restricted to allowlist
+        
+        Policy-specific security requirements (runAsNonRoot, readOnlyRootFilesystem, 
+        drop ALL capabilities) are enforced through the _check_policy method.
+        """
         errors: List[str] = []
         containers = self._collect_containers(manifest)
         init_containers = self._collect_containers(manifest, container_types=("initContainers",))
@@ -438,6 +534,7 @@ class Verifier:
                 errors.append("no containers found in manifest")
                 return (False, errors)
             return (True, errors)
+        
         for container in containers + init_containers + ephemeral_containers:
             image = container.get("image")
             if not isinstance(image, str) or not image.strip():
@@ -445,6 +542,17 @@ class Verifier:
             security = container.get("securityContext")
             if isinstance(security, dict) and security.get("privileged") is True:
                 errors.append("privileged container detected")
+        
+        # hostPath allowlist (always enforced)
+        for volume in self._collect_volumes(manifest):
+            host_path = volume.get("hostPath")
+            if isinstance(host_path, dict):
+                path_value = host_path.get("path")
+                if isinstance(path_value, str) and path_value.strip():
+                    normalised = path_value.rstrip("/")
+                    if normalised not in self._host_path_whitelist:
+                        errors.append(f"hostPath {path_value!r} not in allowlist")
+        
         return (not errors, errors)
 
     def _collect_containers(

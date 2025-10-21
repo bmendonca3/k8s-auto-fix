@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "1"
+  creationTimestamp: "2025-10-20T18:43:23Z"
+  generation: 1
+  labels:
+    app: startupapicheck
+    app.kubernetes.io/component: startupapicheck
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: startupapicheck
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: cert-manager-v1.19.0
+  name: release-name-cert-manager-startupapicheck
+  namespace: default
+  uid: bb7b96d2-b8db-4738-b3e6-99afff5bed00
+spec:
+  backoffLimit: 4
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: bb7b96d2-b8db-4738-b3e6-99afff5bed00
+  suspend: false
+  template:
+    metadata:
+      labels:
+        app: startupapicheck
+        app.kubernetes.io/component: startupapicheck
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: startupapicheck
+        app.kubernetes.io/version: v1.19.0
+        batch.kubernetes.io/controller-uid: bb7b96d2-b8db-4738-b3e6-99afff5bed00
+        batch.kubernetes.io/job-name: release-name-cert-manager-startupapicheck
+        controller-uid: bb7b96d2-b8db-4738-b3e6-99afff5bed00
+        helm.sh/chart: cert-manager-v1.19.0
+        job-name: release-name-cert-manager-startupapicheck
+    spec:
+      containers:
+      - args:
+        - check
+        - api
+        - --wait=1m
+        - -v
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: quay.io/jetstack/cert-manager-startupapicheck:v1.19.0
+        imagePullPolicy: IfNotPresent
+        name: cert-manager-startupapicheck
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: OnFailure
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: release-name-cert-manager-startupapicheck
+      serviceAccountName: release-name-cert-manager-startupapicheck
+      terminationGracePeriodSeconds: 30
+status: {}

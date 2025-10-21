@@ -98,6 +98,8 @@ class VerifierCliTests(unittest.TestCase):
             ids=kwargs.get("ids"),
             limit=kwargs.get("limit"),
             jobs=1,
+            gate_profile=kwargs.get("gate_profile", "full"),
+            disable_gate=kwargs.get("disable_gate"),
         )
 
     def test_verify_filters_by_ids(self) -> None:
@@ -112,3 +114,22 @@ class VerifierCliTests(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["id"], "001")
 
+    def test_gate_profile_can_disable_policy_gate(self) -> None:
+        patches = json.loads(self.patches_path.read_text(encoding="utf-8"))
+        # Leave the :latest tag unfixed so the policy gate would normally fail.
+        for patch in patches:
+            if patch["id"] == "002":
+                patch["patch"][0]["value"] = "nginx:latest"
+        self.patches_path.write_text(json.dumps(patches, indent=2), encoding="utf-8")
+
+        # Baseline should fail the policy check.
+        self._invoke_verify()
+        baseline_results = {entry["id"]: entry for entry in json.loads(self.output_path.read_text(encoding="utf-8"))}
+        self.assertFalse(baseline_results["002"]["accepted"])
+        self.assertFalse(baseline_results["002"]["ok_policy"])
+
+        # Disable the policy gate; patch should be accepted despite remaining :latest.
+        self._invoke_verify(gate_profile="no-policy")
+        gated_results = {entry["id"]: entry for entry in json.loads(self.output_path.read_text(encoding="utf-8"))}
+        self.assertTrue(gated_results["002"]["accepted"])
+        self.assertTrue(gated_results["002"]["ok_policy"])

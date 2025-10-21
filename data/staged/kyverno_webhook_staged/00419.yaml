@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:34Z"
+  generation: 1
+  labels:
+    app: nfs-subdir-external-provisioner
+    chart: nfs-subdir-external-provisioner-4.0.18
+    heritage: Helm
+    release: release-name
+  name: release-name-nfs-subdir-external-provisioner
+  namespace: default
+  uid: 09af81d6-ca9d-45b5-baab-a240d69ba007
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: nfs-subdir-external-provisioner
+      release: release-name
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: nfs-subdir-external-provisioner
+        release: release-name
+    spec:
+      containers:
+      - env:
+        - name: PROVISIONER_NAME
+          value: cluster.local/release-name-nfs-subdir-external-provisioner
+        - name: NFS_SERVER
+        - name: NFS_PATH
+          value: /nfs-storage
+        image: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
+        imagePullPolicy: IfNotPresent
+        name: nfs-subdir-external-provisioner
+        resources: {}
+        securityContext: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /persistentvolumes
+          name: nfs-subdir-external-provisioner-root
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: release-name-nfs-subdir-external-provisioner
+      serviceAccountName: release-name-nfs-subdir-external-provisioner
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: nfs-subdir-external-provisioner-root
+status: {}

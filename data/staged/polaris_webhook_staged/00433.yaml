@@ -1,0 +1,260 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T18:46:09Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.1.1
+    helm.sh/chart: grafana-10.0.0
+  name: release-name-grafana
+  namespace: default
+  uid: 5bf7371c-5a07-4259-a55b-7db615b55d26
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: grafana
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 0e9cbd0ea8e24e32f7dfca5bab17a2ba05652642f0a09a4882833ae88e4cc4a3
+        checksum/sc-dashboard-provider-config: e70bf6a851099d385178a76de9757bb0bef8299da6d8443602590e44f05fdf24
+        checksum/secret: 032056e9c62bbe9d1daa41ee49cd3d9524c076f51ca4c65adadf4ef08ef28712
+        kubectl.kubernetes.io/default-container: grafana
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: grafana
+        app.kubernetes.io/version: 12.1.1
+        helm.sh/chart: grafana-10.0.0
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: METHOD
+          value: WATCH
+        - name: LABEL
+          value: grafana_dashboard
+        - name: LABEL_VALUE
+          value: "1"
+        - name: FOLDER
+          value: /tmp/dashboards
+        - name: RESOURCE
+          value: both
+        - name: NAMESPACE
+          value: ALL
+        - name: REQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: release-name-grafana
+        - name: REQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: release-name-grafana
+        - name: REQ_URL
+          value: http://localhost:3000/api/admin/provisioning/dashboards/reload
+        - name: REQ_METHOD
+          value: POST
+        image: quay.io/kiwigrid/k8s-sidecar:1.30.10
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-dashboard
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp/dashboards
+          name: sc-dashboard-volume
+      - env:
+        - name: METHOD
+          value: WATCH
+        - name: LABEL
+          value: grafana_datasource
+        - name: LABEL_VALUE
+          value: "1"
+        - name: FOLDER
+          value: /etc/grafana/provisioning/datasources
+        - name: RESOURCE
+          value: both
+        - name: REQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: release-name-grafana
+        - name: REQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: release-name-grafana
+        - name: REQ_URL
+          value: http://localhost:3000/api/admin/provisioning/datasources/reload
+        - name: REQ_METHOD
+          value: POST
+        image: quay.io/kiwigrid/k8s-sidecar:1.30.10
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-datasources
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
+      - env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: release-name-grafana
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: release-name-grafana
+        - name: GF_PATHS_DATA
+          value: /var/lib/grafana/
+        - name: GF_PATHS_LOGS
+          value: /var/log/grafana
+        - name: GF_PATHS_PLUGINS
+          value: /var/lib/grafana/plugins
+        - name: GF_PATHS_PROVISIONING
+          value: /etc/grafana/provisioning
+        image: docker.io/grafana/grafana:12.1.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        - containerPort: 9094
+          name: gossip-tcp
+          protocol: TCP
+        - containerPort: 9094
+          name: gossip-udp
+          protocol: UDP
+        - containerPort: 6060
+          name: profiling
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /var/lib/grafana
+          name: storage
+        - mountPath: /tmp/dashboards
+          name: sc-dashboard-volume
+        - mountPath: /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml
+          name: sc-dashboard-provider
+          subPath: provider.yaml
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 472
+        runAsGroup: 472
+        runAsNonRoot: true
+        runAsUser: 472
+      serviceAccount: release-name-grafana
+      serviceAccountName: release-name-grafana
+      shareProcessNamespace: false
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: release-name-grafana
+        name: config
+      - emptyDir: {}
+        name: storage
+      - emptyDir: {}
+        name: sc-dashboard-volume
+      - configMap:
+          defaultMode: 420
+          name: release-name-grafana-config-dashboards
+        name: sc-dashboard-provider
+      - emptyDir: {}
+        name: sc-datasources-volume
+status: {}

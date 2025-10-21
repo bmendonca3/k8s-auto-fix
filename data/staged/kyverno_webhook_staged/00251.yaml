@@ -1,0 +1,213 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:14Z"
+  generation: 1
+  labels:
+    app: gitea
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: gitea
+    app.kubernetes.io/version: 1.24.6
+    helm.sh/chart: gitea-12.4.0
+    version: 1.24.6
+  name: release-name-gitea
+  namespace: default
+  uid: 82a51377-afc3-4194-9fd4-aed5f062c1d8
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: gitea
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: bb454c57a0d08076ac35d4f54b5de0cf4b6d442941fd825366a47173d035eb5b
+      labels:
+        app: gitea
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: gitea
+        app.kubernetes.io/version: 1.24.6
+        helm.sh/chart: gitea-12.4.0
+        version: 1.24.6
+    spec:
+      containers:
+      - env:
+        - name: SSH_LISTEN_PORT
+          value: "2222"
+        - name: SSH_PORT
+          value: "22"
+        - name: GITEA_APP_INI
+          value: /data/gitea/conf/app.ini
+        - name: GITEA_CUSTOM
+          value: /data/gitea
+        - name: GITEA_WORK_DIR
+          value: /data
+        - name: GITEA_TEMP
+          value: /tmp/gitea
+        - name: TMPDIR
+          value: /tmp/gitea
+        - name: HOME
+          value: /data/gitea/git
+        image: docker.gitea.com/gitea:1.24.6-rootless
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          initialDelaySeconds: 200
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: http
+          timeoutSeconds: 1
+        name: gitea
+        ports:
+        - containerPort: 2222
+          name: ssh
+          protocol: TCP
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: http
+          timeoutSeconds: 1
+        resources: {}
+        securityContext: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: temp
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - /usr/sbinx/init_directory_structure.sh
+        env:
+        - name: GITEA_APP_INI
+          value: /data/gitea/conf/app.ini
+        - name: GITEA_CUSTOM
+          value: /data/gitea
+        - name: GITEA_WORK_DIR
+          value: /data
+        - name: GITEA_TEMP
+          value: /tmp/gitea
+        image: docker.gitea.com/gitea:1.24.6-rootless
+        imagePullPolicy: IfNotPresent
+        name: init-directories
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /usr/sbinx
+          name: init
+        - mountPath: /tmp
+          name: temp
+        - mountPath: /data
+          name: data
+      - command:
+        - /usr/sbinx/config_environment.sh
+        env:
+        - name: GITEA_APP_INI
+          value: /data/gitea/conf/app.ini
+        - name: GITEA_CUSTOM
+          value: /data/gitea
+        - name: GITEA_WORK_DIR
+          value: /data
+        - name: GITEA_TEMP
+          value: /tmp/gitea
+        - name: TMP_EXISTING_ENVS_FILE
+          value: /tmp/existing-envs
+        - name: ENV_TO_INI_MOUNT_POINT
+          value: /env-to-ini-mounts
+        image: docker.gitea.com/gitea:1.24.6-rootless
+        imagePullPolicy: IfNotPresent
+        name: init-app-ini
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /usr/sbinx
+          name: config
+        - mountPath: /tmp
+          name: temp
+        - mountPath: /data
+          name: data
+        - mountPath: /env-to-ini-mounts/inlines/
+          name: inline-config-sources
+      - command:
+        - /usr/sbinx/configure_gitea.sh
+        env:
+        - name: GITEA_APP_INI
+          value: /data/gitea/conf/app.ini
+        - name: GITEA_CUSTOM
+          value: /data/gitea
+        - name: GITEA_WORK_DIR
+          value: /data
+        - name: GITEA_TEMP
+          value: /tmp/gitea
+        - name: HOME
+          value: /data/gitea/git
+        - name: GITEA_ADMIN_USERNAME
+          value: gitea_admin
+        - name: GITEA_ADMIN_PASSWORD
+          value: r8sA8CPHD9!bt6d
+        - name: GITEA_ADMIN_PASSWORD_MODE
+          value: keepUpdated
+        image: docker.gitea.com/gitea:1.24.6-rootless
+        imagePullPolicy: IfNotPresent
+        name: configure-gitea
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /usr/sbinx
+          name: init
+        - mountPath: /tmp
+          name: temp
+        - mountPath: /data
+          name: data
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: init
+      - emptyDir: {}
+        name: config
+      - emptyDir: {}
+        name: inline-config-sources
+      - emptyDir: {}
+        name: temp
+      - emptyDir: {}
+        name: data
+status: {}

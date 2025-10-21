@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: libri-experimenter
+spec:
+  restartPolicy: Never
+  volumes:
+  - name: data
+    emptyDir: {}
+  containers:
+  - name: libri-experimenter
+    image: daedalus2718/libri-exp:snapshot-949fb64
+    args:
+    - run
+    - --librarians
+    - librarians-0.libri.default.svc.cluster.local:20100,librarians-1.libri.default.svc.cluster.local:20100,librarians-2.libri.default.svc.cluster.local:20100,librarians-3.libri.default.svc.cluster.local:20100,librarians-4.libri.default.svc.cluster.local:20100,librarians-5.libri.default.svc.cluster.local:20100,librarians-6.libri.default.svc.cluster.local:20100,librarians-7.libri.default.svc.cluster.local:20100
+    - --duration
+    - 30m
+    - --numAuthors
+    - '100'
+    - --docsPerDay
+    - '2560'
+    - --contentSizeKBGammaShape
+    - '1.5'
+    - --contentSizeKBGammaRate
+    - '0.00588'
+    - --sharesPerUpload
+    - '2'
+    - --nUploaders
+    - '64'
+    - --nDownloaders
+    - '192'
+    - --profile
+    env:
+    - name: GODEBUG
+      value: netdns=go
+    volumeMounts:
+    - name: data
+      mountPath: /data
+    resources:
+      limits:
+        memory: 2G
+        cpu: 400m

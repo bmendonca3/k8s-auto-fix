@@ -1,0 +1,149 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:18Z"
+  generation: 1
+  labels:
+    app: harbor
+    app.kubernetes.io/component: core
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.14.0
+    chart: harbor
+    component: core
+    heritage: Helm
+    release: release-name
+  name: release-name-harbor-core
+  namespace: default
+  uid: 17010c08-6761-408b-9f50-7a0946940650
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: harbor
+      component: core
+      release: release-name
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: 9f10ac573f31bb0810150a5f7c1f04fe8883b5850e0c0864ac1413792af939c2
+        checksum/secret: a96e028877820958786a1bec0806cc8371456bb27c2a090276a01f71e3ea2dd6
+        checksum/secret-jobservice: 65d7ad3b4b4e98e4243bfc35342599fa0006c75bab7916ff31b211456a37c582
+      labels:
+        app: harbor
+        app.kubernetes.io/component: core
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: harbor
+        app.kubernetes.io/part-of: harbor
+        app.kubernetes.io/version: 2.14.0
+        chart: harbor
+        component: core
+        heritage: Helm
+        release: release-name
+    spec:
+      containers:
+      - env:
+        - name: CORE_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: secret
+              name: release-name-harbor-core
+        - name: JOBSERVICE_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: JOBSERVICE_SECRET
+              name: release-name-harbor-jobservice
+        envFrom:
+        - configMapRef:
+            name: release-name-harbor-core
+        - secretRef:
+            name: release-name-harbor-core
+        image: goharbor/harbor-core:v2.14.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /api/v2.0/ping
+            port: 8080
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: core
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /api/v2.0/ping
+            port: 8080
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        startupProbe:
+          failureThreshold: 360
+          httpGet:
+            path: /api/v2.0/ping
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/core/app.conf
+          name: config
+          subPath: app.conf
+        - mountPath: /etc/core/key
+          name: secret-key
+          subPath: key
+        - mountPath: /etc/core/private_key.pem
+          name: token-service-private-key
+          subPath: tls.key
+        - mountPath: /etc/core/ca
+          name: ca-download
+        - mountPath: /etc/core/token
+          name: psc
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 10000
+        runAsUser: 10000
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: config
+      - emptyDir: {}
+        name: secret-key
+      - emptyDir: {}
+        name: token-service-private-key
+      - emptyDir: {}
+        name: ca-download
+      - emptyDir: {}
+        name: psc
+status: {}

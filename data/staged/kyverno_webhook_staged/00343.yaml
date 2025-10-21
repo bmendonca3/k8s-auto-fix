@@ -1,0 +1,249 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-10-20T21:11:24Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kong
+    app.kubernetes.io/version: "3.8"
+    helm.sh/chart: kong-2.46.0
+  name: release-name-kong
+  namespace: default
+  uid: 5aca5d05-227e-4955-8da7-ad8a85faf8e8
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: app
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: kong
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kuma.io/gateway: enabled
+        kuma.io/service-account-token-volume: release-name-kong-token
+        traffic.sidecar.istio.io/includeInboundPorts: ""
+      labels:
+        app: release-name-kong
+        app.kubernetes.io/component: app
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: kong
+        app.kubernetes.io/version: "3.8"
+        helm.sh/chart: kong-2.46.0
+        version: "3.8"
+    spec:
+      containers:
+      - env:
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_GUI_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_GUI_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_LISTEN
+          value: 127.0.0.1:8444 http2 ssl, [::1]:8444 http2 ssl
+        - name: KONG_CLUSTER_LISTEN
+          value: "off"
+        - name: KONG_DATABASE
+          value: "off"
+        - name: KONG_DECLARATIVE_CONFIG
+          value: /kong_dbless/kong.yml
+        - name: KONG_DNS_ORDER
+          value: LAST,A,CNAME,AAAA,SRV
+        - name: KONG_LUA_PACKAGE_PATH
+          value: /opt/?.lua;/opt/?/init.lua;;
+        - name: KONG_NGINX_WORKER_PROCESSES
+          value: "1"
+        - name: KONG_PLUGINS
+          value: "off"
+        - name: KONG_PORTAL_API_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PORTAL_API_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_PORT_MAPS
+          value: 443:8443
+        - name: KONG_PREFIX
+          value: /kong_prefix/
+        - name: KONG_PROXY_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_PROXY_LISTEN
+          value: 0.0.0.0:8443 http2 ssl, [::]:8443 http2 ssl
+        - name: KONG_PROXY_STREAM_ACCESS_LOG
+          value: /dev/stdout basic
+        - name: KONG_PROXY_STREAM_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ROUTER_FLAVOR
+          value: traditional
+        - name: KONG_STATUS_ACCESS_LOG
+          value: "off"
+        - name: KONG_STATUS_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_STATUS_LISTEN
+          value: 0.0.0.0:8100, [::]:8100
+        - name: KONG_STREAM_LISTEN
+          value: "off"
+        - name: KONG_NGINX_DAEMON
+          value: "off"
+        image: kong:3.8
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /status
+            port: status
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: proxy
+        ports:
+        - containerPort: 8443
+          name: proxy-tls
+          protocol: TCP
+        - containerPort: 8100
+          name: status
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /status/ready
+            port: status
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /kong_prefix/
+          name: release-name-kong-prefix-dir
+        - mountPath: /tmp
+          name: release-name-kong-tmp
+        - mountPath: /kong_dbless/
+          name: kong-custom-dbless-config-volume
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - rm
+        - -vrf
+        - $KONG_PREFIX/pids
+        env:
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_GUI_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_GUI_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_LISTEN
+          value: 127.0.0.1:8444 http2 ssl, [::1]:8444 http2 ssl
+        - name: KONG_CLUSTER_LISTEN
+          value: "off"
+        - name: KONG_DATABASE
+          value: "off"
+        - name: KONG_DECLARATIVE_CONFIG
+          value: /kong_dbless/kong.yml
+        - name: KONG_DNS_ORDER
+          value: LAST,A,CNAME,AAAA,SRV
+        - name: KONG_LUA_PACKAGE_PATH
+          value: /opt/?.lua;/opt/?/init.lua;;
+        - name: KONG_NGINX_WORKER_PROCESSES
+          value: "1"
+        - name: KONG_PLUGINS
+          value: "off"
+        - name: KONG_PORTAL_API_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PORTAL_API_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_PORT_MAPS
+          value: 443:8443
+        - name: KONG_PREFIX
+          value: /kong_prefix/
+        - name: KONG_PROXY_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_PROXY_LISTEN
+          value: 0.0.0.0:8443 http2 ssl, [::]:8443 http2 ssl
+        - name: KONG_PROXY_STREAM_ACCESS_LOG
+          value: /dev/stdout basic
+        - name: KONG_PROXY_STREAM_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ROUTER_FLAVOR
+          value: traditional
+        - name: KONG_STATUS_ACCESS_LOG
+          value: "off"
+        - name: KONG_STATUS_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_STATUS_LISTEN
+          value: 0.0.0.0:8100, [::]:8100
+        - name: KONG_STREAM_LISTEN
+          value: "off"
+        image: kong:3.8
+        imagePullPolicy: IfNotPresent
+        name: clear-stale-pid
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /kong_prefix/
+          name: release-name-kong-prefix-dir
+        - mountPath: /tmp
+          name: release-name-kong-tmp
+        - mountPath: /kong_dbless/
+          name: kong-custom-dbless-config-volume
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: release-name-kong
+      serviceAccountName: release-name-kong
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: release-name-kong-prefix-dir
+      - emptyDir: {}
+        name: release-name-kong-tmp
+      - emptyDir: {}
+        name: release-name-kong-token
+      - emptyDir: {}
+        name: kong-custom-dbless-config-volume
+status: {}

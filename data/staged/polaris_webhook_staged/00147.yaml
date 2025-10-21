@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  creationTimestamp: "2025-10-20T18:42:56Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: artifact-hub
+    app.kubernetes.io/version: 1.21.0
+    helm.sh/chart: artifact-hub-1.21.0
+  name: tracker
+  namespace: default
+  uid: 14217a9e-2946-4733-b729-496ab1218216
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata: {}
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: release-name
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: artifact-hub
+            app.kubernetes.io/version: 1.21.0
+            helm.sh/chart: artifact-hub-1.21.0
+        spec:
+          containers:
+          - image: artifacthub/tracker:v1.21.0
+            imagePullPolicy: IfNotPresent
+            name: tracker
+            resources:
+              limits:
+                cpu: 100m
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /home/tracker/.cfg
+              name: tracker-config
+              readOnly: true
+          dnsPolicy: ClusterFirst
+          initContainers:
+          - command:
+            - sh
+            - -c
+            - until pg_isready; do echo waiting for database; sleep 2; done;
+            env:
+            - name: PGHOST
+              value: release-name-postgresql.default
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: postgres
+            image: docker.io/artifacthub/postgres:latest
+            imagePullPolicy: IfNotPresent
+            name: check-db-ready
+            resources: {}
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccount: default
+          serviceAccountName: default
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - name: tracker-config
+            secret:
+              defaultMode: 420
+              secretName: tracker-config
+  schedule: 1,30 * * * *
+  successfulJobsHistoryLimit: 1
+  suspend: false
+status: {}

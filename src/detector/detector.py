@@ -466,6 +466,18 @@ class Detector:
             resource_ref = self._format_document_reference(document)
             manifest_str = str(manifest.resolve())
 
+            if any(self._spec_requires_cap_drop(spec, "SYS_ADMIN") for spec in specs):
+                results.append(
+                    DetectionResult(
+                        tool="builtin",
+                        manifest=manifest_str,
+                        rule="cap-sys-admin",
+                        message="container capabilities must drop SYS_ADMIN",
+                        resource=resource_ref,
+                        severity="warning",
+                    )
+                )
+
             if any(self._spec_contains_host_path(spec) for spec in specs):
                 results.append(
                     DetectionResult(
@@ -575,20 +587,55 @@ class Detector:
 
     @staticmethod
     def _spec_contains_host_port(spec: Dict[str, Any]) -> bool:
-        def iter_containers(section: Optional[List[Any]]) -> Iterable[Dict[str, Any]]:
-            if isinstance(section, list):
-                for container in section:
-                    if isinstance(container, dict):
-                        yield container
-
-        for key in ("containers", "initContainers", "ephemeralContainers"):
-            for container in iter_containers(spec.get(key)):
+        for container in Detector._iter_containers(spec):
                 ports = container.get("ports")
                 if isinstance(ports, list):
                     for port in ports:
                         if isinstance(port, dict) and port.get("hostPort") is not None:
                             return True
         return False
+
+    @staticmethod
+    def _spec_requires_cap_drop(spec: Dict[str, Any], capability: str) -> bool:
+        cap = (capability or "").upper()
+        if not cap:
+            return False
+        for container in Detector._iter_containers(spec):
+            if not Detector._container_drops_cap(container, cap):
+                return True
+        return False
+
+    @staticmethod
+    def _iter_containers(spec: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+        if not isinstance(spec, dict):
+            return []
+        for key in ("containers", "initContainers", "ephemeralContainers"):
+            section = spec.get(key)
+            if not isinstance(section, list):
+                continue
+            for container in section:
+                if isinstance(container, dict):
+                    yield container
+
+    @staticmethod
+    def _container_drops_cap(container: Dict[str, Any], capability: str) -> bool:
+        sec = container.get("securityContext")
+        if not isinstance(sec, dict):
+            return False
+        caps = sec.get("capabilities")
+        if not isinstance(caps, dict):
+            return False
+        drop = caps.get("drop")
+        if not isinstance(drop, list):
+            return False
+        normalised = {
+            str(entry).strip().upper()
+            for entry in drop
+            if isinstance(entry, str)
+        }
+        if "ALL" in normalised:
+            return True
+        return capability in normalised
 
     @staticmethod
     def _format_document_reference(document: Dict[str, Any]) -> Optional[str]:

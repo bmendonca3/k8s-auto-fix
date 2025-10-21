@@ -103,5 +103,22 @@ Large corpus artifacts are stored as compressed `.json.gz` files to keep the rep
 | **k8s-auto-fix** | 88.78% (Grok-5k), 93.54% / 100% (supported rules), 100% (Grok 1.313k) | 5k + 1.3k manifests | Secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
 | GenKubeSec (2024) | ~85-92% (curated 200) | 200 manifests | LLM reasoning with human review | None |
 | Kyverno (2023+) | 80-95% (policy mutation) | Thousands | Policy-driven mutation/generation | Admission queue |
-| Borg/SRE automation | ~90-95% (internal) | Millions | Rollbacks, health checks, throttling | Priority queues |
+
+Note: Production SRE automation systems (e.g., Google Borg) discuss automation principles publicly, but we do not cite a public acceptance percentage and therefore avoid drawing numeric comparisons.
+
+## Baselines and Reproducibility
+
+- Kyverno mutate baseline (simulate or real): `scripts/run_kyverno_baseline.py`
+- Polaris mutate/CLI fix baseline (simulate or real): `scripts/run_polaris_baseline.py`
+- MutatingAdmissionPolicy baseline (simulate or YAML generation): `scripts/run_mutatingadmission_baseline.py`
+- LLMSecConfig-style slice: `scripts/run_llmsecconfig_slice.py` (requires `OPENAI_API_KEY`)
+- Risk throughput (KEV-weighted): `scripts/eval_risk_throughput.py`
+ - Unified baseline comparison: `scripts/compare_baselines.py` (writes CSV/MD/TeX)
+
+Quick start to regenerate bundles and baselines (simulation mode):
+```
+scripts/reproduce_all.sh
+```
+
+See `ARTIFACTS.md` for artifact map, `docs/VERIFIER.md` for guardrails, `docs/BASELINES.md` to run baselines, `docs/RISK_EVAL.md` for prioritization metrics, and `docs/LIVE_EVAL.md` for live-cluster methodology.
 | Magpie (2024) | ~84% dry-run acceptance | 9.5k manifests | RBAC and PSP static analysis | None |
