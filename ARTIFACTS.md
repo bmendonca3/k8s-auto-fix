@@ -1,25 +1,15 @@
-# Artifacts and Reproducibility
+# Artifacts
 
-This repository includes scripts and manifests to regenerate all tables and figures referenced in the paper.
+This document provides instructions for reproducing the results in our paper.
 
-One-command reproduction
-- `scripts/reproduce_all.sh` rebuilds the reproducibility bundle and baseline summaries in simulation mode. It also runs the LLMSecConfig slice if `OPENAI_API_KEY` is set.
+## Quickstart: 3 commands
 
-Key outputs
-- `docs/reproducibility/report.md` – human-readable summary of datasets and metrics
-- `docs/reproducibility/tables.tex` – LaTeX table snippet
-- `docs/reproducibility/baselines.md` / `baselines.tex` – baseline comparison tables
-- `data/eval/unified_eval_summary.json` – machine-readable evaluation summary
-- `data/outputs/baselines/*.csv` – curated view of the baselines (Kyverno, Polaris, MAP) and LLMSecConfig slice; the canonical files remain in `data/baselines/` (e.g. `data/baselines/baseline_summary.csv`)
-- `data/metrics_risk_throughput.json` – risk-closure throughput with sensitivity analysis
-- `data/corpus_hashes.csv` / `data/corpus_manifest.txt` – corpus ledger with SHA-256 per file
+To reproduce our results, run the following commands from the root of the repository:
 
-Live-cluster evaluation
-- `scripts/live_cluster_eval.sh` installs common CRDs and executes detect→propose→verify with server-side dry-run enabled. Requires a working `kubectl` context.
+```bash
+make detect
+make propose
+make verify
+```
 
-DOI and artifact archive
-- For IEEE Access, publish a tagged archive (e.g., Zenodo) containing:
-  - Corpus manifests and SHA-256 listing
-  - Exact scripts under `scripts/` used to regenerate every number
-  - Model prompts and latency CSVs for LLM-backed runs
-  - Environment versions (kubectl, Kind, kube-linter, Python deps)
+Expected runtime is approximately 5 minutes on a standard laptop. Please see Table 5 in the paper for environment details.
