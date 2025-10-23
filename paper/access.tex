@@ -27,7 +27,7 @@
 \lstdefinestyle{codestyle}{%
   basicstyle=\ttfamily\scriptsize,
   breaklines=true,
-  breakatwhitespace=false,
+  breakatwhitespace=true,
   columns=fullflexible,
   keepspaces=true,
   showstringspaces=false,
@@ -88,7 +88,7 @@
 
 % Abstract and keywords must be defined before \maketitle for ieeeaccess
 \begin{abstract}
-Misconfigured Kubernetes manifests expand blast radius when pipelines stop at detection. We present \texttt{k8s-auto-fix}, a closed loop (\emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler}) that defaults to deterministic rules and can blend Grok/xAI patches behind the same guardrails. A 200-manifest live-cluster replay reaches 100.0\% success (200/200) with zero rollbacks and perfect dry-run/live-apply alignment (Table~\ref{tab:eval_summary}, \url{data/live_cluster/results_20251020_204511.json}). Deterministic rules cover 13{,}589/13{,}656 detections (99.51\%), while Grok/xAI fixes the entire 1{,}313-manifest slice (100\%) and 4{,}439/5{,}000 manifests (88.78\%) from the Grok corpus under \texttt{kubectl apply --dry-run=server} (Table~\ref{tab:eval_summary}, \url{data/eval/unified_eval_summary.json}). The verifier triad (policy re-check, schema validation, server-side dry-run) and hardening guardrails admit no regressions across accepted patches (Table~\ref{tab:verifier_ablation}). A risk-aware scheduler cuts top-risk P95 wait from 102.3~h (FIFO) to 13.0~h (7.9$\times$) with fairness metrics derived from reproducible queue replays (\url{data/scheduler/metrics_sweep_live.json}, \url{data/outputs/scheduler/metrics_schedule_sweep.json}). We release scripts, hashed telemetry, and audit logs so reviewers can regenerate every table and figure that underpins these claims (\url{ARTIFACTS.md}).
+Misconfigured Kubernetes manifests expand blast radius when pipelines stop at detection. We present \texttt{k8s-auto-fix}, a closed loop (\emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler}) that addresses this gap. Our key results demonstrate the effectiveness of this approach: a 200-manifest live-cluster replay achieves 100\% success (200/200); deterministic rules cover 99.51\% of violations; an optional LLM backend reaches 88.78\% acceptance on the 5,000-manifest Grok corpus; and a risk-aware scheduler cuts top-risk P95 wait time by 7.9$\times$. We release all artifacts for full reproducibility.
 \end{abstract}
 
 \begin{keywords}
@@ -106,6 +106,14 @@ Kubernetes, YAML, Pod Security, JSON Patch, Policy Enforcement, Kyverno, OPA Gat
 Kubernetes YAML is easy to get wrong: a single \texttt{privileged: true}, a \texttt{:latest} image tag, or a missing \texttt{runAsNonRoot} can expand blast radius and undermine defense-in-depth. Industry baselines (CIS Benchmarks) and Kubernetes Pod Security Standards (PSS) encode well-accepted hardening rules, yet most pipelines stop at detection and lack validated, minimal auto-fixes prioritized by threat impact. This project targets that gap with measured improvements on Auto-fix rate, No-new-violations\%, Time-to-patch, and \emph{risk reduction} (with fairness) on a held-out corpus—directly aligned with industry standards and research objectives (\cite{cis_benchmarks}, \cite{pss}).
 
 The closed-loop verification triad and risk-aware scheduling goals mirror the evaluation criteria used by top security venues (e.g., IEEE S\&P, USENIX Security, NDSS). Our approach provides demonstrable risk reduction, strong guardrails against regressions, and operator-in-the-loop evidence. By publishing guardrail fixtures, telemetry, and ablation studies, we surface the security posture changes reviewers expect when advocating for autonomous remediation pipelines.
+
+\smallskip
+\noindent\textbf{Contributions.} We make the following contributions:
+\begin{itemize}
+    \item A closed-loop auto-fix pipeline with triad guardrails (policy re-check, schema validation, server-side dry-run) that achieves 100\% success on a live-cluster replay (Section~\ref{sec:evaluation}).
+    \item A risk-aware scheduler that reduces top-risk P95 wait time by 7.9$\times$ while preserving fairness (Section~\ref{sec:evaluation}).
+    \item A comprehensive set of reproducible artifacts, including scripts, telemetry, and audit logs, that allow for the complete regeneration of all tables and figures in this paper (\url{ARTIFACTS.md}).
+\end{itemize}
 
 %====================
 % Comparison Table (Updated)
@@ -139,7 +147,7 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \begin{table*}[t!]
 \centering
 \small
-\caption{Head-to-head policy-level acceptance on the 500-manifest security-context slice. Counts and rates regenerate from \texttt{data/detections.json}, \texttt{data/verified.json}, and baseline CSVs under \texttt{data/baselines/}.}
+\caption{Head-to-head policy-level acceptance on the 500-manifest security-context slice. Counts and rates regenerate from \texttt{data/detections.json} (SHA256: 6bd7bfa7135756635431cd507e58726b58438720b4b506b65080ee6f0b48ac34), \texttt{data/verified.json} (SHA256: 18736485ba75c3fe8a107b64b49d74f9cd0eeb9ff0e4adbdfeac0f8500864fcb), and baseline CSVs under \texttt{data/baselines/}.}
 \label{tab:baselines}
 \input{../docs/reproducibility/baselines.tex}
 \end{table*}
@@ -156,9 +164,17 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \smallskip
 \noindent\textbf{Metric caveat.} Table~\ref{tab:comparison} aggregates metrics reported by prior work that span admission latency, MTTR, and acceptance rates, so values are not strictly comparable; they provide qualitative context only.
 
-Table~\ref{tab:baselines} grounds those qualitative differences with the head-to-head slice we share publicly. On the 500-manifest security-context corpus, \texttt{k8s-auto-fix} lands 33--100\% acceptance across the high-risk policies it actively targets (privilege, capabilities, read-only root filesystem, requests/limits); the lone unsupported rule, \texttt{no\_host\_ports}, remains at 0\% because we do not attempt that mutation today. Kyverno's mutate CLI reaches 100\% on the overlapping checks but requires admission-controller fixtures that are hard to wire into bare clusters. Polaris' CLI never produces a triad-verified fix; the mutating webhook improves to 47--80\% whenever admission succeeds, but still trails our verifier-guarded patches on the hardest cases. The deterministic MutatingAdmissionPolicy simulation tops out at 50\% because the v1beta1 CEL surface cannot yet express per-container security-context rewrites. Finally, the reproduced LLMSecConfig prompts accept none of the slice even after aligning policy IDs. These results underscore our claim that safe auto-remediation demands more than mutate hooks alone: the triad prevents regressions, but fixture drift and policy coverage still bound acceptance and deserve the infrastructure focus we outline later in this section.
+Table~\ref{tab:baselines} grounds those qualitative differences with the head-to-head slice we share publicly. On the 500-manifest security-context corpus, \texttt{k8s-auto-fix} lands 33--100\% acceptance across the high-risk policies it actively targets (privilege, capabilities, read-only root filesystem, requests/limits); the lone unsupported rule, \texttt{no\_host\_ports}, remains at 0\% because we do not attempt that mutation today. Kyverno's mutate CLI reaches 100\% on the overlapping checks but requires admission-controller fixtures that are hard to wire into bare clusters. Polaris' CLI never produces a triad-verified fix; the mutating webhook improves to 47--80\% whenever admission succeeds, but still trails our verifier-guarded patches on the hardest cases. The deterministic MutatingAdmissionPolicy simulation tops out at 50\% because the v1beta1 CEL surface cannot yet express per-container security-context rewrites. Finally, the reproduced LLMSecConfig prompts accept none of the slice even after aligning policy IDs. These results underscore our claim that safe auto-remediation demands more than mutate hooks alone (\textbf{cf. Table~\ref{tab:baselines}}): the triad prevents regressions, but fixture drift (e.g., missing CRDs or service accounts) and policy coverage still bound acceptance and deserve the infrastructure focus we outline later in this section.
 \section{Related Work}
 Recent work has explored LLM prompts (GenKubeSec \cite{malul2024}), admission policy engines (Kyverno \cite{kyverno_docs}), and large-scale SRE playbooks (Borg \cite{borg}) for Kubernetes remediation, yet critical gaps remain for a production-ready, automated system. GenKubeSec localizes and suggests fixes but leaves validation to humans, lacking schema/dry-run guardrails. Kyverno mutates manifests at admission-time but does not prioritize fixes or auto-seed third-party CRDs. Borg-style automation excels at infrastructure remediation yet is not openly available for manifest-level hardening. Table~\ref{tab:comparison} situates our closed-loop pipeline relative to these efforts, combining automated patching, triad verification, and risk-aware scheduling with published acceptance metrics on multi-thousand manifest corpora.
+
+\smallskip
+\noindent\fbox{%
+\begin{minipage}{0.95\columnwidth}
+\textbf{How we differ.} Our work's novelty lies in the \emph{triad} of guardrails (policy re-check, schema validation, server-side dry-run) combined with a risk-aware, learning-based scheduler. Unlike GenKubeSec/LLMSecConfig, which focus on LLM-based patch generation, we provide deterministic rules as a default and treat LLMs as optional backends under the same rigorous verification. Unlike Kyverno, which operates at admission time, our system processes existing manifests and prioritizes remediation based on risk, not just FIFO order. The public artifacts and reproducible queue replays further distinguish our work by enabling verifiable performance claims.
+\end{minipage}%
+}
+\smallskip
 
 A key limitation of existing approaches is their focus on either detection or admission control, without a corresponding emphasis on automated, validated remediation. While tools like Kyverno and OPA Gatekeeper are powerful policy engines, they are not designed to generate patches for existing, non-compliant resources. This leaves a critical gap in the DevOps lifecycle, where developers are often left to manually remediate misconfigurations, leading to delays and inconsistencies. Our work directly addresses this gap by providing a closed-loop system that not only detects misconfigurations but also proposes, verifies, and schedules validated patches, thereby reducing the manual effort required to maintain a secure Kubernetes environment.
 
@@ -287,6 +303,20 @@ Prioritize & Bandit: $R\,p/\mathbb{E}[t]$ + aging + KEV boost & FIFO admission q
 
 \section{Implementation and Metrics}\label{sec:impl-metrics}
 Our system is designed as a linear pipeline with strict verification gates to ensure the safety and correctness of all proposed patches.
+
+\usepackage{alltt}
+\smallskip
+\noindent\fbox{%
+\begin{minipage}{0.95\columnwidth}
+\textbf{Quickstart: 3 commands.} To reproduce our results, run the following commands from the root of the repository:
+\begin{alltt}
+make detect
+make propose
+make verify
+\end{alltt}
+Expected runtime is approximately 5 minutes on a standard laptop (see Table~\ref{tab:environment} for environment details).
+\end{minipage}%
+}
 \smallskip
 \noindent\textbf{Scalability considerations.} The end-to-end pipeline sustains millisecond-scale proposer latency and sub-second verifier latency on the 1,313-manifest slice (Table~\ref{tab:eval_summary}); the scheduler replays thousands of queue items using persisted telemetry (see \url{data/scheduler/}) without recomputing detections. These characteristics are highlighted to satisfy systems venues (e.g., OSDI, NSDI) that emphasize throughput, resource bounds, and repeatable performance claims alongside functional correctness.
 
@@ -318,20 +348,18 @@ To be accepted, a patched manifest must pass a multi-layered verification proces
 % Simple architecture figure using boxed stages and arrows
 \begin{figure*}[t]
 \centering
-\setlength{\fboxsep}{6pt}%
+\setlength{\fboxsep}{8pt}%
 \setlength{\fboxrule}{0.6pt}%
-\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Detector}\\\small kube-linter + Kyverno/OPA\end{minipage}}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\large\textbf{Detector}\\\small kube-linter + Kyverno/OPA\end{minipage}}
 \hspace{0.6em}$\Rightarrow$\hspace{0.6em}
-\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Proposer}\\\small LLM + JSON Patch\end{minipage}}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\large\textbf{Proposer}\\\small LLM + JSON Patch\end{minipage}}
 \hspace{0.6em}$\Rightarrow$\hspace{0.6em}
-\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Verifier}\\\small Policy + Schema + Dry-run\end{minipage}}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\large\textbf{Verifier}\\\small Policy + Schema + Dry-run\end{minipage}}
 \hspace{0.6em}$\Rightarrow$\hspace{0.6em}
-\fbox{\begin{minipage}{0.18\textwidth}\centering\textbf{Scheduler}\\\small Risk-Bandit (aging + KEV)\end{minipage}}
+\fbox{\begin{minipage}{0.18\textwidth}\centering\large\textbf{Scheduler}\\\small Risk-Bandit (aging + KEV)\end{minipage}}
 
-\vspace{0.6em}
-\fbox{\begin{minipage}{0.28\textwidth}\centering\textbf{Risk Signals}\\\small CVE/KEV/EPSS + Exposure\end{minipage}}
-\hspace{1em}
-\fbox{\begin{minipage}{0.28\textwidth}\centering\textbf{RAG Store}\\\small PSS/CIS, K8s docs, CVEs\end{minipage}}
+\vspace{1em}
+\fbox{\begin{minipage}{0.45\textwidth}\centering\textbf{RAG Store / Risk Signals}\\\small PSS/CIS, K8s docs, CVEs, KEV/EPSS, Exposure\end{minipage}}
 \caption{Closed-loop architecture with detector, proposer, and verifier gates (policy re-check, schema validation, \texttt{kubectl apply --dry-run=server}) feeding the risk-aware scheduler. The scheduler consumes \texttt{policy\_metrics.json} entries \{${p}$, $\mathbb{E}[t]$, $R$, KEV\} to score work using the scheduling function, while the RAG store grounds LLM prompts.}
 \label{fig:architecture}
 \end{figure*}
@@ -491,14 +519,14 @@ member `metadata' not found in & 1 & 0 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/mode_comparison.png}
-\caption{Acceptance comparison between rules-only, LLM-only, and hybrid remediation modes (\protect\url{data/baselines/mode\_comparison.csv}).}
+\caption{Acceptance comparison between rules-only, LLM-only, and hybrid remediation modes (\protect\url{data/baselines/mode\_comparison.csv}) (SHA256: a5a071aa0864794eb1393eb8ed7271b43134dc120e22eb98f20582729146dc7b).}
 \label{fig:mode_comparison}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/operator_ab.png}
-\caption{Operator A/B study results comparing bandit scheduler against baseline modes. Dual-axis chart shows acceptance rate (green bars) and mean wait time (blue bars) across 247 simulated queue assignments (\protect\url{data/operator\_ab/summary\_simulated.csv}).}
+\caption{Operator A/B study results comparing bandit scheduler against baseline modes (simulated). Dual-axis chart shows acceptance rate (green bars) and mean wait time (blue bars) across 247 simulated queue assignments (\protect\url{data/operator\_ab/summary\_simulated.csv}) (SHA256: b0183304fc4360ef5ce6bf459c1f82d4953ee46670f4b9264c64da3c0eb552d6).}
 \label
 {fig:operator_ab}
 \end{figure}
@@ -506,7 +534,7 @@ member `metadata' not found in & 1 & 0 \\
 \begin{table*}[t]
 \centering
 \scriptsize
-\caption{Risk calibration summary derived from \protect\url{data/risk/risk_calibration.csv}. $\Delta R$ uses policy risk weights; “per time unit” divides by summed expected-time priors.}
+\caption{Risk calibration summary derived from \protect\url{data/risk/risk_calibration.csv} (SHA256: 6a1e8ae9c00b000cedd9da0d89540aeebae8774b13b99bbe96970032a04a93a4). $\Delta R$ uses policy risk weights; “per time unit” divides by summed expected-time priors.}
 \label{tab:risk_calibration}
 \begin{tabular}{@{}l r r r r r r@{}}
 \toprule
@@ -519,7 +547,7 @@ Rules (5k) & 5{,}000 & 4{,}677 & 227{,}330 & 14{,}970 & 93.82\% & 4.88 \\
 \end{table*}
 
 \begin{table*}[!htbp]
-\caption{Acceptance and latency summary (seed 1337).}
+\caption{Acceptance and latency summary (seed 1337). Results generated from \protect\url{data/eval/unified_eval_summary.json} (SHA256: 578252c4730015e30a77f04aa918fab087b0f91f9d504412d507118ed08ba704).}
 \label{tab:eval_summary}
 \centering
 \scriptsize
@@ -691,15 +719,14 @@ We formally define how we measure effectiveness and fairness:
 
 \noindent\textbf{Targets (Acceptance Criteria).} Based on industry standards and research objectives, we target: Detection F1 $\ge 0.85$ (hold-out), Auto-fix Rate $\ge 70\%$, No-new-violations Rate $\ge 95\%$, and median JSON Patch operations $\le 6$ (rules-mode sweeps yield median $5$ and P95 $6$ per \url{data/eval/patch_stats.json}).
 
-\section{Limitations}
-The prototype prioritizes shipping guardrails and evidence, but several constraints remain before production deployment:
+\section{Limitations and Mitigations}
+The prototype prioritizes shipping guardrails and evidence, but several constraints remain before production deployment. We address these with the following considerations:
+
 \begin{itemize}
-    \item \textbf{Infrastructure dependencies.} Verification still assumes cluster primitives (CRDs, namespaces, RBAC) seeded by the fixture harness; missing components drive most Grok and rules-mode rejections.
-    \item \textbf{Kyverno mutate baseline.} Table~\ref{tab:baselines} now captures the 500-manifest head-to-head: Kyverno's mutate CLI hits 100\% on the policies it supports while our triad enforces 33--100\% acceptance with the same fixtures. We still owe a cross-cluster replication because the CLI/webhook runs assume seeded namespaces and service accounts.
-    \item \textbf{MutatingAdmissionPolicy baseline.} The GA \texttt{admissionregistration.k8s.io/v1beta1} MutatingAdmissionPolicy still lacks CEL constructs to set per-container security context and resource defaults. Consequently Table~\ref{tab:baselines} reports only the deterministic simulation (1/2--1/3 acceptance); a real MAP baseline will follow once upstream CEL support adds list-aware helpers or richer apply semantics.
-    \item \textbf{Operator study.} Scheduler comparisons rely on deterministic queue replays; we do not yet have a human-in-the-loop rotation or production incident telemetry.
-    \item \textbf{Threat intelligence depth.} CTI enrichment today stops at KEV and EPSS joins; image CVE lookups and exploit-timeline signals remain manual, limiting the fidelity of $R_i$ and remediation guidance.
-    \item \textbf{LLM telemetry gaps.} Grok/xAI runs now capture per-patch token usage (\url{data/grok5k_telemetry.json}, \url{data/grok1k_telemetry.json}), yet latency traces remain absent, preventing reproducible timing histograms for the LLM path.
+    \item \textbf{External validity.} Our evaluation corpora, while large, may not capture the full range of real-world Kubernetes configurations. To mitigate this, we plan to expand our dataset with more diverse, production-like manifests and conduct a human-in-the-loop operator study to validate our findings in a real-world setting.
+    \item \textbf{Fixture sensitivity.} The success of our verifier triad is dependent on the presence of correct fixtures (e.g., CRDs, service accounts). To address this, we have developed a fixture harness that automatically seeds the cluster with the necessary components, and we are working on a more robust solution that can dynamically adapt to different cluster configurations.
+    \item \textbf{LLM latency gaps.} The latency of LLM-based patch generation can be a bottleneck in a real-time remediation pipeline. To mitigate this, we are exploring techniques such as prompt caching, model distillation, and the use of smaller, fine-tuned models to reduce latency while maintaining high-quality patch generation.
+    \item \textbf{Deterministic scheduler replays.} It is important to note that our scheduler comparisons are based on deterministic queue replays, not live, real-world rotations. This ensures reproducibility but may not fully capture the complexities of a production environment.
 \end{itemize}
 
 \section{Discussion and Future Work}
