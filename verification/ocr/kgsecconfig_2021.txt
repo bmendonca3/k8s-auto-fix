@@ -1,0 +1,425 @@
+
+# KGSecConfig: A Knowledge Graph Based Approach for Secured Container Orchestrator Configuration  
+
+
+Mubin Ul Haque, 
+M. Mehdi Kholoosi, and 
+M. Ali Babar  Centre for Research on Engineering Software Technologies (CREST)  School of Computer Science, and Engineering, The University of Adelaide, Adelaide, Australia  Cyber Security Cooperative Research Centre  
+
+
+Abstract—Container Orchestrator (CO) is a vital technology for managing clusters of containers, which may form a virtualized infrastructure for developing and operating software systems. Like any other software system, securing CO is critical, but can be quite challenging task due to large number of configurable options. Manual configuration is not only knowledge intensive and time consuming, but also is error prone. For automating security configuration of CO, we propose a novel Knowledge Graph based Security Configuration, KGSecConfig, approach. Our solution leverages keyword and learning models to systematically capture, link, and correlate heterogeneous and multi- vendor configuration space in a unified structure for supporting automation of security configuration of CO. We implement KGSecConfig on Kubernetes, Docker, Azure, and VMware to build secured configuration knowledge graph. Our evaluation results show 0.98 and 0.94 accuracy for keyword and learning- based secured configuration option and concept extraction, respectively. We also demonstrate the utilization of the knowledge graph for automated misconfiguration mitigation in a Kubernetes cluster. We assert that our knowledge graph based approach can help in addressing several challenges, e.g., misconfiguration of security, associated with manually configuring the security of CO.  
+
+
+Keywords- Container, Configuration, Security, Knowledge Graph  
+
+
+## I. INTRODUCTION  
+
+
+Container Orchestrator (CO), such as Kubernetes [1], Docker- Swarm [2], Nomad [3] enable system administrators to perform multiple tasks, e.g., scaling and interconnecting a large number of containers seamlessly [4]. Furthermore, organizations gain a significant benefit in deploying containers in clouds across different production environments [5] for rapid software delivery using continuous software engineering.  
+
+
+Despite the reported benefits of using CO, security is one of the key concerns while deploying containers in CO [6], [7]. CO is typically used to manage thousands of containers hosting business critical services, whose security can be compromised if CO is not secured.  
+
+
+That is why CO security misconfigurations have emerged as one of the biggest concerns of system administrator and software professionals [8]. In a recent survey [9], CO security misconfiguration has been mentioned as the top concern \((59\%)\) . By exploiting a misconfigured identity management roles of a CO in a Capital One system in 2019 [10], hackers accessed 30 GB of application data containing valuable financial and personal information of 106 million people.  
+
+
+If the security of a CO is not appropriately configured, it cannot enforce security policies (e.g., restriction of capabilities, accessibility of root files, privileges to run containers) for the underlying clusters on its own as the default options are not always security- focused [11]. Therefore, system administrators need to manually perform security configuration tasks, such as identifying and updating the default options, implementing configuration arguments and the options involved in the security policy [12]. Moreover, when deploying containers in a cluster, system administrators may need to maintain diverse configuration files for different purposes, such as deployment (e.g., replica, namespaces), managing credentials (e.g., roles and resources), and observing performances (e.g., audit and log). Each of such configuration files consists of several arguments. For example, a deployment configuration file in Kubernetes may consist of 40 configuration arguments [13] and more than 100 options. Besides, CO has a distributed architecture constituting different components with a vast configuration space, e.g., arguments, options, default values and types. For example, Kubernetes consists of eight different components, more than 1K configuration arguments across all components, which require manual intervention for configuration [12]. Thus, the process of manually identifying and configuring a vast configuration space and different configuration files from the security perspective in CO is effort- intensive, time- consuming, and error- prone [11], [12].   
+
+
+Therefore, automation is highly desirable for securing the configuration of CO to reduce the required effort and minimize the risk of misconfiguration [7], [14]. However, automation support may need to overcome several challenges, such as configuration data scatteredness, dynamicity, and overload for automating the security configuration task of CO. We provide brief explanation of each of these challenges below to help better understand our research's motivators.  
+
+
+Automation of CO security configuration is a knowledge- intensive task; it is important to know 'what' options are required for 'which' arguments for each component of a CO. This task is not trivial due to a large number of available configuration options and arguments. In addition, CO is typically integrated with multi- vendor software systems [9], such as Continuous Integration and Development or Deployment (CI/CD) tools, e.g., Jenkins; Development and Operations (DevOps) platforms, e.g., Docker; and cloud resource providers, e.g., Azure. Therefore, administrators need to investigate each of the scattered tools, platforms, or providers' configuration space for identifying and capturing the secured configuration
+
+<--- Page Split --->
+
+
+arguments and options.  
+
+
+CO security configuration options data may dynamically change due to new vulnerabilities, malware, security flaws, and patch releases. For example, the configuration option for the argument 'imagePullPolicy' in Kubernetes was expected to change after Distributed Denial of Service (DDoS) attack in DataDog [11]. Hence, to mitigate the rapidly changing threat landscape, configuration space needs to be updated continuously, which requires a frequent manual monitor and search of diverse data sources (e.g., HTML, JSON or XML).  
+
+
+Cyber security information overload as the number and the sources of threat advisories are increasing. Whilst threat advisories contain in- depth information on how attackers target the existing configuration to compromise software systems, it is a cognitively challenging task to separate relevant from the irrelevant information. For example, to obtain the secured configuration options for kube api server [15] (one of the eight constituent components of Kubernetes), relevant documents contain 400 sentences on average, whereas the concepts, i.e., relevant sentences, such as reason, implementation details, are 30 sentences on average.  
+
+
+There is a need for a unified solution for secured CO configuration, constituting configuration space associated with their secured arguments, options, and concepts of heterogeneous, multi- vendor, and diverse tools, platforms, providers for enabling automation of secured CO configuration.  
+
+
+There are a few studies that have discussed the best security practices [7] and defects [14] for Kubernetes. Moreover, Kubernetes usage for monitoring resources and performances had also been reported in [16], [17]. However, there is a general lack of solutions for automating CO security configuration.  
+
+
+To address the above identified problem, we propose to build a KG for Secured Configuration (KGSeConf) that provides a fundamental support for automatic security configuration of CO. KG can provide the unification of configuration space associated with their secured arguments, options, and concepts in terms of entities and relations. For example, configuration options, arguments, types, default values, code snippets (e.g., Infrastructure- as- Code (IaC)) represent entities. Relations connect entities using phrases that describe relationship among entities, such as 'is' or 'has' relationship. Besides, we propose a keyword and learning- based model to address the dynamicity and overload barriers, which can automatically extract secured configuration knowledge in terms of secured arguments, options, and concepts hidden in large documents. These types of knowledge are populated in the KG for organized structure, so that the encapsulated knowledge can be utilized for automating the security configuration of CO.  
+
+
+Our KGSeConf can capture and link the configuration knowledge through real- time monitoring of multiple, diverse, and heterogeneous configuration space from different data sources to reflect the intricate and evolving security threats. Our KGSeConf can be utilized for various downstream configuration tasks, such as automated misconfiguration mitigation and interpretation of secured configuration options which can increase the understanding of the reason of enabling/dis  
+
+
+abling particular arguments. Furthermore, our KGSeConf can provide a way for visualizing configuration arguments where default values are not security- focused and can help administrators to prioritize their efforts in configuration task.  
+
+
+Our paper makes the following three main contributions:  
+
+
+We are the first, to the best of our knowledge, to propose a keyword and learning- based approach for CO to capture, store and correlate configuration knowledge automatically. We build a secured configuration knowledge graph using KGSeConf on Kubernetes [1], Docker [18], Azure [19], and VMWare [20]. Our evaluation shows high accuracy to build the KGSeConf. Moreover, we demonstrated the effectiveness of KGSeConf in automated mitigation of misconfiguration of a Kubernetes cluster.  
+
+
+The remainder of our paper proceeds as follows. Section II describes the related work. Section III and IV discuss the approach and implementation. The process of the evaluation and results are discussed in Section V. We report the implications and limitations in Sections VI and VII. Finally, our paper concludes in Section VIII with some future directions.  
+
+
+## II. RELATED WORK  
+
+
+Our research is related to the prior studies that have investigated the security of CO, the configuration studies in software engineering, and cyber security KG.  
+
+
+### A. Security in Container Orchestrator  
+
+
+Shamim et al. [7] reported a study of grey literature, e.g., blog posts and tutorials to identify security best practices for Kubernetes. They stated secure usage of Kubernetes requires the implementation of security practices applicable to multiple components within Kubernetes, such as containers [21] and pods [22]. They also advocated for a need of a deep understanding of Kubernetes configurations to implement security practices. Bose et al. [14] conducted a study on open- source software repositories, e.g., GitLab, and identified commits for updating security- related defects in Kubernetes manifests [7]. They applied closed coding [23], a qualitative analysis technique, on the collected commits to determine commits related to a security defect. Moreover, there were studies on the usage of Kubernetes in creating monitoring systems [16] and comparison of performance and resource management [17]. However, our research is different to these studies as we aim to develop an approach which can automatically capture, link, and encapsulate the configuration knowledge of diverse configuration space in a unified KG. which can be used for secured configuration of CO.  
+
+
+### B. Configuration in Software Engineering  
+
+
+Sayagh and Hassan [24] identified the appropriate options to configuration related user questions by mining already answered configuration questions on online forums. Jin et al. [25] and Wen et al. [26] identified the appropriate options to a configuration- related question by extracting options whose option names are textually similar to the new user question. Xia
+
+<--- Page Split --->
+
+
+
+<center>Fig. 1: Conceptual schema for configuration knowledge </center>  
+
+
+et al. [27] predicted if a bug report is related to configuration or not. However, the study [24] focused on the already answered question; thus, there would be a long trail of less discussed configuration options. Moreover, all the configuration options might not be discussed on online forums, and the answered options might not be reliable, as shown by prior studies [28], [29]. Besides, given a bug report, the study [27] determined whether the bug report was a configuration or not, and the studies [25], [26] extracted configuration options from the bug reports. However, our research goal is different as our motivation is not only to extract configuration options but also realize and extract configuration concepts (e.g., reason, implementation details). We specifically intend to encapsulate such extracted configuration knowledge in a structured way in the unified knowledge graph. This unified knowledge graph allows us to correlate the vast configuration space of diverse CO software systems and, afterward, enables us to automate the secured configuration and compliance.  
+
+
+### C. Cyber Security Knowledge Graph  
+
+
+Rastogi et al. [30] proposed a KG for predicting missing information for malware. Pingle et al. [31] proposed a system, RelExt, that would detect relationships and create semantic triples over cyber security text using a deep- learning approach. Piplai et al. [32] extracted the information from malware After Action Reports (AAR) that can be merged to create a KG using RelExt. Mendsaikhan et al. [33] identified the significance of the cyber security text using the deep- learning approach. Whilst the prior studies focused on detecting cyber security text, e.g., attack patterns, vulnerabilities, malware, our study, in contrast, aims to build a KG automatically for secured configuration knowledge for CO.  
+
+
+In summary, our research, to the best of our knowledge, has provided a unique solution, KGSeConfig, for building a secured configuration knowledge graph automatically for diverse software systems in CO. Our KGSeConfig is expected to minimize the manual efforts required to extract and utilize configuration knowledge for securing CO configuration.  
+
+
+## III. APPROACH  
+
+
+We propose a Knowledge Graph (KG) based approach to overcome the above- mentioned barrier, i.e., data scatteredness, dynamicity and overload, to automating the configuration of  
+
+<center>Fig. 2: Approach for constructing KGSeConfig </center>  
+
+
+CO. The conceptual schema of our KGSeConfig is shown in Fig. 1; and Fig. 2 shows the different stages of envisioned process for automatically constructing KGSeConfig. In particular, we present how KGSeConfig can be constructed from the natural language text sources by retrieving the entities and relations to form the triples [31], [32] of KGSeConfig. Our approach contains three main modules named Configuration Knowledge Graph (KGConfig) Construction, Security Document Relevancy Estimation, and Security Configuration Concept Classifier. The details of each module are described as follows.  
+
+
+### A. Configuration Knowledge Graph (KGConfig) Construction  
+
+
+The purpose of this module is to create a Knowledge Graph for Configuration (KGConfig) of heterogeneous platforms, cloud resource providers, and tools used in CO to mitigate data scatteredness. We encapsulated configuration arguments, options, types, default values, and descriptions. Configuration arguments and options are indispensable knowledge for performing the configuration task (e.g., 'RBAC' is an option in 'authorization- mode' argument for configuring kube apiserver). Types and default values are necessary knowledge to verify whether the used types (e.g., strings for 'audit- policy- file' argument, or integer for 'MinReadySeconds' argument) and values in the configuration file (e.g., Kubernetes manifest file) are aligned with the required setting. Descriptions are essential knowledge for discovering and understanding the functionality of the configuration argument. In this module, we used different adapters to extract the configuration information, e.g., arguments, options, descriptions, and default options, from official documentation of diverse orchestrators, tools, platforms and built a configuration corpus with the extracted information. Then we applied our schema as shown in Fig. 1 to the configuration corpus to develop KGConfig. We need different adapters (e.g., data scrapers) since the documentation content is distributed in diverse formats such HTML, XML, or JSON. One example of extracting configuration information from documentation and constructing triples to populate KGConfig is illustrated in Fig. 3 and Fig. 4. The extracted arguments, options, types, and default options are considered as the entities and we defined 'has' relationship, e.g., 'hasArgument', 'hasOption', 'hasType', 'hasDefault' and
+
+<--- Page Split --->
+
+
+
+<center>Fig. 3: Example of configuration space extraction </center>  
+
+<center>Fig. 4: Triples corresponding to Fig. 3 </center>  
+
+
+'hasDescription' among the entities. These entities and relations are important for identifying the configuration syntax and used to formulate keyword- based rules for estimating the relevancy of security documents with configuration (Section III- B). In summary, the input of this module is a set of official documentations, and the output is a KGConfig consisting of configuration entities and corresponding relations.  
+
+
+### B. Security Document Relevancy Estimation (SDRE)  
+
+
+The purpose of this module is to filter out security documents from configuration point of view to mitigate data dynamicity barrier. Our KGSecConfig extracts security configuration information from publicly available security information- sharing sources. While security information- sharing sources (e.g., National Vulnerability Database (NVD), Security Tool White Paper, Security Bulletin) have grown in popularity [33], the amount of shared security information has also increased tremendously. This security information is shared in text documents and all the documents may not be relevant to configuration. Fig. 5 and Fig. 6 show the examples of two excerpts from Kubernetes Blog [34], where a document is relevant to configuration and other is not relevant to configuration. In Fig. 6, bold text (e.g., configuration argument) represents the reason of a sentence being relevant to configuration. In particular, we labeled a sentence that is relevant with configuration if any word in the sentence is matched with the extracted configuration argument, which is obtained from the previous step (Section III- A). In the same way, we considered a security document is relevant to configuration if there is any sentence being labelled as configuration. We used configuration argument and its associated entities as the Depending on the attack surface of your application, you may want to focus on specific aspects of security. For example: If you are running a service (Service A) that is critical in a chain of other resources and a separate workload (Service B) which is vulnerable to a resource exhaustion attack then the risk of compromising Service A is high if you do not limit the resources of Service B.   
+
+
+Fig. 5: Example of a non- configuration document  
+
+
+Ensure that the - authorization- mode argument includes RBAC. Edit the API server pod specification file /etc/kubernetes/manifests/kubeapiserver. yaml on the master node. RBAC ensures fine- grained control over the operations that different entities can perform on different objects in the cluster. RBAC also restricts unauthorized access to the kube api- server.  
+
+
+Fig. 6: Example of a configuration document  
+
+
+keyword for estimating the relevancy of security documents to configuration. In summary, the input of this module is a set of security documents and the output is a set of security configuration documents.  
+
+
+### C. Security Configuration Concept Classifier (SCCC)  
+
+
+The purpose of this module is to realize and extract configuration concepts from security configuration documents to mitigate data overload barrier. We proposed four main classes for security configuration concepts as (i) 'statement' concept describes to perform a security configuration task (e.g., Ensure that the 'authorization- mode' argument includes 'RBAC'); (ii) 'goal' concept describes the reason behind the security configuration task (e.g., 'RBAC' ensures fine- grained control over the operations...cluster, 'RBAC' restricts unauthorized access...server); (iii) 'action' concept describes the actionable steps to implement the task (e.g., Edit the API server pod specification file...node); and (iv) 'other' concept describes the rest of sentences in the document (e.g., In this article, we will take a deep dive into key Kubernetes security configurations and the recommended best practices).  
+
+
+A secured configuration 'statement' concept is essential to correlate statements with actionable steps in the knowledge graph. For example, Security Announcement Kubernetes [35] did not provide the actionable steps to mitigate the security issues due to CVE- 2020- 8557, however, it mentioned the statement (e.g., force containers to drop CAP- DAC- OVERRIDE capabilities in PodSecurityPolicy). In this regard, storing a statement in the knowledge graph can help find actionable steps for implementing secured configuration tasks. Moreover, 'goal' concept is essential to demonstrate 'why' a particular option should be used or not for security purposes. Dietrich et al. described system administrators suffer from a lack of knowledge in configuration, which is one of the primary reasons for misconfiguration [36]. Therefore, the 'goal' concept provides a way to interpret the cause of a particular configuration, which can be influential in broadening the configuration knowledge. The 'action' concept provides the required low- level implementation details, which are necessary for the machine execution of configuration tasks. Besides, 'other' concept is necessary to filter out irrelevant sentences from the security configuration document.  
+
+
+We leveraged learning- based techniques to classify the sentences in security configuration documents automatically.
+
+<--- Page Split --->
+
+
+Learning- based techniques are used since they are able to independently adapt new data for their learning ability from the previous computation, e.g., historical data for producing repeatable and data- driven decisions [37], [38], [39]. We designed the problem as a multi- class supervised text classification problem from a learning perspective. The components of building a learning model include- text preprocessing, model selection, model building, and prediction. Pre- processing, security configuration document may contain noise (e.g., punctuation, stop- words), which can make the learning model overfit [37], [40]. Therefore, we used the state- of- the- art approaches [41] for pre- processing the sentences, e.g., removal of noises, stop- words, lower casing, and lemmatization. Lemmatization is used to minimize the inflectional and derivational forms of a word to a standard base form [38]. We left the configuration argument and options intact, e.g., "anonymous- auth", to preserve the configuration syntax. Model Selection, we used the pre- processed text to perform stratified k- fold cross- validation. Stratification ensures the ratio of each input source is kept throughout the cross- validation [37], avoiding different data distribution of the folds. Our model selection component has two steps as (i) feature engineering, (ii) model training and validation. Feature engineering is the process where textual data is transformed into features to improve the performance of the learning models [42]. In the model training and evaluation steps, (k- 1) folds are used for feature engineering and training a model, while the remaining one is used for validation. The validation performance of a model is the average of k runs. The model configurations with the highest performance metric would be selected as the optimal classifier for the following model building process. Model Building, the model building process uses the pre- processed data to generate a feature model based on the identified feature configuration. The feature model has been saved to transform the data for future prediction. Prediction, the prediction process is used for both testing the trained model and classifying the new sentences. In this process, the sentences are first pre- processed and then transformed to a feature set using the saved feature model. Finally, the feature set is used by the saved trained model to determine the class of the sentences.  
+
+
+Our SCCC module will reduce the manual analysis required for realizing concepts from security configuration documents. In summary, the input of this module is a security configuration document and the output is the sentences classified according to the four configuration concepts.  
+
+
+Once we identified the classified sentences, we considered all the concepts except 'other' concept for updating the initial KGConfig. We used graph- traversal algorithm [43] to locate the configuration argument and then added concepts as entities with 'has' relationship as described in Fig. 2 to construct a secure configuration knowledge graph. Moreover, we identified the required options for security configuration mentioned in the concepts by a rule- based approach. The rules are formulated from the available options associated with the particular arguments that had been initially encapsulated in  
+
+<center>Fig. 7: Configuration concepts added to KGConfig (Fig. 4) from the text of Fig. 6 </center>  
+
+
+the KGConfig. Fig. 7 shows an example to construct a secure configuration knowledge graph from the identified concepts.  
+
+
+To mitigate data scatteredness barrier, we proposed a configuration schema which is used to capture the configuration arguments, descriptions, default, and available options from diverse, heterogeneous, and multi- vendor tools documentation using entities and relations. While the schema can be used for instantiating KG, it can also map data of different formats (e.g., structured, unstructured, or semi- structured) from multiple sources into a common structure (Section III- A). Secondly, we proposed a keyword- based configuration knowledge localization method (Section III- B) to overcome data dynamicity barrier. Thirdly, to mitigate the data overload barrier, we proposed a learning- based model (Section III- C). The proposed learning- based model can automatically adopt new data from diverse sources to keep the configuration updated for mitigating security incidents.  
+
+
+## IV. IMPLEMENTATION  
+
+
+We applied our knowledge graph construction approach to Kubernetes [1] (container orchestrator), Docker [18] (DevOps platform), Azure [19] (cloud resource provider), and VMware [20] (infrastructure manager) which can be integrated with Kubernetes [44]. We selected the above four software systems due to their large- scale adoption for integrated orchestration service in a software- defined network [44].  
+
+
+We used Beautiful Soup [45], a Python library for parsing HTML and XML documents to crawl the web pages of official documentation for knowledge extraction. In addition, NLTK [46], a Python library for text processing, was used to implement the text pre- processing in descriptive knowledge extraction. Beautiful Soup and NLTK were widely used in software engineering studies involving information retrieval process [47], [48].  
+
+
+We leveraged following security information- sharing sources for secured configuration knowledge extraction.  
+
+
+- Security Announcement Kubernetes: Official site [35] for announcing security adversaries discovered or reported for Kubernetes and its integrated software systems, e.g., Docker or Azure. This site is maintained by
+
+<--- Page Split --->
+
+
+
+TABLE I: Description of data set   
+
+<table><tr><td>Source</td><td>Official</td><td>Internet</td><td>Vulners</td></tr><tr><td>Security-related Document</td><td>42</td><td>101</td><td>2187</td></tr><tr><td>Security Configuration Document</td><td>39</td><td>91</td><td>205</td></tr></table>  
+
+
+Kubernetes security experts and recommended for the Kubernetes users for security task information [1].  
+
+
+- Internet Artifacts: Shamim et al. proposed a taxonomy for secured installation of Kubernetes clusters and shared a dataset of 101 blog posts [7] from internet. Researchers have acknowledged the value of internet artifacts in deriving security tasks in various domains, such as DevOps [49], CI/CD [50], and testing [51].- Security Tool White Paper: Security tools, such as SYSDIG [52] release white papers to secure deployment of container workloads and contain valuable information. The previous researches showed the importance of analyzing white papers for realizing security tasks [53]. We used Vulners database [54], a rich source of security task information for diverse and heterogeneous software systems from more than 50 security tools. Vulners database was also used by other researches [39], [55], [56].  
+
+
+Table I shows the distribution of the documents related to security and configuration. We used our 5,172 arguments as a keyword to search and identify security configuration- related documents. The search was performed in August 2021.  
+
+
+We required a labelled dataset for the supervised learning model to extract configuration concepts from the security configuration documents. To the best of our knowledge, there is no labelled dataset for security configuration concept classification. Manual labelling of data is time- consuming and labour- intensive [38]. Therefore, we randomly selected 3,300 sentences from the security configuration documents for manual labelling. Two authors manually and independently label the sentences based on our four configuration concepts (Section III- C). We used Cohen's Kappa [57] to measure the agreement between two labelers. Cohen's Kappa is used since the same two labelers had rated the set of selected sentences, and also used in software engineering studies to report the agreement [58], [59]. We obtained the Kappa value of 0.7, indicating substantial agreement [57]. We used 3,032 sentences which were agreed upon by both labelers for training the model to reduce the labeling bias.  
+
+
+Five traditional machine learning classifiers, Logistic Regression (LR), Naive Bayesian (NB), Support Vector Machines (SVM), Random Forest (RF), and Extreme Gradient Boosting (XGB), were selected for learning- based models. Those classifiers were chosen due to the common practice in the literature [60], [61], [62] and real data science competition (e.g., Kaggle [63]). The first three (e.g., LR, NB, SVM) are single models, whereas the rest two (RF, XGB) are ensemble models [37]. In addition, we considered Term Frequency- Inverse Document Frequency (TF- IDF)- based word level, character level, and combination of word and character level to obtain relevant features. We also considered NLP features, such as word count, character, noun, verb, adjective, adverb, pronoun, and word density. These features are common and also used  
+
+
+in the previous studies of software engineering studies that involve classification process [27], [37], [60]. To select optimal traditional ML models, we applied Bayesian optimization [64] using hyperopt library [65]. We chose bayesian optimisation due to its robustness against noisy objective function evaluations [66]. We utilised the average Matthews Correction Coefficient (MCC) of 10- fold cross- validation with stratified sampling [37] and early stopping criteria to select the optimal hyper parameters. MCC was used to select the optimal model since MCC explicitly considers all classes and is proclaimed as the best metric for error consideration by the prior study [67]. Besides, we implemented our models using scikit- learn [68] and gensim [69].  
+
+
+After concept extraction from the corpus, we used the Breadth- First- Search (BFS) [43] algorithm to identify the configuration argument and then update the KGConfig. BFS is a traditional graph traversal algorithm and is also commonly used in prior knowledge graph research [70].  
+
+
+## V. RESULTS AND EVALUATION  
+
+
+Our KGSeConfig built upon Kubernetes, Docker, Azure, and VMWare consists of 5,172 arguments, 2,774 options, and 23,177 descriptions. We obtained 1,463 argument, 1,793 options, where 984 arguments are not secured by default, and 479 arguments are secured by default.  
+
+
+We conducted a series of experiments to evaluate the effectiveness and feasibility of our KGSeConfig by answering the following Research Questions (RQs).  
+
+
+- RQ1: How effective is a keyword-based method for estimating relevancy of security documents to configuration? Our keyword-based method considers configuration arguments with the exact syntax as mentioned in the software systems. The answer to RQ1 will inform whether the method returns the accurate configuration documents. Accurate configuration documents are important since they are the primary source of secure options and their implementation details.- RQ2: How effective is our concept classifier module based on machine-learning? Our classifier module aims to classify sentences of the security configuration documents to identify concepts. The answer to RQ2 will reveal how accurately the module predicts in terms of classification. An accurate model is important since the predicted concepts will be further used to build KGSeConfig on top of KGConfig by adding concepts. Besides, it will help organizations to select suitable models in their orchestration service in a software-defined network.- RQ3: What is the intrinsic quality of the knowledge captured in KGSeConfig? Our KGSeConfig aims to capture, link, and correlate the configuration knowledge of multi-vendor software systems from diverse data sources, which can be further utilized for securing the CO configuration automatically. The answer to RQ3 will reveal the quality, i.e., whether the captured knowledge precisely convey the completeness and correctness of the configuration knowledge. Ascertaining the completeness
+
+<--- Page Split --->
+
+
+
+TABLE II: Evaluation metrics   
+
+<table><tr><td>Metric</td><td>Description</td></tr><tr><td>Accuracy</td><td>Percentage of correctly classified instances.</td></tr><tr><td>Recall</td><td>The correctly identified proportion of positive instances.</td></tr><tr><td rowspan="2">Precision</td><td>The percentage of the detected positive instances that were correct.</td></tr><tr><td>The harmonic mean of recall and precision.</td></tr><tr><td>f1-score</td><td>It is correlation coefficient that depicts the performance of the classifier by considering all four dimensions in the confusion metric.</td></tr></table>  
+
+
+and correctness is crucial for determine KGSecConfig's purpose for various downstream utilization.  
+
+
+### A. Protocol for answering RQs  
+
+
+1) RQ1: We adopted a sampling method [58] similar to the prior studies [71], [72] to ensure that the ratios observed in the sample are generalized to the population within a specific confidence interval at a certain confidence level. The required sample size is 385 for a confidence interval of 5 at \(95\%\) confidence level. Therefore we randomly selected 385 security documents and identified how accurately the keyword-based method could select configuration-related documents.  
+
+
+2) RQ2: We used our manually curated dataset of 3,032 sentences ('statement' concept 790 sentences, 'goal' concept 860 sentences, 'action' concept 751 sentences, and 'other' concept 631 sentences) to evaluate the ML-models. Besides, we used the evaluation metrics defined in Table II. \(80\%\) of the dataset was randomly selected for model selection and building, and \(20\%\) for model prediction on unseen sentences. To select the optimal hyper parameter for each model, we performed stratified 10-fold cross-validation. Stratified sampling ensures that the proportion of each source would be kept. We ran our approach (e.g., KGCConfig construction, security configuration document estimation, and security configuration concept classification) with different ML-models five times to calculate the time required to build KGSecConfig. Moreover, one-tailed non-parametric Mann-Whitney U-test [73] and Cohen's \(d\) effect size [74] tests were calculated to compare the statistical significance of the observed samples. These tests were selected since those were not affected by the data distribution and also used in prior studies to confirm their observation on the selection of ML-models [37], [60].  
+
+
+3) RQ3: We used a statistical sampling method similar to RQ1 to examine the randomly sampled instances of entities in KGSecConfig. Our statistical sampling ensures the evaluation is in 0.05 error margin at \(95\%\) confidence level. We used accuracy as the evaluation metric for assessing the quality of KGSecConfig since accuracy is the most used and well-known evaluation metrics for the quality assessment of KG as reported in the prior researches [58], [59], [70], [71]. Two authors independently evaluated the accuracy and discussed to reach the consensus where independent assessment were different. We followed the prior research [58], [59], [71] criterion, that is whether an extracted instance is correct and meaningful (e.g., complete). We computed Cohen's Kappa [57] to measure the inter rater agreement. Our SeConfigKG is built upon KGCConfig (Section III-A) by adding our three secured configuration concepts (Section III-C) as 'statement', 'goal', and 'action' entities using learning models. As we already evaluated the learning models in RQ2, we did not  
+
+<center>Fig. 8: MCC for each of the ML-models and features </center>  
+
+TABLE III: Optimal hyper parameters for the studied ML-models   
+
+<table><tr><td>Model</td><td>Hyper Parameter</td><td>Model</td><td>Hyper Parameter</td><td>Model</td><td>Hyper Parameter</td></tr><tr><td rowspan="6">LR</td><td>C: 2.60</td><td></td><td></td><td></td><td></td></tr><tr><td>fit_intercept: True</td><td></td><td></td><td></td><td></td></tr><tr><td>max_iter: 582</td><td></td><td></td><td></td><td></td></tr><tr><td>solver: liblinear</td><td></td><td>C: 8.68</td><td></td><td>criterion: gini</td></tr><tr><td>tol: 9.95 e-05</td><td>SVM</td><td>gamma: 3.56</td><td>RF</td><td>max_depth: 34</td></tr><tr><td>warm_start: False</td><td></td><td>kernel: linear</td><td></td><td>max_features: auto</td></tr><tr><td></td><td></td><td>scale: 0</td><td></td><td>n_estimators: 100</td></tr><tr><td></td><td>normalize: 0</td><td></td><td></td><td></td><td></td></tr><tr><td>NB</td><td>alpha: 0.52</td><td>XGB</td><td>max_depth: 92</td><td></td><td></td></tr><tr><td></td><td>fit_prior: False</td><td></td><td>tree_method: exact</td><td></td><td></td></tr></table>  
+
+
+repeat the evaluation of these entities in RQ3. We focused our quality assessment on other configuration entities, e.g., argument, option, types, default values, and description.  
+
+
+### B. Evaluation Results  
+
+
+1) RQ1: We achieved an accuracy of 0.98 for our keyword-based method. Besides, we obtained 1.00, 0.95, and 0.97 precision, recall, and f1-score, respectively. Our approach could not identify the configuration documents where syntax were not preserved in the document, e.g., 'admissionControl', '-azure-container-registry', or 'show.hidden.metrics' violating camel case, hyphenation, or dotted syntax. However, relaxing the syntax preservation causes generation of huge false positives, e.g., providing irrelevant documents as configuration documents. For example, the sentences 'The azure container registry is Microsoft's own hosting platform for Docker images' [75], or 'How to Best Secure Azure Container Registry' [76] resulted in a configuration sentence. However, the documents are not providing any configuration information. Thus, the relaxation of syntax preservation may generate many irrelevant documents to process and large search space. In this regard, our keyword-based method with syntax preservation can keep the search space of configuration knowledge localization minimized, yet representative and provide high precision results for retrieving secured configuration documents.  
+
+
+2) RQ2: Fig. 8 shows a combination of word and character level feature performs better than other features in terms of MCC. For the character level feature, we chose \(n\) -gram in the range of \(2 \leq n \leq 4\) since vocabulary size does not increase after character size 4. A combination of word and character level features considers both word and character to learn the semantic representation of the sentence to give better results. NLP features (e.g., count of word, character, noun, verb, adjective, adverb, and pronoun) perform similarly for all single models except ensemble models. One of the reasons could be that ensemble models learn the overlapping of NLP features among classes due to their intrinsic characteristics
+
+<--- Page Split --->
+
+
+
+TABLE IV: Accuracy achieved by the studied ML-models   
+
+<table><tr><td>Model</td><td>LR</td><td>NB</td><td>SVM</td><td>RF</td><td>XGB</td></tr><tr><td>Accuracy</td><td>0.94</td><td>0.82</td><td>0.88</td><td>0.76</td><td>0.93</td></tr></table>  
+
+
+of individual model aggregation. We verified NLP features perform statistically significant different than other features with Mann- Whitney U- test ( \(z\) - score is 2.506, \(p\) - value is .006, significant at \(p\) - value \(< .05\) ) and large Cohen's \(d\) effect size (4.324). Table III represents the optimal hyper- parameter of each model for its best feature, e.g., a combination of word and character level features. Besides, Table IV presents the accuracy achieved by different ML- model. It is observed that LR and XGB outperform other models. We verified our observation with Mann- Whitney U- test ( \(z\) - score is 3.741, \(p\) - value is \(9 \times 10^{- 3}\) ) and Cohen's \(d\) effect size. Table V shows the precision, recall, and f1- score obtained for each model. We found that LR and XGB also perform better than other models in terms of precision, recall, and f1- score.  
+
+
+Table VI shows the average time requirement to build KGSeConfig with different ML models. Our approach with the LR model takes the least amount of time (4.4 minutes on average) to build KGSeConfig. The difference among the time requirements is due to the different training times for ML models since the KGConfig construction, configuration documents estimation, and BFS algorithm execution required similar time to generate their respective output. XGB and RF take longer time to train than LR, NB, and SVM. We verified our observation with Mann- Whitney U- test, where we obtained statistical significant difference ( \(z\) - score \(< 3.185\) , \(p\) - value \(< 9.1 \times 10^{- 3}\) , significant at \(p\) - value \(< 0.05\) ) and larger Cohen's \(d\) effect size ( \(d > 174.1\) ). XGB and RF are tree- based methods and traditionally reported to take longer time [77].  
+
+
+Calero and Pattini [78] mentioned current commercial designs are motivated by arguments based on sustainability (i.e., using fewer resources to achieve results). In particular, they asserted organizations used sustainability- based redesigns to motivate extensive cost- cutting opportunities. Therefore, we suggest LR should be preferred in building KGSeConfig.  
+
+
+3) RQ3: Table VII shows the results of our quality assessment of the extracted knowledge, where ACC-1, ACC-2, and ACC-F denotes the accuracy by two annotators independently, and final accuracy after resolving disagreement. The accuracies for all the configuration entities are above \(90\%\) and Cohen's Kappa are above 0.6, indicating substantial to almost-perfect agreement between annotators.  
+
+
+Our configuration entities argument and options achieved \(100\%\) accuracy, which is not surprising since such entities are extracted from structured document contents (e.g., enclosed in html, xml tags) with careful implementation and verification. Null values, empty fields, and empty strings were the common problems for default values and types extraction. For example, '- allow-metric-labels' argument in kube api server provided a square bracket notation to present empty fields in its default values, whereas '- cgroup-root' provided double quotes, '- system-reserved' provided backslash, and '- kube-reserved-cgroup' kept the space blank after mentioning types (e.g., '- kube-reserved-cgroup', 'Type: <space>')  
+
+<center>Fig. 9: An example of Kubernetes manifest </center>  
+
+
+in Kubernetes, which caused erroneous extraction. Besides, incomplete sentences due to erroneous splitting is the common problem for the description entity. For example, '- container- runtime' argument had the description 'The container, e.g., docker, remote runtime to use'. Our sentence tokenizer based on NLTK provided two separate sentences as 'The container, e.g.', and 'docker, remote runtime to use' causing incomplete sentences for the description entity.  
+
+
+Our KGSeConfig contains highly accurate configuration knowledge, which can support practical downstream applications, such as automated misconfiguration detection, verification, and mitigation. The common problems with the quality of extracted knowledge include text processing errors and meaningless description due to incomplete sentences. These problems can be minimized by developing more rules to enhance the text processing techniques, which can be further leveraged for accurate configuration entity extraction.  
+
+
+## VI. IMPLICATION AND DISCUSSION  
+
+
+In this Section, we provide how KGSeConfig can be utilized for secured configuration of CO and some implications for researchers and practitioners.  
+
+
+### A. Secured Configuration-as-a-Service  
+
+
+1) Automated mitigation of misconfiguration: Our KGSeConfig can be used to mitigate the misconfiguration of CO clusters automatically. Fig. 9 shows an example of a configuration file to deploy a containerized application [79]. We built a Kubernetes cluster with two nodes [80], a control plane [81], and a worker node [82] to explore the potential security threat actors with the configuration file as shown in Fig. 9. We leveraged our KGSeConfig to identify and mitigate the threat actors automatically, as shown in Fig. 10. A Compliance Parse Tree (CPT) as shown in Fig. 10(b) was built to tokenize configuration argument and its options, where the root of the tree is the configuration file type, e.g., 'Deployment', non-leaf nodes are arguments, and leaf nodes are options. We developed a compliance checker using subgraph matching [70] whose aim is to compare CPT with our KGSeConfig for possible misconfiguration detection.  
+
+
+Our KGSeConfig identified any user in the cluster could get access to the container as the security policy (e.g., 'SecurityContext') argument is missing. A user can also access the container as a root user since 'runAsNonRoot' was not set. Moreover, a user can perform the privilege escalation
+
+<--- Page Split --->
+
+
+
+TABLE V: Precision, Recall, f1-score for each concept using the studied ML-models   
+
+<table><tr><td rowspan="2">concept statement goal action other</td><td>Precision</td><td>Recall</td><td>f1-score</td><td>Precision</td><td>Recall</td><td>f1-score</td><td>Precision</td><td>Recall</td><td>F1-score</td><td>Precision</td><td>Recall</td><td>f1-score</td></tr><tr><td>0.98</td><td>0.93</td><td>0.96</td><td>0.94</td><td>0.77</td><td>0.85</td><td>0.93</td><td>0.93</td><td>0.97</td><td>0.82</td><td>0.89</td><td>0.97</td></tr><tr><td>goal</td><td>0.9</td><td>0.88</td><td>0.89</td><td>0.81</td><td>0.7</td><td>0.75</td><td>0.83</td><td>0.88</td><td>0.9</td><td>0.42</td><td>0.57</td><td>0.9</td></tr><tr><td>action</td><td>0.86</td><td>0.93</td><td>0.9</td><td>0.7</td><td>0.91</td><td>0.79</td><td>0.88</td><td>0.83</td><td>0.85</td><td>0.58</td><td>0.96</td><td>0.72</td></tr><tr><td>other</td><td>0.9</td><td>0.88</td><td>0.89</td><td>0.82</td><td>0.79</td><td>0.8</td><td>0.9</td><td>0.89</td><td>0.89</td><td>0.81</td><td>0.74</td><td>0.73</td></tr></table>  
+
+<center>Fig. 10: Automated misconfiguration mitigation using KGSeConfig </center>  
+
+TABLE VI: Time (s) required to build KGSeConfig by ML-models   
+
+<table><tr><td>Model</td><td>LR</td><td>NB</td><td>SVM</td><td>RF</td><td>XGB</td></tr><tr><td>Time (in seconds)</td><td>264</td><td>313</td><td>438</td><td>773</td><td>694</td></tr></table>  
+
+TABLE VII: Accuracy of knowledge in KGSeConfig   
+
+<table><tr><td>Entities</td><td>ACC-1</td><td>ACC-2</td><td>ACC-F</td><td>Agreement</td></tr><tr><td>argument</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr><tr><td>options</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.0</td></tr><tr><td>default values</td><td>0.97</td><td>0.98</td><td>0.98</td><td>0.62</td></tr><tr><td>type</td><td>0.96</td><td>0.94</td><td>0.94</td><td>0.77</td></tr><tr><td>description</td><td>0.90</td><td>0.91</td><td>0.91</td><td>0.86</td></tr></table>  
+
+
+as the 'allowPrivilegeEscalation' argument is missing. Besides, DDoS attack can be mounted due to configuring 'imagePullPolicy' as 'Always' and undefined host networking policy. All of the mentioned threat actors are automatically generated from our compliance checker, as shown in the red circle in Fig. 10(c). In particular, our 'goal' concept provided the knowledge of such threat actors where missing or undefined arguments were matched.  
+
+
+Our KGSeConfig also has the capability to automatically mitigate the misconfiguration by replacing (e.g., replacing 'Always' option with 'IfNotPresent' in 'imagePullPolicy' argument) or adding (e.g., adding 'allowPrivilegeEscalation' argument with 'false' option) secured argument and corresponding options as a node or set of nodes as shown in green circles in Fig. 10(c) by using the knowledge in KGSeConfig. Finally, it can generate secured configuration files with YAML as shown in Fig. 10(d) or JSON format for automated execution due to the structured storage of relationships, e.g., parent- child relationship among arguments as shown in arrows in Fig. 10.  
+
+
+2) Automated Verification of Extracted Configuration: Our KGConfig (Section III-A) can serve as foundation support in terms of verification, e.g., whether the extracted configuration knowledge for security purposes either exists (e.g., if 'authorization-mode' argument is consistent with the current documentation or 'RBAC' is a valid option for 'authorization-mode') according to official documentation. For instance, our KGSeConfig has detected some inconsistencies in the NSA published report [83]. For instance, the NSA report stated Kubelet [84] and Kube-Scheduler [85] run Transmission  
+
+
+Control Protocol (TCP) on port number 10251, however, we identified it is actually 10250 for read/write port and 10255 read- only port. Similarly, the same inconsistencies were found in other components of Kubernetes, such as Kubelet [84] and control- manager [86]. Our KGSeConfig can automatically detect inconsistencies without manual navigation of the large configuration space. In addition, we also detected some deprecated arguments (e.g., 'repair- malformed- updates' in kube api- server) mentioned in some white papers (e.g., RedHat). Thus our KGSeConfig ensures real- time monitoring and updated configuration knowledge aligned with official documentation by automatic verification of extracted knowledge in terms of configuration space.  
+
+
+### B. Automated Interpretation of Configuration Options  
+
+
+Our KGSeConfig can provide the reasoning why we need to set/enable or disable a particular set of arguments that can increase the understanding of the configuration knowledge. For example, 'false' option in 'profiling' argument reduces the potential attack surface since the default 'true' option generates a significant amount of program data that could potentially be exploited to uncover system and program details. Our KGSeConfig systematically organizes such essential knowledge by 'hasGoal' relationship with respective options which can help administrators' reasoning in configuring CO.  
+
+
+Besides, our KGSeConfig minimizes the manual traversal of multiple data sources required for an investigation to change the configuration options due to the disclosure of new security issues, e.g., vulnerabilities or malware. For example, a denial- of- service vulnerability of kube api- server, CVE- 2019- 11254 is revealed in one security information sharing- source (i.e., in a vulnerability database NVD [87]). This vulnerability can be fixed by restricting unauthorized access to kube api- server, which had been mentioned in another source, i.e., Security Announcement Kubernetes (SAK) [35]. However, neither NVD nor SAK described how to restrict unauthorized access to kube api server in terms of configuration options and arguments.
+
+<--- Page Split --->
+
+
+
+<center>Fig. 11: A subgraph visualizing the configuration hotspot of the studied CO software systems </center>  
+
+
+Our KGsecConfig can correlate the encapsulated knowledge (e.g., 'goal' concepts associated with arguments of kube api server and the query 'restrict unauthorized access to kube api- server') and return the mitigation approach by providing necessary arguments and options (e.g., 'anonymous- auth' will be 'false' and 'authorization- mode' will be 'RBAC') for restricting the unauthorized access. Therefore, KGsecConfig can automatically provide the knowledge required for secured configuration to fix security issues. However, we acknowledge that the returned results will depend on the query formulation (e.g., query other than 'restrict unauthorized access to kube api- server'). In future research, we will perform the embedding- based textual similarity [24] on the encapsulated knowledge and the given query to reduce the semantic and lexical gap.  
+
+
+### C. Visualization of Configuration hot-spot  
+
+
+Our KGsecConfig can support to visualize the configuration hot- spot, i.e., the arguments which need to change their default options for security purposes. The default configurations in CO and its integrated software are not always security- focused and require changes to harden the CO. Multiple cybersecurity attacks were launched due to default configuration in Kubernetes. For instance, Tesla went through a cyber breach because of misconfiguration in 2018 [10]. Unauthorized users got access to secret resources exploiting an administrative CO which was being operated with default configuration in Tesla. Besides, the diversity of tools, platforms, and resource providers' configuration space makes it challenging to locate and then update the configuration manually. For example, the lead engineer of Target [88], a retail corporation, reviewed Kubernetes as "...no document versioning. Stuff is all over. It is difficult to find the right stuff.." [89]. In this regard, our KGsecConfig can be a potential approach to mitigate this challenge by visualizing a unified knowledge base. Fig. 11 represents a sub- graph (built using Neo4j [90]) providing the configuration hot- spot of the studied software systems. Fig. 11 can be a way to represent which software system needs to adjust default arguments more than the other software systems and can help the practitioner to prioritize their security configuration task. For instance, Fig. 11(a) has more more nodes compared to others (Fig. 11(b), 11(c), and 11(d)), representing it requires more adjustment of default arguments. Moreover, our KGsecConfig summarises relationships effectively (RQ1) and efficiently (RQ2 and RQ3), and it can scale to adopt new knowledge automatically using the learning- based model.  
+
+
+## VII. THREATS TO VALIDITY  
+
+
+1) Construct Validity: Labelled data are necessary for training a supervised learning model. Our manually labelled dataset may be biased and subjective. We followed the prior studies [30], [32], [42] to mitigate the bias. Two authors independently annotated the dataset and reported the disagreement. Moreover, we only used the dataset that both authors agreed to train the learning model for minimizing the effect of bias. Our labelled dataset is also comparable with prior studies to build the cyber security knowledge graph. For example, Islam et al. [42] labelled 1.7K, Rastogi et al. [30] labelled 3K, Piplai et al. [32] labelled 3.6K sentences for building security tools, predicting malware entities, and constructing malware KG, respectively.  
+
+
+2) Internal Validity: Our collected configuration options from official documentation might be incomplete. However, prior studies on configuration mining from question/answering sites [24], bug reports [25], [26] also leveraged official documentation in their studies. Besides, our security configuration arguments are derived from publicly available security information-sharing sources, which might miss some secured configuration arguments. However, we used security information sharing sources reported by prior researchers in the security of orchestrators [7] or software systems. In future work, we will investigate other sources of security information. Another threat to the internal validity is the subjective judgment in RQs, for example the evaluation of the quality of extracted configuration knowledge. To alleviate this threat, we have reported the agreement for each subjective judgment.  
+
+
+3) External Validity: Our evaluation results consider four case-study software systems and five ML models. We can not generalize our findings to other software systems or ML models. However, we provided an approach that can be applied to any other software system. Besides, our selected software system has a large configuration space and is popular in orchestration services [34]. Moreover, our goal is not to compare different ML models, and any learning-based model can be plugged into our approach to build the KG.  
+
+
+## VIII. CONCLUSION AND FUTURE WORK  
+
+
+85% of global organizations are forecast to relocate their legacy application to container- based development and deployment [8]. Container orchestrators, e.g., Kubernetes, are playing a vital role in managing container clusters in both the development and production environment. Container orchestrators require automated configuration for secured operation of container clusters. The diversity of software systems used in orchestrators, their vast configuration space, and information overload cause barriers for automating the secured configuration. We proposed a novel knowledge graph- based approach, KGsecConfig to aggregate and organize disparate silos of security configuration knowledge. We built a secured configuration knowledge graph with Kubernetes, Docker, Azure, and VMWare using KGsecConfig, which provide essential configuration knowledge, such as implementation details and reasoning. We demonstrated how KGsecConfig can be utilized for various downstream task, such as automated misconfiguration mitigation, inconsistency identification, and configuration
+
+<--- Page Split --->
+
+
+hot- spot visualization. We plan to extend our KGSeConfig to explore the potential of secure configuration migration from one orchestrator to another orchestrator for the clusters.  
+
+
+## ACKNOWLEDGMENT  
+
+
+The work has been supported by the Cyber Security Research Centre Limited whose activities are partially funded by the Australian Government's Cooperative Research Centres Programme. This work has also been supported with supercomputing resources provided by the Phoenix HPC service at The University of Adelaide.  
+
+
+## REFERENCES  
+
+
+[1] (2021) Kubernetes documentation. Access Date August, 2021. [Online]. Available: http://kubernetes.io[2] (2021) Swarm mode overview. Access Date August, 2021. [Online]. Available: https://docs.docker.com/engine/swarm/[3] (2021) Nomad documentation. Access Date August, 2021. [Online]. Available: https://www.nomadproject.io/docs[4] D. Bernstein, "Containers and cloud: From lxc to docker to kubernetes," IEEE Cloud Computing, vol. 1, no. 3, pp. 81- 84, 2014. [5] B. Burns, J. Beda, and K. Hightower, Kubernetes: up and running: dive into the future of infrastructure. O'Reilly Media, 2019. [6] Portworx and A. Security. (2019) 2019 container adoption survey. October 20, 2020. [Online]. Available: https://portworx.com/wp- content/uploads/2019/05/2019- container- adoption- survey.pdf[7] M. S. I. Shamim, F. A. Bhuiyan, and A. Rahman, "Xi commandments of kubernetes security: A systematization of knowledge related to kubernetes security practices," in 2020 IEEE Secure Development (SecDev). IEEE, 2020, pp. 58- 64. [8] StackRox. (2020) The state of container and kubernetes security. Access Date August, 2021. [Online]. Available: https://security.stackro.com/rs/219- UEH- 533/images/State_of_Container_and_Kubernetes_Report.pdf[9] RedHat. (2021) State of kubernetes security report. Access Date August, 2021. [Online]. Available: https://www.redhat.com/en/engage/state- kubernetes- security- s- 202106210910[10] T. Taylor. (2020) 5 kubernetes security incidents and what we can learn from them. Access Date August, 2021. [Online]. Available: https://techgenix.com/5- kubernetes- security- incidents[11] E. Zilberman. (2021) Top kubernetes configuration mistakes to avoid. Access Date August, 2021. [Online]. Available: https://www.date.io/resources/kubernetes- configuration- mistakes[12] R. Wilson. (2021) Why is kubernetes so hard - 4 reasons why and what to do about it. Access Date August, 2021. [Online]. Available: https://releasehub.com/blog/why- kubernetes- is- so- hard[13] Kubernetes. (2021) Kubernetes deployments. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[14] D. B. Bose, A. Rahman, and S. I. Shamim, "under- reported security defects in kubernetes manifests," in 2021 IEEE/ACM 2nd International Workshop on Engineering and Cybersecurity of Critical Systems (EnCyCriS). IEEE, 2021, pp. 9- 12. [15] Kubernetes. (2021) kube api- server. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/reference/command- line- tools- reference/kube- apiserver/[16] C.- C. Chang, S.- R. Yang, E.- H. Yeh, P. Lin, and J.- Y. Jeng, "A kubernetes- based monitoring platform for dynamic cloud resource provisioning," in GLOBECOM 2017- 2017 IEEE Global Communications Conference. IEEE, 2017, pp. 1- 6. [17] A. Modak, S. Chaudhary, P. Paygude, and S. Ldate, "Techniques to secure data on cloud: Docker swarm or kubernetes?" in 2018 Second International Conference on Inventive Communication and Computational Technologies (ICICCT). IEEE, 2018, pp. 7- 12. [18] (2021) Docker documentation. Access Date August, 2021. [Online]. Available: https://docs.docker.com[19] (2021) Microsoft azure documentation. Access Date August, 2021. [Online]. Available: https://docs.microsoft.com/en- us/azure/aks/[20] (2021) Vmware tanzu kubernetes grid documentation. Access Date August, 2021. [Online]. Available: https://docs.vmware.com/en/VMware- Tanzu- Kubernetes- Grid/index.html  
+
+
+[21] (2021) Container concept kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/containers/[22] (2021) Pods in kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/workloads/pods/[23] J. Saldaña, The coding manual for qualitative researchers. sage, 2021. [24] M. Sayagh and A. E. Hassan, "Configmimer: Identifying the appropriate configuration options for config- related user questions by mining online forums," IEEE Transactions on Software Engineering, 2020. [25] D. Jin, M. B. Cohen, X. Qu, and B. Robinson, "Preffinder: Getting the right preference in configurable software systems," in Proceedings of the 29th ACM/IEEE international conference on Automated software engineering, 2014, pp. 151- 162. [26] W. Wen, T. Yu, and J. H. Hayes, "Colua: Automatically predicting configuration bug reports and extracting configuration options," in 2016 IEEE 27th international symposium on software reliability engineering (ISSRE). IEEE, 2016, pp. 150- 161. [27] X. Xia, D. Lo, W. Qiu, X. Wang, and B. Zhou, "Automated configuration bug report prediction using text mining," in 2014 IEEE 38th Annual Computer Software and Applications Conference. IEEE, 2014, pp. 107- 116. [28] D. van der Linden, E. Williams, J. Hallett, and A. Rashid, "The impact of surface features on choice of (in) secure answers by stackoverflow readers," IEEE Transactions on Software Engineering, no. 01, pp. 1- 1, 2020. [29] M. Verdi, A. Sami, J. Akhondali, F. Khomh, G. Uddin, and A. K. Motlagh, "An empirical study of c++ vulnerabilities in crowd- sourced code examples," IEEE Transactions on Software Engineering, 2020. [30] N. Rastogi, S. Dutta, R. Christian, M. Zaki, A. Gittens, and C. Aggarwal, "Information prediction using knowledge graphs for contextual malware threat intelligence," arXiv preprint arXiv:2102.05571, 2021. [31] A. Pingle, A. Piplai, S. Mittal, A. Joshi, J. Holt, and R. Zak, "Relext: Relation extraction using deep learning approaches for cybersecurity knowledge graph improvement," in Proceedings of the 2019 IEEE/ACM International Conference on Advances in Social Networks Analysis and Mining, 2019, pp. 879- 886. [32] A. Piplai, S. Mittal, A. Joshi, T. Finin, J. Holt, and R. Zak, "Creating cybersecurity knowledge graphs from malware after action reports," IEEE Access, vol. 8, pp. 211691- 211703, 2020. [33] O. Mendsaikhan, H. Hasegawa, Y. Yamaguchi, and H. Shimada, "Quantifying the significance and relevance of cyber- security text through textual similarity and cyber- security knowledge graph," IEEE Access, vol. 8, pp. 177041- 177052, 2020. [34] (2021) kubernetes blog. Access Date August, 2021. [Online]. Available: https://kubernetes.io/blog/[35] (2021) kubernetes security announcement. Access Date August, 2021. [Online]. Available: https://groups.google.com/g/kubernetes- security- announce[36] C. Dietrich, K. Krombholz, K. Borgolte, and T. Fiebig, "Investigating system operators' perspective on security misconfigurations," in Proceedings of the 2018 ACM SIGSAC Conference on Computer and Communications Security, 2018, pp. 1272- 1289. [37] T. H. M. Le, D. Hin, R. Croft, and M. A. Babar, "Punimer: Mining security posts from developer question and answer websites with pu learning," in Proceedings of the 17th International Conference on Mining Software Repositories, 2020, pp. 350- 361. [38] X. Zhao, Z. Xing, M. A. Kabir, N. Sawada, J. Li, and S.- W. Lin, "Hdskg: Harvesting domain specific knowledge graph from content of webpages," in 2017 ieee 24th international conference on software analysis, evolution and reengineering (saner). IEEE, 2017, pp. 56- 67. [39] S. Mumtaz, C. Rodriguez, B. Benatallah, M. Al- Banna, and S. Zamanirad, "Learning word representation for the cyber security vulnerability domain," in 2020 International Joint Conference on Neural Networks (IJCNN). IEEE, 2020, pp. 1- 8. [40] A. Kao and S. R. Poteet, Natural language processing and text mining. Springer Science & Business Media, 2007. [41] S. Vijayarani, M. J. Ilamathi, M. Nithya et al., "Preprocessing techniques for text mining- an overview," International Journal of Computer Science & Communication Networks, vol. 5, no. 1, pp. 7- 16, 2015. [42] C. Islam, M. A. Babar, and S. Nepal, "Automated interpretation and integration of security tools using semantic knowledge," in International Conference on Advanced Information Systems Engineering. Springer, 2019, pp. 513- 528. [43] A. Bundy and L. Wallen, "Breadth- first search," in Catalogue of artificial intelligence tools. Springer, 1984, pp. 13- 13.
+
+<--- Page Split --->
+
+
+[44] (2021) Kubernetes use case studies. Access Date August, 2021. [Online]. Available: https://kubernetes.io/case- studies/[45] (2021) Beautiful soup documentation. Access Date August, 2021. [Online]. Available: https://www.crummy.com/software/BeautifulSoup/bs4/doc/[46] (2021) Natural language toolkit. Access Date August, 2021. [Online]. Available: https://www.nltk.org/[47] M. Liu, X. Peng, A. Marcus, Z. Xing, W. Xie, S. Xing, and Y. Liu, "Generating query- specific class api summaries," in Proceedings of the 2019 27th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering, 2019, pp. 120- 130. [48] X. Hu, G. Li, X. Xia, D. Lo, S. Lu, and Z. Jin, "Summarizing source code with transferred api knowledge," 2018. [49] A. A. U. Rahman and L. Williams, "Software security in devops: Synthesizing practitioners' perceptions and practices," in 2016 IEEE/ACM International Workshop on Continuous Software Evolution and Delivery (CSED). IEEE, 2016, pp. 70- 76. [50] A. A. U. Rahman, E. Helms, L. Williams, and C. Parnin, "Synthesizing continuous deployment practices used in software development," in 2015 Agile Conference. IEEE, 2015, pp. 1- 10. [51] V. Garousi and B. Kucuk, "Smells in software test code: A survey of knowledge in industry and academia," Journal of systems and software, vol. 138, pp. 52- 81, 2018. [52] (2021) sysdig. Access Date August, 2021. [Online]. Available: https://sysdig.com/[53] C. Islam, M. A. Babar, and S. Nepal, "A multi- vocal review of security orchestration," ACM Computing Surveys (CSUR), vol. 52, no. 2, pp. 1- 45, 2019. [54] (2021) Vulnerability assessment platform. Access Date August, 2021. [Online]. Available: https://vulners.com/[55] V. V. Varenica, A. S. Markov, and V. V. Savchenko, "Recommended practices for the analysis of web application vulnerabilities," in 10th Anniversary International Scientific and Technical Conference on Secure Information Technologies, BIT 2019 CEUR Workshop Proceedings, vol. 2603, 2019, pp. 75- 78. [56] O. Valea and C. Oprisa, "Towards pentesting automation using the metasploit framework," in 2020 IEEE 16th International Conference on Intelligent Computer Communication and Processing (ICCP). IEEE, 2020, pp. 171- 178. [57] M. L. McHugh, "Interrater reliability: the kappa statistic," Biochemia medica, vol. 22, no. 3, pp. 276- 282, 2012. [58] Y. Liu, M. Liu, X. Peng, C. Treude, Z. Xing, and X. Zhang, "Generating concept based api element comparison using a knowledge graph," in Proceedings of the 35th IEEE/ACM International Conference on Automated Software Engineering, 2020, pp. 834- 845. [59] J. Sun, Z. Xing, R. Chu, H. Bai, J. Wang, and X. Peng, "Knowhow in programming tasks: From textual tutorials to task- oriented knowledge graph," in 2019 IEEE International Conference on Software Maintenance and Evolution (ICSME). IEEE, 2019, pp. 257- 268. [60] T. H. M. Le, B. Sabir, and M. A. Babar, "Automated software vulnerability assessment with concept drift," in 2019 IEEE/ACM 16th International Conference on Mining Software Repositories (MSR). IEEE, 2019, pp. 371- 382. [61] T. Menzies, S. Majumder, N. Balaji, K. Brey, and W. Fu, "500+ times faster than deep learning:(a case study exploring faster methods for text mining stackoverflow)," in 2018 IEEE/ACM 15th International Conference on Mining Software Repositories (MSR). IEEE, 2018, pp. 554- 563. [62] Y. Ma, S. Fakhoury, M. Christensen, V. Arnaoudova, W. Zogaan, and M. Mirakholi, "Automatic classification of software artifacts in open- source applications," in 2018 IEEE/ACM 15th International Conference on Mining Software Repositories (MSR). IEEE, 2018, pp. 414- 425. [63] (2021) Kaggle competitions. Access Date August, 2021. [Online]. Available: https://www.kaggle.com/[64] J. Snoek, H. Larochelle, and R. P. Adams, "Practical bayesian optimization of machine learning algorithms," Advances in neural information processing systems, vol. 25, 2012. [65] J. Bergstra, D. Yamins, and D. Cox, "Making a science of model search: Hyperparameter optimization in hundreds of dimensions for vision architectures," in International conference on machine learning. PMLR, 2013, pp. 115- 123. [66] Z. Wang, M. Zoghi, F. Hutter, D. Matheson, and N. De Freitas, "Bayesian optimization in high dimensions via random embeddings,"  
+
+
+in Twenty- Third international joint conference on artificial intelligence, 2013. [67] A. Luque, A. Carrasco, A. Martin, and A. de las Heras, "The impact of class imbalance in classification performance metrics based on the binary confusion matrix," Pattern Recognition, vol. 91, pp. 216- 231, 2019. [68] (2021) scikit- learn- machine learning in python. Access Date August, 2021. [Online]. Available: https://scikit- learn.org/stable/[69] (2021) Gensim. Access Date August, 2021. [Online]. Available: https://radimrehurek.com/gensim/[70] X. Zou, "A survey on application of knowledge graph," in Journal of Physics: Conference Series, vol. 1487, no. 1. IOP Publishing, 2020, p. 012016. [71] H. Li, S. Li, J. Sun, Z. Xing, X. Peng, M. Liu, and X. Zhao, "Improving api caveats accessibility by mining api caveats knowledge graph," in 2018 IEEE International Conference on Software Maintenance and Evolution (ICSME). IEEE, 2018, pp. 183- 193. [72] C. Wang, X. Peng, M. Liu, Z. Xing, X. Bai, B. Xie, and T. Wang, "A learning- based approach for automatic construction of domain glossary from source code and documentation," in Proceedings of the 2019 27th ACM joint meeting on european software engineering conference and symposium on the foundations of software engineering, 2019, pp. 97- 108. [73] H. B. Mann and D. R. Whitney, "On a test of whether one of two random variables is stochastically larger than the other," The annals of mathematical statistics, pp. 50- 60, 1947. [74] J. Cohen, Statistical power analysis for the behavioral sciences. Academic press, 2013. [75] T. Seals. (April 14, 2021) Security bug allows attackers to brick kubernetes clusters. Access Date August, 2021. [Online]. Available: https://vulners.com/threatpost/THREATPOST: E7B7ABC22A2369A38FEB70BA45964658[76] C. Losh. (July 20, 2020) How to best secure your azure container registry. Access Date August, 2021. [Online]. Available: https://vulners.com/trendmicroblog/TRENDMICROBLOG:F404AF8BA3B3A80C21BEB37E66D561E0[77] M. Ganaie, M. Hu et al., "Ensemble deep learning: A review," arXiv preprint arXiv:2104.02395, 2021. [78] C. Calero and M. Piattini, Green in software engineering. Springer, 2015, vol. 3. [79] (2021) React, node js, and mongodb microservices- based application deployment on kubernetes. Access Date August, 2021. [Online]. Available: https://github.com/aimaripinger/todo- app- client- server- kubernetes[80] (2021) Nodes in kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/architecture/nodes/[81] (2021) Control plane in kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/architecture/control- plane- node- communication/[82] (2021) Worker nodes in kubernetes. Access Date August, 2021. [Online]. Available: https://docs.oracle.com/en/operating- systems/olcne/1.1/orchestration/worker.html[83] (2021) Cybersecurity and infrastructure security agency. Access Date August, 2021. [Online]. Available: https://www.nsa.gov/Press- Room/News- Highlights/Article/Article/2716980/nsa- cisa- release- kubernetes- hardening- guidance/[84] (2021) Kubelet in kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/overview/components/#kubelet[85] (2021) Kube scheduler in kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/overview/components/#kube- scheduler[86] (2021) Cloud control manager in kubernetes. Access Date August, 2021. [Online]. Available: https://kubernetes.io/docs/concepts/architecture/cloud- controller/[87] (2021) National vulnerability database. Access Date August, 2021. [Online]. Available: https://nvd.nist.gov/[88] (2021) Target. Access Date August, 2021. [Online]. Available: https://www.target.com/[89] M. Rajkarnikar. (2017) Overall satisfaction with kubernetes. Access Date August, 2021. [Online]. Available: https://www.trustradius.com/reviews/kubernetes- 2017- 04- 11- 12- 36- 25[90] (2021) Graph database platform. Access Date August, 2021. [Online]. Available: https://neo4j.com/

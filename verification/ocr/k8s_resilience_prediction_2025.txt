@@ -1,0 +1,585 @@
+
+# Enhancing Kubernetes Resilience through Anomaly Detection and Prediction  
+
+
+V. Anemogiannis \(^{a}\) , 
+B. Andreou \(^{a}\) , 
+K. Myrtollari \(^{a}\) , 
+K. Panagidi \(^{a}\) , 
+S. Hadjiefthymiades \(^{a}\)  
+
+
+\(^{a}\) Department of Informatics and Telecommunications, National and Kapodistrian University of Athens, Greece  
+
+
+## Abstract  
+
+
+Kubernetes, in recent years, has become widely used for the deployment and management of software projects on cloud infrastructure. Due to the execution of these applications across numerous Nodes, each one with its unique specifications, it has become a challenge to identify problems and ensure the smooth operation of the application. Effective supervision of the cluster remains a challenging and resource intensive task. This research work focuses on providing a novel framework system maintainer in order to overview all the possible resources in Kubernetes and pay the attention to specific parts of the cluster that may be showcasing problematic behavior. The novelty of this component rises from the use of cluster graphical representation where features, e.g. graph edges and neighboring nodes, are used for anomaly detection. The proposed framework defines the normality in the dynamic enviroment of Kubernetes and the output feeds the supervised models for abnormality detection presented in user- friendly graph interface. A variety of model combinations are evaluated and tested in real- life environment.  
+
+
+Keywords: Kubernetes, anomaly detection, Neo4j, nodes, supervised learning, unsupervised learning, graphs
+
+<--- Page Split --->
+
+
+## 1. Introduction  
+
+
+One of the most important developments in recent years of software and application development is the switch to cloud computing [1]. Instead of designing applications as a single monolithic entity, designed to run on a local machine, developers have switched their focus in creating smaller and independently developed and deployed micro services delivered to the users over the internet [2]. One of the key ingredients of this transition is the Container. A Container is a small and light virtual machine that can house a micro service. The combination of micro services, spread across multiple Containers can be used to create an application a user can access.  
+
+
+In order to manage these Containers, a Container orchestration platform is needed. One of the most popular Container orchestration platforms is Kubernetes [3] [4]. Kubernetes houses the Containers inside Pods. Pods are the smallest unit that can be deployed in Kubernetes. These Pods are spread across various Nodes of different specifications. The collection of these Nodes, used to run an application, constitutes the Cluster. This approach has numerous advantages including scalability and operational resilience.  
+
+
+Managing the Pods spread across multiple Nodes, that are perhaps geographically separated, can be a challenge. Pods as well as Nodes can present problems in their operations that could jeopardise the smooth operation of the entire application. Monitoring tools exist [5] for accessing Kubernetes' metrics but understanding them and making predictions on how problems in one component can effect others, constitutes a difficult challenge, especially for a system maintainer without extensive experience.  
+
+
+Various schemes have been proposed to address this challenge as described in Subsection 2.1. These works leverage machine learning techniques in order to detect anomalous behavior and notify the system maintainer to address it. Most solutions focus, however, on the individual components, ignoring their interconnected nature. A Pod misbehaving inside a Node can have negative effects on other Pods housed inside the same Node. In addition, most works assume a level of domain expertise in the creation of datasets of normal and anomalous behavior to train the models.  
+
+
+The contribution of this research in this field, is the proposal of a graph representation of the Kubernetes Cluster, fed with monitoring information and updated in real time in the anomaly detection process. A user- friendly interface of graph dynamically produced by unsupervised techniques based on the dynamic resources in the Kubernetes cluster is combined with super
+
+<--- Page Split --->
+
+
+vised techniques in order to identify possible anomalies to the system. This will allow the anomaly detection component to easily leverage information from connected Kubernetes components, using the edges of the graph. The proposed solution allows to easily integrate various supervised and unsupervised methods as models.  
+
+
+This paper is organised as follows: Section II showcases related works to this research. Section III breaks down the proposed solution. The model selection and the experiments performed are detailed in Section IV. Finally, the conclusions and future work are presented in section V.  
+
+
+## 2. RELATED WORK  
+
+
+### 2.1. Algorithmic Anomaly and Error Prediction on Kubernetes Resources  
+
+
+Various systems have been suggested for detecting anomalies on monitoring data. In their work, Kosinska et al. present the Kubernetes Anomaly Detector (KAD) system, that follows a streamlined workflow from data acquisition to model selection and deployment [6]. The authors evaluate four models: Seasonal Autoregressive Integrated Moving Average, Hidden Markov Model, Long Short- Term Memory, and Autoencoder. Their system can be classified as semi supervised due to the assumption that the training data is non anomalous. In addition, KAD offers automatic model selection with criteria of validation loss minimilization. Kosinska et al. assert that having multiple models to choose from provides more flexibility for the type of data and speed requirements for anomaly detection.  
+
+
+Qingfeng et al. introduce an Anomaly Detection System for container based microservices. It is comprised of monitoring, data processing, and fault injection modules used for the training of the models [7]. The monitoring module gathers performance data from containers across clusters, while the data processing module analyzes this data to detect anomalies. The authors claim that their system can identify anomalies such as CPU hogging, memory leaks, packet loss, and network latency using supervised machine learning. The algorithms tested in this work, include Support Vector Machines, Nearest Neighbor Classifier, Naive Bayes, and Random Forest. To train the algorithms, the authors used the fault injection component by writing scripts to simulate various types of faults in their system. Faults simulated include high CPU consumption, memory leaks, network package loss, and network latency increase.
+
+<--- Page Split --->
+
+
+Tien et al. introduce KubAnomaly, a security monitoring system tailored for Kubernetes environments, aimed at detecting anomalous behavior at the container runtime [8]. Their system aggregates monitoring logs from containers, extracts features, and inputs them into a 4 layer fully connected linear neural network with activation functions and dropout layers. KubAnomaly labels containers as Normal or Anomalous, on a 10 second interval. The authors evaluated KubAnomaly by creating two datasets of varying complexity. They simulated normal behavior by deploying a service and observing typical usage patterns, while they induced anomalies by generating requests to simulate DDOS attacks, autotraversers attempting to extract information from containers, and hacking attempts aimed to compromise the web service.  
+
+
+These works are rooted at the component performance question, mostly the Container, and perform the anomaly detection using metrics originated by the component in question. This strategy diverges from a holistic view and treatment of the whole cluster and how it could affect the component's performance in the near future. In addition, all these works assume a domain expert in order to create the datasets that train the models.  
+
+
+### 2.2. Our Contribution  
+
+
+In contrast to the aforementioned solutions, this work tries to provide a solution that takes into account the interconnected nature of components inside the Kubernetes cluster. In addition, it tries to learn the rules that create these anomalies without making presuppositions on the data. Our contribution to the field of Kubernetes Anomaly Detection and Prediction lies in:  
+
+
+- implementation of a framework providing a holistic view of how anomalies spread within the Kubernetes cluster.- the use of unsupervised models to dynamically define the "normality" of Kubernetes ecosystem- the use of the supervised models for anomaly detection based on the the trained "normality"- a model toolbox offered to users to create a unique combination of unsupervised and supervised models- Present the results in a user friendly manner and track the source of an anomaly.
+
+<--- Page Split --->
+
+
+Ultimately, our goal is to develop an intuitive and user- friendly anomaly detection tool that provides actionable insights into the health and performance of Kubernetes clusters to empower operators with the information needed to proactively address issues and ensure the reliability of their containerized applications.  
+
+
+## 3. PROPOSED SOLUTION  
+
+
+### 3.1. Background - Systems and Monitoring  
+
+
+The closest to anomaly detection mechanism occurs by Kubernetes's own self healing capability. This consists of a reactive mechanism that detects containers that fail or do not pass user defined tests and restarts them or replaces them, in order to ensure and maintain application availability. In addition, Kubernetes's Horizontal Pod Autoscaler dynamically adjusts the number of Pods on a given Deployment as a reaction to specified metrics such as CPU utilization. The above mentioned mechanisms, may be fairly effective but are considered reactive in nature. They respond to events as they occur without the ability to predict and prevent anomalies [3].  
+
+
+In order to detect any anomalies and predict if an undesired behavior takes place, there is a need for access to Kubernetes' metrics. This is where Prometheus comes into place. Prometheus collects numeric data from components inside the Kubernetes Cluster and presents it as a time series data stream. Prometheus not only collects data such as CPU and memory utilization, but also metrics like the number of requests on a given service [5]. In addition, Thanos complements Prometheus by extending its capabilities. This is done by enabling long- term storage, global querying and cross cluster aggregation of metrics data. Using Thanos, developers can achieve scalable and highly available monitoring solutions by aggregating and querying metrics data from distributed Kubernetes clusters [9].  
+
+
+Last, Grafana is an important component in the monitoring ecosystem as it offers powerful query visualization as well as alerting functionalities based on Prometheus's, and by expansion, Thanos's metrics. Notably for this research, Grafana provides a visual Node graph as shown in Fig. 1, where Nodes represent various applications, services, and other components, and Edges symbolize relationships between them, such as requests. Within this graph, Nodes and Edges contain pertinent information about the entities they represent, while also offering the capability to highlight important metrics and health data. Using this visualization tool enables the user to analyze and
+
+<--- Page Split --->
+
+
+
+<center>Figure 1: Graphana’s Graph Visualization of Monitoring Data </center>  
+
+
+understand the relationships and dependencies within the kubernetes environment, enabling proactive anomaly detection and efficient troubleshooting by an experienced system maintainer [10] as shown in 1.  
+
+
+### 3.2. Architecture  
+
+
+An important aspect of this work is the Database used in order to store the information of the Kubernetes Cluster. The Kubernetes cluster could be viewed as a Dynamic and Heterogeneous Graph, where nodes signify Kubernetes components such as Pods and Deployments, while edges correspond to the connections between the aforementioned components. The Database chosen needs to be able to store this graph, a relationship heavy model, while offering an easy to use query language (Cypher Query Language) and visualization capabilities.  
+
+
+#### 3.2.1. Monitoring Component  
+
+
+Let consider a Kubernetes cluster with all the available resources. Prometheus has an additional overview of the resources in the cluster. We propose a
+
+<--- Page Split --->
+
+
+Monitoring component as shown in Fig. 4 which consumes the metrics such as CPU saturation and memory utilization, stores the results from its own anomaly detection process on the Prometheus data inside the corresponding nodes of a graph and ensures that the information stored inside the nodes and edges of the graph is updated using the data coming from Prometheus.  
+
+
+Neo4j selected as long as offers the ability to store information inside the nodes and the edges of the graph [11, 12, 13] as the backbone of the architecture. This makes it possible to save the monitoring data as well as anomaly classification results inside the nodes. The user has easy access to that information via the User Interface or by a query, gaining access to a health overview of the entire cluster as shown in Fig. 3.  
+
+
+Utilizing a graph database, the system, can solely rely on the graph for the anomaly detection and prediction task, without the need for direct communication with the Kubernetes or Prometheus APIs. This enables the component to be scalable, flexible and resilient, making it well suited for dynamic and distributed environments that can be represented on a graph database.  
+
+
+Lastly, the deployment of the Resource Registry component as shown in Fig. 2 in the same application layer to the component described in this work, as shown in Fig. 5, ensures the query capabilities and access to the real time augmented representation of the cluster, for the prediction process to take place.  
+
+
+#### 3.2.2. Anomaly Detection and Prediction on Future Spreading Strategy  
+
+
+The nature of the described Kubernetes graph, that could be characterized by its heterogeneity, meaning that multiple types of nodes coexist in the graph and represent different kubernetes components, each with its distinct monitoring metrics, and its dynamic nature, meaning nodes and edges are constantly added or removed from the graph following the events in the kubernetes cluster, makes employing conventional machine learning techniques a challenge. The use of the entire graph as input makes it really challenging to expect as output the same graph with annotated anomaly values for each node.  
+
+
+To address the challenge described, the anomaly detection and prediction process is segmented based on the types of the nodes within the graph. This means that a Pod is evaluated against other Pods and so forth, for the different component types. It is worth mentioning that this segmentation does take into account the metrics of the connected components to the one being evaluated using the edges of the graph to reach them.
+
+<--- Page Split --->
+
+
+
+<center>Figure 2: Kubernetes Resource Model </center>  
+
+
+Not all components in the cluster have a physical meaning. Many Kubernetes components serve as an abstraction layer and don't have their own monitoring information. For example, the Deployment functions as an abstraction layer for the Replica Sets that it manages, and the Replica Set in turn, serves as an abstraction layer for the Pods that it manages. In such cases, these components will act as aggregators to help consolidate metrics from related components.  
+
+
+#### 3.2.3. Dividing the Anomaly Detection and Prediction Process into 2 Parts  
+
+
+Without domain expertise, a dataset for what behavior constitutes as anomalous for each component cannot be created. This realization leads to the division of the anomaly detection and prediction process into two distinct parts, the unsupervised and the supervised phases.  
+
+
+The anomaly detection and prediction process is divided into two distinct parts, the unsupervised and the supervised phases. This is done due to the lack of domain expertise as to what constitutes anomalous behavior, making the creation of a training dataset a challenge.
+
+<--- Page Split --->
+
+
+
+<center>Figure 3: sing Neo4j to Represent a Workflow in the Kubernetes Cluster. The red node at the top symbolizes the Node the Workflow runs on. The pink node at the middle represents the Namespace created for this Workflow. The orange nodes represent Deployments, while the pink ones represent Replica Sets. The big light blue nodes represent Pods while the green nodes represent the Containers. There are also other types of nodes inside the graph such as Services, Stateful Sets, Ports, Labels, etc. </center>
+
+<--- Page Split --->
+
+
+#### 3.2.4. Unsupervised Part  
+
+
+In the unsupervised phase, the question of what is defined as a normality is addressed. The dynamic nature and the easiness to change pods, nodes, memory make the performance overview of a cluster a challenging task. In addition resources shall be treated similarly based on the nature of the resource, e.g. a Pod shall be evaluated against other Pods and so forth, for the different component types.  
+
+
+In unsupervised anomaly classification models are utilized on datasets of observations from the graph. The task consists of the utilization of existing observations to discern, for each component type, which observations stray from the normality. It is worth noting that all observations could be deemed normal by the model, meaning it did not find any outlier observations.  
+
+
+The outlined process leads to the construction of a dataset of normal and anomalous behavior, using the previous observations. As the state of the cluster evolves over time, in order to avoid drifting, it is important to re- execute this part of the process. This is done in order to incorporate in the anomaly comparison the latest observations of the graph. The more observations that are incorporated to the decision process, the less the likelihood of normal behavior to be classified as anomalous will be.  
+
+
+#### 3.2.5. Supervised Part  
+
+
+Using the dataset with data labeled as normal or anomalous from the unsupervised part, traditional classification machine learning models can now be used. The goal is to perform two class classification in order to determine for future observations their anomaly status. It is worth mentioning that the models used for this part need to be able to provide a continuous output due to the nature of the task, that requires output to be a probability value. It is worth mentioning that the models used for this part need to have the ability to give probability as output since the anomaly classification is a continuous task.  
+
+
+The trained models can be used for classification on the periodic scrapings of the graph. The outputs of the models are used to annotate the nodes of the graph with their given anomaly score.  
+
+
+When the unsupervised part is re- executed to take into account the latest observations, the supervised models are also retrained on the new labeling.
+
+<--- Page Split --->
+
+
+### 3.2.6. Anomaly Detection and Prediction on Future Spreading Workflow  
+
+
+The Anomaly Detection and Prediction Workflow consists of two functions that are executed at user specified intervals: the "update graph" and the "update models" functions. The first one is invoked to gather a graph observation and label the nodes of the graph with anomaly values, while the later is called in order to retrain the models with the latest observations. A simplified architecture is illustrated in Fig. 4.  
+
+
+Update Graph. When calling the "update graph" function, two tasks take place. The update of the historic graph observations with the new ones and the "coloring" of the graph using the anomaly scores computed using the latest observation.  
+
+
+For this function, the order of assessment of the different kubernetes components plays an important role. Due to the existence of aggregator components, that require other components to be first evaluated as for their anomaly status before being themselves evaluated, an hierarchical approach is needed. This means that components are evaluated following the Kubernetes Resource Model starting from the bottom and going upwards.  
+
+
+Update Models. When calling the "update models" function, the machine learning models used for prediction of anomaly scores are re- trained. Not all types of components have a model for their type. During the function call, a global dataframe containing all the accumulated observations from the graph is loaded. Then, an unsupervised model is initiated and is used to label these observations as anomalous or not. In case that the dataset does not contain any anomalous data points, a few outliers will be automatically created. This procedure is done by selecting a small subset of the data points and modifying their values by a few standard deviations. Afterwards, a Supervised model is created and trained to detect the anomalies using the labeled dataset. The trained supervised model is then returned for making predictions on future observations.  
+
+
+Components with Models. The components with models are the ones that need to pass from a machine learning model in order to evaluate their anomaly status. Their workflow begins by querying the Neo4j database in order to obtain the latest observation for them. A pre processing step is then applied, that aggregates information, if needed, from components further down the hierarchy.
+
+<--- Page Split --->
+
+
+
+<center>Figure 4: Anomaly Detection and Prediction Component Architecture </center>  
+
+
+Afterwards, the global observations database is updated with the latest observations. Those will be used in order to retrain the models. A maximum of observations is kept for each component type by discarding the old ones. The next step consists of standardization and classification. Standardization consists of subtracting the mean and dividing by the standard deviation of the observations used to train the model. Subsequently, they are fed to a supervised model in order to obtain their anomaly score. Last, the graph is updated with the new anomaly scores and the process continues with the next component type.  
+
+
+Aggregator Components. Aggregator components are the ones that do not have a machine learning model for their type but simply gather the scores from components connected to them and update their anomaly score using the mean of the values they gathered. For the needs of the workflow, this procedure is done with the use of a Cypher Query. This query gets the scores from components connected to specific edge types and updates the anomaly score of the component being evaluated.  
+
+
+Configurability and Adaptability. The frequency in which the models and the graph get updated can be specified by the user. The more often these updates take place, the more accurate the anomaly reporting will be, but the need for computational resources will increase as well. In addition, the user can also choose the metrics that are taken into account for the evaluation of each component type as well as the amount of historic observations used for retraining the models. This means that this work can be adapted for different infrastructures. The component is agnostic as to the nature of what it monitors and works with the assumption that anomalies will be few and
+
+<--- Page Split --->
+
+
+infrequent. This component could be used to monitor activities ranging from security threats to hardware resource management with minimal reconfiguration.  
+
+
+### 3.3. Models  
+
+
+A slew of combinations of unsupervised and supervised models was explored, all implemented using the Scikit- learn Python library [14]. More precisely, for the unsupervised part of the workflow, three anomaly detection, techniques were explored: Isolation Forests, DBSCAN (Density Based Spatial Clustering of Applications with Noise) and OCSVM (One Class Support Vector Machines). For the supervised part of the workflow, the classification models used for experiments are: Logistic Regression, SVM (Support Vector Machines) and Decision Trees [15, 16]. All models were implemented using the Scikit- learn Python library [17].  
+
+
+#### 3.3.1. Unsupervised Models  
+
+
+For the unsupervised portion of the workflow, three anomaly detection, techniques were explored:  
+
+
+1. Isolation Forest: Isolation forests are an unsupervised machine learning technique used for anomaly detection. They construct a collection of isolation trees and compute the average path lengths for each data point from these trees. The trees are constructed by randomly partitioning the feature space. This ensures that points that are isolated from the rest will be partitioned faster as compared to normality points [18].  
+
+
+2. DBSCAN (Density Based Spatial Clustering of Applications with Noise): DBSCAN is an unsupervised machine learning technique primarily focused on clustering but it can also be used for anomaly detection problems. It groups together data points that form densities of arbitrary shapes and marks them as a cluster. Points that are isolated, are not assigned to any clusters and are marked as outliers [19].  
+
+
+3. OCSVM (One Class Support Vector Machines): OCSVM are an unsupervised machine learning technique used for anomaly detection. They try to create a decision boundary that catches the majority of the points. They assume that anomalous points will not be placed inside the decision boundary, thus being marked as anomalies [20].
+
+<--- Page Split --->
+
+
+#### 3.3.2. Supervised Models  
+
+
+For the supervised part of the workflow, three supervised classification models were used for experiments. These include:  
+
+
+1. Logistic Regression: Logistic Regression is a supervised machine learning technique used for binary classification tasks. It computes the weights of a linear function based on the training data. Then it uses this function to predict the binary outcome on future observations [21].  
+
+
+2. SVM (Support Vector Machines): SVM are a supervised machine learning algorithm that are used for classification. They find the hyperplane that maximizes the distance to the decision boundary between the classes of data points in the feature space and use it to perform classification tasks on future observations [22, 23].  
+
+
+3. Decision Trees: Decision trees are a supervised machine learning algorithm. They create a Directed acyclic graph where the non leaf nodes represent the input features, whose edges denote feature value ranges. Leaf nodes on the other hand belong to the output, hypothesis, space. New observations follow the path according to their features down the tree and the leaf node they reach constitutes the decision for that observation. Decision trees are well known for their interpretable nature [24].  
+
+
+## 4. Performance evaluation  
+
+
+The proposed framework was developed and tested as part of EO4EU project. The (EO4EU) project is targeting a one- stop- shop approach to facilitate the discovery and processing of EO data. Consolidating massive amounts of data from EO data providers, its machine learning models dynamically extract patterns and insights that are easily accessible to users via improved user interfaces and extended reality. The processing needs of EO big data were based on a highly dynamic Kubernetes cluster with dynamic allocation of resources on the user needs. The monitoring, the resource registry, the anomaly detection and the graph representation were part of the architecture as shown in Fig. 5.  
+
+
+### 4.1. Model Selection  
+
+
+#### 4.1.1. Model Selection Experiment definition  
+
+
+For the conduct of the experiments, metrics from a production cluster were taken. Each model was first given the chance to optimize its hyper
+
+<--- Page Split --->
+
+
+
+<center>Figure 5: Position of the Anomaly Detection and Prediction Component in the Architecture </center>  
+
+
+parameters for the given nature of the data, before being compared to the other models. This was done using the hyper parameter optimization framework Optuna [25]. Each model got 50 trials in order to explore its hyper parameter space for the optimal combination given the data.  
+
+
+Unsupervised models were evaluated based on their silhouette score, while the supervised ones were evaluated based on the F1 score. The first value is calculated using the mean distance of samples within the assigned class \(a\) and the mean nearest class distance \(b\) for the same samples. The silhouette coefficient is then computed using the formula  
+
+
+\[f = \frac{b - a}{\max (a,b)} \quad (1)\]  
+
+
+\(f\) provides a measure of how well clustering was performed with 1 signifying that all samples were appropriately placed and - 1 indicating that the assignment was performed poorly. F1 score on the other hand, is a function of true and false predictions from the supervised model. It is computed as  
+
+
+\[F1 = \frac{\mathrm{True~Positive}}{\mathrm{True~Positive} + \frac{1}{2}(\mathrm{False~Positive} + \mathrm{False~Negative)}} \quad (2)\]  
+
+
+The maximum possible F1 score is 1, computed when all samples are classified correctly. Both types of models were also evaluated in terms of the time required to be fitted and make predictions.  
+
+
+In order to better understand the hyper parameter search process for each model, a contour plot is provided. Each axis corresponds to a hyper
+
+<--- Page Split --->
+
+
+parameter, while dark areas on the plot signify better objective values. The contour lines represent regions of similar objective values. Denser lines mean that the different combinations give similar results. These plots give a visual way to understand how changes in one hyper parameter, effect the results of the objective value, in conjunction with another.  
+
+
+#### 4.1.2. Unsupervised Models  
+
+Table 1: Performance Metrics of Anomaly Detection Models   
+
+<table><tr><td>Model</td><td>Best Silhouette Value</td><td>Fit Time (s)</td></tr><tr><td>IsolationForest</td><td>0.7941</td><td>0.8232</td></tr><tr><td>OneClassSVM</td><td>0.7302</td><td>0.1175</td></tr><tr><td>DBSCAN</td><td>0.7661</td><td>0.0431</td></tr></table>  
+
+
+Table 1 describes the performance results for the Unsupervised models. All three models achieve similar silhouette values, with the Isolation Forest achieving the highest.  
+
+
+These scores may appear relatively modest, compared to scores computed in a clustering task. This discrepancy could be attributed to the nature of the anomaly detection task. In anomaly detection the goal is to find outliers, in contrast to the task of clustering, which is to assign points to their nearest cluster center. Therefore, the given results could be considered as a meaningful achievement for the given task.  
+
+
+In terms of the time required to fit the models, the Isolation Forest model is by far the slowest of the three, with DBSCAN converging faster by a wide margin.  
+
+
+Since the model retraining is a rare occurrence in the Anomaly Detection and Prediction Workflow, as well as it does not require a small time window to be concluded, the Isolation Forest could be selected as the most suitable model for the task. The time penalty can be justified for the more accurate results.  
+
+
+Plot 6. suggests that the Isolation Forest works best for the nature of the given task using: i) Bootstrap \(=\) "True", ii)Contamination \(= 0.01\) , iii) Max Features in [0.6, 0.9], iv) Max samples in [0.9, 1] and v) Estimators in [250, 350].  
+
+
+The Contamination parameter has a big influence on the performance of the model, achieving the highest objective values while having its value remain stable at 0.1, no matter the combination with other hyper parameters.
+
+<--- Page Split --->
+
+
+
+<center>Figure 6: Contour plot for Isolation Forest </center>  
+
+<center>Figure 7: Contour plot for OneClassSVM </center>  
+
+
+Plot 7 . suggests that the One Class SVM model works best for the nature of the given task using: i) Bootstrap \(=\) "linear", ii) Gamma in [0.01, 0.05] and nu in [0.4, 0.5].  
+
+
+The kernel parameter has a big influence on the performance of the model, achieving the highest objective values while being set to "linear", with smaller influences from the other hyper parameters.  
+
+
+Plot 8. suggests that DBSCAN works best for the nature of the given task using: i) Algorithm \(=\) "kd tree" or "ball tree", ii) eps in [1.5, 2], iii) Leaf size in [10, 15], iv) Metric \(=\) "euclidian" and v) min samples in [0, 8]  
+
+
+The eps parameter, meaning the maximum distance between to points for them to be considered neighbors, has a big influence on the performance of the model, achieving the highest objective values while having its value remain stable in the upper values range, no matter the combination with other hyper parameters. The metric and min samples parameters also assert  
+
+<center>Figure 8: Contour plot for DBSCAN </center>
+
+<--- Page Split --->
+
+
+
+<center>Figure 9: Contour plot for Linear Regression </center>  
+
+
+some influence on the results, tho not as significant.  
+
+
+#### 4.1.3. Supervised Models  
+
+Table 2: Performance Metrics of Classification Models   
+
+<table><tr><td>Model</td><td>Best F1 Score</td><td>Fit Time (s)</td><td>Pred. Time (s)</td></tr><tr><td>Logistic Regress.</td><td>0.8702</td><td>0.0125</td><td>0.0038</td></tr><tr><td>SVM</td><td>0.8780</td><td>0.0565</td><td>0.0146</td></tr><tr><td>Decision Tree</td><td>0.8864</td><td>0.0194</td><td>0.0025</td></tr></table>  
+
+
+Table 2 showcases the results for the Supervised Model comparison. All three models achieved similar results in the classification tasks with the Decision Tree managing to outperform the other 2 models on the test set F1 score. The test set constitutes \(20\%\) of the total dataset.  
+
+
+In terms of the time for the fitting of the model with the training set, Logistic Regression comes on top, with a small margin over the Decision Tree. The fitting time is not as important for the same reasons as the time measured for the Unsupervised Models.  
+
+
+The most important time, where being low is important, is the Prediction time. In terms of this time, Decision Trees come on top. This time is important due to the need to quickly update the graph with the new anomaly labels for each node.  
+
+
+Taking into account all the performance metrics, the Decision Trees better fulfills the needs of this work, thus they will be selected for the anomaly prediction stage of the workflow.  
+
+
+Plot 9. suggests that the Logistic Regression model works best for the nature of the given task using: i) Penalty \(= "11"\) and ii) Solver \(= "\) liblinear".
+
+<--- Page Split --->
+
+
+
+<center>Figure 10: Contour plot for SVM </center>  
+
+<center>Figure 11: Contour plot for Decision Tree </center>  
+
+
+The solver and the penalty both had noticeable influence in the model's performance, with the solver skewing the results the most. There were 2 more hyper parameters tested, C and max iterations but they did not have any impact in the model's performance.  
+
+
+Fig. 10. suggests that the SVM model works best for the nature of the given task using: i) C in \([0.4, 0.85]\) and ii) gamma in \([1, 4.5]\) and iii) kernel = "rbf".  
+
+
+The kernel had the most significant impact in the model's performance in all the hyper parameter combinations. The C hyper parameter also had a noticeable impact in the model's performance. The degree and coeff0 did not skew the results in any significant way.  
+
+
+Fig. 11. suggests that the Decision Tree model works best for the nature of the given task using: i) Criterion = "entropy" and ii) splitter = "best", iii) max depth in \([5, 35]\) , iv) max features in \([0.6, 1]\) , v) min samples leaf in \([1, 53]\) and vi) min samples split in \([20, 80]\) .  
+
+
+The splitter hyper parameter had the biggest impact in the model's performance, followed by min samples leaf. The other hyper parameters did not have the same impact as the first 2 but were not insignificant.
+
+<--- Page Split --->
+
+
+
+<center>Figure 12: Node baseline before experiment starts </center>  
+
+<center>Figure 13: Average of anomaly scores of Pods in the targeted Node before experiments </center>  
+
+
+### 4.2. Experiments  
+
+
+After the establishment of the individual benchmarking of the models, a combination of Decision Trees and Isolation Forest were applied in order to check the framework as end- to- end. The experiments described below were executed in EO4EU platform for \(N = 100\) and the average metrics are presented. Hence two types of experiments were conducted. For both experiments, a Pod was created that, at first, slept for 20 minutes and, then, used the stress command to simulate loads. For the first experiment, CPU load was simulated, by creating 32 Workers running the sqrt function. For the second experiment 32 workers did malloc calls and then hanged, making them unable to free the memory allocated.  
+
+
+Before running the experiments, a baseline of the Node's anomaly classification was established. The Node was deemed to be non anomalous with a high degree of confidence by the model.  
+
+
+In the first experiment the Node was indicated as a definite anomaly. As for the Pod that caused the disturbance, it was identified by having an anomaly score that surpassed by orders of magnitude the anomaly scores of the other Pods allocated inside the same Node. The experiment, did not only highlight the Pod that was causing issues, but also manages to quickly identify the Namespace and the Replica Set- Deployment that caused
+
+<--- Page Split --->
+
+
+
+<center>Figure 14: Node metrics under stress for first experiment. </center>  
+
+<center>Figure 15: Pod metrics under stress for first experiment. Note, In the current version of the components, the conditiontype and phase information is not updated. </center>  
+
+<center>Figure 16: Graph Components connected to the problematic Pod found by looking at the edges of the Pod in the first experiment. </center>  
+
+
+the issues. The removal of the problematic Pod, returned the Node to its original anomaly classification of non- anomalous.  
+
+
+In the second experiment the Node that was used to host the Pod running the malloc script, was immediately identified as a definite anomaly. In addiction to the Node being identified, the responsible Pod also exhibited
+
+<--- Page Split --->
+
+
+
+<center>Figure 17: Node after the problematic Pod was removed in the first experiment. </center>  
+
+<center>Figure 18: Node baseline in the second experiment. </center>  
+
+<center>Figure 19: Node under stress in the second experiment. </center>  
+
+
+a score that quickly identified it as problematic, way above its peers in the same Node.  
+
+
+Both experiments managed to showcase the effectiveness of the proposed component. In both cases, the Node experiencing difficulties was identified by the anomaly detection mechanisms. The component also managed to track down the Pod causing the issues as well as the Namespace and the Replica Set- Deployment it belonged. In all the cases, the user could easily identify the
+
+<--- Page Split --->
+
+
+
+<center>Figure 20: Pod under stress in the second experiment </center>  
+
+<center>Figure 21: Experiment 2 </center>  
+
+
+problematic components from the visual database of Neo4j. By identifying the problematic components the system maintainer can take action. They can also be on the lookout for other components, connected to the ones in question, as to problems that may arise as a consequence of the problematic ones.  
+
+
+## 5. Conclusion  
+
+
+In this paper, we proposed and tested an anomaly detection and prediction component for Kubernetes Clusters. The evaluation was based on a live Application Cluster in order to test on real conditions and data. We started the evaluation by conducting experiments on model selection for both types of models. Subsequently, we tested the efficiency of the proposed solution by creating problematic Pods in a Node of the Cluster. The component was able to identify in all the cases the problematic Node as well as the defective Pod. In addition, it managed to find the Namespace the Pod was Deployed and the Deployment- Replica Set that it belonged enabling the system maintainer to take the appropriate action.
+
+<--- Page Split --->
+
+
+In the future, we aim to enhance the scope of the component, by enhancing the graph representation with the parental layers of Kubernetes, like the Virtual Machines and OpenStack layers. This would give a deeper insight in the inner workings of the Cluster and provide even more information on the problematic parts, as well as, allow for better resource management by controlling the location of the deployments, in an effort to maximize efficiency. We also aim to enhance the anomaly prediction component with LSTM (Long Short Term Memory) neural networks. By creating a time series of graph observations, it is possible to predict future values and take appropriate action at an even earlier stage than it is possible now, with the current approach.  
+
+
+## 6. Acknowledgments  
+
+
+This work was supported by the EO4EU (AI- augmented ecosystem for Earth Observation data accessibility with Extended reality User Interfaces for Service and data exploitation) project, funded by the EU's Horizon Europe Research and Innovation Programme under Grant Agreement No. 101060784.  
+
+
+## References  
+
+
+[1] A. R. N. Pratik Narendra Gulhanel, A review paper on cloud computing, International Advanced Research Journal in Science, Engineering and Technology (2022).  
+
+
+[2] G. Liu, B. Huang, Z. Liang, M. Qin, H. Zhou, Z. Li, Microservices: architecture, container, and challenges, in: 2020 IEEE 20th International Conference on Software Quality, Reliability and Security Companion (QRS- C), 2020, pp. 629- 635. doi:10.1109/QRS- C51114.2020.00107.  
+
+
+[3] Kubernetes, Available:https://kubernetes.io/docs/concepts/architecture/, [Online; accessed 03/01/2024] (2023).  
+
+
+[4] J. Shah, D. Dubaria, Building modern clouds: Using docker, kubernetes and google cloud platform, in: 2019 IEEE 9th Annual Computing and Communication Workshop and Conference (CCWC), 2019, pp. 0184- 0189. doi:10.1109/CCWC.2019.8666479.  
+
+
+[5] Prometheus documentation, https://prometheus.io/docs/introduction/overview/, accessed: (15/03/2024).
+
+<--- Page Split --->
+
+
+[6] J. Kosińska, M. Tobiasz, Detection of cluster anomalies with ml techniques, IEEE Access 10 (2022) 110742–110753. doi:10.1109/ACCESS.2022.3216080.  
+
+
+[7] Q. Du, T. Xie, Y. He, Anomaly detection and diagnosis for container-based microservices with performance monitoring, EasyChair Preprint no. 468 (EasyChair, 2018). doi:10.29007/43km.  
+
+
+[8] C.- W. Tien, T.- Y. Huang, C.- W. Tien, T.- C. Huang, S.- Y. Kuo, Kubanomaly: Anomaly detection for the docker orchestration platform with neural network approaches, Engineering Reports 1 (5) (2019) e12080. arXiv:https://onlinelibrary.wiley.com/doi/pdf/10.1002/eng2.12080, doi:https://doi.org/10.1002/eng2.12080. URL https://onlinelibrary.wiley.com/doi/abs/10.1002/eng2.12080  
+
+
+[9] Thanos, https://thanos.io/, accessed: (15/03/2024).  
+
+
+[10] Grafana, https://grafana.com/, accessed: (05/05/2024).  
+
+
+[11] F. López, E. Cruz, Literature review about neo4j graph database as a feasible alternative for replacing rdbms, Industrial Data 18 (2015) 135. doi:10.15381/idata.v18i2.12106.  
+
+
+[12] M. A. Rodriguez, P. Neubauer, The graph traversal pattern (2010). arXiv:1004.1001.  
+
+
+[13] B. Regmi, Neo4j graph database (01 2021). doi:10.13140/RG.2.2.35357.33764.  
+
+
+[14] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel, B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer, R. Weiss, V. Dubourg, J. Vanderplas, A. Passos, D. Cournapeau, M. Brucher, M. Perrot, E. Duchesnay, Scikit-learn: Machine learning in python, J. Mach. Learn. Res. 12 (null) (2011) 2825–2830.  
+
+
+[15] S. Theodoridis, Machine Learning: A Bayesian and Optimization Perspective, Elsevier, 2020. doi:DOI: 10.1016/C2019- 0- 03772- 7.  
+
+
+[16] E. Alpaydin, Introduction to Machine Learning, MIT Press, 2020.
+
+<--- Page Split --->
+
+
+[17] L. Buitinck, G. Louppe, M. Blondel, F. Pedregosa, A. Mueller, O. Grisel, V. Niculae, P. Prettenhofer, A. Gramfort, J. Grobler, R. Layton, J. VanderPlas, A. Joly, B. Holt, G. Varoquaux, API design for machine learning software: experiences from the scikit- learn project, in: ECML PKDD Workshop: Languages for Data Mining and Machine Learning, 2013, pp. 108–122.  
+
+
+[18] F. T. Liu, K. M. Ting, Z.- H. Zhou, Isolation forest, in: 2008 Eighth IEEE International Conference on Data Mining, 2008, pp. 413–422. doi:10.1109/ICDM.2008.17.  
+
+
+[19] M. Ester, H.- P. Kriegel, J. Sander, X. Xu, A density- based algorithm for discovering clusters in large spatial databases with noise, in: Knowledge Discovery and Data Mining, 1996. URL https://api.semanticscholar.org/CorpusID:355163  
+
+
+[20] B. Schölkopf, R. C. Williamson, A. Smola, J. Shawe- Taylor, J. Platt, Support vector method for novelty detection, in: S. Solla, T. Leen, K. Müller (Eds.), Advances in Neural Information Processing Systems, Vol. 12, MIT Press, 1999. URL https://proceedings.neurips.cc/paper_files/paper/1999/file/8725fb777f25776ffa9076e44fcfd776- Paper.pdf  
+
+
+[21] D. Jurafsky, J. H. Martin, Speech and language processing, draft of January 7, 2023 (2023). URL https://web.stanford.edu/\~jurafsky/slp3/5. pdf  
+
+
+[22] Y. Liang, Machine learning basics - lecture 4: Svm i, https://www.cs.princeton.edu/courses/archive/spring16/cos495/slides/ML_basics_lecture4_SVM_I.pdf (2016).  
+
+
+[23] Y. Liang, Machine learning basics - lecture 5: Svm ii, https://www.cs.princeton.edu/courses/archive/spring16/cos495/slides/ML_basics_lecture5_SVM_II.pdf (2016).  
+
+
+[24] Y. Izza, A. Ignatiev, J. Marques- Silva, On explaining decision trees (2020). arXiv:2010.11034.  
+
+
+[25] T. Akiba, S. Sano, T. Yanase, T. Ohta, M. Koyama, Optuna: A next- generation hyperparameter optimization framework (2019).
+
+<--- Page Split --->
+
+
+arXiv:1907.10902.  URL https://arxiv.org/abs/1907.10902

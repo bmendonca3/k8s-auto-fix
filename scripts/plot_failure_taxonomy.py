@@ -148,9 +148,11 @@ def main() -> None:
         pivot.plot(kind="barh", stacked=True, ax=ax)
     else:
         pivot.plot(kind="barh", stacked=False, ax=ax)
-    ax.set_xlabel("Failure count")
+    ax.set_xlabel("Failure count", fontsize=13)
     ax.set_ylabel("Failure category")
     ax.set_title(args.title)
+    ax.tick_params(axis="x", labelsize=12)
+    ax.tick_params(axis="y", labelsize=15)
     ax.legend(title="Dataset", bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.6)
     plt.tight_layout()

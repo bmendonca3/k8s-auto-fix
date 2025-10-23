@@ -37,17 +37,18 @@ Benchmark helpers (`make benchmark-grok200`, `make benchmark-full`, `make benchm
 - **Automation (`Makefile`, `scripts/`)** provides repeatable entry points for experiments, telemetry refresh, and reproducibility bundles.
 
 ## Repository layout
-- `archives/` - zipped paper bundles and large exports kept out of the project root.
-- `configs/` - pipeline presets (`run.yaml`, `run_grok.yaml`, `run_rules.yaml`).
-- `data/` - detections, patches, verification results, risk metrics, queues, evaluation corpora.
-- `docs/` - research notes, policy guidance, reproducibility appendices, future work plans.
-- `infra/fixtures/` - RBAC, NetworkPolicies, and `manifests/` samples (CronJob scanner, Bitnami PostgreSQL) for reproducing edge cases.
-- `logs/` - proposer/verifier transcripts and Grok sweep summaries.
-- `paper/` - IEEE Access manuscript sources (PDF and TeX assets).
-- `scripts/` - maintenance and evaluation helpers (`compute_policy_metrics.py`, `refresh_guidance.py`, `parallel_runner.py`, etc).
-- `src/` - core packages (`common`, `detector`, `proposer`, `risk`, `scheduler`, `verifier`).
-- `tests/` - pytest suite validating detectors, proposer guardrails, verifier gates, scheduler scoring, CLI tooling.
-- `tmp/` - scratch workspace (ignored).
+- `archives/` – historical exports and large bundles kept out of the active workspace.
+- `configs/` – pipeline presets (`run.yaml`, `run_grok.yaml`, `run_rules.yaml`).
+- `data/` – retains the canonical folders (`data/manifests`, `data/batch_runs`, etc.) and now exposes curated views via `data/corpora/` (inputs) and `data/outputs/` (generated artefacts). See `data/README.md` for details.
+- `docs/` – research notes, policy guidance, reproducibility appendices, future work plans.
+- `infra/fixtures/` – RBAC, NetworkPolicies, and manifest samples (CronJob scanner, Bitnami PostgreSQL) for reproducing edge cases.
+- `logs/` – proposer/verifier transcripts, Grok sweep summaries, and root-level logs (e.g. `logs/access.log`).
+- `notes/` – working notes and backlog items formerly at the repository root.
+- `paper/` – IEEE Access manuscript sources; archives in `paper/archives/` and the Overleaf export tracked under `paper/overleaf/`.
+- `scripts/` – maintenance and evaluation helpers; see `scripts/README.md` for an index by pipeline stage.
+- `src/` – core packages (`common`, `detector`, `proposer`, `risk`, `scheduler`, `verifier`).
+- `tests/` – pytest suite validating detectors, proposer guardrails, verifier gates, scheduler scoring, CLI tooling.
+- `tmp/` – scratch workspace (ignored by git). Historic large exports remain under `archives/` if needed.
 
 ## Configuration
 `configs/run.yaml` centralises proposer configuration:
@@ -83,13 +84,13 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 - `scripts/parallel_runner.py` - parallelise proposer/verifier workloads; `scripts/probe_grok_rate.py` sizes safe LLM concurrency.
 
 ## Datasets and metrics (Oct 2025 snapshot)
-- **Rules baseline (full corpus)** - 13,589 / 13,656 fixes (99.5 percent) with median JSON Patch length 8 (`data/patches_rules_full.json.gz`, `data/verified_rules_full.json.gz`, `data/metrics_rules_full.json`; decompress the `.json.gz` files before consuming them).
-- **Grok full corpus** - 1,313 / 1,313 accepted (100 percent) with median JSON Patch length 6 (`data/batch_runs/grok_full/metrics_grok_full.json`).
-- **Secondary supported corpus** - 1,264 / 1,264 accepted in rules mode; artifacts and telemetry under `data/batch_runs/secondary_supported/`.
+- **Rules baseline (full corpus)** – 13,589 / 13,656 fixes (99.5 percent) with median JSON Patch length 8 (`data/patches_rules_full.json.gz`, `data/verified_rules_full.json.gz`, `data/metrics_rules_full.json`; decompress the `.json.gz` files before consuming them).
+- **Grok full corpus** – 1,313 / 1,313 accepted (100 percent) with median JSON Patch length 6 (curated view `data/outputs/batch_runs/grok_full/metrics_grok_full.json` points to the canonical `data/batch_runs/grok_full/metrics_grok_full.json`).
+- **Secondary supported corpus** – 1,264 / 1,264 accepted in rules mode; artefacts and telemetry live at `data/batch_runs/secondary_supported/` with a companion symlink view under `data/outputs/batch_runs/secondary_supported/`.
 - Policy-level success probabilities and runtimes are regenerated via `scripts/compute_policy_metrics.py` into `data/policy_metrics.json`.
-- Scheduler evaluation (`docs/scheduler_visualisation.md`, `data/metrics_schedule_sweep.json`) compares bandit, risk-only, and FIFO strategies.
+- Scheduler evaluation (`docs/scheduler_visualisation.md`, viewable at `data/outputs/scheduler/metrics_schedule_sweep.json`) compares bandit, risk-only, and FIFO strategies.
 
-Large corpus artifacts are stored as compressed `.json.gz` files to keep the repository lean. Run `gunzip data/patches_rules_full.json.gz` (and the verified counterpart) before tooling that expects the plain `.json` filenames.
+Large corpus artefacts now live under `data/outputs/` and are stored as compressed `.json.gz` files to keep the repository lean. Run `gunzip data/patches_rules_full.json.gz` (and the verified counterpart) before tooling that expects the plain `.json` filenames.
 
 ## Roadmap
 - Q4 2025 - publish a containerised reproducibility bundle for one-command replays.

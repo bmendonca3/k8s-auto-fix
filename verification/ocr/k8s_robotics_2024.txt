@@ -1,0 +1,221 @@
+
+# A generic approach for reactive stateful mitigation of application failures in distributed robotics systems deployed with Kubernetes  
+
+
+Florian Mirus \(^{1,*}\) , Frederik Pasch \(^{1,*}\) , Nikhil Singhal \(^{1}\) , and Kay- Ulrich Scholl \(^{1}\)  
+
+
+Abstract—Offloading computationally expensive algorithms to the edge or even cloud offers an attractive option to tackle limitations regarding on- board computational and energy resources of robotic systems. In cloud- native applications deployed with the container management system Kubernetes (K8s), one key problem is ensuring resilience against various types of failures. However, complex robotic systems interacting with the physical world pose a very specific set of challenges and requirements that are not yet covered by failure mitigation approaches from the cloud- native domain. In this paper, we therefore propose a novel approach for robotic system monitoring and stateful, reactive failure mitigation for distributed robotic systems deployed using Kubernetes (K8s) and the Robot Operating System (ROS2). By employing the generic substrate of Behaviour Trees, our approach can be applied to any robotic workload and supports arbitrarily complex monitoring and failure mitigation strategies. We demonstrate the effectiveness and application- agnosticism of our approach on two example applications, namely Autonomous Mobile Robot (AMR) navigation and robotic manipulation in a simulated environment.  
+
+
+## I. INTRODUCTION  
+
+
+Modern algorithms, particularly those employing cutting- edge AI, allow robots to reach a greater level of autonomy and fulfill more challenging tasks. However, on- board limitations regarding computational and energy resources are hindering factors regarding the deployment of such resource- hungry algorithms, particularly on mobile robots. On the other hand, the number and diversity of robots in a fleet for industrial automation will increase in the future. One attractive option to tackle both challenges is offloading most of the algorithmic workloads to the edge or even cloud to leverage massive computing power for robotics applications. However, given a large, heterogeneous fleet of robots with a diverse, challenging set of tasks and a complex stack of software deployed with a container management system such as K8s, one key problem is how to mitigate failures and thereby minimize their impact on the robots' and fleets' task performance. Potential failures in such a system range from failures of the compute nodes, over failures in the communication network to failures of the containerized applications themselves [1]. In previous work, we already tackled temporary communication failures for a specific application use- case, namely AMR navigation [2].  
+
+
+In this paper, we focus on mitigation of application failures and investigate robotics- specific requirements, that  
+
+<center>Fig. 1. High-level overview of the monitoring and failure mitigation system. </center>  
+
+
+are not yet covered by failure mitigation approaches from the cloud- native domain. One core aspect of cloud- native applications is to ensure that failing micro- services are timely monitored and restarted such that, ideally, the end- user does not experience notable down- times. However, in a cloud- native deployment, containers are mostly running isolated from the physical world whereas complex robotic systems interact with the physical world in real- time and stateful failure mitigation approaches from the cloud- native domain are not directly applicable.  
+
+
+In this paper, we therefore propose a novel approach for robotic system monitoring and reactive failure mitigation for distributed robotic systems deployed using Kubernetes (K8s) and ROS2. Our approach is agnostic to the application and considers the unique challenges of distributed robotics applications by introspectively monitoring robotics- specific metrics or, monitoring the overall system's behaviour through external sensors and applying robotic- specific failure mitigation. One crucially important aspect is that our approach allows to preserve the last healthy state of the robotic system before the failure occurred and transfer it once the failure is resolved. This enables the robotic application to continue its task at the point where the failure of the workload occurred. Furthermore, our approach offers different methods for handling application failures varying in the time necessary for bringing the workload back to a functional state as well as the computational resources necessary. Finally, our approach employs Behaviour Trees [3] to encapsulate the control of the failure mitigation and thus allows arbitrarily complex failure mitigation strategies. We demonstrate the effectiveness and application- agnosticism of our approach on two example applications, namely AMR navigation and robotic manipulation, in a simulated environment.  
+
+
+In summary, our three main contributions are: 1) an
+
+<--- Page Split --->
+
+
+application- agnostic, reactive failure mitigation system based on the generic substrate of Behaviour Trees for distributed robotic systems deployed using Kubernetes and ROS2 allowing to preserve the last healthy state prior to the failure. 2) a robotics-specific workload monitoring system to detect failures either trough introspection, i.e., monitoring system diagnostics and Key Performance Indicators (KPIs), and/or through external supervision, i.e., observing the overall system's behaviour with external sensors and comparing the expected with actually observed behaviour. 3) several recovery strategies resulting in a trade-off between system- downtime and demand for computational resources.  
+
+
+## II. RELATED WORK  
+
+
+Offloading robotic software to the edge/cloud offers a powerful enhancement to various robotic tasks [4] by leveraging high computing power and large storage spaces in the robotics domain. In recent years, researchers proposed a plethora of innovative approaches and concepts for employing edge- computing in the robotics domain ranging from applications such as perception [5], [6], grasping [7], [8], motion planning [9] and mobile navigation [10], [11]. Offloading workloads to the edge or even cloud is particularly useful for resource- hungry algorithms [12], for instance, based on modern machine learning approaches [6]. Chen et. al. [13] proposed a strategy for optimal service deployment in the cloud to ensure that the strict requirements of latency- critical robotics applications are met.  
+
+
+These scientific advancements are complemented from a system perspective by several architectural solutions, which aim to simplify the access to cloud computing for roboticists. For instance, FogROS2 [14] automatically provisions a cloud computer to deploy and launch ROS2 nodes while KubeROS [15] uses K8s to facilitate the deployment of ROS2- based applications across robot, edge, and cloud.  
+
+
+One key problem when deploying containerized applications using a container management system such as K8s is ensuring resilience against various types of failures [1], which can range from communication network failures, over compute node failures to failure of the applications or pod processes themselves. In the context of AMR navigation, a strategy to tackle temporary communication network failures by leaving minimal fallback workloads on the robot's on- board compute has been proposed in [2]. In cloud- native applications using K8s to deploy containers, failure mitigation approaches are typically separated in two categories, namely reactive and proactive [16]. Reactive approaches re- launch a failed service after a fault has occurred and was detected by the system. Proactive approaches on the other hand aim to predict potential failures before they happen employing, e.g., learning approaches ranging from forecasting neural networks such as Long Short- Term Memory (LSTMs), kmeans, or reinforcement learning and take countermeasures accordingly. Another important aspect is preserving the state of the failed application. In cloud- native applications, there is a large variety of approaches for stateful container migration [17] and stateful failure mitigation [18]. Other approaches  
+
+<center>Fig. 2. Factors and possible weights for selection of Failure Monitoring and Mitigation Strategy. </center>  
+
+
+focus on mitigating failures occurring in the container management system K8s itself [19].  
+
+
+In this paper, we aim to close the gap for a robotics- specific stateful failure mitigation for distributed robotics applications deployed with K8s. Our focus lies on a reactive approach detecting application failures either through introspection of relevant KPIs or external supervision, and a generic failure mitigation method based on Behaviour Trees. The introspection monitoring draws inspiration from monitor templates for robotic systems proposed in [20] but, for simplicity, only uses user- defined monitors instead of automatically generated ones as proposed in [20]. To the best of our knowledge, our work is the first to consider robotics- specific requirements for stateful mitigation of application failures within robotic systems deployed with the container management system Kubernetes.  
+
+
+## III. STATEFUL FAILURE MITIGATION  
+
+
+Our reactive, stateful failure mitigation system consists of two main components: the monitoring system for failure detection as well as the actual failure mitigation for bringing the workload back to a functional state while preserving the last healthy state prior to the failure (see Fig 1). Both components rely on Behaviour Trees [3] to describe and apply the monitoring and failure mitigation procedures during execution time. Behavior trees are a powerful and generic substrate, that provides a formal and extensible structure for the monitoring and failure mitigation logic, which can be used to create arbitrarily complex monitoring systems and failure mitigation procedures while being human- readable and verifiable. Importantly, our failure mitigation approach is executed next to the main application without requiring to change the application's source code.  
+
+
+1) Taxonomy: Monitoring advanced robotic systems can be very difficult due to the systems' inherent complexity [20]. In general, there is plethora of levels at which robotics systems can and should be monitored to detect failures in the hardware, the software, at application level, at behaviour level or from a safety perspective. The choice of both, the monitoring requirements and the actual failure mitigation strategy could be tailored depending on the requirements of the application or task at hand. For instance, if the robot
+
+<--- Page Split --->
+
+
+
+<center>Fig. 3. System Architecture </center>  
+
+
+is performing a difficult task handling expensive materials that could be damaged while a failure occurs, it is more important to keep the system's down- time to a minimum at the cost of additional computational resources. For other cases, some level of system- downtime could be acceptable while stricter requirements regarding computational resources apply. Therefore, we propose to select the focus of the monitoring and failure mitigation system according to a taxonomy as depicted in Fig. 2 considering the requirements (such as safety, availability, resource usage, safety, task criticality just to name a few options) of tasks the robotic system is performing.  
+
+
+### A. Monitoring System  
+
+
+Application- and workload- monitoring is one key ingredient to ensure meaningful and functional operation of edge- and/or cloud- systems. However, monitoring a complex robotic system interacting with the physical world poses unique challenges compared to cloud- native applications. In this paper, we focus concretely on two main monitoring approaches, namely introspective monitoring of software workloads and external supervision of the robot's behaviour and task performance.  
+
+
+1) Introspective monitoring: Here, we mainly apply time-related monitors according to the templates proposed in [20], which are characterized by a ROS2 topic's frequency. However, availability and frequency of a certain topic depend on the robot's current task and therefore a more generic monitoring solution on top of the topic monitors is necessary. For instance, consider an AMR equipped with a robotic arm, i.e., a mobile manipulator: if the frequency of the velocity command sent to the actuators of the mobile base is not consistently meeting a desired level while the robot is supposed to be navigating towards a desired goal position, the system is most likely in a failure state. In contrast, if there are no velocity commands sent to the mobile base, while the robot is standing to manipulate objects with its arm and/or end-effector, the system is considered healthy if the joint-states of the arm are delivering their data at the expected frequency. At the same time, the availability of meaningful data from various sensor sources such as Light Detection and Ranging (LIDAR), Inertial Measurement Unit (IMU), Cameras or torque sensors, needs to be monitored permanently in parallel to the task-dependent monitoring objectives, which are only active if certain conditions are fulfilled. For being able to model such hierarchical and situational monitoring  
+
+<center>Fig. 4. Example Behaviour Tree to apply basic failure mitigation for a task and an automatically restarting workload (e.g., using Kubernetes deployment) </center>  
+
+
+requirements, we employ the generic substrate of Behaviour Trees [3]. Fig. 4 visualizes one possible Behaviour Tree for the aforementioned mobile manipulator example.  
+
+
+2) External supervision: Our second monitoring approach is unique for Cyber-Physical Systems (CPSs). As robotic systems interact with the physical (or simulated) world, the resulting behaviours (e.g., movement of the manipulator or the mobile base driving along path) can be monitored through external sensors such as cameras or LIDARs and state-of-the-art object detection and tracking approaches. The essential part of this monitoring approach is to compare the behaviour observed with the external sensor(s) with the expected behaviour, which is known to the system through introspection. If this comparison yields a significant discrepancy between observed and expected behaviour, the failure mitigation component of our system needs to apply countermeasures to bring the system back to a functional state.  
+
+
+### B. Failure Mitigation  
+
+
+In case the monitoring system as described in Sec. III- A reports a critical failure of a workload, the failure mitigation is responsible for bringing the workload back to a functional, healthy state. Our system architecture, the interplay between the two main components and how they are connected to the monitored workload is visualized in Fig. 3. Similar to our monitoring approach, the failure mitigation procedure is encapsulated in the generic substrate of Behaviour Trees to, in general, allow the system to perform any failure mitigation procedure. Concretely, we focus on four classes of failure mitigation strategies, which result in a trade- off between down- time of the overall system after the failure occurred and the additional computational resources required for the mitigation as depicted in Fig. 5.  
+
+
+1) Failure mitigation strategies: The simplest way is to restart the failing workload from scratch. However, this is the slowest recovery strategy as it requires both failure mitigation at the level of the Kubernetes cluster as well as re-initialization of the failed application and thus results in some down-time of the workload. On the other hand, this recovery strategy does not require additional computational resources except for the monitoring during operation. Another option is to run a fallback instance in parallel to the main workload to speed up the recovery time. The total time necessary for recovery depends on the state the fallback workload is in, which could be either of 1) uninitialized 2) initialized and 3) in execution while receiving external data but not sending data to the remainder of the system (see Fig. 5).
+
+<--- Page Split --->
+
+
+
+<center>Fig. 5. Required steps for the different failure mitigation strategies and their trade-off in terms of failure mitigation time and resource usage. Depending on the provisioned fallback workload, the steps of restarting the container, workload startup and state initialization need to be executed. </center>  
+
+
+All four strategies take some time at K8s cluster level either for restarting the failing workload or connecting the rest of the system to the fallback workload. Furthermore, the time for recovery at application level varies depending on the state of the fallback instance: if the fallback workload is only started, it needs to be initialized, possibly handed over the last healthy state of the failed main workload and pick up the task where the main workload failed. If the fallback workload is already initialized or even in execution mode, the necessary time for recovery reduces accordingly (see also Fig. 5 and 6 and Eq. 1).  
+
+
+### C. State Recovery  
+
+
+In addition to re- launching the failing workload or connecting the running system to the fallback workload, it is crucially important that the new instance (either fallback or restarted) properly picks up where the main workload failed, i.e., the last healthy state needs to be stored during operation and handed over from the failing workload. Depending on the recovery strategy employed as described in Sec. III- B.1, the steps performed during the recovery procedure potentially differ. Therefore, the proposed failure mitigation is able to run arbitrarily complex recovery procedures encoded as Behaviour Tree, which it receives as a user- defined description (marked as requirements in Fig. 1). Additionally, it is possible that the failing workload critically depends on another (healthy) workload. In such a case, it could even be necessary to restart/recover the healthy workload as well. The proposed recovery approach based on Behaviour Trees also supports such complex recovery scenarios by encapsulating dependencies within the Behaviour Tree description.  
+
+
+### D. Implementation Details  
+
+
+To realize the failure mitigation strategies described in Sec. III- B.1, we rely on off- the- shelf Kubernetes (K8s) components: the restart from scratch is realized through a K8s deployment [21] while rewiring the system to connect to the fallback workloads instead of the failed workloads is based on dynamically changing K8s network policies [22]. For the realizing the Behaviour Tree representation and execution of the workload monitoring and failure mitigation, we employ Scenario Execution for Robotics [23], [24], a software library that translates scenarios or, in our case and  
+
+
+more generally, Behaviour Tree description files written in the OpenSCENARIO 2 [25] language to a Python Behaviour Tree [26] and executes it. To keep the high- level task request active, we establish a task proxy, that is capable of handling a possible workload re- initialization.  
+
+
+## IV. EXPERIMENTS  
+
+
+### A. Experimental Setup  
+
+
+We demonstrate the effectiveness of our reactive failure mitigation system for robotics applications on two example applications, namely AMR navigation and robotic manipulation in the Gazebo simulator [27], [28]. We use two different domains to demonstrate that our approach is agnostic of the application or workload it is monitoring and protecting. For AMR navigation, we use the Turlebot 4 [29] as robot platform and the WidowX- 200 [30] robotic arm for manipulation. We containerize the ROS2 frameworks Nav2 [31], [32] and MoveIt2 [33], [34] for navigation and robotic manipulation respectively and execute one simple task per example application. For both applications, we execute a basic task, i.e., move the robot platform or arm to a series of user- defined goal positions, and after a user- defined time time \(t_{\text{failure}}\) , we delete the K8s pod containing the main workload (either Nav2 or MoveIt2) to artificially inject a failure. Again, we use Scenario Execution for Robotics [23], [24] to define and control the high- level scenarios. In both cases, our monitor checks the frequency of specific topics, i.e., the velocity commands sent to mobile base for Nav2 or the joint states for the robotic arm, and reports a failure once the stream of messages gets interrupted due to the pod containing the main workload being deleted. To demonstrate the external behaviour monitoring, we only consider the AMR navigation use- case: here, our monitor compares the expected velocity command received from introspection with the velocity command calculated from external observations. These observations are obtained by placing a camera nearby and detecting the poses of ArUco markers attached to the robot over time. To inject a failure, we remap the velocity commands such that the system assumes the mobile base receives meaningful velocity commands, whereas it actually stops moving.  
+
+
+1) Metrics: The first metric to consider is the time necessary to recover from an application failure and to bring the overall robotic system back to a functional state. This recovery time \(t_{\text{recovery}}\) is the sum of 1) the time \(t_{\text{detection}}\) necessary to detect the failure 2) failure mitigation time at cluster level (microservice/pod restart and/or time for adjusting network connections) and 3) restart and 4) re-initialization time at application level, i.e.,  
+
+
+\[t_{\text{recovery}} = t_{\text{detection}} + t_{\text{cluster}} + t_{\text{startup}} + t_{\text{re-initialization}}. \quad (1)\]  
+
+
+The second metric is the usage of computational resources. We measure the CPU usage \(\gamma_{c,t_i}\) at timestamp \(t_i\) for \(i \in \{1, \ldots , n\}\) for each container \(c\) separately over the duration of an entire experimental run. Therefore, we use CAdvisor [35], a tool for analyzing and exposing resource usage and
+
+<--- Page Split --->
+
+
+
+<center>Fig. 6. Evaluation of failure recovery approaches regarding necessary time for failure mitigation. </center>  
+
+
+performance data from running containers. The unit for measuring CPU usage is the K8s standard milliCPU [36] per second. The final metric is the total average CPU usage of the cluster \(\sigma (CPU)\) , i.e., the sum of the mean CPU usage \(\sigma (c)\) per container \(c\) for all containers in the cluster \(\mathfrak{C}\) :  
+
+
+\[\sigma (CPU) = \underbrace{\sum_{c\in \mathfrak{C}}\frac{1}{n}\sum_{i = 1}^{n}\gamma_{c,i}}_{\sigma (c)}. \quad (2)\]  
+
+
+### B. Evaluation of recovery strategies  
+
+
+1) AMR navigation use-case: Fig. 6 visualizes the individual parts of the recovery time \(t_{recovery}\) according to Eq. 1 for each recovery strategy. Note that we only compare our recovery strategies against each other without a baseline, as there is - to the best of our knowledge - no other framework (e.g., FogROS2 [14] and KubeROS [15]), that offers the functionality we are proposing in this paper. The closest off-the-shelf Kubernetes counterpart is Stateful Sets [37], which however would require adaptations to the application itself, whereas our solution just uses off-the-shelf ROS2 and K8s tools without requiring application changes.  
+
+
+As Nav2 consists of several components, we investigate different levels of initialization for the recovery strategies involving a fallback workload ranging from just the K8s pod being started, over the Nav2 stack being started, to the fallback container running the localization workload and even the full Navigation stack in parallel. The necessary time \(t_{detection}\) to detect the failure depends on the requirements specified by the user and is set to \(500\mathrm{ms}\) in our experiments for all recovery strategies. The failure mitigation time at cluster level \(t_{cluster}\) shows significant differences among recovery strategies: restarting a container from scratch takes K8s significantly longer (on average 32 times longer) than patching network policies to connect the system to the fallback variant of the failing workload (2.9 s vs. 0.1 s on average). Furthermore, with increasing initialization of the fallback workload, the startup time \(t_{startup}\) and re-initialization time \(t_{reinitialization}\) (green and red bars in Fig. 6 respectively) decrease proportionally. For the fallback workload in full execution mode, application startup is not needed and hence, the startup time collapses to \(t_{startup} = 0\) .  
+
+<center>Fig. 7. Experimental evaluation of failure recovery approaches regarding CPU load. </center>  
+
+
+Fig. 7 visualizes the total average CPU usage \(\sigma (CPU)\) for each recovery strategy with the stacked colored bars representing the mean CPU usage of individual K8s pods containing either the workload instances, i.e., Nav2, or our monitoring and failure mitigation system. As expected, the failure mitigation strategy starting the failing workload from scratch (leftmost bar in Fig. 7) consumes the least resources on average, as there is no fallback container running in parallel to the main workload. The recovery strategies that hold an uninitialized fallback variant of the navigation stack in parallel to the main system consume at least the same resources as the restart from scratch in addition to the resources needed for running the uninitialized fallback workload in parallel. The uninitialized container consumes around \(60\%\) of the resources necessary for the main navigation container. Similarly, the fully initialized fallback navigation stack running in execution mode in parallel consumes the same resources as the main workload. Hence, these recovery strategies are the most- resource hungry among all recovery strategies and additionally require one fallback instance for each monitored workload whereas an uninitialized workload can serve as a fallback for several main workload instances (e.g., in a robot fleet). The additional resources necessary for the monitoring component of our system is (almost) identical for all recovery strategies.  
+
+
+2) Manipulation use-case: Fig. 8 visualizes the recovery time for each failure mitigation strategy. Due to application differences, only a subset of the mitigation strategies from the navigation use case is applicable for manipulation, namely restart from scratch, a fallback workload with just the K8s being started and a fallback workload in full execution mode. As expected, we observe tendencies similar to the AMR navigation use-case: starting the failing workload from scratch is the slowest whereas parallel execution offers the fastest recovery. The resource usage of the recovery strategies for manipulation is similar to the navigation example, hence we omitted a dedicated figure as it offers little additional information over Fig. 7.  
+
+
+### C. Scaling considerations  
+
+
+In Sec. IV- B, we have seen that there is indeed a trade- off between recovery time and necessary computational resources regarding the choice of the failure mitigation strategy. Depending on the task and application of the robotic system, the choice for a suitable recovery strategy might
+
+<--- Page Split --->
+
+
+
+<center>Fig. 8. Navigation: Experimental evaluation of failure recovery approaches regarding necessary time for failure mitigation. </center>  
+
+
+vary. For instance, time- critical tasks involving expensive goods that call for as little down- time as possible and hence are more relaxed regarding additional resource usage will employ a recovery strategy with a fallback workload running in execution mode in parallel to the main workload. On the other extreme, workloads running in a resource- constrained cluster with less strict requirements regarding system- downtime will employ the recovery strategy starting the failing workload from scratch.  
+
+
+Consider a fleet of \(N\) robots and, for simplicity, only one workload per robot to monitor (e.g., navigation) with a failure of this workload causing a system downtime of \(t_S\) depending on the recovery strategy \(S\) . Additionally, let \(I = \{t_1, \ldots , t_N\}\) be a discrete time interval of interest and \(X\) the number of expected failures of the entire fleet within an interval of length \(N\) . To ensure that the expected down- time of the system does not exceed the down- time \(t_S\) of the selected recovery strategy \(S\) , we need to run a sufficient number of fallback workloads. Sufficient means that the probability that more failures than available fallback workloads occur within a time- window \(D_k \subset I\) of length \(t_S\) for \(k = 1, \ldots , N - t_S + 1\) is sufficiently low. Assuming that the probability of a failure occurring at time- step \(t_i\) within the interval \(I\) is equal for all \(i = 1, \ldots , N\) , the number of possible failure occurrences \(f_1, \ldots , f_X\) during the time interval \(I\) is lower than  
+
+
+\[\left(\frac{N + X - 1}{N - 1}\right), \quad (3)\]  
+
+
+because we only count instances with \(f_j \in D_k\) for all \(j = 1, \ldots , X\) for one time- window \(D_k\) . For example, let's assume a (fairly high) failure rate of 1 failure per hour per robot for a fleet of \(N = 1000\) robots, i.e., a total of 1000 failures per hour. Hence, in a time interval \(I\) of \(30 \mathrm{~s}\) , \(\frac{1000}{120} \approx 8.3\) failures occur. By employing 4 fallback instances, the probability of the \(8.3 - 4 \approx 5\) remaining failures to occur within a time- window \(D_k\) of length \(t_S = 6 \mathrm{~s}\) (which is roughly the down- time we measured for navigation for the recovery strategy holding an uninitialized fallback workload), i.e., leading to a longer system- downtime is at \(1.2\%\) . To reduce the down- time by factor 10 compared to the restart from scratch by having one fallback workload in parallel execution mode for all 1000 robots, the CPU usage in turn would be double whereas 4  
+
+
+additional fallback workloads would reduce the down- time by a factor of 2 and only add \(0.4\%\) resource usage compared to the restart from scratch. Hence, a recovery strategy holding an uninitialized fallback workload in parallel offers a good balance between system down- time and additional resource usage. Particularly, for larger robot fleets, the additional compute resources necessary in such a setting is neglectable.  
+
+
+### V. DISCUSSION  
+
+
+### A. Conclusion  
+
+
+In this paper, we presented an application- agnostic, reactive failure mitigation system based on the generic substrate of Behaviour Trees for distributed robotic systems deployed using Kubernetes and ROS2 allowing to preserve the last healthy state prior to the failure. Our approach consists of a robotics- specific workload monitoring system to detect failures either trough introspection, i.e., monitoring system diagnostics and KPIs, and/or through external supervision, i.e., observing the overall system's behaviour with external sensors. Finally, we presented different recovery strategies resulting in a trade- off between system- downtime and demand for computational resources and demonstrated the effectiveness of our approach at two example applications, namely AMR navigation and robot manipulation.  
+
+
+### B. Future Work  
+
+
+Although we believe that our approach is an important step towards making distributed robotic systems deployed with a container management system such as K8s resilient against application failures, there are several options for future work. In this paper, we assumed that the workload to be monitored runs entirely in one container inside K8s. However, the navigation stack for instance, consists of multiple individual workloads such as localization, path planning and trajectory execution that could run in separate containers following a more micro- service- oriented architecture. At the same time, these workloads critically depend on each other in the sense that a failure in the localization module directly affects the functionality of the path planning module. Hence, in a micro- service- oriented software architecture, the monitoring and failure mitigation system needs to take such dependencies into account and act accordingly when mitigating failures. Although our proposed monitoring system is, in principle, able to encode such a hierarchical monitoring system in the substrate of Behaviour Trees, more research and evaluation is necessary to realize it. Additionally, we aim to add monitoring vectors along the lines of our taxonomy as described in Sec. III- 1, for instance, safety- focused monitoring. Finally, we aim to incorporate our monitoring and failure mitigation system in a larger orchestration solution, which is not only able to mitigate failures but also reschedule containers and compute resources in case the monitoring solution detects sub- optimal behaviour of individual workloads above failure- level.
+
+<--- Page Split --->
+
+
+## REFERENCES  
+
+
+[1] L. Abdollahi Vayghan, M. A. Saied, M. Toeroe, and F. Khendek, "Microservice Based Architecture: Towards High- Availability for Stateful Applications with Kubernetes," in 2019 IEEE 19th International Conference on Software Quality, Reliability and Security (QRS), 2019, pp. 176- 185. [2] F. Mirus, F. Pasch, and K.- U. Scholl, "Towards fault- tolerant deployment of mobile robot navigation in the edge: An experimental study," in 41st IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2024, pp. 6791- 6797. [3] M. Colledanchise and P. Ögren, Behavior Trees in Robotics and AI: An Introduction, 1st ed. CRC Press, 2018. [4] B. Kehoe, S. Patil, P. Abbeel, and K. Goldberg, "A Survey of Research on Cloud Robotics and Automation," IEEE Transactions on Automation Science and Engineering, vol. 12, no. 2, pp. 398- 409, Apr. 2015. [5] W. J. Beksi, J. Spruth, and N. Papanikolopoulos, "Core: A cloud- based object recognition engine for robotics," in 2015 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2015, pp. 4512- 4517. [6] A. Rashid, C. M. Kim, J. Kerr, L. Fu, K. Hari, A. Ahmad, K. Chen, H. Huang, M. Gualtieri, M. Wang, C. Juette, N. Tian, L. Ren, and K. Goldberg, "Lifelong LERF: Local 3D Semantic Inventory Monitoring Using FogROS2," in 2024 IEEE International Conference on Robotics and Automation (ICRA), 2024, pp. 7740- 7747. [7] B. Kehoe, D. Warrier, S. Patil, and K. Goldberg, "Cloud- based grasp analysis and planning for tolerated parts using parallelized Monte Carlo sampling," IEEE Transactions on Automation Science and Engineering, vol. 12, no. 2, pp. 455- 470, 2014. [8] M. Zahid and F. T. Pokorny, "CloudGripper: An Open Source Cloud Robotics Testbed for Robotic Manipulation Research, Benchmarking and Data Collection at Scale," in 2024 IEEE International Conference on Robotics and Automation (ICRA), 2024, pp. 12076- 12082. [9] J. Ichnowski, W. Lee, V. Murta, S. Paradis, R. Alterovitz, J. E. Gonzalez, I. Stoica, and K. Goldberg, "Fog robotics algorithms for distributed motion planning using lambda serverless computing," in 2020 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2020, pp. 4232- 4238. [10] M. Groshev, G. Baldoni, L. Cominardi, A. de la Oliva, and R. Gazda, "Edge robotics: are we ready? an experimental evaluation of current vision and future directions," Digital Communications and Networks, May 2022. [Online]. Available: https://www.sciencedirect.com/science/article/pii/S2352864822000888[11] M. Balogh, A. Vidács, G. Fehér, M. Maliosz, M. Á. Horváth, N. Reider, and S. Rácz, "Cloud- Controlled Autonomous Mobile Robot Platform," in 2021 IEEE 32nd Annual International Symposium on Personal, Indoor and Mobile Radio Communications (PIMRC), 2021, pp. 1- 6. [12] S. Chinchali, A. Sharma, J. Harrison, A. Elhafsi, D. Kang, E. Pergament, E. Cidon, S. Katti, and M. Pavone, "Network offloading policies for cloud robotics: a learning- based approach," Autonomous Robots, vol. 45, no. 7, pp. 997- 1012, July 2021. [13] K. Chen, M. Wang, M. Gualtieri, N. Tian, C. Juette, L. Ren, J. Ichnowski, J. Kubiatowicz, and K. Goldberg, "FogROS2- LS: A Location- Independent Fog Robotics Framework for Latency Sensitive ROS2 Applications," in 2024 IEEE International Conference on Robotics and Automation (ICRA), 2024, pp. 10581- 10587. [14] J. Ichnowski, K. Chen, K. Dharmarajan, S. Adebola, M. Danielczuk, V. Mayoral- Vilches, N. Jha, H. Zhan, E. Lontop, D. Xu, C. Buscaron, J. Kubiatowicz, I. Stoica, J. Gonzalez, and K. Goldberg, "FogROS2: An Adaptive Platform for Cloud and Fog Robotics Using ROS 2," in 2023 IEEE International Conference on Robotics and Automation (ICRA), 2023, pp. 5493- 5500. [15] Y. Zhang, C. Wurll, and B. Hein, "KubeROS: A Unified Platform for Automated and Scalable Deployment of ROS2- based Multi- Robot Applications," in 2023 IEEE International Conference on Robotics and Automation (ICRA), 2023, pp. 9097- 9103.  
+
+
+[16] Z. Huang and H. Huang, "Proactive Failure Recovery for Stateful NFV," in 2020 IEEE 26th International Conference on Parallel and Distributed Systems (ICPADS), 2020, pp. 536- 543. [17] P. S. Junior, D. Miorandi, and G. Pierre, "Stateful Container Migration in Geo- Distributed Environments," in 2020 IEEE International Conference on Cloud Computing Technology and Science (CloudCom), 2020, pp. 49- 56. [18] M.- N. Tran, X. T. Vu, and Y. Kim, "Proactive Stateful Fault- Tolerant System for Kubernetes Containerized Services," IEEE Access, vol. 10, pp. 102 181- 102 194, 2022. [19] M. Barletta, M. Cinque, C. D. Martino, Z. T. Kalbarczyk, and R. K. Iyer, "Mutiny! How does Kubernetes fail, and what can we do about it?" 2024. [Online]. Available: https://arxiv.org/abs/2404.11169[20] H. Jiang, S. Elbaum, and C. Detweiler, "Inferring and monitoring invariants in robotic systems," Autonomous Robots, vol. 41, no. 4, pp. 1027- 1046, 2017. [21] Kubernetes. (2024) K8s deployment. [Online]. Available: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[22] (2024) K8s network Policies. [Online]. Available: https://kubernetes.io/docs/concepts/services- networking/network- policies/[23] F. Pasch, F. Mirus, Y. Zhang, and K.- U. Scholl, "Scenario Execution for Robotics: A generic, backend- agnostic library for running reproducible robotics experiments and tests," 2024. [Online]. Available: https://arxiv.org/abs/2409.07080[24] Frederik Pasch and Florian Mirus. (2024) Scenario Execution for Robotics. [Online]. Available: https://github.com/IntelLabs/scenario_execution[25] Association for Standardization of Automation and Measurement Systems (ASAM). (2024) OpenScenario V2.0. [Online]. Available: https://www.asam.net/project- detail/asam- openscenario- v20- 1/[26] Py- trees. (2024) Py- trees. [Online]. Available: https://py- trees.readthedocs.io/en/level/introduction.html[27] N. Koenig and A. Howard, "Design and use paradigms for Gazebo, an open- source multi- robot simulator," in 2004 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) (IEEE Cat. No.04CH37566), vol. 3, 2004, pp. 2149- 2154 vol.3. [28] Open Robotics. (2024) Gazebo. [Online]. Available: http://gazebosim.org/home[29] C. Robotics. (2024) Turtlebot 4. [Online]. Available: https://clearpathrobotics.com/turtlebot- 4/[30] Interbotix. (2024) WidoX- X200. [Online]. Available: https://docs.trossenrobotics.com/interbotix.xsarms_docs/specifications/wx200.html[31] S. Macenski, T. Moore, D. V. Lu, A. Merzlyakov, and M. Ferguson, "From the desks of ROS maintainers: A survey of modern & capable mobile robotics algorithms in the robot operating system 2," Robotics and Autonomous Systems, p. 104493, 2023. [Online]. Available: https://www.sciencedirect.com/science/article/pii/S092188902300132X[32] S. Macenski. (2024) Nav2. [Online]. Available: https://docs.nav2.org/[33] D. Coleman, I. A. Sucan, S. Chitta, and N. Correll, "Reducing the Barrier to Entry of Complex Robotic Software: a MoveIt! Case Study," Journal of Software Engineering for Robotics, vol. 5, no. 1, pp. 3- 16, 2014. [34] I. A. Sucan and S. Chitta. (2024) MoveIt2. [Online]. Available: https://moveit.ros.org/[35] Cadvisor. (2024) CADvisor. [Online]. Available: https://prometheus.io/docs/guides/cadvisor/[36] Kubernetes. (2024) K8s, the meaning of CPU. [Online]. Available: https://kubernetes.io/docs/concepts/configuration/manage- resources- containers/#meaning- of- cpu[37] (2024) K8s Stateful Sets. [Online]. Available: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/

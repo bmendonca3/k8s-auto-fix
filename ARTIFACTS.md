@@ -10,7 +10,7 @@ Key outputs
 - `docs/reproducibility/tables.tex` – LaTeX table snippet
 - `docs/reproducibility/baselines.md` / `baselines.tex` – baseline comparison tables
 - `data/eval/unified_eval_summary.json` – machine-readable evaluation summary
-- `data/baselines/*.csv` – baselines (Kyverno, Polaris, MAP) and LLMSecConfig slice; unified summary in `data/baselines/baseline_summary.csv`
+- `data/outputs/baselines/*.csv` – curated view of the baselines (Kyverno, Polaris, MAP) and LLMSecConfig slice; the canonical files remain in `data/baselines/` (e.g. `data/baselines/baseline_summary.csv`)
 - `data/metrics_risk_throughput.json` – risk-closure throughput with sensitivity analysis
 - `data/corpus_hashes.csv` / `data/corpus_manifest.txt` – corpus ledger with SHA-256 per file
 

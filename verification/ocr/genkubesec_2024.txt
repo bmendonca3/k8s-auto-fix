@@ -1,0 +1,477 @@
+
+# GenKubeSec: LLM-Based Kubernetes Misconfiguration Detection, Localization, Reasoning, and Remediation  
+
+
+Ehud Malul, Yair Meidan, Dudu Mimran, Yuval Elovici, Asaf Shabtai  Department of Software and Information Systems Engineering  Ben- Gurion University of The Negev  
+
+
+## ABSTRACT  
+
+
+A key challenge associated with Kubernetes configuration files (KCFs) is that they are often highly complex and error- prone, leading to security vulnerabilities and operational setbacks. Rule- based (RB) tools for KCF misconfiguration detection rely on static rule sets, making them inherently limited and unable to detect newlydiscovered misconfigurations. RB tools also suffer from misdetection, since mistakes are likely when coding the detection rules. Recent methods for detecting and remediating KCF misconfigurations are limited in terms of their scalability and detection coverage, or due to the fact that they have high expertise requirements and do not offer automated remediation along with misconfiguration detection. Novel approaches that employ LLMs in their pipeline rely on API- based, general- purpose, and mainly commercial models. Thus, they pose security challenges, have inconsistent classification performance, and can be costly. In this paper, we propose GenKubeSec, a comprehensive and adaptive, LLM- based method, which, in addition to detecting a wide variety of KCF misconfigurations, also identifies the exact location of the misconfigurations and provides detailed reasoning about them, along with suggested remediation. When empirically compared with three industry- standard RB tools, GenKubeSec achieved equivalent precision \((0.990 \pm 0.020)\) and superior recall \((0.999 \pm 0.026)\) . When a random sample of KCFs was examined by a Kubernetes security expert, GenKubeSec's explanations as to misconfiguration localization, reasoning and remediation were \(100\%\) correct, informative and useful. To facilitate further advancements in this domain, we share the unique dataset we collected, a unified misconfiguration index we developed for label standardization, our experimentation code, and GenKubeSec itself as an open- source tool. A video demonstrating our implementation of GenKubeSec can be found here: https://youtu.be/hBehYfdR- zM.  
+
+
+## CCS CONCEPTS  
+
+
+- Computing methodologies \(\rightarrow\) Natural language generation;- Security and privacy \(\rightarrow\) Vulnerability scanners.  
+
+
+## KEYWORDS  
+
+
+Large Language Models (LLMs), Infrastructure- as- Code (IAC), DevOps, Kubernetes (K8s), Artificial Intelligence (AI), Static Analysis  
+
+
+## 1 INTRODUCTION  
+
+
+The cloud native computing landscape has undergone a significant transformation, with rapid adoption of container- based environments in a relatively short period of time. Kubernetes (K8s) [56] has emerged as the preferred choice for orchestrating containerized applications, driven by the benefits K8s offers, such as efficiency,  
+
+
+portability, isolation, scalability, and flexibility [20]. The strong community [54] support surrounding containerization technologies has strengthened their leading role in the development ecosystem.  
+
+
+The plethora of K8s configuration files (KCFs) available in public repositories [18] streamlines the creation and deployment of new environments and applications, permitting developers to easily create cloud environments by duplicating open- source KCFs. However, this convenience comes with its own set of challenges. Open- source KCFs, while widely available, may contain undetected bugs, errors, vulnerabilities, and other types of misconfigurations (abbreviated as misconfigs), potentially leaving deployed systems exposed to cyber threats [17, 35, 37, 52, 83, 92]. Moreover, due to the adoption of K8s in a broad variety of production environments, and the accessibility of open- source KCFs, attackers invest significant efforts in identifying KCF misconfigs that can serve as exploitation entry points into clusters or applications [50, 68].  
+
+
+Given the associated risks, powerful tools capable of detecting KCF misconfigs are required. Rule- based (RB) static analysis tools like SLI- Kube [82], Checkov [14], KubeLinter [53], and Terracan [90] are recognized tools for assessing the security of KCFs based on predefined rules. However, due to their static nature, RB tools also struggle with adapting to new misconfigs, primarily due to the need for coding new error- prone detection rules. Recent studies on KCF misconfig detection proposed methods that rely on more innovative approaches, such as knowledge graphs and topological graphs [11, 39]. However, these methods face limitations in scalability, expertise requirements, reliance on high- quality input data, and automated remediation, as elaborated in Secs. 7.2 and 7.3.  
+
+
+Recent advances in large language models (LLMs) have proven highly effective in various application domains [34, 41], including cybersecurity [87, 102], where several studies suggested using LLMs in static analysis tasks [2, 59, 61, 65, 103]. Since KCFs are technically (semi- structured) text files, two studies focused specifically on LLM- based methods for KCF misconfig detection and remediation [60, 69]. These studies, however, have the following limitations: (1) each of them utilized LLMs to solve only a sub- task rather than addressing all of the related challenges from end- to- end, including detection, localization, reasoning, and remediation, (2) they utilized pretrained LLMs which had only undergone basic domain adaptation and not LLMs fine- tuned to the specific task, thus demonstrating limited performance, (3) the inspected files were sent to external LLMs via an API, introducing security (privacy) risks and adding unnecessary overhead, (4) relatively small datasets with small number of misconfig types were used for evaluation, and (5) the experimental results were reported very scarcely, so their performance during future inference cannot be guaranteed.  
+
+
+In light of the need to mitigate KCF- related risks, the limitations of existing RB and graph- based methods, the potential of LLMs, and
+
+<--- Page Split --->
+
+
+the shortcomings and scarcity of research on applying LLMs in KCF misconfig detection and remediation, in this paper we introduce GenKubeSec: a novel and comprehensive LLM- based method which comprises of three key components. In the first component, a substantial set of KCFs is collected, and then labeled and standardized using a unified misconfig index we developed. In the second component, named GenKubeDetect, since general purpose pretrained LLMs performed poorly, a base LLM is optimized and fine- tuned using a large and comprehensive set of labeled KCFs to detect a wide variety of KCF misconfigs (the scope of which continually grows over the course of time). In the third component, named GenKubeResolve, a pretrained LLM is adapted, using prompt engineering and few- shot learning techniques [12, 64, 106], to provide the exact location of each misconfig detected in a KCF by GenKubeDetect, clear explanations in human language, and suggested remediation. Unlike previous studies where LLMs were utilized for either KCF misconfig detection [60] or remediation [69], we propose an end- to- end LLM- based method which addresses both of these aspects. In addition, GenKubeResolve also provides localization and reasoning for each misconfig detected by GenKubeDetect.  
+
+
+In our extensive evaluation, GenKubeDetect achieved detection precision of 0.990 (equivalent to three industry standard RB tools) and recall of 0.999 (superior to any of those tools individually). In addition, manual, expert- based analysis of false misconfig detections made by GenKubeDetect revealed that more than \(83\%\) of these detections were actually correct. This demonstrates the ability of our LLM- based method to generalize and detect misconfigs which are not covered by the rule sets of the three RB tools. These evaluation results were achieved with a relatively lightweight LLM architecture and thus save substantial time and compute. Another benefit is that GenKubeDetect supports KCF misconfig learning both in primary batch mode, as part of fine- tuning, and in ongoing mode, using just a few examples of newly- discovered misconfigs. With GenKubeResolve, based on a random sample of KCFs, a K8s expert validated that all of the localization, reasoning, and remediation suggestions were clear and accurate. A notable advantage of GenKubeSec, is that by relying on local LLMs rather than API- based LLMs, GenKubeSec minimizes security and privacy risks, as it does not expose proprietary KCFs (with potential vulnerabilities) to external entities. To conclude, the contributions of our research are as follows:  
+
+
+To the best of our knowledge, we are the first to propose an endto- end LLM- based method that provides KCF misconfig detection (both known and new), along with localization, reasoning, and remediation. As part of our quantitative evaluation, we developed a unified misconfig index (UMI) of 169 KCF misconfigs to enable standardization among detection tools; this index can be used by the scientific community and industry to further advance research in this area through improved consistency and comparability. We collected a large and diverse set of real- world material from the K8s domain. This dataset includes approximately 700MB of K8s- focused free text, as well as almost 277,000 KCFs which we labeled using the abovementioned UMI. Such datasets are known to be rare [60], and therefore, we make this unique dataset publicly available to enable our research to be reproduced, and to advance research in this area by the scientific community.  
+
+<center>Figure 1: An example of a misconfigured KCF: the container is configured to run with privileged access; this can potentially expose sensitive host information. </center>  
+
+
+- To further facilitate transparency, usability, and benchmarking, we also make our code publicly available via a GitHub repository and make GenKubeSec available as an open-source tool.  
+
+
+## 2 BACKGROUND  
+
+
+### 2.1 K8s and related security challenges  
+
+
+2.1 K8s and related security challenges2.1.1 K8s and KCFs. K8s is the primary container orchestration tool for \(71\%\) of Fortune 100 companies [21, 33]. KCF (also known as a manifest file [55]), refers to any file that defines the configuration of various K8s components [51], and describes how an application or service should be deployed and run within a K8s cluster [57]. KCFs provide a human-readable representation (in a YAML or JSON format) of an application's requirements, enabling reproducible deployment and consistent application behavior. KCFs are essential building blocks in containerized and cloud-native architectures, enabling developers and operators to define, manage, and scale applications effectively.  
+
+
+2.1.2 KCF misconfigs and vulnerabilities. The complexity associated with configuring KCFs mainly stems from the inter- dependencies among the large variety of configuration parameters [86]. This complexity can lead to misconfigs in KCFs. A KCF misconfig (see example in Fig. 1) is the result of the incorrect configuration of system components. Such misconfig can lead to security vulnerabilities and affect system workload, integrity, and performance. KCF misconfigs can occur at the edge, application, or cluster level, allowing attackers to exploit containers and hosts. They can also occur with parameters affecting resource allocation, networking, security policies, and more. These misconfigs can have far- reaching consequences, resulting in application downtime, performance bottlenecks, and resource wastage. KCF misconfigs may also lead to non- compliance with industry regulations and data protection laws [58]. According to a CNCF report from 2022 [19], KCF misconfigs are the biggest security threat when using K8s. This report also states that \(94\%\) of companies that use K8s encountered a security vulnerability. Another study [9] revealed that \(100\%\) of 10,000 checked clusters had misconfigs, and \(65\%\) had at least one high- severity misconfig.  
+
+
+### 2.2 Large language models  
+
+
+2.2 Large language modelsLLMs represent a significant advancement in natural language processing (NLP), enhancing machines' ability to understand and generate human- like language. Utilizing deep learning (DL) techniques and extensive textual datasets, LLMs excel in tasks like sentiment
+
+<--- Page Split --->
+
+
+
+<center>Figure 2: Overview of GenKubeSec. This method includes a data preprocessing component (a), in which a unified miscongf index (UMI) is created, and KCFs are labeled and encoded; the GenKubeDetect component (b) in which an LLM for KCF structure understanding and miscongf detection is trained; the GenKubeResolve component (c) in which a pretrained LLM with prompt engineering and few-shot learning is used for localization, reasoning, and remediation of identified miscongfis. </center>  
+
+
+analysis [62] and text generation and translation [105]. Contemporary pretrained LLMs, which continuously evolve and increase in size and sophistication, can be adapted for specialized domains [36] using, e.g., fine- tuning and continual learning, as described next.  
+
+
+Fine- tuning a pretrained LLM involves additional training focused on specific objectives, like aligning model outputs with user intent, generating ethical and accurate responses, and improving performance on particular tasks. This process not only enhances the model's ability to understand and respond to task- specific instructions but also makes it more robust to domain shifts, without significantly increasing computational costs. Fine- tuning methods vary and include transfer learning with task- specific data, instruction- tuning using formatted data, and alignment- tuning to align model outputs with human values. These approaches ensure that LLMs operate effectively in varied and specific contexts [71].  
+
+
+Continual learning (CL) [101] is a pivotal aspect of modern machine learning (ML). CL enables systems to gradually learn and integrate diverse contents or skills via an additional step of training, using newly- acquired data. This approach is essential for developing robust and adaptable ML systems capable of responding to changing demands and incorporating new knowledge efficiently [95]. In the context of domain adaptation, CL enhances an LLM's ability to balance the retention of original domain knowledge with learning from the targeted domain distribution [4, 71, 89], ensuring effective adaptation without 'catastrophic forgetting' [30, 67]. Moreover, CL maintains computational efficiency during domain- adaption [84]. Employing techniques like next sentence prediction (NSP) which help the model maintain context and coherence between sequences, and masking, which focuses the model's attention on relevant parts of the input [7, 23], along with unsupervised learning [93, 99], enhance LLMs' comprehension and response capabilities.  
+
+
+## 3 PROPOSED METHOD  
+
+
+In this paper, we propose GenKubeSec: a novel LLM- based method for KCF miscongf detection, localization, reasoning, and remediation, aimed at mitigating KCF- related K8s security vulnerabilities. Our method consists of three components. Initial data preprocessing is performed in the first component, and LLMs are used in the other two components as follows: The GenKubeDetect component is trained (fine- tuned) to detect any miscongfis that may exist in a given KCF, serving as an advanced, LLM- based alternative to existing rule- and graph- based tools and methods (described in Sec. 7.2). The GenKubeResolve component, which is based on a pretrained LLM and specifically crafted prompts, is trained to provide localization, reasoning, and remediation suggestions for each miscongf detected by GenKubeDetect.  
+
+
+### 3.1 Data preprocessing component  
+
+
+3.1.1 Creating a unified miscongf index. Given the large number of KCF miscongf types that can be detected by various tools, recent studies [38, 69] stressed the need for miscongf label standardization. To address this need, we created a unified miscongf index (UMI). Our UMI consists of multiple, consistently- formatted, unique miscongf class labels. That is, if a certain miscongf was annotated differently in various sources, whether described differently in text or using different miscongf IDs, the UMI maps all of the variations of the miscongf to a single ID (i.e., label). In addition to being useful in our research, the UMI can facilitate the development of effective solutions and their comparison.  
+
+
+The first step in creating the UMI involved collecting as many policies and detection rules as possible from multiple reliable resources, which in our case were the three RB KCF miscongf detection tools: Checkov, KubeLinter, and Terrascan. In the second step, an LLM was employed for entity matching [76, 77] using prompt engineering (see Fig. 2. a); the entity matching prompt structure is
+
+<--- Page Split --->
+
+
+presented in Appendix A. Manual inspection of the entity matching results was then performed, to verify their correctness; this was followed by manual adjustments when needed. Entries in the UMI (each of which represents a KCF misconfig) are formatted as the combination of a numerical <misconfig_ID> \(\in (0,1,2,\ldots)\) and a textual <misconfig_description>, for example, (9, 'Default namespace should not be used'). The UMI we developed can be found in our GitHub repository.  
+
+
+3.1.2 Collecting and labeling KCFs. To train the LLMs used in GenKubeDetect and GenKubeResolve, we collect a large and diverse set of KCFs. We annotate this raw dataset of unlabeled KCFs as \(DS_{unlabeled}\) (see Fig. 2. a). Then, to create \(DS_{labeled}\) , we associate ground- truth misconfig labels to the KCFs in \(DS_{unlabeled}\) using Checkov, KubeLinter, and Terrascan (which the UMI is based on). We opted to use three detection tools due to the limitations of RB detection methods. Nonetheless, \(DS_{labeled}\) may still consist of some undetected misconfigs that are not covered by the unified rule sets of the three RB tools. In practice, when any of these tools detects a misconfig for a KCF in \(DS_{unlabeled}\) , the detected misconfig is mapped to its corresponding UMI misconfig_ID and replaced by a pair of values formatted as (<impact_K8s_resource>+<misconfig_ID>), e.g., 'app+52' (see full example in Appendix B). We consider each pair of such values as an encoded label. Encoding (compressing) the class labels decreases the overall size of labeled KCFs, such that (1) higher coverage is provided by LLMs that impose size limits, (2) training is accelerated, and (3) fewer misclassifications are likely to occur, as shorter class labels are easier for the LLM to (re-)generate.  
+
+
+### 3.2 The GenKubeDetect component  
+
+
+The GenKubeDetect component of GenKubeSec, is a fine- tuned LLM which specializes in detecting KCF misconfigs. Specifically, given a KCF as input, GenKubeDetect's main goal is to use an LLM in order to generate a list of detected misconfigs, formatted as the encoded labels described above. We achieve this goal by selecting a base LLM (which is preferably pretrained on English semi- structured data to resemble the hierarchical textual format used by KCFs) and fine- tuning it for the task of misconfig detection. Fine- tuning the LLM is performed in two stages: (1) adapting it so that it 'understands' the general structure of KCFs, and (2) further adapting it so that it can detect misconfigs in KCFs.  
+
+
+3.2.1 Adapting the base LLM for KCF structure understanding. To familiarize GenKubeDetect's LLM with the specific structure of KCFs, it is fine- tuned using the \(DS_{contextual}\) dataset (Fig. 2. b). \(DS_{contextual}\) is constructed by applying two techniques on \(DS_{unlabeled}\) , namely masking and NSP (see Sec. 2.2). Masking is randomly applied to \(15\%\) of each KCF (we chose to mask \(15\%\) , as this is typically done in similar cases [23, 66, 81]). Using NSP, GenKubeDetect is trained to predict the second half of a KCF based on its first half. This first stage of the fine- tuning process enables the LLM to recognize and interpret the details and dependencies inherent in KCFs, thereby enhancing its ability to perform subsequent domain- specific tasks (such as misconfig detection) with greater accuracy and efficiency. The output of this stage is the structural LLM (shown in Fig. 2. b).  
+
+
+3.2.2 Fine- tuning the structural LLM for KCF misconfig detection. Once specialized on the structure of KCFs, the structural LLM is further fine- tuned using \(DS_{labeled}\) , enabling it to function as a multilabel classifier; thus, given a KCF as input during inference, the LLM will generate text that serves as the predicted class labels of (zero or more) detected misconfigs. To enhance this process, we used Low- Rank Adaptation (LoRA) [40, 42]. LoRA is a technique that allows fine- tuning a subset of parameters within a large pre- trained model by decomposing a large matrix into two smaller low- rank matrices in the attention layers, while keeping the original weights unchanged. This makes the process more efficient, as it requires fewer resources and allows for faster convergence without the need to retrain the entire model from scratch. LoRA preserves the integrity of the original model's weights, maintaining its knowledge and capabilities while adapting to specific tasks or datasets. The output of this stage is the KCF expert LLM (shown in Fig. 2. b).   
+
+
+### 3.3 The GenKubeResolve component  
+
+
+Given a KCF as input, GenKubeDetect is trained to generate (possibly multiple) detected misconfig labels, each in the previously mentioned encoded format, e.g., 'app+52'. Then, to expand GenKubeSec's capabilities further, for each misconfig detected by GenKubeDetect, GenKubeResolve is trained to generate (1) the exact location of the misconfig, (2) reasoning regarding the nature or cause of the detected misconfig, and (3) recommended remediation steps. To accomplish this, in the first stage of this component we decode and split the class labels, and in the second stage we adapt a pretrained LLM using prompt engineering techniques, as described below.  
+
+
+3.3.1 Decoding and splitting. In the first stage of GenKubeResolve, the encoded labels are decoded (see Fig. 2. c) and then split into pairs of (inspected_KCF, decoded_label). In practice, we replace the misconfig_ID in each encoded label with the associated misconfig_description from the UMI (see Appendix B); this provides the LLM with much more contextual information, enabling it to respond more accurately. The subsequent splitting (illustrated in Fig. 2. c) performed at this point is aimed at preventing the LLM from being 'confused' due to an overabundance of misconfigs in the same KCF. Moreover, label splitting enables this component to provide localization, reasoning, and remediation suggestions for each misconfig separately.  
+
+
+3.3.2 Adapting an LLM for localization, reasoning, and remediation. The task of detecting a large variety of K8s misconfigs performed by GenKubeDetect is an extremely specific task for a general- purpose pretrained LLM, (as reflected by the experimental results in Sec. 5.1). This is why we chose to implement GenKubeDetect using fine- tuning techniques; these techniques, however, impose significant overhead. In contrast, preliminary experimentation with GenKubeResolve showed that for the task of providing localization, reasoning, and remediation for detected KCF misconfigs, fine- tuning is not essential. Instead, we decided to adapt a pretrained LLM for this task, using few- shot learning techniques (which provide the LLM with favorable relevant examples as part of in- context learning [12, 64, 106]) and prompt engineering techniques. An illustration of this process can be found in Fig. 2. c, while prompt examples are provided in Appendix C.  
+
+
+The base model we chose for GenKubeResolve is a pretrained Mistral LLM. It was chosen due to its superior recall and F1- score
+
+<--- Page Split --->
+
+
+(abbreviated as F1) in our preliminary experiments (Sec. 5.1), the fact that it is one of the best open- source LLMs available [46], and the ability to use it locally, free of charge. Local use of Mistral ensures that, unlike web- based pretrained LLMs, no KCF data is exposed to external APIs. Using a local LLM also accelerates operation by eliminating the delays and complexities of API calls.  
+
+
+To specialize Mistral for localization, reasoning, and remediation, we optimized a system prompt which, based on a provided KCF and a miscongf detected in it, instructs Mistral to return the exact line number of the miscongf, the logic behind the detection, and suggestions on how to fix the miscongf. To enhance Mistral's performance, we augmented this system prompt with a few examples of KCFs, detected miscongf, and expected output (i.e., few- shot learning). The system prompt we optimized and an inference example for GenKubeResolve are presented in Appendix C.  
+
+
+## 4 EVALUATION METHOD  
+
+
+### 4.1 Experimental setup  
+
+
+Throughout our quantitative evaluation we used the Python programming language. The Hugging Face transformers library [100] served as the primary source for training and utilizing state- of- theart LLMs (see the complete code in the project's GitHub repository). For heavy- lifting computing, mainly during the LLM fine- tuning step, we used NVIDIA RTX 4090 [74] and RTX 6000 [75] Ada GPUs.  
+
+
+To create our UMI (Sec. 3.1.1), we began by performing targeted web crawling of the online documentation (i.e policy indexes) of three open- source RB tools, namely KubeLinter, Checkov, and Terracan, which are industry standards [24, 28]. We then utilized OpenAI's GPT- 4 for entity matching, and establishing in a UMI of 170 standardized unique miscongf, one of which was used for KCFs where no miscongf was identified.  
+
+
+To produce \(DS_{unlabeled}\) , we collected 276,520 unlabeled KCFs from the K8s Manifest Subset [88], recently released by 'The Stack' [48]. In order to associate ground- truth labels to each KCF in \(DS_{unlabeled}\) , we utilized the three open- source RB tools mentioned earlier (KubeLinter, Checkov, and Terracan), resulting in \(DS_{labeled}\) .  
+
+
+### 4.2 Data partitioning and performance metrics  
+
+
+To compare the performance of various KCF miscongf detectors, whether rule- or LLM- based, we randomly split \(DS_{labeled}\) into fixed training (80%), validation (10%), and test (10%) sets. We compared their performance using the common classification metrics of precision, recall, and the F1, weighted by the occurrence of the various KCF miscongf in the test set. For convenience, in the remainder of the paper the terms precision, recall, and F1 represent the weighted precision, weighted recall, and weighted F1, respectively. To compute the value of these classification performance metrics, we define their building blocks as follows:  
+
+
+True positives (TPs): Instances where both the LLM and at least one RB tool correctly detected a miscongf.  
+
+
+False positives (FPs): Instances where the LLM erroneously detected a miscongf that was not recognized by any of the RB tools. Note that due to the fact that RB detectors are limited by their given set of rules, it might be the case that a FP is actually a detection of a variant of a known miscongf, such that it does not entirely match any of the coded detection rules.  
+
+
+False negatives (FNs): Instances where a miscongf was overlooked by the LLM but detected by one of the RB tools.  
+
+
+True negatives (TNs): Instances in which there was consensus between the LLM and the RB tools as to the absence of miscongf.  
+
+
+## 5 EXPERIMENTAL RESULTS  
+
+
+### 5.1 Investigating pretrained LLMs  
+
+
+The first experiment aimed to answer the following question: Are existing pretrained LLMs sufficient for detecting miscongf in KCFs? To answer this question we experimented with four state- of- theart pretrained LLMs: GPT- 4- Turbo [1, 13], Gemini 1.0 Pro [32, 79], Claude 3 Sonnet [5, 6], and Mistral- 7B- Instruct- v0.2 [46, 70]. Currently these models can be used via online chat or API calls but cannot be fine- tuned, so we relied on prompt engineering and few- shot learning [12, 64, 106]. First, we created a fixed few- shot training set by randomly sampling 10 labeled KCFs (the number of labeled KCFs is based on Gemini's maximum allowed input size (in tokens)). To increase variety, we ensured that each of the 10 KCFs had at least two miscongf labels. The same few- shot training set was used with each pretrained LLM. Similarly, the same test set (consisting of 30 randomly sampled test KCFs with the same 39 miscongf found in the training set) was used to evaluate the LLMs' performance. The prompt we used in this evaluation is presented in Appendix D).  
+
+
+As can be seen in Fig. 3, our experiment with the pretrained LLMs yielded unsatisfactory results: the highest precision, recall, and F1 values obtained were around 0.81, 0.45, and 0.51, respectively. Based on this, we conclude that the task of detecting miscongf in KCFs might be too narrow for a pretrained general- purpose LLM (as concluded in past studies [15, 16]) and the ability to realize LLMs' potential in this area might require more than the use of a limited set of labeled KCFs in a few- shot learning scheme. In Fig. 3 we can also see that the recall obtained with Mistral is much higher than that achieved by the other pretrained LLMs, while its precision is lower. In classical ML settings, a combination of low precision and high recall typically indicates a classification threshold that is too low [22], i.e., the ML model predicts too many positive labels. However, in our LLM settings, we found that Mistral tends to generate responses that are 2- 3 times longer than those of the other LLMs, possibly due to the internal configuration of hyperparameters. In our use case, longer responses necessarily means higher positive miscongf detections (and descriptions), some of which are TPs while others are FPs, resulting in the low precision and high recall obtained by Mistral.  
+
+
+### 5.2 Selecting the modeling architecture and base model  
+
+
+Given the results obtained in the previous experiment and the need to achieve better performance and broader miscongf coverage, in this subsection, we explore the use of dedicated open- source LLMs with different architectures. These LLMs are optimized and fine- tuned for our task of miscongf detection in KCFs.  
+
+
+We considered three popular LLM architectures: the encoder- only, decoder- only, and encoder- decoder [23, 80, 94]. Among them, we expected the encoder- decoder architecture to be the most suitable for our use case, because (1) the encoder- only architecture
+
+<--- Page Split --->
+
+
+
+<center>Figure 3: Performance of the pretrained LLMs using few-shot learning for misconfig detection. </center>  
+
+Table 1: Performance with various LLM architectures   
+
+<table><tr><td>Base model</td><td>Architecture</td><td>Precision</td><td>Recall</td><td>F1</td></tr><tr><td>BigBird [104]</td><td>Encoder-only</td><td>-</td><td>-</td><td>-</td></tr><tr><td>CodeLlama [85]</td><td>Decoder-only</td><td>-</td><td>-</td><td>-</td></tr><tr><td>CodeGen [73]</td><td>Encoder-only</td><td>0.982±0.040</td><td>0.574±0.199</td><td>0.705±0.168</td></tr><tr><td>LED [10]</td><td>Encoder-decoder</td><td>0.976±0.035</td><td>0.265±0.248</td><td>0.368±0.256</td></tr><tr><td>CodeT5p 770M [97]</td><td>Encoder-decoder</td><td>0.987±0.023</td><td>0.997±0.018</td><td>0.992±0.018</td></tr><tr><td>CodeT5p 6B [97]</td><td>Encoder-decoder</td><td>0.902±0.068</td><td>0.390±0.015</td><td>0.545±0.026</td></tr></table>  
+
+
+exels in context understanding [44], (2) the decoder- only architecture is well suited for generating tokens [43], and (3) the encoder- decoder architecture performs well at both understanding the context and generating appropriate tokens [45]. Recently, the superiority of the encoder- decoder architecture in a code understanding and completion task was demonstrated [98]; our use case is similar in that (1) a KCF has to be well understood by the LLM, and (2) LLM completion is then used to generate appropriate misconfig labels.  
+
+
+To identify the most promising LLM architecture and base model for KCF misconfig detection, we experimented with several open- source LLMs with the abovementioned architectures (i.e., encoder- only, decoder- only, and encoder- decoder). For efficiency, we finetuned each of the LLMs using a stratified random sample of 68,997 labeled KCFs, which represent \(30\%\) of the total 229,989 labeled KCFs that comply with the LLMs' token limits. Of these, \(85\%\) were allocated for training and \(15\%\) for validation. To enable comparison across our experiments, from this point onwards we utilized the same test set defined in Sec. 4.2 (which comprises 22,987 instances that comply with the token limits). As can be seen in Table 1, BigBird (encoder- only) and CodeLlama (decoder- only) failed to converge after fine- tuning, i.e., their output (generated text that serves as KCF labels) did not match the desired misconfig labels, thus we were unable to calculate the metrics for them. In contrast, the other LLMs (which were mainly encoder- decoders, as expected) demonstrated adaptability to the designated task: their output gradually resembled the misconfig labels from the training set, and they managed to obtain noteworthy precision.  
+
+
+Of the evaluated encoder- decoder base models, we chose to proceed with CodeT5p 770M (trained for code understanding and completion [97], which is closely related to our domain), as it obtained the best performance. Also, compared to other encoder- decoder base models, such as the evaluated CodeT5p 6B, it is smaller and thus more affordable in terms of resources and training time. However, one shortcoming of CodeT5p 770M is its upper bound of 512 tokens. In \(DS_{labeled}\) , about \(83\%\) of the 276,785 instances are less than 512 tokens. These 229,989 KCFs and labels, were used in our experiments. The rest of our experiments were conducted using the CodeT5p 770M base model only, and the dataset of 229,989 KCFs which are short enough for this base model.  
+
+
+### 5.3 Selection of data sources for fine-tuning  
+
+
+To identify the most effective combination of data sources for fine- tuning, we experimented with three data sources:  
+
+
+- Labeled KCFs: As in any classification task, model training requires labeled instances which in our use case are KCFs paired with their misconfigs (Sec. 3.1.2).- Unlabeled KCFs: This data source was included as a potential of enhancing the model's ability to understand the typical structure and patterns inherent in KCFs in general (see Sec. 3.1).- Free text: This dataset which comprises 232 documents (700MB) obtained by targeted web crawling, includes various K8s-related material, such as the CIS Benchmarks [17], authoritative literature, and official documentation [26, 47]. This dataset is available in our github repository. It was included as a potential means of broadening GenKubeDetect's comprehension of K8s-specific language and concepts. For that, we explored the use of domain adaptation strategies utilizing CL methods, including techniques such as next sentence prediction (NSP) and masking (see Sec. 2.2).  
+
+
+To identify the optimal data sources and training pipeline that maximize model performance via fine- tuning, we trained four distinct models using the CodeT5p 770M base model. In each setup, the labeled KCFs are used in the last fine- tuning step. As the results presented in Table 2 show, first using unlabeled KCFs and then labeled KCFs resulted in the best performance (maximum mean and/or minimum standard deviation of precision, recall, and F1). This suggests that preliminary exposure to the general structure of KCFs, followed by pairs of KCFs and their misconfig labels, slightly improves the model's ability to detect misconfigs, compared to fine- tuning using labeled KCFs only. Conversely, the introduction of free text appeared to degrade performance slightly, potentially due to its unstructured nature conflicting with the LLM's intended structured inputs (i.e., KCFs). Therefore, it was not included in our proposed method (Sec. 3), which also saves significant amount of time in training (fine- tuning) the model. Notably, adding unlabeled KCFs to free text resulted in improved performance compared to fine- tuning without unlabeled KCFs. Still, it is evident that the best performance (with minimal input overhead) is achieved when fine- tuning is performed using only KCFs, both unlabeled and labeled.  
+
+
+### 5.4 Comparison to existing RB tools  
+
+
+Having selected the encoder- decoder as our architecture (Sec. 5.2), CodeT5p 770M as our base model (Sec. 5.2), and the combination of unlabeled and labeled KCFs as our data sources (Sec. 5.3), we
+
+<--- Page Split --->
+
+
+
+Table 2: Performance of GenKubeDetect models fine-tuned using various combinations of data sources   
+
+<table><tr><td>Data sources</td><td>Precision</td><td>Recall</td><td>F1</td></tr><tr><td>Labeled KCFs</td><td>0.983±0.026</td><td>0.995±0.043</td><td>0.989±0.039</td></tr><tr><td>Unlabeled KCFs → labeled KCFs</td><td>0.984±0.027</td><td>0.995±0.037</td><td>0.989±0.035</td></tr><tr><td>Free text → labeled KCFs</td><td>0.979±0.031</td><td>0.988±0.059</td><td>0.982±0.058</td></tr><tr><td>Free text → unlabeled KCFs → labeled KCFs</td><td>0.983±0.027</td><td>0.995±0.049</td><td>0.988±0.048</td></tr></table>  
+
+
+conducted experiments for hyperparameter tuning, such as the learning rate and the weight decay. We restricted the LoRA adaptation [40] to \(12.5\%\) , \(r = 128\) , and LoRA_alpha \(= 256\) . The complete list of the tuned hyperparameters used to assess the performance of our method is provided in our GitHub repository.  
+
+
+Using the optimized hyperparameters and the same training set (comprised of unlabeled KCFs followed by labeled KCFs), we retrained GenKubeDetect's LLM and evaluated it on the test set. The results of our evaluation of its performance, along with that of industry- standard RB tools for KCF misconfig detection (KubeLinter, Checkov and Terracan), are presented in Table 3. To ensure a fair comparison, each RB tool was evaluated for its ability to detect the specific subset of misconfigs it is designed to identify. This approach highlights each tool's strengths without penalizing the tools for undetected misconfigs that fall outside their configured rules. We also evaluate the performance of an ensemble of the three tools (referred to as RB- Ensemble), which covers all of the misconfig subsets they address; this serves as a benchmark for the maximum detection capabilities available.  
+
+Table 3: Performance of various tools for KCF misconfig detection: GenKubeDetect vs. individual industry-standard RB tools vs. an ensemble of these RB tools   
+
+<table><tr><td>Tool</td><td>Precision</td><td>Recall</td><td>F1</td><td>#Labels</td></tr><tr><td>GenKubeDetect</td><td>0.990±0.020</td><td>0.999±0.026</td><td>0.994±0.027</td><td>169</td></tr><tr><td>KubeLinter</td><td>1.0±0.0</td><td>0.827±0.355</td><td>0.837±0.351</td><td>55</td></tr><tr><td>Checkov</td><td>1.0±0.0</td><td>0.851±0.316</td><td>0.866±0.319</td><td>121</td></tr><tr><td>Terracan</td><td>1.0±0.0</td><td>0.587±0.471</td><td>0.599±0.474</td><td>41</td></tr><tr><td>RB-Ensemble</td><td>1.0±0.0</td><td>1.0±0.0</td><td>1.0±0.0</td><td>169</td></tr></table>  
+
+
+As seen in Table 3, compared to each RB tool, GenKubeDetect demonstrates superior capabilities on the recall and F1 metrics, with precision that is essentially equivalent. Moreover, GenKubeDetect's demonstrated ability to detect a larger amount of KCF misconfigs (169 in total) than any of the evaluated RB tools individually, reflects its comprehensiveness and applicability. Unlike RB tools that are confined to a limited number of specific misconfigs and achieve perfect precision but low recall, GenKubeDetect's approach enables it to identify a large amount of both common and rare misconfigs across various scenarios, with high precision and high recall.  
+
+
+### 5.5 GenKubeDetect error analysis  
+
+
+In order to better understand GenKubeDetect's FPs (shown in Table 3), we manually inspected them with the help of a K8s security expert. FP misconfigs appeared in 563 KCFs in the test set (note that a KCF may contain one or more misconfigs). Since we could not manually inspect all of these KCFs, we randomly sampled 100 of them, which contain 489 FPs. Our K8s expert thoroughly examined these KCFs and found that \(408 / 489 = 83.44\%\) of the FP misconfigs were actually TPs. These results indicate that GenKubeDetect's precision is actually higher than shown in Table 3. This also means that GenKubeDetect succeeded in effectively generalizing its knowledge base, providing correct insights that surpass the conventional ground truth in its field, set by the ensemble of three industry- standard RB tools. More specifically, GenKubeDetect succeeded in detecting misconfigs that were not caught by any of the RB tools, since they were variations of detection rules and thus didn't entirely fit any coded rule.   
+
+
+Appendix E provides examples of two cases of misconfig detections provided by GenKubeDetect that were initially categorized as FPs and later determined by the K8s expert to actually be TPs. For each of these two examples, we present the relevant section of the KCF along with a brief description of the misconfig detected by GenKubeDetect but missed by the RB ensemble. A possible reason for GenKubeDetect's advantage over the RB tools in detecting such misconfigs may stem from both the inherent complexity of KCFs and the advanced capabilities of LLMs; the latter enables the models to learn complex representations of input data [96], thereby enhancing the ability to identify subtle misconfigs that other non- LLM- based tools might miss. LLMs' capacity to generalize from large datasets [72] may also contribute to their effectiveness in diverse and complex environments such as KCFs.  
+
+
+### 5.6 Training set's size  
+
+
+To characterize GenKubeDetect's learning curve with respect to the size of its training set, we incrementally increased the training set's size, ranging from 50 to 2,000 misconfig instances for each misconfig label. In cases in which there was a limited quantity of instances for a misconfig, all available instances were used. Each time, we fine- tuned GenKubeDetect from scratch, using the optimized hyperparameters described throughout this section, and evaluated its performance using the same test set used thus far.  
+
+
+As can be seen in Fig. 4, GenKubeDetect's performance metrics increase rapidly from 0 to around 250 instances and then reach a plateau, converging when there are approximately 1,250 instances from each misconfig label. It is important to note that while larger high- quality datasets typically contribute to better model generalization and performance in the realm of DL in general, and LLM specifically [3, 27, 91], the rate of improvement decreases, eventually becoming marginal. Thus, while our identified threshold of 250 misconfigs instances serves as an effective minimum, larger datasets may still offer incremental benefits.  
+
+
+### 5.7 Adaptation to new misconfigs  
+
+
+The set of known KCF misconfigs is likely to expand occasionally (mainly when a new configuration- related vulnerability is discovered). To prevent exploitation of a newly- discovered misconfig, detection tools must be adaptable. Traditionally, such adaptation has relied on programmers' in- depth understanding of the detection tool's source code, K8s proficiency, and ability to develop new detection rules or methods to identify the new misconfigs. This process of adaptation to newly- discovered misconfigs is time- consuming and burdensome, which limits the responsiveness of RB tools. In
+
+<--- Page Split --->
+
+
+
+<center>Figure 4: Learning curve analysis for GenKubeDetect based on incremental increases in the training set's size. </center>  
+
+
+contrast, with an LLM- based detection method like ours, all that is needed is further fine- tuning of the trained LLM using a small set of KCFs labeled with the newly- discovered misconfig.  
+
+
+Algorithm 1 Empirical assessment of GenKubeSec's adaptability.  
+
+
+Require: \(DS_{fixed}^{adaptation},LLM_{trained},DS_{test}^{test}\) 1: \(M\leftarrow (51,97,103,139,140)\) 2: \(S\leftarrow (1,2,5)\) 3: for each \(m\in M\) do 4: for each \(s\in S\) do 5: for each \(i\in (1,2,\ldots ,10)\) do 6: \(DS_{m,s,i}^{adaptation}\leftarrow DS_{fixed}^{adaptation}\cup KCF_{- sample}(m,s,i)\) 7: \(LLM_{m,s,i}\gets fine\_ tune(LLM_{trained}^{trained},DS_{m,s,i}^{adaptation})\) 8: \(precision_{m,s,i},recall_{m,s,i}\gets evaluate(LLM_{m,s,i},DS_{test}^{test})\) 9: end for 10: return Meanprecision \(m,s,i\) ),St.Dev.(precision \(m,s,i\) 11: return Mean(recall \(m,s,i\) ),St.Dev.(recall \(m,s,i\) 12: end for 13: end for  
+
+
+To empirically assess GenKubeDetect's ability to adapt to new misconfigs, we devised an experiment (outlined in Alg. 1) in which we intentionally omitted a set of five randomly selected misconfig_IDs, denoted as \(M\) , from the training set. These omitted misconfig_IDs simulate newly- discovered misconfigs, unseen during training. GenKubeDetect's LLM (denoted as \(LLM_{trained}^{trained}\) ), which was trained without any \(M\) - labeled KCFs, simulates an operational detector that is required to adapt as quickly and accurately as possible. We used the same test set as before (denoted as \(DS_{test}^{test}\) ), however to expedite the multiple sub- experiments described next we only used \(30\%\) of the data to train and fine- tune \(LLM_{trained}^{trained}\) , as described in Sec. 5.2. For each misconfig_ID \(m\in M\) and sample size \(s\in (1,2,5)\) , in each iteration \(i\in (1,2,\ldots ,10)\) we took a random sample of \(s\) KCFs labeled with the 'new' misconfig_ID \(m\) . This sample, denoted as \(KCF_{- sample}(m,s,i)\) , was then merged with a randomly sampled fixed set of \(50\) 'old' KCFs (denoted as \(DS_{fixed}^{adaptation}\) ), resulting in an adaptation dataset \(DS_{m,s,i}^{adaptation}\) comprised of labeled KCFs of both old and new misconfig labels. This approach was chosen to prevent the fine- tuned model in each iteration \(LLM_{m,s,i}\) from being biased towards the new misconfig_ID \(m\) . After each iteration, defined by the unique combination of \(m\) , \(s\) , and \(i\) , the precision and recall of \(LLM_{m,s,i}\) were evaluated using \(DS_{test}^{test}\) . Then, for each combination of \(m\) and \(s\) , the mean and standard deviation of the precision and  
+
+
+recall were calculated. The results of this experiment are presented in Table 4.  
+
+Table 4: GenKubeDetect's precision and recall for selected misconfig_IDs \((m)\) as a function of the size of the sample \((s)\) in fine-tuning (left side) or the size of the training set in full training (right side).   
+
+<table><tr><td></td><td colspan="3">Fine-tuning (for adaptation)</td><td colspan="2">Full training</td></tr><tr><td></td><td>m</td><td>s=1</td><td>s=2</td><td>s=5</td><td>30% data</td></tr><tr><td rowspan="4">Precision</td><td>51</td><td>0.083±0.180</td><td>0.444±0.416</td><td>0.445±0.113</td><td>1</td></tr><tr><td>97</td><td>0.433±0.498</td><td>0.263±0.404</td><td>0.366±0.090</td><td>0.579</td></tr><tr><td>103</td><td>0.475±0.506</td><td>0.817±0.317</td><td>0.857±0.000</td><td>1</td></tr><tr><td>139</td><td>0.875±0.317</td><td>0.944±0.118</td><td>0.943±0.074</td><td>1</td></tr><tr><td rowspan="4">Recall</td><td>140</td><td>0.994±0.013</td><td>0.951±0.046</td><td>0.942±0.040</td><td>0.967</td></tr><tr><td>51</td><td>0.005±0.010</td><td>0.048±0.054</td><td>0.256±0.153</td><td>1</td></tr><tr><td>97</td><td>0.042±0.044</td><td>0.083±0.096</td><td>0.467±0.143</td><td>0.917</td></tr><tr><td>103</td><td>0.167±0.208</td><td>0.574±0.374</td><td>1</td><td>1</td></tr><tr><td rowspan="2">Recall</td><td>139</td><td>0.417±0.180</td><td>0.685±0.242</td><td>1</td><td>1</td></tr><tr><td>140</td><td>0.826±0.103</td><td>0.956±0.045</td><td>0.969±0.076</td><td>1</td></tr></table>  
+
+
+Table 4 shows a promising learning curve in the context of GenKubeDetect's ability to quickly and accurately adapt to newly- discovered KCF misconfigs. The empirical results show that to achieve a precision level of 0.8 or more, only two m- labeled KCFs (i.e., \(s = 2\) ) are required in \(60\%\) of cases and just one m- labeled KCF is needed in \(40\%\) of cases. Satisfactory recall levels require slightly more m- labeled KCFs, however in \(60\%\) of cases, five m- labeled KCFs are sufficient to achieve near- zero FN rates. These empirical results demonstrate our LLM- based method's adaptability and effectiveness in continuously evolving environments, which are maintained in such settings without compromising GenKubeDetect's performance or increasing the demands on RB tool developers.  
+
+
+When looking closer at the results presented in Table 4 we can see that some misconfig_IDs (i.e., 51 and 97) suffer from many FNs and FPs when only a handful of them are used to further fine- tune a trained LLM. In further analysis of these misconfig_IDs, we found that both of the associated misconfigs are extremely similar to other misconfigs, and thus they tend to be misclassified. More specifically, misconfig_ID 97 is defined under 'securityContext/capabilities/add', while several other misconfig_IDs are defined under 'securityContext/capabilities/drop'. This makes it difficult for the LLM, which has already learned from the old misconfigs, to distinguish between them based such a small sample of new KCFs. Similarly, the fine- tuned LLM frequently failed to recognize misconfig_ID 51 and confused it with another misconfig_ID, because they are both associated with role- based access control (RBAC). Still, as can be seen on the right side of Table 4, when GenKubeDetect is trained with more data (30 or \(80\%\) of the \(M\) - labeled KCFs), the precision and recall using \(DS_{test}^{test}\) converge to one. Also, the gap between having a small or large set of \(m\) - labeled KCFs (denoted as \(KCF_{- sample}(m)\) ) can be bridged by initially fine- tuning \(LLM_{trained}^{trained}\) using whatever size of \(KCF_{- sample}(m)\) is available. Then, using \(LLM_{m}\) (i.e., \(LLM_{trained}^{trained}\) which was further fine- tuned using \(DS_{m,s}^{adaptation}\) ), we can scan other KCFs, either locally available or obtained on the Internet to gather additional \(m\) - labeled KCFs. With this approach, even an \(LLM_{m}\) with relatively low recall and/or precision can increase the size of \(KCF_{- sample}(m)\) by gathering KCFs that have the newly- discovered \(m\) but have not yet been labeled as such. Then, a second
+
+<--- Page Split --->
+
+
+round of fine- tuning (using the increased KCF_sample(m)) would enable the GenKubeDetect's quick and accurate adaptation to the newly- discovered misconfig.  
+
+
+### 5.8 Localization, reasoning, and remediation  
+
+
+Manually validating GenKubeResolve's output for each misconfig detected is a time- consuming task that should be performed by an expert. Therefore, a K8s security expert validated GenKubeResolve's performance on a random sample of 30 detected KCF misconfigs (this took approximately six minutes for each misconfig). The K8s expert confirmed that GenKubeResolve excels in these explanatory tasks, achieving a score of 30/30 in terms of both its explanations and remediation suggestions. In terms of localization, in 20 of the 30 cases, GenKubeResolve correctly identified that necessary lines were missing in the provided KCFs, and therefore could not provide a line number. In the remaining 10 cases, GenKubeResolve accurately pinpointed the issues in the correct lines.  
+
+
+## 6 DISCUSSION  
+
+
+### 6.1 Lessons learned  
+
+
+During our research, the following valuable insights emerged. First, similar to previous research [60, 69], using the basic prompt engineering and few- shot learning techniques to adapt pretrained LLMs for KCF misconfig detection results in relatively poor performance (Sec. 5.1). For this highly specific task of multi- label classification within (semi- structured) KCFs, we found that a thoroughly optimized and fine- tuned LLM is capable of achieving near- perfect performance, with precision equivalent to industry standards and superior recall. In comparison, for the task of KCF misconfig localization, reasoning, and remediation, our experimental results (validated by a K8s expert) showed that few- shot learning with a pretrained model is sufficient. Hence, it seems that reconstructing specific misconfig IDs is much more difficult for an LLM than generating less restrictive text for misconfig localization, reasoning and remediation.  
+
+
+Second, it seems that with a suitable LLM architecture, a domainrelevant base model [97], and optimized hyperparameters, relativelysmall quantities of training data are sufficient for GenKubeDetect to achieve satisfactory performance. This applies both to the initial fine- tuning whose learning curve achieves high precision and recall (about \(83\%\) and \(91\%\) , respectively) when there are 250 KCFs per misconfig (Fig. 4), and to the adaptation process, which, in most cases, requires only a handful of relevant KCFs in order to be able to detect a newly- discovered misconfig (Table 4).  
+
+
+A third lesson learned during our experimentation is that when an LLM is used for classification, encoding (compressing) the textual label is beneficial. Most importantly, with a given amount of labeled KCFs in the training set, predicting an encoded misconfig label may improve the classification performance (longer texts are harder to reconstruct). Furthermore, a reduction in the number of processed tokens (during GenKubeDetect's training and inference) directly translates to accelerated and less expensive compute.  
+
+
+A fourth insight, which was counter- intuitive for us, is that during GenKubeDetect's fine tuning, focusing exclusively on KCFs maximizes the precision, recall, and F1 (Table 2). That is, incorporating free- text information about K8s along with KCFs does not enhance performance on these metrics, but rather actually impairs it slightly. This finding suggests that (1) when the LLM is designed to analyze structured data (i.e., KCFs), there is no use in training it using unstructured data; (2) fewer inputs (i.e., KCFs only) are sufficient for achieving accurate outputs; and (3) labeled KCFs are essentially sufficient for realizing the LLM's potential in detecting KCF misconfigs, as the contribution of unlabeled KCFs is negligible.   
+
+
+### 6.2 Research limitations  
+
+
+In our empirical evaluation, the best- performing base LLM (CodeT5p 770M) places a 512 token limit, such that only \(83\%\) of the KCFs in our dataset are covered. Nevertheless, CodeT5p 770M may be replaced by a less restrictive base LLM in the future. Another limitation is that during error analysis (see Sec. 5.5 and Sec. 5.8), the expert manually only analyzed a sample of 100 KCFs which contained alleged FPs, and 30 randomly selected outputs of GenKubeResolve. While not all of the KCFs were examined in our manual error analysis, a non- negligible portion of those examined demonstrated GenKubeDetect's ability to outperform existing RB tools and GenKubeResolve's ability to produce valuable and correct responses.  
+
+
+## 7 RELATED WORK  
+
+
+### 7.1 The use of LLMs in static analysis  
+
+
+LLMs such as ChatGPT [1], Bard [31], Gemini Pro [79], GPT- 4, and GPT- 3.5 have been leveraged extensively in the software and hardware security analysis domain, uncovering both promising applications and notable limitations. Several recent studies [2, 59, 61, 65, 103] demonstrated LLMs' efficacy in static analysis tasks like correcting defective Ansible scripts, detecting code security defects, detecting and repairing security bugs in hardware description languages, and automating static binary taint analysis. These tasks are similar to our task of KCF misconfig detection in that they use LLMs for static analysis. These studies theoretically suggested the need to fine- tune LLMs for specific applications to optimize performance. However in contrast to those studies, we evaluated the impact of fine- tuning on performance quantitatively. Other studies [63, 78] examined the ML's integration with runtime DevSecOps and the automation of configuration validation. These studies not only underscored the adaptability of generative AI in security contexts but also emphasized the need for further refinement, such as fine- tuning, to fully exploit generative AI technologies' adaptability in these complex applications. Our research contributes uniquely to this field; to the best of our knowledge, we are the first to employ a fine- tuned LLM specifically for robust and cost- efficient static analysis of KCFs, detecting KCF misconfigs, and providing detailed reasoning regarding the misconfigs, their exact localization, and remediation suggestions.  
+
+
+### 7.2 KCF misconfig detection  
+
+
+Recently, topology graphs were proposed [11] as a means of revealing attack vectors in security configurations and assigning them security risk scores. This approach helps detect KCF misconfigs by mapping the K8s' deployment, identifying vulnerabilities, and highlighting security weaknesses. However, it faces challenges in scalability and practical application, requires in- depth K8s expertise, occasionally fails to scan certain containers, and lacks automated
+
+<--- Page Split --->
+
+
+remediation suggestions. In another study [82], SLI- KUBE, an innovative RB tool for KCF misconfig detection, was proposed. However, in terms of coverage, SLI- KUBE can only detect 11 specific misconfigs using its predefined rule set, while our method was empirically shown capable of detecting 169 KCF misconfigs (see Sec. 5). In addition, our method's use of fine- tuning enables it to quickly and easily adapt to newly- discovered misconfigs, based on just a few KCFs labeled with the new misconfig (Sec. 5.7). Fine- tuning also offers a substantial advantage over traditional RB tools, which suffer from a non- negligible incidence of FPs [69] and are limited due to their reliance on static rule sets which do not adapt to new misconfigs without manual updates.  
+
+
+### 7.3 KCF misconfig remediation  
+
+
+While existing tools can detect KCF misconfigs, they often lack the ability to suggest effective corrective measures. Our method is unique, since in addition to detecting misconfigs in KCFs, it also provides detailed reasoning, as well as the specific locations of detected misconfigs and remediation. This aids greatly in understanding the root cause of misconfigs, enabling more effective and targeted fixes.  
+
+
+In a preliminary study [69], LLMs' potential in correcting security misconfigs in K8s Helm charts was explored. Existing RB tools (similar to the ones used in our study) were employed to detect misconfigs; then LLMs were used to suggest mitigation steps aimed at enhancing configuration. Thus, unlike in our study, LLMs were not considered a direct replacement for RB tools but rather as a means of correcting any misconfigs they detect (potentially inadvertently introducing new misconfigs in their attempt to correct others). Moreover, the LLMs used in that study are ChatGPT and Gemini, which are general- purpose pretrained LLMs that have not undergone fine- tuning. Another drawback is that sending files for inspection by external LLMs via API calls, as done in that study, poses security risks [8, 25] and adds unnecessary costs. To overcome these issues, in our research, we used an LLM developed by Mistral [46] which is open- source (and thus free of charge), does not require external API interactions, and can be adapted to meet our specific needs. In addition, in the evaluation of this preliminary study, the authors used a limited sample of only 60 Helm charts, whereas we collected and labeled over 276,000 KCFs to evaluate our proposed method.  
+
+
+Another study [60] explored LLMs' potential for analyzing KCFs. The authors proposed a pipeline to identify whether the KCF is of 'good' or 'bad' quality. They used Polaris [29] to identify one specific misconfig, and leveraged an LLM to perform few- shot learning, assessing the presence of this misconfig in other KCFs, and recommending best practices for developers. Despite similarities to our research, some limitations and differences between the two studies are worth noting: (1) The authors used a small dataset of only 100 KCFs, which is much smaller than our dataset of over 276,000 KCFs. (2) For training, the authors relied on few- shot learning [12, 64, 106], which, as they acknowledged, restricts the LLM's ability to learn and generalize complex relationships from the data. In contrast, we performed fine- tuning with a significantly larger dataset, allowing the model to better capture and generalize complex relationships. (3) They focused on binary classification [49], determining the presence or absence of a specific misconfig in KCFs, thus providing  
+
+
+limited feedback to developers; in contrast, our method is trained to detect up to 169 misconfigs. (4) Our approach not only identifies misconfigs but also pinpoints their location, explains their reasons, and offers targeted suggestions for remediation. (5) Unlike the prior study, which did not include results and evaluation metrics, we have comprehensively described our experimentation, evaluation, and findings, and publicly share our data and code.  
+
+
+In another study whose goals are also relatively similar to ours [39], the authors proposed a completely different approach. Specifically, they suggested the use of free text documents (mostly from blog posts) to infer a knowledge graph, which was used to identify misconfigs and provide remediation. However, unlike our research, their focus was on matching a given textual vulnerability description to a configuration concept, i.e., extracting knowledge from free text. A shortcoming in this research noted by the authors is that the method's performance relies heavily on the free text documents' comprehensiveness, as well as on the quality of their text processing procedure; our proposed method does not face these limitations. In addition, their evaluation was performed on a much smaller scale than ours, and configuration concepts were manually labeled by the researchers, a method which the authors acknowledged as subjective (unlike the vast amount of KCFs we labeled using three unbiased industry- standard RB tools).  
+
+
+## 8 CONCLUSION  
+
+
+In this research, we explored LLMs' ability to enhance the security of K8s systems. For that, GenKubeSec does more than merely detect (a wide variety of) KCF misconfigs; it provides their exact location in the inspected KCFs, provides clear reasoning from which the KCF developer can learn, and offers actionable recommendations for remediation. GenKubeSec does not rely on external APIs, thus ensuring that KCFs are not exposed on the web, enhancing security; this approach also reduces costs. Unlike previous studies, we developed a comprehensive LLM- based method, and quantitatively evaluated it. Our extensive evaluation demonstrated GenKubeSec's excellent performance, validated by a K8s expert. In addition to contributing to containers' security via mitigating KCF misconfig- related risks, by making our data (including the UMI) and code freely accessible, this work will contribute to future advancements in the field, specifically in terms of standardization, benchmarking, and security- oriented, LLM- based analysis and remediation methods.  
+
+
+Future work in this domain can focus on (1) automatically generating a misconfig- free version of the input KCF to eliminate the detected misconfigs, and (2) enhancing GenKubeSec's ability to prioritize the detected misconfigs based on their severity level.
+
+<--- Page Split --->
+
+
+## REFERENCES  
+
+
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. 2023. Gpt- 4 technical report. arXiv preprint arXiv:2303.08774 (2023). [2] Baleegh Ahmad, Shailja Thakur, Benjamin Tan, Ramesh Karri, and Hammond Pearce. 2024. On Hardware Security Bug Code Fixes By Prompting Large Language Models. IEEE Transactions on Information Forensics and Security (2024). [3] Md Zahangir Alom, Tarek M Taha, Chris Yakopcic, Stefan Westberg, Paheding Sidike, Mst Shamima Nasrin, Mahmudul Hasan, Brian C Van Essen, Abdul AS Awwal, and Vijayan K Asari. 2019. A state- of- the- art survey on deep learning theory and architectures. electronics 8, 3 (2019), 292. [4] Zaid Alyafeai, Maged Saeed AlSahibani, and Irfan Ahmad. 2020. A survey on transfer learning in natural language processing. arXiv preprint arXiv:2007.04239 (2020). [5] Anthropic. 2024. Claude 3. Anthropic. https://www.anthropic.com/news/claude- 3- family [6] anthropic. 2024. Claude Soonet. Anthropic. https://claude.ai/chats [7] Vladimir Araujo, Marie- Francine Moens, and Alvaro Soto. 2023. Learning Sentence- Level Representations with Predictive Coding. Machine Learning and Knowledge Extraction 5, 1 (2023), 59- 77. [8] Muhammad Azizi Mohd Ariffin, Mohd Faisal Ibrahim, and Zolidah Kasiran. 2020. API vulnerabilities in cloud computing platform: attack and detection. International Journal of Engineering Trends and Technology 1 (2020), 8- 14. [9] ARMO. 2022. ARMO study. https://thenewstack.io/armo- misconfiguration- is- number- 1- kubernetes- security- risk/ [10] Iz Beltagy, Matthew E. Peters, and Arman Cohan. 2020. Longformer: The Long- Document Transformer. arXiv:2004.05150 (2020). [11] Agathe Blaise and Filippo Rebecchi. 2022. Stay at the Helm: secure Kubernetes deployments via graph generation and attack reconstruction. In 2022 IEEE 15th International Conference on Cloud Computing (CLOUD). IEEE, 59- 69. [12] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. 2020. Language models are few- shot learners. Advances in neural information processing systems 33 (2020), 1877- 1901. [13] ChatGPT. 2024. ChatGPT - GPT 4. ChatGPT. https://chatgpt.com/ [14] checkov. 2024- 02- 03. checkov. https://www.checkov.io [15] Yufan Chen, Arjun Arunasalam, and Z Berkay Celik. 2023. Can large language models provide security & privacy advice? measuring the ability of llms to refute misconceptions. In Proceedings of the 39th Annual Computer Security Applications Conference. 366- 378. [16] Anton Cheshkov, Pavel Zadorozhny, and Rodion Levichev. 2023. Evaluation of chatgpt model for vulnerability detection. arXiv preprint arXiv:2304.07232 (2023). [17] CIS. 2024. CIS- Benchmark. https://www.cisecurity.org/benchmark/kubernetes [18] Cloud Native Computing Foundation. 2024. Artifact Hub. https://artifacthub.io/ Accessed: 2024- 07- 04. [19] CNCF. 2022. Workload misconfiguration - the 1 security threat when using Kubernetes. https://www.cncf.io/online- programs/cloud- native- live- workload- misconfiguration- the- 1- security- threat- when- using- kubernetes/ [20] CNCF. 2023. Project Journey Report. https://www.gartner.com/en/documents/ 3988026 [21] CNCF. 2023. Project Journey Report. https://www.cncf.io/reports/kubernetes- project- journey- report/ [22] Jesse Davis and Mark Goadrich. 2006. The relationship between Precision- Recall and ROC curves. In Proceedings of the 23rd international conference on Machine learning. 233- 240. [23] Jacob Devlin, Ming- Wei Chang, Kenton Lee, and Kristina Toutanova. 2018. Bert: Pre- training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805 (2018). [24] Practical DevSecOps. 2023. 10+ Top Kubernetes Security Tools in 2023. https://medium.com/@pdevsecops/10- top- kubernetes- security- tools- in- 2023- df26642f995a [25] Josué Alejandro Diaz- Rojas, Jorge Octavio Ocharán- Hernández, Juan Carlos Pérez- Arriaga, and Xavier Limón. 2021. Web api security vulnerabilities and mitigation mechanisms: A systematic mapping study. In 2021 9th International Conference in Software Engineering Research and Innovation (CONSOFT). IEEE, 207- 218. [26] dohsimpson. 2023. kubernetesDoc. https://github.com/dohsimpson/kubernetes- doc- pdf [27] Shi Dong, Ping Wang, and Khushnood Abbas. 2021. A survey on deep learning and its applications. Computer Science Review 40 (2021), 100379. [28] Nicolas Ehrman. 2023. The top 11 open- source Kubernetes security tools. https://www.wiz.io/academy/top- kubernetes- security- tools [29] Fairwinds. 2024- 08- 01. Polaris. https://www.fairwinds.com/polaris  
+
+
+[30] Robert M French. 1999. Catastrophic forgetting in connectionist networks. Trends in cognitive sciences 3, 4 (1999), 128- 135. [31] Google. 2023. An important next step on our AI journey. https://blog.google/technology/ai/bard- google- ai- search- updates/ [32] Google. 2024. Gemini 1.0 Pro. https://gemini.google.com/app [33] Google. 2024. Google. https://cloud.google.com/learn/what- is- kubernetes [34] Sagar Goyal, Eti Rastogi, Sree Prasanna Rajagopal, Dong Yuan, Fen Zhao, Jai Chintagunta, Gautam Naik, and Jeff Ward. 2024. HealAI: A Healthcare LLM for Effective Medical Documentation. In Proceedings of the 17th ACM International Conference on Web Search and Data Mining. 1167- 1168. [35] James Guffey and Yanyan Li. 2023. Cloud Service Misconfigurations: Emerging Threats, Enterprise Data Breaches and Solutions. In 2023 IEEE 13th Annual Computing and Communication Workshop and Conference (CCWC). IEEE, 0806- 0812. [36] Muhammad Usman Hadi, Rizwan Qureshi, Abbas Shah, Muhammad Irfan, Anas Zafar, Muhammad Bilal Shaikh, Naveed Akhtar, Jia Wu, Seyedali Mirjalili, et al. 2023. Large language models: a comprehensive survey of its applications, challenges, limitations, and future prospects. (2023). [37] Ibrahim Bu Haimed, Marwan Albahar, and Ali Alzubaidi. 2023. Exploiting Misconfiguration Vulnerabilities in Microsoft's Azure Active Directory for Privilege Escalation Attacks. Future Internet 15, 7 (2023), 226. [38] Md Sadun Haq, Ali Saman Tosun, and Turgay Korkmaz. 2024. LUCID: A Framework for Reducing False Positives and Inconsistencies Among Container Scanning Tools. arXiv:2405.07054 [cs.CR] [39] Mubin Ul Haque, M Mehdi Kholoosi, and M Ali Babar. 2022. KGSeConfig: A Knowledge Graph Based Approach for Secured Container Orchestrator Configuration. In 2022 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER). IEEE, 420- 431. [40] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen- Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. 2021. Lora: Low- rank adaptation of large language models. arXiv preprint arXiv:2106.09685 (2021). [41] Wenbo Hu, Yifan Xu, Yi Li, Weiyue Li, Zeyuan Chen, and Zhuowen Tu. 2024. Bliva: A simple multimodal llm for better handling of text- rich visual questions. In Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 38. 2256- 2264. [42] HuggingFace. 2023. PEFT - LoRA. https://huggingface.co/docs/peft/package_reference/lora [43] huggingface. 2024. huggingfaceDecoder. https://huggingface.co/learn/nlp- course/chapter1/67fw=pt [44] huggingface. 2024. huggingfaceEncoder. https://huggingface.co/learn/nlp- course/chapter1/57fw=pt [45] huggingface. 2024. huggingfaceEncoderDecoder. https://huggingface.co/learn/nlp- course/chapter1/77fw=pt [46] Albert Q Jiang, Alexandre Sablayrolles, Arthur Mensch, Chris Bamford, Devendra Singh Chaplot, Diego de las Casas, Florian Bressand, Gianna Lengyel, Guillaume Lample, Lucile Saulnier, et al. 2023. Mistral 7B. arXiv preprint arXiv:2310.06825 (2023). [47] k8s. 2024. KubeDoc. https://kubernetes.io/docs/home/ [48] Denis Kocetkov, Raymond Li, Loubna Ben Allal, Jia Li, Chenghao Mou, Carlos Munoz Ferrandis, Yacine Jernite, Margaret Mitchell, Sean Hughes, Thomas Wolf, Dzmitry Bahdanau, Leandro von Werra, and Harm de Vries. 2022. The Stack: 3 TB of permissively licensed source code. Preprint (2022). [49] Brian Kolo. 2011. Binary and multiclass classification. Lulu. com. [50] Pandu Ranga Reddy Konala, Vimal Kumar, and David Bainbridge. 2023. SoK: Static Configuration Analysis in Infrastructure as Code Scripts. In 2023 IEEE International Conference on Cyber Security and Resilience (CSR). IEEE, 281- 288. [51] Yogita Kothadiya. 2022. A Manifest File in Kubernetes. https://medium.com/@yogitakothadia/a- manifest- file- in- kubernetes- 952183a508d4 [52] NEGAR MOHAMMADI KOUSHKI, IBRAHIM EL- SHEKELI, and KRISHNA KANT. 2024. Root- Cause Analysis of Service Misconfigurations in Enterprise Systems. (2024). [53] kubelinter. 2024- 02- 03. kubelinter. https://docs.kubelinter.io [54] Kubernetes. 2024. The Kubernetes community. https://kubernetes.io/ community/ Accessed: 2024- 08- 04. [55] kubernetes. 2024. static pod. https://kubernetes.io/docs/tasks/configure- pod- container/static- pod/ [56] T Kubernetes. 2019. Kubernetes. Kubernetes. Retrieved May 24 (2019), 2019. [57] Kubernetes- documentation. 2023. Kubernetes. https://kubernetes.io/docs/ concepts/overview/working- with- objects/ [58] Pankaj Kumar. 2023. Kubernetes Misconfigurations: The Silent Killers of Your Cluster. https://www.askpython.com/resources/kubernetes- misconfigurations- silent- killers- of- cluster [59] Sunjae Kwon, Sungu Lee, Taehyoun Kim, Duksan Ryu, and Jongmoon Baik. 2023. Exploring LLM- Based Automated Repairing of Ansible Script in Edge- Cloud Infrastructures. Journal of Web Engineering 22, 6 (2023), 889- 912. [60] Giacomo Lanciano, Manuel Stein, Volker Hilt, Tommaso Cucinotta, et al. 2023. Analyzing Declarative Deployment Code with Large Language Models. CLOSER 2023 (2023), 289- 296.
+
+<--- Page Split --->
+
+
+[61] Haonan Li, Yu Hao, Yizhuo Zhai, and Zhiyun Qian. 2023. Assisting static analysis with large language models: A chatgpt experiment. In Proceedings of the 31st ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering. 2107- 2111. [62] Xin Li, Lidong Bing, Wenxuan Zhang, and Wai Lam. 2019. Exploiting BERT for end- to- end aspect- based sentiment analysis. arXiv preprint arXiv:1910.00883 (2019).[63] Xinyu Lian, Yinfang Chen, Runxiang Cheng, Jie Huang, Parth Thakkar, and Tianyin Xu. 2023. Configuration Validation with Large Language Models. arXiv preprint arXiv:2310.09690 (2023).[64] Xi Victoria Lin, Todor Mihaylov, Mikel Artetxe, Tianlu Wang, Shuohui Chen, Daniel Simig, Myle Ott, Naman Goyal, Shruti Bhosale, Jingfei Du, et al. 2022. Few- shot learning with multilingual generative language models. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing. 9019- 9052. [65] Puzhuo Liu, Chengnian Sun, Yaowen Zheng, Xuan Feng, Chuan Qin, Yuncheng Wang, Zhi Li, and Limin Sun. 2023. Harnessing the power of llm to support binary taint analysis. arXiv preprint arXiv:2310.08275 (2023).[66] Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov. 2019. Roberta: A robustly optimized bert pretraining approach. arXiv preprint arXiv:1907.11692 (2019).[67] Yun Luo, Zhen Yang, Fandong Meng, Yafu Li, Jie Zhou, and Yue Zhang. 2023. An empirical study of catastrophic forgetting in large language models during continual fine- tuning. arXiv preprint arXiv:2308.08747 (2023).[68] Microsoft Threat Intelligence. 2024. Attackers exploiting new critical OpenMetadata vulnerabilities on Kubernetes clusters. https://www.microsoft.com/en- us/security/blog/2024/04/17/attackers- exploiting- new- critical- openmetadata- vulnerabilities- on- kubernetes- clusters/ Accessed: 2024- 01- 05. [69] Francesco Minna, Fabio Massacci, and Katja Tuma. 2024. Analyzing and Mitigating (with LLMs) the Security Misconfigurations of Helm Charts from Artifact Hub. arXiv preprint arXiv:2403.09537 (2024).[70] Mistral. 2024. mistralai: Mistral- 7B- Instruct- v0.2. https://huggingface.co/mistralai/Mistral- 7B- Instruct- v0.2[71] Humza Naveed, Asad Ullah Khan, Shi Qiu, Muhammad Saqib, Saeed Anwar, Muhammad Usman, Nick Barnes, and Ajmal Mian. 2023. A comprehensive overview of large language models. arXiv preprint arXiv:2307.06435 (2023).[72] Behnam Neyshabur, Srinadh Bhojanapalli, David McAllester, and Nati Srebro. 2017. Exploring generalization in deep learning. Advances in neural information processing systems 30 (2017).[73] Erik Nijkamp, Bo Pang, Hiroaki Hayashi, Lifu Tu, Huan Wang, Yingbo Zhou, Silvio Savarese, and Caiming Xiong. 2022. CodeGen: An Open Large Language Model for Code with Multi- Turn Program Synthesis. In The Eleventh International Conference on Learning Representations.[74] nvidia. 2024. rtx4090. https://www.nvidia.com/en- eu/geforce/graphics- cards/40- series/rtx- 4090/[75] nvidia. 2024. rtx6000. https://www.nvidia.com/en- us/design- visualization/rtx- 6000/[76] Ralph Peeters and Christian Bizer. 2023. Entity Matching using Large Language Models. arXiv preprint arXiv:2310.11244 (2023).[77] Ralph Peeters and Christian Bizer. 2023. Using chatgpt for entity matching. In European Conference on Advances in Databases and Information Systems. Springer, 221- 230. [78] Nenad Petrovic. 2023. Machine learning- based run- time DevSecOps: ChatGPT against traditional approach. In 2023 10th International Conference on Electrical, Electronic and Computing Engineering (ICEITRA). IEEE, 1- 5. [79] Sundar Pichai and Demis Hassabis. 2023. Introducing Gemini: our largest and most capable AI model. Google. Retrieved December 8 (2023), 2023. [80] Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. [n. d.]. Language Models are Unsupervised Multitask Learners. ([n. d.]).[81] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J. Liu. 2020. Exploring the limits of transfer learning with a unified text- to- text transformer. Journal of machine learning research 21, 140 (2020), 1- 67. [82] Akond Rahman, Shazibul Islam Shamim, Dibyendu Brinto Bose, and Rahul Pandita. 2023. Security misconfigurations in open source kubernetes manifests: An empirical study. ACM Transactions on Software Engineering and Methodology 32, 4 (2023), 1- 36. [83] Monika Rangta et al. 2022. Tools for Security Auditing and Hardening in Microservices Architecture. Master's thesis.[84] Subendhu Rongali, Abhyuday Jagannatha, Bhanu Pratap Singh Rawat, and Hong Yu. 2020. Continual domain- tuning for pretrained language models. arXiv preprint arXiv:2004.02288 (2020).[85] Baptiste Roziere, Jonas Gehring, Fabian Gloeckle, Sten Sootla, Itai Gat, Xiaoqing Ellen Tan, Yossi Adi, Jingyu Liu, Tal Remez, Jeremy Rapin, et al. 2023. Code llama: Open foundation models for code. arXiv preprint arXiv:2308.12950 (2023).  
+
+
+[86] Areeg Samir and Havard Dagenborg. 2023. Adaptive Controller to Identify Misconfigurations and Optimize the Performance of Kubernetes Clusters and IoT Edge Devices. In European Conference on Service- Oriented and Cloud Computing. Springer, 170- 187. [87] Mohit Sewak, Vamsi Emani, and Annam Naresh. 2023. CRUSH: Cybersecurity Research using Universal LLMs and Semantic Hypernetworks. (2023).[88] substratusai. 2024. substratusai/the- stack- yaml- k8s. https://huggingface.co/datasets/substratusai/the- stack- yaml- k8s[89] Chi Sun, Xipeng Qiu, Yige Xu, and Xuanjing Huang. 2019. How to fine- tune bert for text classification?. In Chinese computational linguistics: 18th China national conference, CCL 2019, Kunming, China, October 18- 20, 2019, proceedings 18. Springer, 194- 206. [90] Terracan. 2024- 04- 01. Terracan. https://runterracan.io[91] Vajira Thambawita, Inga Strümke, Steven A Hicks, Pál Halvorsen, Sravanthi Parasa, and Michael A Riegler. 2021. Impact of image resolution on deep learning performance in endoscopy image classification: An experimental study using a large dataset of endoscopic images. Diagnostics 11, 12 (2021), 2183. [92] Ankit Amrendra Tripathi. 2024. Attacking and Defending Kubernetes. Ph. D. Dissertation. Dublin Business School.[93] Kanishka Tyagi, Chinmay Rane, Raghavendra Sriram, and Michael Manry. 2022. Unsupervised learning. In Artificial intelligence and machine learning for edge computing. Elsevier, 33- 52. [94] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. Advances in neural information processing systems 30 (2017).[95] Liyuan Wang, Xingxing Zhang, Hang Su, and Jun Zhu. 2023. A comprehensive survey of continual learning: Theory, method and application. arXiv preprint arXiv:2302.00487 (2023).[96] Xizhao Wang, Yanxia Zhao, and Farhad Pourpanah. 2020. Recent advances in deep learning. International Journal of Machine Learning and Cybernetics 11 (2020), 747- 750. [97] Yue Wang, Hung Le, Akhilesh Deepak Gotmare, Nghi DQ Bui, Junnan Li, and Steven Hoi. 2023. CodeT5+: Open Code Large Language Models for Code Understanding and Generation. In The 2023 Conference on Empirical Methods in Natural Language Processing.[98] Yue Wang, Weishi Wang, Shafiq Joty, and Steven C.H. Hoi. 2021. CodeT5: Identifier- aware Unified Pre- trained Encoder- Decoder Models for Code Understanding and Generation. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing. Marie- Francine Moens, Xuanjing Huang, Lucia Specia, and Scott Wen- tau Yih (Eds.). Association for Computational Linguistics, Online and Punta Cana, Dominican Republic, 8696- 8708. https://doi.org/10.18653/v1/2021. emnlp- main.685[99] Garrett Wilson and Diane J Cook. 2020. A survey of unsupervised deep domain adaptation. ACM Transactions on Intelligent Systems and Technology (TIST) 11, 5 (2020), 1- 46. [100] Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric Cistac, Tim Rault, Remi Louf, Morgan Funtowicz, et al. 2020. Transformers: State- of- the- art natural language processing. In Proceedings of the 2020 conference on empirical methods in natural language processing: system demonstrations. 38- 45. [101] Tongtong Wu, Massimo Caccia, Zhuang Li, Yuan- Fang Li, Guilin Qi, and Gholamreza Haffari. 2021. Pretrained language model in continual learning: A comparative study. In International conference on learning representations.[102] Yifan Yao, Jinhao Duan, Kaidi Xu, Yuanfang Cai, Zhibo Sun, and Yue Zhang. 2024. A survey on large language model (llm) security and privacy: The good, the bad, and the ugly. High- Confidence Computing (2024), 100211. [103] Jiaxin Yu, Peng Liang, Yujia Fu, Amjed Tahir, Mojtaba Shahin, Chong Wang, and Yangxiao Cai. 2024. Security Code Review by LLMs: A Deep Dive into Responses. arXiv preprint arXiv:2401.16310 (2024).[104] Manzil Zaheer, Guru Guruganesh, Kumar Avinava Dubey, Joshua Ainslie, Chris Alberti, Santiago Ontanon, Philip Pham, Anirudh Ravula, Qifan Wang, Li Yang, et al. 2020. Big bird: Transformers for longer sequences. Advances in Neural Information Processing Systems 33 (2020).[105] Hanqing Zhang, Haolin Song, Shaoyu Li, Ming Zhou, and Dawei Song. 2023. A survey of controllable text generation using transformer- based pre- trained language models. Comput. Surveys 56, 3 (2023), 1- 37. [106] Xuan Zhang, Navid Rajabi, Kevin Duh, and Philipp Koehn. 2023. Machine translation with large language models: Prompting, few- shot learning, and fine- tuning with qlora. In Proceedings of the Eighth Conference on Machine Translation. 468- 481.
+
+<--- Page Split --->
+
+
+## A ENTITY MATCHING PROMPT  
+
+<center>Figure 5: Entity matching prompt, used during the UMI creation process, as part of GenKubeDetect's preprocessing component. </center>  
+
+
+Figure. 5 outlines the structure of the optimized prompt we used for entity matching while creating the UMI (Sec. 3.1.1. This prompt has three segments: (1) a system prompt which describes the entity matching task, the criteria for matching, and the structure of the required output; (2) a few- shot training set; and (3) new lists comprising entities to be matched. We used this prompt in order to map all of the variations of a misconfig (from three different RB tools) to a single ID.  
+
+
+## B ENCODED AND DECODED CLASS LABELS  
+
+<center>Figure 6: Encoded and decoded representations of an example misconfig class label. </center>  
+
+
+Figure. 6 illustrates the encoded and decoded representations of an example misconfig class label (as discussed in Sec. 3.1.2). The original/decoded representation contains detailed information about a misconfig related to privilege escalation in K8s containers. This relatively long textual description is encoded into the compressed format: <impacted_K8s_resource>+<misconfig_ID>, in this case app+52. Encoding the labels decreases the overall size of labeled KCFs, such that (1) higher coverage is provided by LLMs that impose size limits, (2) training is accelerated, and (3) fewer misclassifications are likely to occur, as shorter class labels are easier for the LLM to (re-)generate. Decoding the labels provides more context to GenKubeResolve during inference (see Sec. 3.3.1).
+
+<--- Page Split --->
+
+
+## C GENKUBERESOLVE PROMPT  
+
+<center>Figure 7: The system prompt devised for the Mistral LLM and an example of a few-shot learning process for localization, reasoning, and remediation of a detected KCF miscongf. </center>  
+
+
+Figure. 7 outlines the structure of the optimized prompt we used in GenKubeResolve for providing localization, reasoning and remediation suggestions to each miscongf detected by GenKubeDetect (see further details in Sec. 3.3.2). This prompt has three segments: (1) a system prompt which describes the required outputs and their format; (2) a few- shot training set; and (3) a test KCF to be processed by GenKubeResolve. At the bottom we can see GenKubeResolve's output for this test KCF: (1) the exact location of the detected miscongf is line 9 (the current text within this line is 'replicas:1'); (2) the reason for alerting is that the current configuration results in a single point of failure; (3) for remediation, the KCF developer is advised to increase the number of replicas.  
+
+
+## D PROMPT USED WITH THE GENERAL PURPOSE PRETRAINED LLMS FOR MISCONFIDENTECTION  
+
+<center>Figure 8: General instruction (top), 2 out of the 10 few-shot learning pairs of KCFs and their miscongf labels (middle), and a test KCF for which the LLM is requested to generate miscongf labels (bottom). </center>  
+
+
+Figure. 8 outlines the structure of the optimized prompt we used with pretrained general- purpose LLMs for them to be able to detect miscongf in KCFs. This prompt has three segments: (1) a system prompt which describes the task; (2) a few- shot training set; and
+
+<--- Page Split --->
+
+
+(3) a test KCF to be processed by the pretrained LLMs. The experimental results eventually showed that more sophisticated LLM training techniques (mostly fine-tuning) are required for reaching satisfactory detection performance (see further details in Sec. 5.1).  
+
+
+## E MISCLASSIFIED FPS EXAMPLES  
+
+<center>Figure 9: Examples of test KCFs that were misclassified as FPs by GenKubeDetect and subsequently verified by a K8s expert as TPs, thus demonstrating GenKubeDetect's effectiveness in detecting actual KCF misconfigs. </center>  
+
+
+Figure. 9 provides examples of test KCFs that which were initially categorized as FPs but were subsequently verified by a K8s security expert to be actually TPs.  
+
+
+The first KCF example (left) involves the use of a secret stored in an environment variable. GenKubeDetect successfully identified the risky usage of secrets, which the RB tools failed to detect. The snippet shows environment variables containing sensitive information like user credentials and GitHub client secrets.  
+
+
+The second KCF example (right) addresses the necessity of setting CPU requests for containers. GenKubeDetect identified that such setting were not provided, a detail that the RB tools overlooked. The snippet includes a container specification where CPU requests should be defined to ensure proper resource allocation and performance (see Sec. 5.5).  
+
+
+Received 28 May 2024; revised 7 August 2024; accepted 19 August 2024

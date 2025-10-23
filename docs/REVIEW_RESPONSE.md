@@ -13,7 +13,7 @@ This document maps the reviewer’s key blockers and revision requests to concre
 - Unsupported Borg acceptance comparison
   - Removed numeric Borg comparisons from README and paper
   - Reframed as “no public acceptance %”; retained SRE principles discussion
-  - Files updated: `paper/access.tex`, `overleaf_upload/paper/access.tex`, `docs/literature_comparison.md`, `docs/related_work.md`, `README.md`
+  - Files updated: `paper/access.tex`, `paper/overleaf/paper/access.tex`, `docs/literature_comparison.md`, `docs/related_work.md`, `README.md`
 - Reproducibility gaps
   - One-command rebuild: `scripts/reproduce_all.sh`
   - Risk throughput evaluation: `scripts/eval_risk_throughput.py`
