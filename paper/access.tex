@@ -175,10 +175,13 @@ We realize the closed loop \emph{Detector $\rightarrow$ Proposer $\rightarrow$ V
 \noindent\textbf{Disagreement and Budgets.} When kube-linter and Kyverno/OPA disagree we take the \emph{union} of violations at detection time, and require patches to satisfy both engines during verification. Attempts are capped at three per manifest; per-attempt latency and success outcomes feed into \texttt{data/policy\_metrics.json}, which the scheduler consumes alongside KEV flags.
 
 \subsection{End-to-End Walkthrough on Real Manifests}
-We show two concise cases and contrast outcomes with prior systems. The goal is safe, automated remediation with proof of no regression and prioritized risk closure.
+To make the closed-loop pipeline concrete, we trace two real-world manifests from the repository's test suite through each stage, from detection to scheduling. The goal is to demonstrate safe, automated remediation with full reproducibility and verifiable risk reduction.
 
 \smallskip
-\noindent\textbf{Case A — Privilege + caps + :latest.}
+\noindent\textbf{Case 1: Remediating a Privileged Pod with a \texttt{:latest} Image Tag}
+
+This example, drawn from \path{data/manifests/001.yaml}, shows a common but high-risk pattern: a privileged container using a floating tag.
+
 \begin{codeblock}
 apiVersion: v1
 kind: Pod
@@ -192,9 +195,9 @@ spec:
       capabilities: { add: ["SYS_ADMIN", "NET_ADMIN"] }
 \end{codeblock}
 
-\noindent\textit{Detect} (union): \texttt{no\_privileged}, \texttt{drop\_capabilities}, \texttt{run\_as\_non\_root}, \texttt{no\_latest\_tag}.
+\noindent\textit{1. Detect} (Union): The detector consumes this manifest and reports four policy violations: \texttt{no\_privileged}, \texttt{drop\_capabilities}, \texttt{run\_as\_non\_root}, and \texttt{no\_latest\_tag}. These correspond to the structured output in \path{data/detections.json}.
 
-\noindent\textit{Propose} (rules, minimal and idempotent):
+\noindent\textit{2. Propose} (Rules Engine): The proposer's rules engine consumes the detection report and generates a minimal, idempotent JSON Patch designed to fix all identified violations. The resulting patch, written to \path{data/patches.json}, is as follows:
 \begin{codeblock}
 [
  {"op":"replace","path":"/spec/containers/0/securityContext/privileged","value":false},
@@ -206,12 +209,18 @@ spec:
 ]
 \end{codeblock}
 
-\noindent\textit{Verify triad}: policies pass; schema valid; \texttt{kubectl apply --dry-run=server} succeeds on a seeded cluster.
+\noindent\textit{3. Verify} (Triad): The verifier applies this patch to a in-memory copy of the manifest and runs it through the full triad:
+\begin{itemize}
+    \item \textbf{Policy Re-check}: Passes, as the patched manifest no longer violates the four detected policies.
+    \item \textbf{Schema Validation}: Passes, confirming the patch produces a structurally valid Kubernetes object.
+    \item \textbf{Server Dry-Run}: Succeeds, as \texttt{kubectl apply --dry-run=server} reports the manifest would be accepted by the API server in a Kind cluster seeded with necessary fixtures.
+\end{itemize}
+The successful outcome is recorded in \path{data/verified.json}.
 
-\noindent\textit{Schedule}: high $R$, high $p$, low $\mathbb{E}[t]$ \(\Rightarrow\) early remediation.
+\noindent\textit{4. Schedule} (Risk-Bandit): The scheduler assigns the verified patch a high priority. Its risk score ($R$) is elevated due to the privileged container, its empirical success probability ($p$) is high based on historical data for these policies, and its expected remediation time ($\mathbb{E}[t]$) is low. This combination results in a high score, pushing it to the front of the remediation queue (\path{data/schedule.json}).
 
 \smallskip
-\noindent\textbf{Case B — HostPath + read-only root FS + resources.}
+\noindent\textbf{Case 2: Hardening a Worker Pod with a \texttt{hostPath} Mount}
 \begin{codeblock}
 spec:
   containers:
@@ -223,9 +232,11 @@ spec:
     hostPath: { path: "/var/run/docker.sock" }
 \end{codeblock}
 
-\noindent\textit{Detect}: \texttt{read\_only\_root\_fs}, \texttt{no\_host\_path}, \texttt{set\_requests\_limits}.
+This second case, from \path{data/manifests/002.yaml}, targets three additional misconfigurations: a writable root filesystem, a dangerous \texttt{hostPath} volume mount, and missing resource requests and limits.
 
-\noindent\textit{Propose} (rules):
+\noindent\textit{1. Detect}: The detector flags \texttt{read\_only\_root\_fs}, \texttt{no\_host\_path}, and \texttt{set\_requests\_limits}.
+
+\noindent\textit{2. Propose}: The rules engine generates a patch to harden the filesystem, remove the disallowed volume, and enforce resource quotas:
 \begin{codeblock}
 [
  {"op":"replace","path":"/spec/containers/0/securityContext/readOnlyRootFilesystem","value":true},
@@ -234,7 +245,9 @@ spec:
 ]
 \end{codeblock}
 
-\noindent\textit{Verify triad}: blocks if hostPath is required; guardrails preserve allowlisted mounts only. Accepted patches are schema-checked and dry-run clean.
+\noindent\textit{3. Verify}: The verifier confirms the patch is valid. The safety guardrails are critical here: had the \texttt{hostPath} mount been on an allowlisted path (e.g., for a metrics agent), the verifier would have preserved it. Since it was not, the removal is accepted.
+
+\noindent\textit{4. Schedule}: This item receives a moderate risk score. While \texttt{hostPath} is a serious issue, it is less critical than a privileged container. The patch is scheduled after higher-priority items, demonstrating the risk-aware nature of the queue.
 
 \smallskip
 \noindent\textbf{What problem we solve (versus alternatives)}
@@ -272,7 +285,7 @@ Prioritize & Bandit: $R\,p/\mathbb{E}[t]$ + aging + KEV boost & FIFO admission q
 \section{Implementation and Metrics}\label{sec:impl-metrics}
 Our system is designed as a linear pipeline with strict verification gates to ensure the safety and correctness of all proposed patches.
 \smallskip
-\noindent\textbf{Scalability considerations.} The end-to-end pipeline sustains millisecond-scale proposer latency and sub-second verifier latency on the 1,313-manifest slice (Table~\ref{tab:eval_summary}); the scheduler replays thousands of queue items using persisted telemetry (see \path{data/scheduler/}) without recomputing detections. These characteristics are highlighted to satisfy systems venues (e.g., OSDI, NSDI) that emphasize throughput, resource bounds, and repeatable performance claims alongside functional correctness.
+\noindent\textbf{Scalability considerations.} The end-to-end pipeline sustains millisecond-scale proposer latency and sub-second verifier latency on the 1,313-manifest slice (Table~\ref{tab:eval_summary}); the scheduler replays thousands of queue items using persisted telemetry (see \url{data/scheduler/}) without recomputing detections. These characteristics are highlighted to satisfy systems venues (e.g., OSDI, NSDI) that emphasize throughput, resource bounds, and repeatable performance claims alongside functional correctness.
 
 \subsection{The Closed-Loop Pipeline}
 The workflow consists of four stages:
@@ -295,7 +308,7 @@ To be accepted, a patched manifest must pass a multi-layered verification proces
         \item \textbf{runAsNonRoot enforcement:} Requires \texttt{runAsNonRoot: true} or \texttt{runAsUser}$\neq$0 when security context is modified \cite{k8s_security_context}
         \item \textbf{readOnlyRootFilesystem:} Mandates \texttt{readOnlyRootFilesystem: true} for security-sensitive patches
         \item \textbf{Drop ALL capabilities:} Enforces \texttt{capabilities.drop: [ALL]} when capabilities are touched
-        \item \textbf{hostPath allowlist:} Restricts host mounts to approved paths (\path{/var/run/secrets/kubernetes.io/serviceaccount}, \path{/var/lib/kubelet/pods}, \path{/etc/ssl/certs})
+        \item \textbf{hostPath allowlist:} Restricts host mounts to approved paths (\url{/var/run/secrets/kubernetes.io/serviceaccount}, \url{/var/lib/kubelet/pods}, \url{/etc/ssl/certs})
     \end{itemize}
 \end{enumerate}
 
@@ -324,7 +337,7 @@ To be accepted, a patched manifest must pass a multi-layered verification proces
 
 Table~\ref{tab:evidence} ties each pipeline stage to the concrete code and artifacts currently in the \texttt{k8s-auto-fix} repository. The implementation operates end-to-end in rules mode without external API dependencies; LLM-backed modes are configurable and evaluated off-line, while the default reproducible path uses rules mode.
 \smallskip
-\noindent\textbf{DevOps rollout.} The checklist in the docs (see \path{docs/devops_adoption_checklist.md}) distills the CI/CD integration path—bootstrapping dependencies, wiring detector/proposer/verifier stages into pipelines, publishing fixtures, and capturing operator feedback—so platform teams can reproduce Table~\ref{tab:eval_summary} outcomes before expanding to LLM-backed modes. A containerized path (see \path{docs/container_repro.md}) builds on the same artifacts for hermetic evaluations.
+\noindent\textbf{DevOps rollout.} The checklist in the docs (see \url{docs/devops_adoption_checklist.md}) distills the CI/CD integration path—bootstrapping dependencies, wiring detector/proposer/verifier stages into pipelines, publishing fixtures, and capturing operator feedback—so platform teams can reproduce Table~\ref{tab:eval_summary} outcomes before expanding to LLM-backed modes. A containerized path (see \url{docs/container_repro.md}) builds on the same artifacts for hermetic evaluations.
 
 \begin{table*}[t]
 \centering
@@ -526,9 +539,9 @@ Grok-5k (Grok/xAI) & 1337 & 4439/5000 (88.78\%) & \textemdash & \textemdash & \t
 \noindent\small\textbf{Notes:} Rates use manifest counts from \url{data/eval/table4_counts.csv} with 95\% Wilson confidence intervals provided in \url{data/eval/table4_with_ci.csv}. Row 1: Host-mount policies normalized; measured from the seeded rerun. Row 2: Deterministic baseline for the manifest slice. Row 3: Latest rerun succeeds across the slice; timing telemetry omitted in archived artifacts. Row 4: Grok/xAI evaluation executed in Reasoning API mode.
 \end{table*}
 
-Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest slice are documented in the project artifact \path{docs/ablation_rules_vs_grok.md}.
+Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest slice are documented in the project artifact \url{docs/ablation_rules_vs_grok.md}.
 
-Multi-seed replay (\path{scripts/multi_seed_summary.py}) yields $0.9993\pm0.0012$ acceptance on the supported corpus and $0.9951\pm0.0004$ on the manifest slice (\path{data/eval/multi_seed_summary.csv}), indicating low variance across randomized queue orderings. The operator survey instrument is drafted in \path{docs/operator_survey.md}; it will be deployed alongside the planned human-in-the-loop rotation described in Section~\ref{sec:evaluation}.
+Multi-seed replay (\url{scripts/multi_seed_summary.py}) yields $0.9993\pm0.0012$ acceptance on the supported corpus and $0.9951\pm0.0004$ on the manifest slice (\url{data/eval/multi_seed_summary.csv}), indicating low variance across randomized queue orderings. The operator survey instrument is drafted in \url{docs/operator_survey.md}; it will be deployed alongside the planned human-in-the-loop rotation described in Section~\ref{sec:evaluation}.
 
 \subsection{Threats and Mitigations}
 The reproducibility bundle (\texttt{make reproducible-report}) regenerates Table~\ref{tab:eval_summary} directly from JSON artifacts so reviewers can audit every metric. Semantic regression checks now block Grok-generated patches that remove containers or volumes, and fixtures under \url{infra/fixtures/} seed RBAC/NetworkPolicy gaps before verification. We threat-modeled malicious or placeholder manifests: the guidance retriever limits prompt context to policy-relevant snippets, the verifier enforces policy/schema/\texttt{kubectl} gates, and the scheduler never surfaces unverified patches. Residual risks—primarily infrastructure assumptions and LLM hallucinations—are captured in \url{logs/grok5k/failure_summary_latest.txt} and triaged before publication. Table~\ref{tab:cilium_patch} illustrates how these guardrails harden high-privilege DaemonSets without breaking required host integrations.
@@ -575,7 +588,7 @@ securityContext: \\
 The current scheduler consumes \url{data/policy_metrics.json}, which stores per-policy priors for success probability, expected latency, KEV flags, and baseline risk. The calibration pass (\url{data/risk/policy_risk_map.json}) now augments those priors with observed detection/resolution counts, while \url{data/risk/risk_calibration.csv} captures corpus-level $\Delta R$ and residual risk (Table~\ref{tab:risk_calibration}). Future iterations will enrich each queue item with container-image CVE joins (via Trivy/Grype), CVSS/EPSS feeds \cite{nvd,epss}, and CISA KEV catalog checks \cite{cisa_kev} so that $R$ reflects both exposure (Pod Security level, dangerous capabilities, host mounts) and exploit likelihood. The risk score $R$ then feeds the bandit scoring function, allowing us to report absolute risk and per-patch risk reduction $\Delta R$ as first-class metrics.
 
 \subsection{Guidance Refresh and RAG Hooks}
-We curate policy guidance under \path{docs/policy_guidance/raw/}; \path{scripts/refresh_guidance.py} now refreshes Pod Security, CIS, and Kyverno snippets (backed by \path{docs/policy_guidance/sources.yaml}) to keep guardrails current. LLM-backed proposer modes can retrieve these snippets at prompt time, and the roadmap extends this into a full RAG loop: chunk guidance with metadata (policy family, resource kind, field path, image$\rightarrow$CVE), cache recent verifier failures, and retrieve targeted passages when retries occur. This keeps the prompt budget bounded while grounding fixes in up-to-date hardening language.
+We curate policy guidance under \url{docs/policy_guidance/raw/}; \url{scripts/refresh_guidance.py} now refreshes Pod Security, CIS, and Kyverno snippets (backed by \url{docs/policy_guidance/sources.yaml}) to keep guardrails current. LLM-backed proposer modes can retrieve these snippets at prompt time, and the roadmap extends this into a full RAG loop: chunk guidance with metadata (policy family, resource kind, field path, image$\rightarrow$CVE), cache recent verifier failures, and retrieve targeted passages when retries occur. This keeps the prompt budget bounded while grounding fixes in up-to-date hardening language.
 
 \subsection{Risk-Bandit Scheduler with Aging and KEV Preemption}
 \begin{equation}
@@ -673,7 +686,7 @@ We formally define how we measure effectiveness and fairness:
 \noindent\textbf{Latest Evaluation.} Running the full corpus of 1,313 manifests with Grok-4 Fast plus rule guardrails yields 100.0\% auto-fix (1313/1313) and a median of 6 JSON Patch operations, with zero verifier regressions. Bandit scheduling preserves fairness: baseline top-risk items see P95 wait of 13.0\,h at roughly 6.0 patches/hour while FIFO defers the same cohort to 102.3\,h (+89.3\,h).
 % METRICS_EVAL_END
 
-\noindent\textbf{Targets (Acceptance Criteria).} Based on industry standards and research objectives, we target: Detection F1 $\ge 0.85$ (hold-out), Auto-fix Rate $\ge 70\%$, No-new-violations Rate $\ge 95\%$, and median JSON Patch operations $\le 6$ (rules-mode sweeps yield median $5$ and P95 $6$ per \path{data/eval/patch_stats.json}).
+\noindent\textbf{Targets (Acceptance Criteria).} Based on industry standards and research objectives, we target: Detection F1 $\ge 0.85$ (hold-out), Auto-fix Rate $\ge 70\%$, No-new-violations Rate $\ge 95\%$, and median JSON Patch operations $\le 6$ (rules-mode sweeps yield median $5$ and P95 $6$ per \url{data/eval/patch_stats.json}).
 
 \section{Limitations}
 The prototype prioritizes shipping guardrails and evidence, but several constraints remain before production deployment:
@@ -683,7 +696,7 @@ The prototype prioritizes shipping guardrails and evidence, but several constrai
     \item \textbf{MutatingAdmissionPolicy baseline.} The GA \texttt{admissionregistration.k8s.io/v1beta1} MutatingAdmissionPolicy still lacks CEL constructs to set per-container security context and resource defaults. Consequently Table~\ref{tab:baselines} reports only the deterministic simulation (1/2--1/3 acceptance); a real MAP baseline will follow once upstream CEL support adds list-aware helpers or richer apply semantics.
     \item \textbf{Operator study.} Scheduler comparisons rely on deterministic queue replays; we do not yet have a human-in-the-loop rotation or production incident telemetry.
     \item \textbf{Threat intelligence depth.} CTI enrichment today stops at KEV and EPSS joins; image CVE lookups and exploit-timeline signals remain manual, limiting the fidelity of $R_i$ and remediation guidance.
-    \item \textbf{LLM telemetry gaps.} Grok/xAI runs now capture per-patch token usage (\path{data/grok5k_telemetry.json}, \path{data/grok1k_telemetry.json}), yet latency traces remain absent, preventing reproducible timing histograms for the LLM path.
+    \item \textbf{LLM telemetry gaps.} Grok/xAI runs now capture per-patch token usage (\url{data/grok5k_telemetry.json}, \url{data/grok1k_telemetry.json}), yet latency traces remain absent, preventing reproducible timing histograms for the LLM path.
 \end{itemize}
 
 \section{Discussion and Future Work}
