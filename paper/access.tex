@@ -53,15 +53,16 @@
 \makeatother
 
 % Ensure local Type 1 font maps (bundled with template) are loaded
-\pdfmapfile{+paper/t1-formata.map}
-\pdfmapfile{+paper/t1-times.map}
-\pdfmapfile{+paper/t1-helvetica.map}
-\pdfmapfile{+paper/t1-giovannistd.map}
+\pdfmapfile{+t1-formata.map}
+\pdfmapfile{+t1-times.map}
+\pdfmapfile{+t1-helvetica.map}
+\pdfmapfile{+t1-giovannistd.map}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 %Your document starts from here ___________________________________________________
+
 \begin{document}
 \history{}
 \doi{DOI: TBD}
@@ -104,7 +105,7 @@ Kubernetes, YAML, Pod Security, JSON Patch, Policy Enforcement, Kyverno, OPA Gat
 \section{Importance of the Problem}
 Kubernetes YAML is easy to get wrong: a single \texttt{privileged: true}, a \texttt{:latest} image tag, or a missing \texttt{runAsNonRoot} can expand blast radius and undermine defense-in-depth. Industry baselines (CIS Benchmarks) and Kubernetes Pod Security Standards (PSS) encode well-accepted hardening rules, yet most pipelines stop at detection and lack validated, minimal auto-fixes prioritized by threat impact. This project targets that gap with measured improvements on Auto-fix rate, No-new-violations\%, Time-to-patch, and \emph{risk reduction} (with fairness) on a held-out corpus—directly aligned with industry standards and research objectives (\cite{cis_benchmarks}, \cite{pss}).
 
-The closed-loop verification triad and risk-aware scheduling goals mirror the evaluation criteria used by security venues such as IEEE S\&P, USENIX Security, and NDSS: demonstrable risk reduction, strong guardrails against regressions, and operator-in-the-loop evidence. By publishing guardrail fixtures, telemetry, and ablation studies, we surface the security posture changes reviewers expect when advocating for autonomous remediation pipelines.
+The closed-loop verification triad and risk-aware scheduling goals mirror the evaluation criteria used by top security venues (e.g., IEEE S\&P, USENIX Security, NDSS). Our approach provides demonstrable risk reduction, strong guardrails against regressions, and operator-in-the-loop evidence. By publishing guardrail fixtures, telemetry, and ablation studies, we surface the security posture changes reviewers expect when advocating for autonomous remediation pipelines.
 
 %====================
 % Comparison Table (Updated)
@@ -156,8 +157,10 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \noindent\textbf{Metric caveat.} Table~\ref{tab:comparison} aggregates metrics reported by prior work that span admission latency, MTTR, and acceptance rates, so values are not strictly comparable; they provide qualitative context only.
 
 Table~\ref{tab:baselines} grounds those qualitative differences with the head-to-head slice we share publicly. On the 500-manifest security-context corpus, \texttt{k8s-auto-fix} lands 33--100\% acceptance across the high-risk policies it actively targets (privilege, capabilities, read-only root filesystem, requests/limits); the lone unsupported rule, \texttt{no\_host\_ports}, remains at 0\% because we do not attempt that mutation today. Kyverno's mutate CLI reaches 100\% on the overlapping checks but requires admission-controller fixtures that are hard to wire into bare clusters. Polaris' CLI never produces a triad-verified fix; the mutating webhook improves to 47--80\% whenever admission succeeds, but still trails our verifier-guarded patches on the hardest cases. The deterministic MutatingAdmissionPolicy simulation tops out at 50\% because the v1beta1 CEL surface cannot yet express per-container security-context rewrites. Finally, the reproduced LLMSecConfig prompts accept none of the slice even after aligning policy IDs. These results underscore our claim that safe auto-remediation demands more than mutate hooks alone: the triad prevents regressions, but fixture drift and policy coverage still bound acceptance and deserve the infrastructure focus we outline later in this section.
-\section{Brief Related Work and Gaps}
+\section{Related Work}
 Recent work has explored LLM prompts (GenKubeSec \cite{malul2024}), admission policy engines (Kyverno \cite{kyverno_docs}), and large-scale SRE playbooks (Borg \cite{borg}) for Kubernetes remediation, yet critical gaps remain for a production-ready, automated system. GenKubeSec localizes and suggests fixes but leaves validation to humans, lacking schema/dry-run guardrails. Kyverno mutates manifests at admission-time but does not prioritize fixes or auto-seed third-party CRDs. Borg-style automation excels at infrastructure remediation yet is not openly available for manifest-level hardening. Table~\ref{tab:comparison} situates our closed-loop pipeline relative to these efforts, combining automated patching, triad verification, and risk-aware scheduling with published acceptance metrics on multi-thousand manifest corpora.
+
+A key limitation of existing approaches is their focus on either detection or admission control, without a corresponding emphasis on automated, validated remediation. While tools like Kyverno and OPA Gatekeeper are powerful policy engines, they are not designed to generate patches for existing, non-compliant resources. This leaves a critical gap in the DevOps lifecycle, where developers are often left to manually remediate misconfigurations, leading to delays and inconsistencies. Our work directly addresses this gap by providing a closed-loop system that not only detects misconfigurations but also proposes, verifies, and schedules validated patches, thereby reducing the manual effort required to maintain a secure Kubernetes environment.
 
 \smallskip
 \noindent\textbf{1. Detection-Only Pipelines.} Static analysis tools like \texttt{kube-linter} and policy engines such as Kyverno and OPA Gatekeeper excel at identifying misconfigurations (\cite{kube_linter_docs}, \cite{kyverno_docs}, \cite{opa_gatekeeper}). However, their core function is detection and admission control, not the generation of validated, minimal patches. Our work uses these powerful tools as the \emph{Detector} and \emph{Verifier} components in a broader remediation workflow.
@@ -180,7 +183,7 @@ To make the closed-loop pipeline concrete, we trace two real-world manifests fro
 \smallskip
 \noindent\textbf{Case 1: Remediating a Privileged Pod with a \texttt{:latest} Image Tag}
 
-This example, drawn from \path{data/manifests/001.yaml}, shows a common but high-risk pattern: a privileged container using a floating tag.
+This example, drawn from \url{data/manifests/001.yaml}, shows a common but high-risk pattern: a privileged container using a floating tag.
 
 \begin{codeblock}
 apiVersion: v1
@@ -195,9 +198,9 @@ spec:
       capabilities: { add: ["SYS_ADMIN", "NET_ADMIN"] }
 \end{codeblock}
 
-\noindent\textit{1. Detect} (Union): The detector consumes this manifest and reports four policy violations: \texttt{no\_privileged}, \texttt{drop\_capabilities}, \texttt{run\_as\_non\_root}, and \texttt{no\_latest\_tag}. These correspond to the structured output in \path{data/detections.json}.
+\noindent\textit{1. Detect} (Union): The detector consumes this manifest and reports four policy violations: \texttt{no\_privileged}, \texttt{drop\_capabilities}, \texttt{run\_as\_non\_root}, and \texttt{no\_latest\_tag}. These correspond to the structured output in \url{data/detections.json}.
 
-\noindent\textit{2. Propose} (Rules Engine): The proposer's rules engine consumes the detection report and generates a minimal, idempotent JSON Patch designed to fix all identified violations. The resulting patch, written to \path{data/patches.json}, is as follows:
+\noindent\textit{2. Propose} (Rules Engine): The proposer's rules engine consumes the detection report and generates a minimal, idempotent JSON Patch designed to fix all identified violations. The resulting patch, written to \url{data/patches.json}, is as follows:
 \begin{codeblock}
 [
  {"op":"replace","path":"/spec/containers/0/securityContext/privileged","value":false},
@@ -215,9 +218,9 @@ spec:
     \item \textbf{Schema Validation}: Passes, confirming the patch produces a structurally valid Kubernetes object.
     \item \textbf{Server Dry-Run}: Succeeds, as \texttt{kubectl apply --dry-run=server} reports the manifest would be accepted by the API server in a Kind cluster seeded with necessary fixtures.
 \end{itemize}
-The successful outcome is recorded in \path{data/verified.json}.
+The successful outcome is recorded in \url{data/verified.json}.
 
-\noindent\textit{4. Schedule} (Risk-Bandit): The scheduler assigns the verified patch a high priority. Its risk score ($R$) is elevated due to the privileged container, its empirical success probability ($p$) is high based on historical data for these policies, and its expected remediation time ($\mathbb{E}[t]$) is low. This combination results in a high score, pushing it to the front of the remediation queue (\path{data/schedule.json}).
+\noindent\textit{4. Schedule} (Risk-Bandit): The scheduler assigns the verified patch a high priority. Its risk score ($R$) is elevated due to the privileged container, its empirical success probability ($p$) is high based on historical data for these policies, and its expected remediation time ($\mathbb{E}[t]$) is low. This combination results in a high score, pushing it to the front of the remediation queue (\url{data/schedule.json}).
 
 \smallskip
 \noindent\textbf{Case 2: Hardening a Worker Pod with a \texttt{hostPath} Mount}
@@ -232,7 +235,7 @@ spec:
     hostPath: { path: "/var/run/docker.sock" }
 \end{codeblock}
 
-This second case, from \path{data/manifests/002.yaml}, targets three additional misconfigurations: a writable root filesystem, a dangerous \texttt{hostPath} volume mount, and missing resource requests and limits.
+This second case, from \url{data/manifests/002.yaml}, targets three additional misconfigurations: a writable root filesystem, a dangerous \texttt{hostPath} volume mount, and missing resource requests and limits.
 
 \noindent\textit{1. Detect}: The detector flags \texttt{read\_only\_root\_fs}, \texttt{no\_host\_path}, and \texttt{set\_requests\_limits}.
 
