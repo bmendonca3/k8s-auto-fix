@@ -27,7 +27,7 @@
 \lstdefinestyle{codestyle}{%
   basicstyle=\ttfamily\scriptsize,
   breaklines=true,
-  breakatwhitespace=true,
+  breakatwhitespace=false,
   columns=fullflexible,
   keepspaces=true,
   showstringspaces=false,
@@ -87,7 +87,7 @@
 
 % Abstract and keywords must be defined before \maketitle for ieeeaccess
 \begin{abstract}
-Misconfigured Kubernetes manifests expand blast radius when pipelines stop at detection. We present \texttt{k8s-auto-fix}, a closed loop (\emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler}) that defaults to deterministic rules and can blend Grok/xAI patches behind the same guardrails. A 200-manifest live-cluster replay reaches 100.0\% success (200/200) with zero rollbacks and perfect dry-run/live-apply alignment (Table~\ref{tab:eval_summary}, \path{data/live_cluster/results_20251020_204511.json}). Deterministic rules cover 13{,}589/13{,}656 detections (99.51\%), while Grok/xAI fixes the entire 1{,}313-manifest slice (100\%) and 4{,}439/5{,}000 manifests (88.78\%) from the Grok corpus under \texttt{kubectl apply --dry-run=server} (Table~\ref{tab:eval_summary}, \path{data/eval/unified_eval_summary.json}). The verifier triad (policy re-check, schema validation, server-side dry-run) and hardening guardrails admit no regressions across accepted patches (Table~\ref{tab:verifier_ablation}). A risk-aware scheduler cuts top-risk P95 wait from 102.3~h (FIFO) to 13.0~h (7.9$\times$) with fairness metrics derived from reproducible queue replays (\path{data/scheduler/metrics_sweep_live.json}, \path{data/outputs/scheduler/metrics_schedule_sweep.json}). We release scripts, hashed telemetry, and audit logs so reviewers can regenerate every table and figure that underpins these claims (\path{ARTIFACTS.md}).
+Misconfigured Kubernetes manifests expand blast radius when pipelines stop at detection. We present \texttt{k8s-auto-fix}, a closed loop (\emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler}) that defaults to deterministic rules and can blend Grok/xAI patches behind the same guardrails. A 200-manifest live-cluster replay reaches 100.0\% success (200/200) with zero rollbacks and perfect dry-run/live-apply alignment (Table~\ref{tab:eval_summary}, \url{data/live_cluster/results_20251020_204511.json}). Deterministic rules cover 13{,}589/13{,}656 detections (99.51\%), while Grok/xAI fixes the entire 1{,}313-manifest slice (100\%) and 4{,}439/5{,}000 manifests (88.78\%) from the Grok corpus under \texttt{kubectl apply --dry-run=server} (Table~\ref{tab:eval_summary}, \url{data/eval/unified_eval_summary.json}). The verifier triad (policy re-check, schema validation, server-side dry-run) and hardening guardrails admit no regressions across accepted patches (Table~\ref{tab:verifier_ablation}). A risk-aware scheduler cuts top-risk P95 wait from 102.3~h (FIFO) to 13.0~h (7.9$\times$) with fairness metrics derived from reproducible queue replays (\url{data/scheduler/metrics_sweep_live.json}, \url{data/outputs/scheduler/metrics_schedule_sweep.json}). We release scripts, hashed telemetry, and audit logs so reviewers can regenerate every table and figure that underpins these claims (\url{ARTIFACTS.md}).
 \end{abstract}
 
 \begin{keywords}
@@ -114,7 +114,7 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \small
 \caption{Comparison of automated Kubernetes remediation systems (Oct.~2025 snapshot).}
 \label{tab:comparison}
-\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{2.5in} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Capability} & \textbf{k8s-auto-fix (this work)} & \textbf{GenKubeSec \cite{malul2024}} & \textbf{Kyverno \cite{kyverno_docs}} & \textbf{Borg/SRE \cite{borg}} \\
 \midrule
@@ -399,12 +399,12 @@ Python & 3.12.4 (macOS-26.0-arm64) \\
 
 \subsection{Evaluation Results}
 \label{sec:evaluation}
-All results in this section derive from the deterministically reproducible \texttt{rules} pipeline unless explicitly noted. Table~\ref{tab:eval_summary} consolidates acceptance and latency statistics for each corpus. The API-backed Grok mode is likewise benchmarked (4{,}439 / 5{,}000 accepted; see \texttt{data/batch\_runs/grok\_5k/metrics\_grok5k.json}) but requires external credentials and funded access, so we treat it as an opt-in configuration rather than the default reproduction path. Consolidated metrics (acceptance + latency) live in \texttt{data/eval/unified\_eval\_summary.json}.
+All results in this section derive from the deterministically reproducible \texttt{rules} pipeline unless explicitly noted. Table~\ref{tab:eval_summary} consolidates acceptance and latency statistics for each corpus. The API-backed Grok mode is likewise benchmarked (4{,}439 / 5{,}000 accepted; see \url{data/batch_runs/grok_5k/metrics_grok5k.json}) but requires external credentials and funded access, so we treat it as an opt-in configuration rather than the default reproduction path. Consolidated metrics (acceptance + latency) live in \url{data/eval/unified_eval_summary.json}.
 
-\noindent\textbf{Detector accuracy.} Running \texttt{scripts/eval\_detector.py} on a synthetic nine-policy hold-out set confirms basic detector functionality with perfect precision and recall (Table~\ref{tab:detector_performance}). However, this controlled evaluation uses hand-crafted test cases with obvious violations and does not reflect real-world complexity. The detector's practical performance is validated through the 100.0\% live-cluster success rate (200/200 curated manifests); artifacts for this run live in \path{data/live\_cluster/results\_20251020\_204511.json}.
+\noindent\textbf{Detector accuracy.} Running \texttt{scripts/eval\_detector.py} on a synthetic nine-policy hold-out set confirms basic detector functionality with perfect precision and recall (Table~\ref{tab:detector_performance}). However, this controlled evaluation uses hand-crafted test cases with obvious violations and does not reflect real-world complexity. The detector's practical performance is validated through the 100.0\% live-cluster success rate (200/200 curated manifests); artifacts for this run live in \url{data/live_cluster/results_20251020_204511.json}.
 
 \smallskip
-\noindent\textbf{ArtifactHub slice.} To test against less curated input, we heuristically labelled 69 ArtifactHub manifests covering four common policies (\texttt{no\_latest\_tag}, \texttt{no\_privileged}, \texttt{no\_host\_path}, \texttt{no\_host\_ports}). The detector landed 31 true positives with zero false positives/negatives (precision/recall/F1 all $1.0$). Scoring is restricted to these policies (detections filtered via \path{data/eval/artifacthub_sample_detections_filtered.json}). Labels, detections, and metrics live under \path{data/eval/artifacthub_sample_labels.json}, \path{data/eval/artifacthub_sample_detections.json}, and \path{data/eval/artifacthub_sample_metrics.json}.
+\noindent\textbf{ArtifactHub slice.} To test against less curated input, we heuristically labelled 69 ArtifactHub manifests covering four common policies (\texttt{no\_latest\_tag}, \texttt{no\_privileged}, \texttt{no\_host\_path}, \texttt{no\_host\_ports}). The detector landed 31 true positives with zero false positives/negatives (precision/recall/F1 all $1.0$). Scoring is restricted to these policies (detections filtered via \url{data/eval/artifacthub_sample_detections_filtered.json}). Labels, detections, and metrics live under \url{data/eval/artifacthub_sample_labels.json}, \url{data/eval/artifacthub_sample_detections.json}, and \url{data/eval/artifacthub_sample_metrics.json}.
 
 \begin{table}[t]
 \caption{Detector performance on synthetic hold-out manifests ($n=9$). Note: These are hand-crafted test cases with obvious violations; real-world performance is validated through live-cluster evaluation.}
@@ -440,7 +440,7 @@ Comparisons against Kyverno baselines show complementary strengths. The Kyverno 
 \begin{table}[t]
 \centering
 \scriptsize
-\caption{Verifier failure taxonomy comparing the rules baseline (pre-fixture) against the supported corpus after fixture seeding. Counts derive from \protect\path{data/failures/taxonomy_counts.csv} generated by \texttt{scripts/aggregate\_failure\_taxonomy.py}.}
+\caption{Verifier failure taxonomy comparing the rules baseline (pre-fixture) against the supported corpus after fixture seeding. Counts derive from \protect\url{data/failures/taxonomy_counts.csv} generated by \texttt{scripts/aggregate\_failure\_taxonomy.py}.}
 \label{tab:failure_taxonomy}
 {\setlength{\tabcolsep}{4pt}
 \begin{tabularx}{\columnwidth}{|>{\raggedright\arraybackslash}X|r|r|}
@@ -475,21 +475,22 @@ member `metadata' not found in & 1 & 0 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/mode_comparison.png}
-\caption{Acceptance comparison between rules-only, LLM-only, and hybrid remediation modes (\protect\path{data/baselines/mode\_comparison.csv}).}
+\caption{Acceptance comparison between rules-only, LLM-only, and hybrid remediation modes (\protect\url{data/baselines/mode\_comparison.csv}).}
 \label{fig:mode_comparison}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/operator_ab.png}
-\caption{Operator A/B study results comparing bandit scheduler against baseline modes. Dual-axis chart shows acceptance rate (green bars) and mean wait time (blue bars) across 247 simulated queue assignments (\protect\path{data/operator\_ab/summary\_simulated.csv}).}
-\label{fig:operator_ab}
+\caption{Operator A/B study results comparing bandit scheduler against baseline modes. Dual-axis chart shows acceptance rate (green bars) and mean wait time (blue bars) across 247 simulated queue assignments (\protect\url{data/operator\_ab/summary\_simulated.csv}).}
+\label
+{fig:operator_ab}
 \end{figure}
 
 \begin{table*}[t]
 \centering
 \scriptsize
-\caption{Risk calibration summary derived from \protect\path{data/risk/risk_calibration.csv}. $\Delta R$ uses policy risk weights; “per time unit” divides by summed expected-time priors.}
+\caption{Risk calibration summary derived from \protect\url{data/risk/risk_calibration.csv}. $\Delta R$ uses policy risk weights; “per time unit” divides by summed expected-time priors.}
 \label{tab:risk_calibration}
 \begin{tabular}{@{}l r r r r r r@{}}
 \toprule
@@ -522,7 +523,7 @@ Grok-5k (Grok/xAI) & 1337 & 4439/5000 (88.78\%) & \textemdash & \textemdash & \t
 \endgroup
 
 \smallskip
-\noindent\small\textbf{Notes:} Rates use manifest counts from \path{data/eval/table4_counts.csv} with 95\% Wilson confidence intervals provided in \path{data/eval/table4_with_ci.csv}. Row 1: Host-mount policies normalized; measured from the seeded rerun. Row 2: Deterministic baseline for the manifest slice. Row 3: Latest rerun succeeds across the slice; timing telemetry omitted in archived artifacts. Row 4: Grok/xAI evaluation executed in Reasoning API mode.
+\noindent\small\textbf{Notes:} Rates use manifest counts from \url{data/eval/table4_counts.csv} with 95\% Wilson confidence intervals provided in \url{data/eval/table4_with_ci.csv}. Row 1: Host-mount policies normalized; measured from the seeded rerun. Row 2: Deterministic baseline for the manifest slice. Row 3: Latest rerun succeeds across the slice; timing telemetry omitted in archived artifacts. Row 4: Grok/xAI evaluation executed in Reasoning API mode.
 \end{table*}
 
 Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest slice are documented in the project artifact \path{docs/ablation_rules_vs_grok.md}.
@@ -530,9 +531,9 @@ Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest sl
 Multi-seed replay (\path{scripts/multi_seed_summary.py}) yields $0.9993\pm0.0012$ acceptance on the supported corpus and $0.9951\pm0.0004$ on the manifest slice (\path{data/eval/multi_seed_summary.csv}), indicating low variance across randomized queue orderings. The operator survey instrument is drafted in \path{docs/operator_survey.md}; it will be deployed alongside the planned human-in-the-loop rotation described in Section~\ref{sec:evaluation}.
 
 \subsection{Threats and Mitigations}
-The reproducibility bundle (\texttt{make reproducible-report}) regenerates Table~\ref{tab:eval_summary} directly from JSON artifacts so reviewers can audit every metric. Semantic regression checks now block Grok-generated patches that remove containers or volumes, and fixtures under \path{infra/fixtures/} seed RBAC/NetworkPolicy gaps before verification. We threat-modeled malicious or placeholder manifests: the guidance retriever limits prompt context to policy-relevant snippets, the verifier enforces policy/schema/\texttt{kubectl} gates, and the scheduler never surfaces unverified patches. Residual risks—primarily infrastructure assumptions and LLM hallucinations—are captured in \path{logs/grok5k/failure_summary_latest.txt} and triaged before publication. Table~\ref{tab:cilium_patch} illustrates how these guardrails harden high-privilege DaemonSets without breaking required host integrations.
+The reproducibility bundle (\texttt{make reproducible-report}) regenerates Table~\ref{tab:eval_summary} directly from JSON artifacts so reviewers can audit every metric. Semantic regression checks now block Grok-generated patches that remove containers or volumes, and fixtures under \url{infra/fixtures/} seed RBAC/NetworkPolicy gaps before verification. We threat-modeled malicious or placeholder manifests: the guidance retriever limits prompt context to policy-relevant snippets, the verifier enforces policy/schema/\texttt{kubectl} gates, and the scheduler never surfaces unverified patches. Residual risks—primarily infrastructure assumptions and LLM hallucinations—are captured in \url{logs/grok5k/failure_summary_latest.txt} and triaged before publication. Table~\ref{tab:cilium_patch} illustrates how these guardrails harden high-privilege DaemonSets without breaking required host integrations.
 
-Secret hygiene is enforced end-to-end: the proposer replaces secret-like environment values with \texttt{secretKeyRef} references, sanitizes generated names, and documents the guarantees in \path{docs/security_considerations.md}.
+Secret hygiene is enforced end-to-end: the proposer replaces secret-like environment values with \texttt{secretKeyRef} references, sanitizes generated names, and documents the guarantees in \url{docs/security_considerations.md}.
 
 \begin{table*}[t]
 \caption{Guardrail example: Cilium DaemonSet patch (excerpt).}
@@ -567,11 +568,11 @@ securityContext: \\
 \end{tabularx}
 \endgroup
 \vspace{0.4em}
-\parbox{\textwidth}{\footnotesize Guardrails summarized in \path{docs/privileged_daemonsets.md}; the proposer preserves required host mounts while enforcing hardened defaults that remove privilege escalation paths and enforce Pod Security Standard-aligned controls.}
+\parbox{\textwidth}{\footnotesize Guardrails summarized in \url{docs/privileged_daemonsets.md}; the proposer preserves required host mounts while enforcing hardened defaults that remove privilege escalation paths and enforce Pod Security Standard-aligned controls.}
 \end{table*}
 
 \subsection{Threat Intelligence and Risk Scoring (CVE/KEV/EPSS)}
-The current scheduler consumes \path{data/policy_metrics.json}, which stores per-policy priors for success probability, expected latency, KEV flags, and baseline risk. The calibration pass (\path{data/risk/policy_risk_map.json}) now augments those priors with observed detection/resolution counts, while \path{data/risk/risk_calibration.csv} captures corpus-level $\Delta R$ and residual risk (Table~\ref{tab:risk_calibration}). Future iterations will enrich each queue item with container-image CVE joins (via Trivy/Grype), CVSS/EPSS feeds \cite{nvd,epss}, and CISA KEV catalog checks \cite{cisa_kev} so that $R$ reflects both exposure (Pod Security level, dangerous capabilities, host mounts) and exploit likelihood. The risk score $R$ then feeds the bandit scoring function, allowing us to report absolute risk and per-patch risk reduction $\Delta R$ as first-class metrics.
+The current scheduler consumes \url{data/policy_metrics.json}, which stores per-policy priors for success probability, expected latency, KEV flags, and baseline risk. The calibration pass (\url{data/risk/policy_risk_map.json}) now augments those priors with observed detection/resolution counts, while \url{data/risk/risk_calibration.csv} captures corpus-level $\Delta R$ and residual risk (Table~\ref{tab:risk_calibration}). Future iterations will enrich each queue item with container-image CVE joins (via Trivy/Grype), CVSS/EPSS feeds \cite{nvd,epss}, and CISA KEV catalog checks \cite{cisa_kev} so that $R$ reflects both exposure (Pod Security level, dangerous capabilities, host mounts) and exploit likelihood. The risk score $R$ then feeds the bandit scoring function, allowing us to report absolute risk and per-patch risk reduction $\Delta R$ as first-class metrics.
 
 \subsection{Guidance Refresh and RAG Hooks}
 We curate policy guidance under \path{docs/policy_guidance/raw/}; \path{scripts/refresh_guidance.py} now refreshes Pod Security, CIS, and Kyverno snippets (backed by \path{docs/policy_guidance/sources.yaml}) to keep guardrails current. LLM-backed proposer modes can retrieve these snippets at prompt time, and the roadmap extends this into a full RAG loop: chunk guidance with metadata (policy family, resource kind, field path, image$\rightarrow$CVE), cache recent verifier failures, and retrieve targeted passages when retries occur. This keeps the prompt budget bounded while grounding fixes in up-to-date hardening language.
@@ -686,15 +687,15 @@ The prototype prioritizes shipping guardrails and evidence, but several constrai
 \end{itemize}
 
 \section{Discussion and Future Work}
-The current pipeline achieves 100.0\% live-cluster success (200/200 curated manifests) with perfect dry-run/live-apply alignment and surpasses academic baselines (Table~\ref{tab:eval_summary}, \path{data/live_cluster/results_20251020_204511.json}). Across offline corpora, the system delivers 93.54\% acceptance on the 5k supported corpus, 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest Grok/xAI run, and 88.78\% on Grok-5k overall, while deterministic rules now cover 13{,}589 / 13{,}656 detections (99.51\%) with millisecond-scale latency (Table~\ref{tab:eval_summary}, \path{data/eval/unified_eval_summary.json}). The risk-aware scheduler trims top-risk P95 wait times from 102.3\,h (FIFO) to 13.0\,h (\path{data/scheduler/metrics_sweep_live.json}, \path{data/outputs/scheduler/metrics_schedule_sweep.json}). Every metric in this paper is regenerated from the public artifact bundle (\texttt{make reproducible-report}, \path{ARTIFACTS.md}), and the scheduler comparisons we report stem from deterministic queue replays rather than live analyst rotations. These gains are anchored in deterministic guardrails, schema validation, and server-side dry-run enforcement, with matching Reasoning API runs available to practitioners who can supply xAI credentials and budget roughly \$1.22 per 5k sweep under the published pricing (\path{data/grok5k_telemetry.json}, \cite{xai_pricing}). To prevent configuration drift, every accepted patch is surfaced as a pull request through our GitOps helper (\path{scripts/gitops_writeback.py}), which records verifier evidence, captures the JSON Patch diff, and requires human approval before merge, mirroring the workflow detailed in \path{docs/GITOPS.md}. Looking forward, we will automate guidance refreshes in CI (\path{scripts/refresh_guidance.py}), fold EPSS/KEV feeds directly into the risk score $R_i$, and scale the qualitative feedback loop that now captures operator notes in \path{docs/qualitative_feedback.md}. As the LLM-backed proposer matures, we plan to publish comparative acceptance and latency data, extend scheduler policies with batch-aware fairness, and run human-in-the-loop rotations so the system graduates from prototype to production-ready remediation service. Near-term efforts focus on keeping the seeded fixtures current so the 200/200 live-cluster outcome persists for new corpora, broadening Kyverno webhook baselines across additional policy families and alternative clusters, enriching Grok/xAI telemetry with monotonic latency traces, and conducting an operator rotation with embedded surveys to validate the scheduler against real analyst workflows.
+The current pipeline achieves 100.0\% live-cluster success (200/200 curated manifests) with perfect dry-run/live-apply alignment and surpasses academic baselines (Table~\ref{tab:eval_summary}, \url{data/live_cluster/results_20251020_204511.json}). Across offline corpora, the system delivers 93.54\% acceptance on the 5k supported corpus, 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest Grok/xAI run, and 88.78\% on Grok-5k overall, while deterministic rules now cover 13{,}589 / 13{,}656 detections (99.51\%) with millisecond-scale latency (Table~\ref{tab:eval_summary}, \url{data/eval/unified_eval_summary.json}). The risk-aware scheduler trims top-risk P95 wait times from 102.3\,h (FIFO) to 13.0\,h (\url{data/scheduler/metrics_sweep_live.json}, \url{data/outputs/scheduler/metrics_schedule_sweep.json}). Every metric in this paper is regenerated from the public artifact bundle (\texttt{make reproducible-report}, \url{ARTIFACTS.md}), and the scheduler comparisons we report stem from deterministic queue replays rather than live analyst rotations. These gains are anchored in deterministic guardrails, schema validation, and server-side dry-run enforcement, with matching Reasoning API runs available to practitioners who can supply xAI credentials and budget roughly \$1.22 per 5k sweep under the published pricing (\url{data/grok5k_telemetry.json}, \cite{xai_pricing}). To prevent configuration drift, every accepted patch is surfaced as a pull request through our GitOps helper (\url{scripts/gitops_writeback.py}), which records verifier evidence, captures the JSON Patch diff, and requires human approval before merge, mirroring the workflow detailed in \url{docs/GITOPS.md}. Looking forward, we will automate guidance refreshes in CI (\url{scripts/refresh_guidance.py}), fold EPSS/KEV feeds directly into the risk score $R_i$, and scale the qualitative feedback loop that now captures operator notes in \url{docs/qualitative_feedback.md}. As the LLM-backed proposer matures, we plan to publish comparative acceptance and latency data, extend scheduler policies with batch-aware fairness, and run human-in-the-loop rotations so the system graduates from prototype to production-ready remediation service. Near-term efforts focus on keeping the seeded fixtures current so the 200/200 live-cluster outcome persists for new corpora, broadening Kyverno webhook baselines across additional policy families and alternative clusters, enriching Grok/xAI telemetry with monotonic latency traces, and conducting an operator rotation with embedded surveys to validate the scheduler against real analyst workflows.
 
 \appendices
 \section{Corpus Mining and Integrity}
 \label{app:corpus}
-\noindent\textbf{ArtifactHub mining pipeline.} Running \texttt{python scripts/\allowbreak collect\_artifacthub.py\ --limit\ 5000} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \path{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
+\noindent\textbf{ArtifactHub mining pipeline.} Running \texttt{python scripts/\allowbreak collect\_artifacthub.py\ --limit\ 5000} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \url{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
 
 \medskip
-\noindent\textbf{Corpus hashes.} After manifests are rendered, \texttt{python scripts/generate\_corpus\_appendix.py} emits \path{docs/appendix\_corpus.md}, a SHA-256 inventory of every manifest (including the curated smoke tests in \path{data/manifests/001.yaml} and \path{002.yaml}). This appendix enables reproducibility reviewers to verify corpus integrity and trace individual evaluation examples back to their Helm chart origins.
+\noindent\textbf{Corpus hashes.} After manifests are rendered, \texttt{python scripts/generate\_corpus\_appendix.py} emits \url{docs/appendix\_corpus.md}, a SHA-256 inventory of every manifest (including the curated smoke tests in \url{data/manifests/001.yaml} and \url{002.yaml}). This appendix enables reproducibility reviewers to verify corpus integrity and trace individual evaluation examples back to their Helm chart origins.
 
 %====================
 % References
