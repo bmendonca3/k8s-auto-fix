@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: galaxy-api
+  name: galaxy-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: galaxy-api
+  template:
+    metadata:
+      labels:
+        app: galaxy-api
+    spec:
+      containers:
+      - args:
+        - run
+        - api
+        env:
+        - name: GALAXY_DB_URL
+          value: postgres://galaxy:galaxy@postgres:5432/galaxy
+        - name: GALAXY_RABBITMQ_HOST
+          value: rabbitmq
+        - name: GALAXY_RABBITMQ_PASSWORD
+          value: galaxy
+        - name: GALAXY_SECRET_KEY
+          value: 31113434a24f96eacb5be664de95962e424dceb4
+        - name: GALAXY_AWS_ACCESS_KEY_ID
+          value: ''
+        - name: GALAXY_AWS_SECRET_ACCESS_KEY
+          value: ''
+        - name: GALAXY_AWS_STORAGE_BUCKET_NAME
+          value: ''
+        - name: GALAXY_INFLUX_DB_HOST
+          value: influxdb-svc
+        - name: GALAXY_INFLUX_DB_PORT
+          value: '8086'
+        - name: GALAXY_INFLUX_DB_USERNAME
+          value: galaxy
+        - name: GALAXY_INFLUX_DB_PASSWORD
+          value: galaxy
+        - name: GALAXY_INFLUX_DB_UI_EVENTS_DB_NAME
+          value: galaxy_ui_events
+        - name: GALAXY_NUM_WORKERS
+          value: '10'
+        image: mansong/galaxy:3.5.0
+        imagePullPolicy: Always
+        name: galaxy-api
+        ports:
+        - containerPort: 8000
+        resources: {}
+      - image: mansong/galaxy-static:latest
+        imagePullPolicy: Always
+        name: galaxy-ui
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - mountPath: /etc/opt/rh/rh-nginx112/nginx
+          name: galaxy-ui-conf
+          readOnly: true
+      volumes:
+      - name: galaxy-ui-conf
+        configMap:
+          name: galaxy-ui-conf
+          items:
+          - key: default.conf
+            path: conf.d/default.conf
+          - key: nginx.conf
+            path: nginx.conf
+          - key: mime.types
+            path: mime.types

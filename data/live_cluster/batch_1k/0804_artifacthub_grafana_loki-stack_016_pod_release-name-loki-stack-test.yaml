@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test-success
+  labels:
+    app: loki-stack
+    chart: loki-stack-2.10.2
+    release: release-name
+    heritage: Helm
+  name: release-name-loki-stack-test
+spec:
+  containers:
+  - name: test
+    image: bats/bats:1.8.2
+    imagePullPolicy: ''
+    args:
+    - /var/lib/loki/test.sh
+    env:
+    - name: LOKI_SERVICE
+      value: release-name-loki
+    - name: LOKI_PORT
+      value: '3100'
+    volumeMounts:
+    - name: tests
+      mountPath: /var/lib/loki
+  restartPolicy: Never
+  volumes:
+  - name: tests
+    configMap:
+      name: release-name-loki-stack-test

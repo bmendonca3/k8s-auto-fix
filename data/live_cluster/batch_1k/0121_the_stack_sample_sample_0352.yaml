@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fb-user-datastore-api-{{ .Values.environmentName }}
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: fb-user-datastore-api-{{ .Values.environmentName }}
+  template:
+    metadata:
+      labels:
+        app: fb-user-datastore-api-{{ .Values.environmentName }}
+        appGroup: fb-user-datastore
+        fb-service-token-cache-access: 'true'
+        tier: frontend
+    spec:
+      serviceAccountName: formbuilder-user-datastore-{{ .Values.environmentName }}
+      containers:
+      - name: fb-user-datastore-api-{{ .Values.environmentName }}
+        image: 754256621582.dkr.ecr.eu-west-2.amazonaws.com/formbuilder/fb-user-datastore-api:{{
+          .Values.circleSha1 }}
+        securityContext:
+          runAsUser: 1001
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+        envFrom:
+        - configMapRef:
+            name: fb-user-datastore-api-env-{{ .Values.environmentName }}
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: rds-instance-formbuilder-user-datastore-{{ .Values.environmentName
+                }}
+              key: url
+        - name: SECRET_KEY_BASE
+          valueFrom:
+            secretKeyRef:
+              name: fb-user-datastore-api-secrets-{{ .Values.environmentName }}
+              key: secret_key_base
+        - name: SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fb-platform-datastore-token-{{ .Values.environmentName }}
+              key: token
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: fb-user-datastore-api-secrets-{{ .Values.environmentName }}
+              key: sentry_dsn
+        - name: METRICS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fb-user-datastore-api-secrets-{{ .Values.environmentName }}
+              key: metrics_access_key

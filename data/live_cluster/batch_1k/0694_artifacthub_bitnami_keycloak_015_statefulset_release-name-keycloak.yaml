@@ -1,0 +1,210 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-keycloak
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/version: 26.3.3
+    helm.sh/chart: keycloak-25.2.0
+    app.kubernetes.io/component: keycloak
+    app.kubernetes.io/part-of: keycloak
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  podManagementPolicy: Parallel
+  serviceName: release-name-keycloak-headless
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: keycloak
+      app.kubernetes.io/component: keycloak
+      app.kubernetes.io/part-of: keycloak
+  template:
+    metadata:
+      annotations:
+        checksum/configmap-env-vars: 32b97b2f95a4b4c37d1e7ba71916ca4c1f73d024fd8a3e077f2c86fba821b469
+        checksum/secrets: 04a6ccee11f98c05bad75a87ca3f46ce99e265b4b5d35d83a1a541641c64d855
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: keycloak
+        app.kubernetes.io/version: 26.3.3
+        helm.sh/chart: keycloak-25.2.0
+        app.kubernetes.io/component: keycloak
+        app.kubernetes.io/part-of: keycloak
+    spec:
+      serviceAccountName: release-name-keycloak
+      automountServiceAccountToken: true
+      affinity:
+        podAffinity: null
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/name: keycloak
+                  app.kubernetes.io/component: keycloak
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+        nodeAffinity: null
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      enableServiceLinks: true
+      initContainers:
+      - name: prepare-write-dirs
+        image: docker.io/bitnami/keycloak:26.3.3-debian-12-r0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          limits:
+            cpu: 150m
+            ephemeral-storage: 2Gi
+            memory: 192Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 128Mi
+        command:
+        - /bin/bash
+        args:
+        - -ec
+        - '. /opt/bitnami/scripts/liblog.sh
+
+
+          info "Copying writable dirs to empty dir"
+
+          # In order to not break the application functionality we need to make some
+
+          # directories writable, so we need to copy it to an empty dir volume
+
+          cp -r --preserve=mode,timestamps /opt/bitnami/keycloak/lib/quarkus /emptydir/app-quarkus-dir
+
+          cp -r --preserve=mode,timestamps /opt/bitnami/keycloak/data /emptydir/app-data-dir
+
+          cp -r --preserve=mode,timestamps /opt/bitnami/keycloak/providers /emptydir/app-providers-dir
+
+          cp -r --preserve=mode,timestamps /opt/bitnami/keycloak/themes /emptydir/app-themes-dir
+
+          info "Copy operation completed"
+
+          '
+        volumeMounts:
+        - name: empty-dir
+          mountPath: /emptydir
+      containers:
+      - name: keycloak
+        image: docker.io/bitnami/keycloak:26.3.3-debian-12-r0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        envFrom:
+        - configMapRef:
+            name: release-name-keycloak-env-vars
+        resources:
+          limits:
+            cpu: 750m
+            ephemeral-storage: 2Gi
+            memory: 768Mi
+          requests:
+            cpu: 500m
+            ephemeral-storage: 50Mi
+            memory: 512Mi
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: discovery
+          containerPort: 7800
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 120
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 5
+          tcpSocket:
+            port: http
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+          httpGet:
+            path: /realms/master
+            port: http
+            scheme: HTTP
+        volumeMounts:
+        - name: empty-dir
+          mountPath: /tmp
+          subPath: tmp-dir
+        - name: empty-dir
+          mountPath: /bitnami/keycloak
+          subPath: app-volume-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/keycloak/conf
+          subPath: app-conf-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/keycloak/lib/quarkus
+          subPath: app-quarkus-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/keycloak/data
+          subPath: app-data-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/keycloak/providers
+          subPath: app-providers-dir
+        - name: empty-dir
+          mountPath: /opt/bitnami/keycloak/themes
+          subPath: app-themes-dir
+        - name: keycloak-secrets
+          mountPath: /opt/bitnami/keycloak/secrets
+      volumes:
+      - name: empty-dir
+        emptyDir: {}
+      - name: keycloak-secrets
+        projected:
+          sources:
+          - secret:
+              name: release-name-keycloak
+          - secret:
+              name: release-name-postgresql
+              items:
+              - key: password
+                path: db-password

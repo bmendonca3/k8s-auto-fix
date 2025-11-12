@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fb-user-datastore-api-env
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: fb-user-datastore-api-env
+  template:
+    metadata:
+      labels:
+        app: fb-user-datastore-api-env
+        appGroup: fb-user-datastore
+        fb-service-token-cache-access: 'true'
+        tier: frontend
+    spec:
+      serviceAccountName: formbuilder-user-datastore-env
+      containers:
+      - name: fb-user-datastore-api-env
+        image: 754256621582.dkr.ecr.eu-west-2.amazonaws.com/formbuilder/fb-user-datastore-api:latest
+        securityContext:
+          runAsUser: 1001
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+        envFrom:
+        - configMapRef:
+            name: fb-user-datastore-api-env-config
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: rds-instance-formbuilder-user-datastore-env
+              key: url
+        - name: SECRET_KEY_BASE
+          valueFrom:
+            secretKeyRef:
+              name: fb-user-datastore-api-secrets-env
+              key: secret_key_base
+        - name: SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fb-platform-datastore-token-env
+              key: token
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: fb-user-datastore-api-secrets-env
+              key: sentry_dsn
+        - name: METRICS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fb-user-datastore-api-secrets-env
+              key: metrics_access_key

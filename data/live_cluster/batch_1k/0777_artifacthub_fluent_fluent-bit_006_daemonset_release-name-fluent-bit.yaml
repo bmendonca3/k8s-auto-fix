@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: release-name-fluent-bit
+  namespace: default
+  labels:
+    helm.sh/chart: fluent-bit-0.53.0
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 4.0.7
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fluent-bit
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fluent-bit
+        app.kubernetes.io/instance: release-name
+      annotations:
+        checksum/config: 8171e72b067d5266d7bcddb8052f04bdf9247e9889fb075d90ccd5939a6ae0da
+    spec:
+      serviceAccountName: release-name-fluent-bit
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
+      containers:
+      - name: fluent-bit
+        image: cr.fluentbit.io/fluent/fluent-bit:4.0.7
+        imagePullPolicy: IfNotPresent
+        command:
+        - /fluent-bit/bin/fluent-bit
+        args:
+        - --workdir=/fluent-bit/etc
+        - --config=/fluent-bit/etc/conf/fluent-bit.conf
+        ports:
+        - name: http
+          containerPort: 2020
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: http
+        volumeMounts:
+        - name: config
+          mountPath: /fluent-bit/etc/conf
+        - mountPath: /var/log
+          name: varlog
+        - mountPath: /var/lib/docker/containers
+          name: varlibdockercontainers
+          readOnly: true
+        - mountPath: /etc/machine-id
+          name: etcmachineid
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: release-name-fluent-bit
+      - hostPath:
+          path: /var/log
+        name: varlog
+      - hostPath:
+          path: /var/lib/docker/containers
+        name: varlibdockercontainers
+      - hostPath:
+          path: /etc/machine-id
+          type: File
+        name: etcmachineid

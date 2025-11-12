@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: repo-configmap
+data:
+  rsyncd.conf: "log file = /dev/stdout\nuse chroot = yes\nuid = root\ngid = root\n\
+    max connections = 10\ntimeout = 600\nread only = yes\n\n[mindspore]\n        path\
+    \ = /repo/mindspore\n        comment = mindspore repo folder\n        read only\
+    \ = true\n        auth users = root\n        secrets file = /etc/rsyncd.secrets\n\
+    \        ignore nonreadable = yes\n        refuse options = checksum\n       \
+    \ dont compress = *\n"
+  ssh.pub: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQChSk+/FF79F8ut0hpNuYQ4uhAgUSY4hzRIPvQ2uVTukP0B0A99NYPfDNICp7gLa6e7yzaj+bvCpgWZoZCNAWTBWkq+zHTgDDHrLtUE4zPC1guzuR+Gz3yeIzSt0iAzi9uG2p+qh7jUfl8QAwNOs3wosNenoZj7NmgsCF9M1o85msimRc8Roxnn5caao1RtdNkDHDqhw5QiS9doSUjoxT+esD0CI7RHAyMgMCfSlXXl/phpdSU2hVJSFXsHVBTiymkuMQe8Ylmls+OEmCe8Cy7lIqE/Q+56l62Pxv4UJpOWs9T/SrOEr5vtEPGghZzgo5ViewzAs3dGMaODSO25XhrIiRZ7hjBK9tjLOX7ZXfAsb4DpJljq2aPCrlEaGJsHc2laixKIOKogDbqFffM3eXwgEAxPUevX/mYnuyhAVrsRUl8HXIQnTuVIEeYVdmn2MA8I/y6MPWdN5VbLR5gOiNLOuSVhCq3sQLpTZ9CONF+zq+1layCoaGMIZw5JwYgWCQgCGNclbx8eMVY3+J3slH6VjzE/05Eys18HtpuAMCivBLGgpBGeCVdpQqkHodTn5ZjNZEBAgzHypiOgR/txMHhkTi4+1ZvTmSRWs9hggv4/IcDQFaj1f2JVds6lxGvJyOnoy9k1VUC0q4N6sptpJ/n+ElCJ4UaHE48La3Mu79R6+Q==
+    mindspore_hosts
+
+    '
+  default.conf: "server {\n    listen 80;\n\n    if ($time_iso8601 ~ \"^(\\d{4})-(\\\
+    d{2})-(\\d{2})\") {\n           set $year $1;\n           set $month $2;\n   \
+    \        set $day $3;\n    }\n    access_log /var/log/nginx/access.log.$year$month$day\
+    \ main;\n\n    server_name download.mindspore.cn;\n    location / {\n        root\
+    \   /repo/mindspore;\n        fancyindex on;\n        fancyindex_exact_size off;\n\
+    \        fancyindex_localtime on;\n        autoindex   on;\n    }\n    location\
+    \ = /favicon.ico {\n      log_not_found off;\n      access_log off;\n    }\n}\n"
+  nginx.conf: "user  root;\nworker_processes  auto;\n\nerror_log  /var/log/nginx/error.log\
+    \ warn;\npid        /var/run/nginx.pid;\n\n\nevents {\n    worker_connections\
+    \  1024;\n}\n\n\nhttp {\n    include       /etc/nginx/conf/mime.types;\n    default_type\
+    \  application/octet-stream;\n\n    # used for geoip2\n    geoip2 /etc/nginx/geoip/country/GeoLite2-Country.mmdb\
+    \ {\n        $geoip2_metadata_country_build metadata build_epoch;\n        $geoip2_data_country_code\
+    \ default=US source=$remote_addr country iso_code;\n        $geoip2_data_country_name\
+    \ country names en;\n    }\n\n    geoip2 /etc/nginx/geoip/city/GeoLite2-City.mmdb\
+    \ {\n        $geoip2_data_city_name default=ShenZhen city names en;\n        $geoip2_data_location_latitude\
+    \ location latitude;\n        $geoip2_data_location_longitude location longitude;\n\
+    \    }\n\n    # the cidr used for elb cluster\n    set_real_ip_from 100.125.0.0/16;\n\
+    \    real_ip_recursive on;\n    real_ip_header X-Forwarded-For;\n\n    log_format\
+    \  main  '$remote_addr <$geoip2_data_country_code, $geoip2_data_country_name,\
+    \ $geoip2_data_city_name, $geoip2_data_location_latitude, $geoip2_data_location_longitude>\
+    \ '\n                      '[$time_local] \"$request\" $status $body_bytes_sent\
+    \ \"$http_referer\" '\n                      '\"$http_user_agent\" $request_filename';\n\
+    \n    sendfile        on;\n    tcp_nopush      on;\n\n    keepalive_timeout  65;\n\
+    \n    #gzip  on;\n\n    server_tokens off;\n    include /etc/nginx/conf/conf.d/*.conf;\n\
+    }"

@@ -1,0 +1,102 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-run-airflow-migrations
+  labels:
+    tier: airflow
+    component: run-airflow-migrations
+    release: release-name
+    chart: airflow-1.18.0
+    heritage: Helm
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: '1'
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        tier: airflow
+        component: run-airflow-migrations
+        release: release-name
+    spec:
+      securityContext:
+        runAsUser: 50000
+        fsGroup: 0
+      restartPolicy: OnFailure
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      topologySpreadConstraints: []
+      serviceAccountName: release-name-airflow-migrate-database-job
+      containers:
+      - name: run-airflow-migrations
+        image: apache/airflow:3.0.2
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        args:
+        - bash
+        - -c
+        - 'exec \
+
+          airflow db migrate'
+        envFrom: []
+        env:
+        - name: PYTHONUNBUFFERED
+          value: '1'
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: release-name-fernet-key
+              key: fernet-key
+        - name: AIRFLOW_HOME
+          value: /opt/airflow
+        - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW_CONN_AIRFLOW_DB
+          valueFrom:
+            secretKeyRef:
+              name: release-name-metadata
+              key: connection
+        - name: AIRFLOW__API__SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: release-name-api-secret-key
+              key: api-secret-key
+        - name: AIRFLOW__API_AUTH__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: release-name-jwt-secret
+              key: jwt-secret
+        - name: AIRFLOW__CELERY__BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: release-name-broker-url
+              key: connection
+        resources: {}
+        volumeMounts:
+        - name: config
+          mountPath: /opt/airflow/airflow.cfg
+          subPath: airflow.cfg
+          readOnly: true
+        - name: config
+          mountPath: /opt/airflow/config/airflow_local_settings.py
+          subPath: airflow_local_settings.py
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: release-name-config

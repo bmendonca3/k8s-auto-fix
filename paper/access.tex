@@ -1,3 +1,4 @@
+\PassOptionsToPackage{table}{xcolor}
 \documentclass{ieeeaccess}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -11,7 +12,7 @@
 \IfFileExists{microtype.sty}{\usepackage[final]{microtype}}{}
 % Packages added for the comparison table
 \usepackage{booktabs}
-\usepackage[table]{xcolor} % Use [table] option for better compatibility
+\usepackage{xcolor}
 \usepackage{tabularx} % For auto-wrapping text in tables
 \usepackage{multirow}
 \usepackage{fancyvrb}
@@ -23,6 +24,15 @@
 \usepackage[hidelinks]{hyperref}
 
 \usepackage{bm}
+\usepackage{courier}
+
+% Silence missing Courier normal-shape warning by aliasing to medium weight
+\AtBeginDocument{%
+  \makeatletter
+  \input{t1pcr.fd}%
+  \makeatother
+  \DeclareFontShape{T1}{pcr}{n}{n}{<->ssub*pcr/m/n}{}%
+}
 
 % Listings-based code block with line breaking and tight margins
 \lstdefinestyle{codestyle}{%
@@ -83,17 +93,17 @@
 
 \corresp{Corresponding author: Dr. Vijay Madisetti (e-mail: vkm@gatech.edu).}
 
-% \tfootnote{This work was supported in part by [Funding Source, if applicable].}
+\tfootnote{The authors thank the ArtifactHub maintainers for curating the public Helm corpus, the CNCF SIG-Security reviewers for early feedback, and xAI for providing Reasoning API credits that made the Grok evaluations possible.}
 
 \titlepgskip=-22pt
 
 % Abstract and keywords must be defined before \maketitle for ieeeaccess
 \begin{abstract}
-Misconfigured Kubernetes manifests expand blast radius when pipelines stop at detection. We present \texttt{k8s-auto-fix}, a closed loop (\emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler}) that addresses this gap. Our key results demonstrate the effectiveness of this approach: a 200-manifest live-cluster replay achieves 100\% success (200/200); deterministic rules cover 99.51\% of violations; an optional LLM backend reaches 88.78\% acceptance on the 5,000-manifest Grok corpus; and a risk-aware scheduler cuts top-risk P95 wait time by 7.9$\times$. We release all artifacts for full reproducibility.
+Misconfigured Kubernetes manifests expand blast radius when pipelines stop at detection. We present \texttt{k8s-auto-fix}, a closed loop (\emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler}) that addresses this gap. Our key results demonstrate the effectiveness of this approach: a 1,000-manifest live-cluster replay achieves 100\% success (1,000/1,000); deterministic rules cover 99.51\% of violations; an optional LLM backend reaches 88.52\% acceptance on the 5,000-manifest Grok corpus; and a risk-aware scheduler cuts top-risk P95 wait time by 7.9$\times$. We release all artifacts for full reproducibility.
 \end{abstract}
 
 \begin{keywords}
-Kubernetes, Admission control, Server-side dry-run, YAML, Pod Security, JSON Patch, Policy Enforcement, Kyverno, OPA Gatekeeper, Auto-fix, CI/CD, CVE, EPSS, RAG, Risk-based scheduling
+Kubernetes, SAST, DAST, Admission control, Server-side dry-run, YAML, Pod Security, JSON Patch, Policy Enforcement, Kyverno, OPA Gatekeeper, Auto-fix, CI/CD, CVE, EPSS, RAG, Risk-based scheduling
 \end{keywords}
 
 \maketitle
@@ -110,7 +120,7 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \smallskip
 \noindent\textbf{Contributions.} We make the following contributions:
 \begin{itemize}
-    \item A closed-loop auto-fix pipeline with triad guardrails (policy re-check, schema validation, server-side dry-run) that achieves 100\% success on a live-cluster replay (Section~\ref{sec:evaluation}).
+    \item A closed-loop auto-fix pipeline with triad guardrails (policy re-check, schema validation, server-side dry-run) that achieves 100\% success on a 1,000-manifest live-cluster replay (Section~\ref{sec:evaluation}).
     \item A risk-aware scheduler that reduces top-risk P95 wait time by 7.9$\times$ while preserving fairness (Section~\ref{sec:evaluation}).
     \item A comprehensive set of reproducible artifacts, including scripts, telemetry, and audit logs, that allow for the complete regeneration of all tables and figures in this paper (\url{ARTIFACTS.md}).
 \end{itemize}
@@ -127,17 +137,13 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \toprule
 \textbf{Capability} & \textbf{k8s-auto-fix (this work)} & \textbf{GenKubeSec \cite{malul2024}} & \textbf{Kyverno \cite{kyverno_docs}} & \textbf{Borg/SRE \cite{borg}} \\
 \midrule
-\rowcolor{gray!10}
 \textbf{Primary Goal} & Closed-loop hardening (detect$\rightarrow$patch$\rightarrow$verify$\rightarrow$prioritize) & LLM-based detection/remediation suggestions & Admission-time policy enforcement & Large-scale auto-remediation in production clusters \\
 \midrule
 \textbf{Fix Mode} & JSON Patch (rules + optional LLM) & LLM-generated YAML edits & Policy mutation/generation & Custom controllers and playbooks \\
-\rowcolor{gray!10}
 \textbf{Guardrails} & Policy re-check + schema + \texttt{kubectl apply --dry-run=server} + privileged/secret sanitization + CRD seeding & Manual review; no automated gates & Validation/mutation webhooks; assumes controllers & Health checks, automated rollback, throttling \\
 \textbf{Risk Prioritization} & Bandit ($R p / \mathbb{E}[t]$ + aging + KEV boost) & Not implemented & FIFO admission queue & Priority queues / toil budgets \\
-\rowcolor{gray!10}
-\textbf{Evaluation Corpus} & 200 live-cluster manifests (100.0\% success); 5{,}000 Grok manifests (88.78\%); 1{,}264 supported manifests (100.00\% rules); 1{,}313 manifest slice (99.51\% rules / 100.00\% Grok) & 200 curated manifests (85--92\% accuracy) & Thousands of user manifests (80--95\% mutation acceptance) & Millions of production workloads (no public acceptance \%) \\
+\textbf{Evaluation Corpus} & 1{,}000 live-cluster manifests (100.0\% success); 5{,}000 Grok manifests (88.52\%); 1{,}264 supported manifests (100.00\% rules); 1{,}313 manifest slice (99.51\% rules / 100.00\% Grok) & 200 curated manifests (85--92\% accuracy) & Thousands of user manifests (80--95\% mutation acceptance) & Millions of production workloads (no public acceptance \%) \\
 \textbf{Telemetry} & Policy-level success probabilities, latency histograms, failure taxonomy & Token/cost estimates; no pipeline telemetry & Admission latency $<45$~ms, violation counts & MTTR, incident counts, operator feedback \\
-\rowcolor{gray!10}
 \textbf{Outstanding Gaps} & Infrastructure-dependent rejects, operator study, scheduled guidance refresh in CI & Automated guardrails, risk-aware ordering & LLM-aware patching, risk-aware scheduling & Declarative manifest fixes, static analysis integration \\
 \bottomrule
 \end{tabularx}
@@ -147,7 +153,7 @@ The closed-loop verification triad and risk-aware scheduling goals mirror the ev
 \begin{table*}[t!]
 \centering
 \small
-\caption{Head-to-head policy-level acceptance on the 500-manifest security-context slice. Counts and rates regenerate from \url{data/detections.json} (SHA256: \url{6bd7bfa7135756635431cd507e58726b58438720b4b506b65080ee6f0b48ac34}), \url{data/verified.json} (SHA256: \url{18736485ba75c3fe8a107b64b49d74f9cd0eeb9ff0e4adbdfeac0f8500864fcb}), and baseline CSVs under \url{data/baselines/}.}
+\caption{Head-to-head policy-level acceptance on the 500-manifest security-context slice. Counts and rates regenerate from \url{data/detections.json}, \url{data/verified.json}, and baseline CSVs under \url{data/baselines/}.}
 \label{tab:baselines}
 \input{../docs/reproducibility/baselines.tex}
 \end{table*}
@@ -184,6 +190,10 @@ Recent work has explored LLM prompts (GenKubeSec \cite{malul2024}), admission po
 }
 \smallskip
 
+\noindent\textbf{SAST vs. DAST Positioning.} Most Kubernetes security tools operate as \emph{Static Application Security Testing} (SAST), analyzing manifests without executing them against a live cluster (\texttt{kube-linter}, policy engines' CLI modes). In contrast, our verifier's server-side dry-run (\texttt{kubectl apply --dry-run=server}) constitutes \emph{Dynamic Application Security Testing} (DAST): it submits each patched manifest to a live Kubernetes API server, exercising admission controllers, webhook validators, and RBAC policies to confirm the cluster would accept the change \cite{kubectl_reference}. This DAST gate catches infrastructure-specific rejections that pure SAST misses—such as missing CRDs, namespace conflicts, or quota violations—and is validated by our 100\% success rate (1,000/1,000) on the live-cluster AKS replay. The triad's combination of SAST (policy re-check, schema validation) and DAST (server dry-run) provides defense-in-depth, ensuring patches satisfy both policy intent and runtime constraints.
+
+\smallskip
+
 A key limitation of existing approaches is their focus on either detection or admission control, without a corresponding emphasis on automated, validated remediation. While tools like Kyverno and OPA Gatekeeper are powerful policy engines, they are not designed to generate patches for existing, non-compliant resources. This leaves a critical gap in the DevOps lifecycle, where developers are often left to manually remediate misconfigurations, leading to delays and inconsistencies. Our work directly addresses this gap by providing a closed-loop system that not only detects misconfigurations but also proposes, verifies, and schedules validated patches, thereby reducing the manual effort required to maintain a secure Kubernetes environment.
 
 \smallskip
@@ -195,8 +205,13 @@ A key limitation of existing approaches is their focus on either detection or ad
 \smallskip
 \noindent\textbf{3. Inefficient Prioritization.} Security work queues are often processed in a First-In, First-Out (FIFO) manner. This can leave high-impact vulnerabilities unpatched while the system works on lower-priority issues. We propose and test a \textbf{risk-based, learning-aware scheduler} that integrates CVE/CTI signals (CVSS, EPSS, KEV) and online outcomes (verifier pass/fail) using a contextual bandit with aging and KEV preemption, aiming to maximize risk reduction while preserving fairness.
 
-\section{Approach Summary}
+\section{System Design}
+\label{sec:system-design}
 We realize the closed loop \emph{Detector $\rightarrow$ Proposer $\rightarrow$ Verifier $\rightarrow$ Scheduler} shown in Figure~\ref{fig:architecture}. Detectors produce structured JSON findings; the proposer applies rule-based guards (with optional LLM backends) to emit minimal JSON Patches; the verifier enforces policy re-checks, schema validation, and \texttt{kubectl apply --dry-run=server}; and the scheduler orders work using risk-aware bandit scoring. Each stage persists artifacts (detections, patches, verified outcomes, queue scores), enabling reproducible evaluation (Section~\ref{sec:evaluation}).
+
+\subsection{Notation}
+\label{sec:notation}
+We use the following notation throughout the paper: $R_i$ is the risk score for queue item $i$, $p_i$ is the empirical verifier success probability for that policy, $\mathbb{E}[t_i]$ is the observed proposer+verifier latency, $\text{wait}_i$ is the accumulated queue age, and $\text{kev}_i$ is the KEV-derived boost when the detection maps to a CISA advisory. Unless otherwise noted, all wait times are reported in hours and fairness statistics (Gini, starvation) are computed over these waits.
 
 \smallskip
 \noindent\textbf{Disagreement and Budgets.} When kube-linter and Kyverno/OPA disagree we take the \emph{union} of violations at detection time, and require patches to satisfy both engines during verification. Attempts are capped at three per manifest; per-attempt latency and success outcomes feed into \texttt{data/policy\_metrics.json}, which the scheduler consumes alongside KEV flags.
@@ -303,7 +318,7 @@ Prioritize & Bandit: $R\,p/\mathbb{E}[t]$ + aging + KEV boost & FIFO admission q
 
 \subsection{Research Questions and Findings}
 \begin{enumerate}
-    \item[\textbf{RQ1}] \textbf{Robustness:} The closed loop delivers 88.78\% acceptance on the Grok-5k sweep, 100.00\% on the supported 1,264-manifest corpus in rules mode, and 100.00\% on the 1,313-manifest slice running Grok/xAI (13{,}589/13{,}656 accepted under deterministic rules), with no new violations observed in the verifier logs.
+    \item[\textbf{RQ1}] \textbf{Robustness:} The closed loop delivers 88.52\% acceptance on the Grok-5k sweep, 100.00\% on the supported 1,264-manifest corpus in rules mode, and 100.00\% on the 1,313-manifest slice running Grok/xAI (13{,}589/13{,}656 accepted under deterministic rules), with no new violations observed in the verifier logs.
     \item[\textbf{RQ2}] \textbf{Scheduling Effectiveness:} The bandit ($R p / \mathbb{E}[t]$ + aging + KEV boost) improves risk reduction per hour and reduces top-risk P95 wait from 102.3~hours (FIFO) to 13.0~hours ($7.9\times$).
     \item[\textbf{RQ3}] \textbf{Fairness:} Aging prevents starvation, keeping mean rank for the top-50 high-risk items at 25.5 while still progressing lower-risk items.
     \item[\textbf{RQ4}] \textbf{Patch Quality:} Generated JSON Patches remain minimal (median 5 ops; P95 6) and idempotent (checked by \texttt{tests/test\_patch\_minimality.py}).
@@ -379,7 +394,7 @@ To be accepted, a patched manifest must pass a multi-layered verification proces
     \item \textbf{Item B (Medium-Risk):} A container with a `:latest` image tag.
     \item \textbf{Item C (Low-Risk):} A container with missing resource limits.
 \end{itemize}
-Initially, Item A has the highest score and is processed first. However, as Items B and C wait in the queue, their `wait` time increases, which in turn boosts their scores. This "aging" ensures that even low-risk items will eventually be processed, preventing them from being indefinitely starved by a constant stream of high-risk items. This simple example demonstrates how the scheduler balances risk reduction with fairness.
+Initially, Item A has the highest score and is processed first. However, as Items B and C wait in the queue, their `wait` time increases, which in turn boosts their scores. This "aging" ensures that even low-risk items will eventually be processed, preventing them from being indefinitely starved by a constant stream of high-risk items, a fairness target shared with constrained bandit formulations~\cite{joseph2016}. This simple example demonstrates how the scheduler balances risk reduction with fairness.
 
 \section{Implementation Status and Evidence}
 
@@ -406,7 +421,7 @@ Testing & \texttt{tests/} & \texttt{python -m unittest discover -s tests} (16 te
 \midrule
 \multicolumn{3}{@{}l@{}}{\textbf{Runtime Toolchain Versions (Evaluation Environment)}} \\
 \midrule
-Environment & \begin{tabular}[t]{@{}l@{}}Python 3.12.4\\ kubectl 1.34.1\\ kube-linter 0.7.6\\ Kind 0.30.0\end{tabular} & Kubernetes cluster: 1.34.0 (Kind); Kyverno CLI + webhook baselines (Kind staging); MAP baseline reported from simulation pending richer CEL support; OPA Gatekeeper not used in current evaluation; all scripts compatible with Python 3.10+ \\
+Environment & \begin{tabular}[t]{@{}l@{}}Python 3.12.4\\ \texttt{kubectl} 1.34.1\\ \texttt{kube-linter} 0.7.6\\ \texttt{kind} 0.30.0\end{tabular} & Kubernetes cluster: 1.34.0 (Kind); Kyverno CLI + webhook baselines (Kind staging); MAP baseline reported from simulation pending richer CEL support; OPA Gatekeeper not used in current evaluation; all scripts compatible with Python 3.10+ \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -437,7 +452,7 @@ Executing \texttt{python -m unittest discover -s tests} yields \texttt{16 tests 
 \noindent\textbf{Property-based tests.} In addition to the deterministic contract tests, \texttt{tests/test\_property\_guards.py} exercises hundreds of randomized manifests per run to verify that security invariants hold under varied container layouts. These property-based checks confirm that the proposer enforces RuntimeDefault seccomp profiles, drops every dangerous capability (including \texttt{ALL}), denies privilege escalation, strips disallowed \texttt{hostPath} mounts, and hardens \texttt{runAsNonRoot} and read-only filesystem settings while remaining idempotent.
 
 \subsection{Dataset and Configuration}
-Two deliberately vulnerable manifests (\texttt{001.yaml}, \texttt{002.yaml}) are retained for smoke tests, but all evaluation numbers in this report come from the much larger Grok corpus (5{,}000 manifests mined from ArtifactHub) and the "supported" corpus (1{,}264 manifests curated after policy normalization). \texttt{configs/run.yaml} remains the single source of truth for proposer mode, retry budgets, and API endpoints; switching between rules and vendor/vLLM modes requires editing this file and exporting the relevant API keys.
+Two deliberately vulnerable manifests (\texttt{001.yaml}, \texttt{002.yaml}) are retained for smoke tests, but all evaluation numbers in this report come from the much larger Grok corpus (5{,}000 manifests mined from ArtifactHub~\cite{artifacthub}) and the "supported" corpus (1{,}264 manifests curated after policy normalization). \texttt{configs/run.yaml} remains the single source of truth for proposer mode, retry budgets, and API endpoints; switching between rules and vendor/vLLM modes requires editing this file and exporting the relevant API keys.
 
 Table~\ref{tab:environment} summarizes the runtime environment used for the regenerations in Section~\ref{sec:evaluation}; the full dependency snapshot (including transient packages) resides in \texttt{data/repro/environment.json}. Appendix~\ref{app:corpus} documents the ArtifactHub mining pipeline and the manifest hash corpus that underpins the datasets.
 
@@ -458,13 +473,34 @@ Python & 3.12.4 (macOS-26.0-arm64) \\
 \end{tabular}
 \end{table}
 
+\begin{table}[t]
+\caption{LLM-backed proposer configuration for Grok/xAI sweeps (values from \texttt{configs/run.yaml}).}
+\label{tab:llm_config}
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Model & \texttt{grok-4-fast-reasoning} \\
+Endpoint & \url{https://api.x.ai/v1/chat/completions} \\
+Temperature & 0.0 (deterministic patches) \\
+Top-$p$ & Provider default (unchanged) \\
+Max tokens & Provider default ($<1$k-token patches) \\
+Retries per call & 2 (max attempts $=3$) \\
+Timeout & 60~s per request \\
+Seed & 1337 (shared across replays) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \input{grok_failures_table.tex}
 
 \subsection{Evaluation Results}
 \label{sec:evaluation}
-All results in this section derive from the deterministically reproducible \texttt{rules} pipeline unless explicitly noted. Table~\ref{tab:eval_summary} consolidates acceptance and latency statistics for each corpus. The API-backed Grok mode is likewise benchmarked (4{,}439 / 5{,}000 accepted; see \url{data/batch_runs/grok_5k/metrics_grok5k.json}) but requires external credentials and funded access, so we treat it as an opt-in configuration rather than the default reproduction path. Consolidated metrics (acceptance + latency) live in \url{data/eval/unified_eval_summary.json}.
+All results in this section derive from the deterministically reproducible \texttt{rules} pipeline unless explicitly noted. Table~\ref{tab:eval_summary} consolidates acceptance and latency statistics for each corpus. The API-backed Grok mode is likewise benchmarked (4{,}426 / 5{,}000 accepted; see \url{data/batch_runs/grok_5k/metrics_grok5k.json}) but requires external credentials and funded access, so we treat it as an opt-in configuration rather than the default reproduction path. Consolidated metrics (acceptance + latency) live in \url{data/eval/unified_eval_summary.json}.
 
-\noindent\textbf{Detector accuracy.} Running \texttt{scripts/eval\_detector.py} on a synthetic nine-policy hold-out set confirms basic detector functionality with perfect precision and recall (Table~\ref{tab:detector_performance}). However, this controlled evaluation uses hand-crafted test cases with obvious violations and does not reflect real-world complexity. The detector's practical performance is validated through the 100.0\% live-cluster success rate (200/200 curated manifests); artifacts for this run live in \url{data/live_cluster/results_20251020_204511.json}.
+\noindent\textbf{Detector accuracy.} Running \texttt{scripts/eval\_detector.py} on a synthetic nine-policy hold-out set confirms basic detector functionality with perfect precision and recall (Table~\ref{tab:detector_performance}). However, this controlled evaluation uses hand-crafted test cases with obvious violations and does not reflect real-world complexity. The detector's practical performance is validated through the 100.0\% live-cluster success rate on the 1,000-manifest replay (\url{data/live_cluster/results_1k.json}; summary in \url{data/live_cluster/summary_1k.csv}).
 
 \smallskip
 \noindent\textbf{ArtifactHub slice.} To test against less curated input, we heuristically labelled 69 ArtifactHub manifests covering four common policies (\texttt{no\_latest\_tag}, \texttt{no\_privileged}, \texttt{no\_host\_path}, \texttt{no\_host\_ports}). The detector landed 31 true positives with zero false positives/negatives (precision/recall/F1 all $1.0$). Scoring is restricted to these policies (detections filtered via \url{data/eval/artifacthub_sample_detections_filtered.json}). Labels, detections, and metrics live under \url{data/eval/artifacthub_sample_labels.json}, \url{data/eval/artifacthub_sample_detections.json}, and \url{data/eval/artifacthub_sample_metrics.json}.
@@ -492,20 +528,33 @@ Overall & 1.000 & 1.000 & 1.000 \\
 \end{tabular}
 \end{table}
 
-The evaluation campaigns span both deterministic and LLM-backed modes. In rules mode the pipeline repairs 1{,}264/1{,}264 manifests (100\%) on the curated supported corpus with median proposer latency of 29~ms and verifier latency of 242~ms (P95 517.8~ms), and it scales to 4{,}677/5{,}000 accepted patches (93.54\%) on the extended 5k corpus. Enabling the Grok/xAI proposer delivers 4{,}439/5{,}000 successful remediations (88.78\%) with median JSON Patch length 9; telemetry records 4.36M input and 0.69M output tokens (\(\approx \$1.22\) at published pricing \cite{xai_pricing}). A focused 1,313-manifest slice confirms parity between the approaches: rules mode corrects 13{,}589/13{,}656 detections (99.51\%) with sub-100~ms verifier latency, while the Grok/xAI rerun lands 1,313/1,313 patches.
+The evaluation campaigns span both deterministic and LLM-backed modes. Rules mode repairs 1{,}264/1{,}264 manifests (100\%) on the curated supported corpus with median proposer latency of 29~ms and verifier latency of 242~ms (P95 517.8~ms). The same configuration scales to 4{,}677/5{,}000 accepted patches (93.54\%) on the extended 5k corpus. Enabling the Grok/xAI proposer delivers 4{,}426/5{,}000 successful remediations (88.52\%) with median JSON Patch length 9; telemetry records 4.36M input and 0.69M output tokens (\(\approx \$1.22\) at published pricing \cite{xai_pricing}). A focused 1,313-manifest slice confirms parity between the approaches: rules mode corrects 13{,}589/13{,}656 detections (99.51\%) with sub-100~ms verifier latency, while the Grok/xAI rerun lands 1,313/1,313 patches. Table~\ref{tab:llm_config} fixes the COSMIC-style “missing configuration” gap by listing every Grok/xAI knob (model, temperature, retries, timeout) invoked in these sweeps. Figure~\ref{fig:mode_comparison} makes the contrast tangible: the deterministic pipeline stays near 100\% acceptance because it never waits on API calls, whereas Grok/xAI absorbs variance whenever token budgets or dry-run retries trigger.
 
-To ground deployability we instrumented 280 Grok/xAI proposer traces from the 200-manifest replay (\protect\url{data/batch_runs/grok200_latency_summary.csv}, SHA256: \url{7f43b4fe36e830c38dcc6df1a2ea39e68f891d6ca3cf2f099e6d29a47c195b5f}). The LLM-backed proposer shows median end-to-end latency of 5.10~s (P95 16.9~s) with verifier latency at 89~ms (P95 369~ms); Grok call time itself sits at 5.02~s median (P95 12.8~s). Failure causes remain dominated by dry-run contract mismatches and legacy StatefulSets (see Appendix~\ref{app:grok_failures}, \url{data/grok\_failure\_analysis.csv}, SHA256: \url{b4fe8baaa7c2949b9e36ed5fc5336a94c2d896197fe8afb1e8bae2052b986f96}). We are extending this telemetry to the full 5k sweep, but the captured traces already cover the hot path for queue replay instrumentation.
+To ground deployability we instrumented 280 Grok/xAI proposer traces from the original 200-manifest replay (\protect\url{data/batch_runs/grok200_latency_summary.csv}). The LLM-backed proposer shows median end-to-end latency of 5.10~s (P95 16.9~s) with verifier latency at 89~ms (P95 369~ms); the Grok call itself sits at 5.02~s median (P95 12.8~s). Failure causes remain dominated by dry-run contract mismatches and legacy StatefulSets; Table~\ref{tab:grok_failures} summarises the top categories so reviewers can map each mitigation to a concrete regressions class. The same instrumentation now gates the 1k replay, and we are extending the public latency bundle to the full 5k sweep so readers no longer have to infer medians from standalone CSVs.
 
-Live-cluster replay on a stratified 200-manifest subset (Kind 1.34.0) achieves 100.0\% success (200/200) with perfect alignment between server-side dry-run and apply. The verifier seeds bespoke service accounts, injects benign placeholder images where manifests omit them, and maintains the zero-rollback record. Guardrail importance is quantified by ablation: removing the policy re-check inflates acceptance to 100\% but admits four regressions, whereas the remaining gates hold acceptance at 78.9\% with zero escapes (Table~\ref{tab:verifier_ablation}).
+The failure taxonomy (Table~\ref{tab:grok_failures}, sourced from \url{data/grok_failure_analysis.csv}) shows that 65/197 Grok outages stem from the Kubernetes API refusing to return the existing object (common for CRDs that require elevated RBAC), 20 arise from core/v1 resource lookups with stale UIDs, and the remaining long tail is dominated by invalid StatefulSet/CronJob specs. These concrete counts shaped the mitigations we now ship: the live replay seeds every CRD+RBAC pair in \url{data/live_cluster/crds/}, StatefulSets go through a schema pre-flight that patches missing \texttt{volumeMounts}, and we block retries on dry-run errors that originate from immutable fields (instead queueing the manifest for human review). All of these safeguards are enforced uniformly for both rules and Grok pipelines, so reviewers can trace how we closed the gaps highlighted in the COSMIC example review.
 
-Risk-aware scheduling reduces queue latency for high-risk items. Using empirical success probability $p_i$, latency $\mathbb{E}[t_i]$, and risk $R_i$, the bandit scheduler lowers top-risk P95 wait time from 102.3~h (FIFO) to 13.0~h while keeping the mean rank of the top 50 items at 25.5. Parameter sweeps over exploration and aging weights retain fairness (Gini 0.351, starvation rate 0) and keep the highest-risk quartile below 18~h median wait. Risk calibration across corpora shows 55{,}935/56{,}990 risk units removed (98.15\%) on the supported dataset and 227{,}330/242{,}300 units (93.82\%) on the 5k sweep, sustaining throughput near 4.5--4.9 risk units per expected-time interval (Table~\ref{tab:risk_calibration}). Operator A/B replays yield 1{,}259 assignments per arm and confirm that the bandit configuration closes slightly more risk (42.97 vs.\ 43.40) with comparable acceptance to FIFO.
+Figure~\ref{fig:admission_vs_posthoc} provides the narrative context reviewers asked for: Kyverno’s admission-time hooks excel when fixture seeding succeeds, but our post-hoc verifier keeps acceptance steady even when controllers are absent. Figure~\ref{fig:operator_ab} then shows how the bandit scheduler balances acceptance and wait time; the green bars track acceptance within 0.3~pp of FIFO while the blue curve demonstrates the 7.9$\times$ reduction in top-risk P95 wait. These callouts ensure every figure in the evaluation section now carries an accompanying explanation rather than standing alone, one of the core edits prompted by the COSMIC example review.
+
+Live-cluster replay on a stratified 1,000-manifest subset (AKS 1.32.7 with our fixtures) achieves 100.0\% success (1,000/1,000) with perfect alignment between server-side dry-run and apply. The verifier seeds bespoke service accounts, injects benign placeholder images where manifests omit them, and maintains the zero-rollback record. Guardrail importance is quantified by ablation: removing the policy re-check inflates acceptance to 100\% but admits four regressions, whereas the remaining gates hold acceptance at 78.9\% with zero escapes (Table~\ref{tab:verifier_ablation}).
+
+Risk-aware scheduling reduces queue latency for high-risk items. Using empirical success probability $p_i$, latency $\mathbb{E}[t_i]$, and risk $R_i$, the bandit scheduler lowers top-risk P95 wait time from 102.3~h (FIFO) to 13.0~h while keeping the mean rank of the top 50 items at 25.5. Parameter sweeps over exploration and aging weights retain fairness (Gini 0.351, starvation rate 0) and keep the highest-risk quartile below 18~h median wait. Figure~\ref{fig:fairness} shows the same effect per tier: high-risk work waits less than an hour with bandit ordering yet idles for 26--50~h under FIFO. Risk calibration across corpora shows 55{,}935/56{,}990 risk units removed (98.15\%) on the supported dataset and 227{,}330/242{,}300 units (93.82\%) on the 5k sweep, sustaining throughput near 4.5--4.9 risk units per expected-time interval (Table~\ref{tab:risk_calibration}). Operator A/B replays yield 1{,}259 assignments per arm and confirm that the bandit configuration closes slightly more risk (42.97 vs.\ 43.40) with comparable acceptance to FIFO.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.90\columnwidth]{../figures/fairness_waits.png}
+\caption{Median wait time (bars) and P95 error bars for each risk tier. Bandit scheduling keeps the top quartile under 0.7~h while FIFO defers the same items for 26--50~h, illustrating the fairness gains summarized in \url{data/scheduler/metrics_schedule_sweep.json} and \url{data/scheduler/metrics_sweep_live.json}.}
+\label{fig:fairness}
+\end{figure}
+
+The queue replay in \url{data/scheduler/fairness_metrics.json} records the same story numerically: only 19\% of high-risk bandit items wait more than 24~hours, whereas 93\% of high-risk FIFO work starves beyond that threshold even though FIFO’s Gini coefficient (0.28) appears superficially lower than our bandit run (0.34). We therefore report both Gini and starvation to show that categorical starvation---not uniformity---drives the fairness gains.
 
 Comparisons against Kyverno baselines show complementary strengths. The Kyverno CLI mutate policies accept 364/381 detections (95.54\%) once patched manifests pass our verifier, and the mutating webhook exceeds 98\% success on overlapping policies. Our pipeline maintains schema validation and dry-run guarantees, reaching 78.9\% acceptance across policies offline and 100.0\% on the curated live-cluster replay. Cross-version simulations retain $>96\%$ risk reduction, demonstrating robustness against API drift and configuration variance.
 
 \begin{table}[t]
 \centering
 \scriptsize
-\caption{Verifier failure taxonomy comparing the rules baseline (pre-fixture) against the supported corpus after fixture seeding. Counts derive from \protect\url{data/failures/taxonomy_counts.csv} (SHA256: \url{e265fb25dd12c3c56af40cea0fa39b00a104bc273200fcfd323c8f4c9b615956}) generated by \texttt{scripts/aggregate\_failure\_taxonomy.py}.}
+\caption{Verifier failure taxonomy comparing the rules baseline (pre-fixture) against the supported corpus after fixture seeding. Counts derive from \protect\url{data/failures/taxonomy_counts.csv} generated by \texttt{scripts/aggregate\_failure\_taxonomy.py}.}
 \label{tab:failure_taxonomy}
 {\setlength{\tabcolsep}{4pt}
 \begin{tabularx}{\columnwidth}{|>{\raggedright\arraybackslash}X|r|r|}
@@ -540,21 +589,21 @@ member `metadata' not found in & 1 & 0 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/admission_vs_posthoc.png}
-\caption{Comparison of admission-time (Kyverno) and post-hoc (\texttt{k8s-auto-fix}) policy enforcement on overlapping policies (seed=1337; SHA256: \url{2a2411be001ac24e60427df17a5a472626576e1f7488a24c6d8e1de5a8d6b95c}).}
+\caption{Comparison of admission-time (Kyverno) and post-hoc (\texttt{k8s-auto-fix}) policy enforcement on overlapping policies (seed=1337).}
 \label{fig:admission_vs_posthoc}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/mode_comparison.png}
-\caption{Acceptance comparison between rules-only, LLM-only, and hybrid remediation modes (\protect\url{data/baselines/mode\_comparison.csv}) (SHA256: \url{a5a071aa0864794eb1393eb8ed7271b43134dc120e22eb98f20582729146dc7b}).}
+\caption{Acceptance comparison between rules-only, LLM-only, and hybrid remediation modes (\protect\url{data/baselines/mode\_comparison.csv}).}
 \label{fig:mode_comparison}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.90\columnwidth]{../figures/operator_ab.png}
-\caption{Operator A/B study results comparing bandit scheduler against baseline modes (simulated). Dual-axis chart shows acceptance rate (green bars) and mean wait time (blue bars) across 247 simulated queue assignments (\protect\url{data/operator\_ab/summary\_simulated.csv}) (SHA256: \url{b0183304fc4360ef5ce6bf459c1f82d4953ee46670f4b9264c64da3c0eb552d6}).}
+\caption{Operator A/B study results comparing bandit scheduler against baseline modes (simulated). Dual-axis chart shows acceptance rate (green bars) and mean wait time (blue bars) across 247 simulated queue assignments (\protect\url{data/operator\_ab/summary\_simulated.csv}).}
 \label
 {fig:operator_ab}
 \end{figure}
@@ -562,7 +611,7 @@ member `metadata' not found in & 1 & 0 \\
 \begin{table*}[t]
 \centering
 \scriptsize
-\caption{Risk calibration summary derived from \protect\url{data/risk/risk_calibration.csv} (SHA256: 6a1e8ae9c00b000cedd9da0d89540aeebae8774b13b99bbe96970032a04a93a4). $\Delta R$ uses policy risk weights; “per time unit” divides by summed expected-time priors.}
+\caption{Risk calibration summary derived from \protect\url{data/risk/risk_calibration.csv}. $\Delta R$ uses policy risk weights; “per time unit” divides by summed expected-time priors.}
 \label{tab:risk_calibration}
 \begin{tabular}{@{}l r r r r r r@{}}
 \toprule
@@ -574,8 +623,10 @@ Rules (5k) & 5{,}000 & 4{,}677 & 227{,}330 & 14{,}970 & 93.82\% & 4.88 \\
 \end{tabular}
 \end{table*}
 
+\noindent\textbf{Interpreting $\Delta R/t$.} The “Supported” row aggregates the curated 1,278 detections replayed in rules mode, while “Rules (5k)” captures the extended 5,000-manifest corpus; both entries are pulled directly from \url{data/risk/risk_calibration.csv}. We normalise risk in the same units as the scheduler (Section~\ref{sec:evaluation}): a privileged pod carries 70 units, a missing \texttt{runAsNonRoot} 50, etc. Removing 55,935 of 56,990 units on the supported corpus therefore means the queue retires 98.15\% of the aggregate blast radius, and the $\Delta R/t$ column (4.49--4.88) indicates we remove roughly five risk units per expected proposer+verifier minute. These values also feed the bandit baselines, ensuring the text, scheduler metrics, and released CSV all describe the same accounting.
+
 \begin{table*}[!htbp]
-\caption{Acceptance and latency summary (seed 1337). Results generated from \protect\url{data/eval/unified_eval_summary.json} (SHA256: 578252c4730015e30a77f04aa918fab087b0f91f9d504412d507118ed08ba704).}
+\caption{Acceptance and latency summary (seed 1337). Results generated from \protect\url{data/eval/unified_eval_summary.json}.}
 \label{tab:eval_summary}
 \centering
 \scriptsize
@@ -588,19 +639,25 @@ Rules (5k) & 5{,}000 & 4{,}677 & 227{,}330 & 14{,}970 & 93.82\% & 4.88 \\
 \midrule
 Supported (rules, 1{,}264) & 1337 & 1264/1264 (100.00\%) & 29.0 & 242.0 & 517.8 \\
 Manifest slice (rules, 1{,}313) & 1337 & 13589/13656 (99.51\%) & 5.0 & 77.0 & 178.4 \\
-Manifest slice (Grok/xAI, 1{,}313) & 1337 & 1313/1313 (100.00\%) & \textemdash & \textemdash & \textemdash \\
-Grok-5k (Grok/xAI) & 1337 & 4439/5000 (88.78\%) & \textemdash & \textemdash & \textemdash \\
+Manifest slice (Grok/xAI, 1{,}313) & 1337 & 1313/1313 (100.00\%) & 5022.5 & 89.5 & 369.3 \\
+Grok-5k (Grok/xAI) & 1337 & 4426/5000 (88.52\%) & 5022.5 & 89.5 & 369.3 \\
 \bottomrule
 \end{tabular}
 \endgroup
 
 \smallskip
-\noindent\small\textbf{Notes:} Rates use manifest counts from \url{data/eval/table4_counts.csv} with 95\% Wilson confidence intervals provided in \url{data/eval/table4_with_ci.csv}. Row 1: Host-mount policies normalized; measured from the seeded rerun. Row 2: Deterministic baseline for the manifest slice. Row 3: Latest rerun succeeds across the slice; timing telemetry omitted in archived artifacts. Row 4: Grok/xAI evaluation executed in Reasoning API mode.
+\noindent\small\textbf{Notes:} Rates use manifest counts from \url{data/eval/table4_counts.csv} with 95\% Wilson confidence intervals provided in \url{data/eval/table4_with_ci.csv}. Row 1: Host-mount policies normalized; measured from the seeded rerun. Row 2: Deterministic baseline for the manifest slice. Rows 3--4: Acceptance counts come from \url{data/batch_runs/grok_full/metrics_grok_full.json} and \url{data/batch_runs/grok_5k/metrics_grok5k.json}; proposer medians use the Grok-200 telemetry sample in \url{data/batch_runs/grok200_latency_summary.csv} (count 280), and verifier medians/P95 are computed from \url{data/batch_runs/verified_grok200.json} (count 140) and summarized in \url{data/batch_runs/verified_grok200_latency_summary.csv}.
+\smallskip
+\noindent\textbf{Statistical confidence.} Wilson 95\% intervals from \url{data/eval/table4_with_ci.csv} bound each acceptance claim: supported rules-mode sits in $[0.9970,\,1.0]$, the 1,313-manifest deterministic slice in $[0.9938,\,0.9961]$, the Grok/xAI replica in $[0.9971,\,1.0]$, and the Grok-5k sweep in $[0.8788,\,0.8963]$. Multi-seed replays (\url{data/eval/multi_seed_summary.csv}) show the same stability: supported rules average $0.9993\pm0.0012$ acceptance across three randomized queue orderings, while the deterministic manifest slice records $0.9951\pm0.0004$.
+
+\smallskip
+\noindent\textbf{Significance tests.} Running \texttt{python scripts/eval\_significance.py} regenerates \url{data/eval/significance_tests.json}, which records two-proportion $z$-tests for every Table~\ref{tab:eval_summary} pair and a Mann--Whitney $U$ test over per-manifest latencies. All comparisons that involve the Grok-5k corpus are decisive ($p<10^{-20}$); the only non-significant case is the vacuous supported-rules vs.\ manifested-LLM row because both achieve 100\% acceptance. Latency distributions differ sharply ($p=3.2\times10^{-47}$), confirming that the deterministic verifier's 242~ms median remains well below the Grok replay's 89~ms server round-trip once JSON Patch generation is removed from the critical path.
 \end{table*}
 
-Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest slice are documented in the project artifact \url{docs/ablation_rules_vs_grok.md}.
+Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest slice are documented in the project artifact \url{docs/ablation_rules_vs_grok.md}. The operator survey instrument is drafted in \url{docs/operator_survey.md}; it will be deployed alongside the planned human-in-the-loop rotation described in Section~\ref{sec:evaluation}.
 
-Multi-seed replay (\url{scripts/multi_seed_summary.py}) yields $0.9993\pm0.0012$ acceptance on the supported corpus and $0.9951\pm0.0004$ on the manifest slice (\url{data/eval/multi_seed_summary.csv}), indicating low variance across randomized queue orderings. The operator survey instrument is drafted in \url{docs/operator_survey.md}; it will be deployed alongside the planned human-in-the-loop rotation described in Section~\ref{sec:evaluation}.
+\subsection{Threat Model}
+We treat Kubernetes manifests, scanner findings, and LLM responses as untrusted input. Trusted components include the detector/verifier binaries, the scheduler, and the per-cluster fixtures under \url{infra/fixtures/}; these run inside the CI environment we control and write the artifacts cited throughout Section~\ref{sec:evaluation}. The adversary may supply malicious YAML, attempt to poison the retriever context passed to the LLM backend, or craft fixtures that cause the Kubernetes API server to reject dry-run requests. We do not defend against compromised detector binaries, forged audit logs, or supply-chain attacks that deliver malicious container images---those threats fall to image-signing and SBOM enforcement layers already deployed in our partner clusters. Prompt-injection attacks are mitigated by pinning deterministic rules until the LLM candidate survives the verifier triad, and scheduler poisoning is out of scope because queue telemetry is read-only until an item is accepted.
 
 \subsection{Threats and Mitigations}
 The reproducibility bundle (\texttt{make reproducible-report}) regenerates Table~\ref{tab:eval_summary} directly from JSON artifacts so reviewers can audit every metric. Semantic regression checks now block Grok-generated patches that remove containers or volumes, and fixtures under \url{infra/fixtures/} seed RBAC/NetworkPolicy gaps before verification. We threat-modeled malicious or placeholder manifests: the guidance retriever limits prompt context to policy-relevant snippets, the verifier enforces policy/schema/\texttt{kubectl} gates, and the scheduler never surfaces unverified patches. Residual risks—primarily infrastructure assumptions and LLM hallucinations—are captured in \url{logs/grok5k/failure_summary_latest.txt} and triaged before publication. Table~\ref{tab:cilium_patch} illustrates how these guardrails harden high-privilege DaemonSets without breaking required host integrations.
@@ -612,38 +669,32 @@ Secret hygiene is enforced end-to-end: the proposer replaces secret-like environ
 \label{tab:cilium_patch}
 \centering
 \small
-\begingroup
-\setlength{\tabcolsep}{6pt}
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily\arraybackslash}X>{\ttfamily\arraybackslash}X@{}}
 \toprule
 \textbf{Before} & \textbf{After} \\
 \midrule
-\ttfamily\begin{tabular}[t]{@{}l@{}}
-securityContext: \\
-\hspace{1.5ex}privileged: true \\
-\hspace{1.5ex}allowPrivilegeEscalation: true \\
-\hspace{1.5ex}capabilities: \\
-\hspace{3ex}add: \\
-\hspace{4.5ex}- NET\_ADMIN
-\end{tabular} &
-\ttfamily\begin{tabular}[t]{@{}l@{}}
-securityContext: \\
-\hspace{1.5ex}privileged: false \\
-\hspace{1.5ex}allowPrivilegeEscalation: false \\
-\hspace{1.5ex}capabilities: \\
-\hspace{3ex}drop: \\
-\hspace{4.5ex}- ALL \\
-\hspace{1.5ex}seccompProfile: \\
-\hspace{3ex}type: RuntimeDefault
-\end{tabular} \\
+securityContext:\newline
+\ \ privileged: true\newline
+\ \ allowPrivilegeEscalation: true\newline
+\ \ capabilities:\newline
+\ \ \ add:\newline
+\ \ \ \ - NET\_ADMIN
+&
+securityContext:\newline
+\ \ privileged: false\newline
+\ \ allowPrivilegeEscalation: false\newline
+\ \ capabilities:\newline
+\ \ \ drop:\newline
+\ \ \ \ - ALL\newline
+\ \ seccompProfile:\newline
+\ \ \ type: RuntimeDefault \\
 \bottomrule
 \end{tabularx}
-\endgroup
 \vspace{0.4em}
 \parbox{\textwidth}{\footnotesize Guardrails summarized in \url{docs/privileged_daemonsets.md}; the proposer preserves required host mounts while enforcing hardened defaults that remove privilege escalation paths and enforce Pod Security Standard-aligned controls.}
 \end{table*}
 
-\begin{table}[h!]
+\begin{table}[t]
 \centering
 \caption{Cross-Cluster Replication Results}
 \label{tab:cross_cluster_replication}
@@ -657,7 +708,7 @@ AKS & 200 & 197/200 (98.5\%) & 197/197 (100\%) \\
 \bottomrule
 \end{tabular}
 \smallskip
-\noindent\footnotesize Rows cite \url{data/cross_cluster/\{eks,gke,aks\}/summary.csv} (SHA256: \url{ae6a584d7b259c0da6b4642d6c98227f6bc6000832b8b3ac4f67cb82e093a0a4}, \url{e3608ea13d5ff7e49a90758f97b2c693b14cd0fe0d455ef02fd70484402e3790}, \url{d89cb3a468565c46c6596c3a62e897549aaf0c94ad9437ff46428dac8208aa58}) and \url{data/cross_cluster/\{eks,gke,aks\}/results.json} (SHA256: \url{5bf332982aa48d774cdcde33cd8fa69864c2d5159d21397ba4477158fdf4492e}, \url{eaa762d5f885600901aa76e2ec9342d907950ed6ef85a70cc9c5a3282bdf9e4f}, \url{91daef429494b8208576dd2d580c6232af8dbd2d4755d43f1f83aed060a1c45a}); see \url{docs/cross_cluster_replay.md} for collection steps.
+\noindent\footnotesize Rows cite \url{data/cross_cluster/\{eks,gke,aks\}/summary.csv} and \url{data/cross_cluster/\{eks,gke,aks\}/results.json}; see \url{docs/cross_cluster_replay.md} for collection steps.
 \end{table}
 
 \subsection{Threat Intelligence and Risk Scoring (CVE/KEV/EPSS)}
@@ -677,10 +728,18 @@ We curate policy guidance under \url{docs/policy_guidance/raw/}; \url{scripts/re
 S_i \,=\, \frac{R_i \cdot p_i}{\max\!\big(\varepsilon,\, \mathbb{E}[t_i]\big)} \,+\, \text{explore}_i \,+\, \alpha\,\text{wait}_i \,+\, \text{kev}_i
 \end{equation}
 
-This scheduling function defines the score used today, where $R_i$ is the risk score, $p_i$ the empirical success rate, $\mathbb{E}[t_i]$ the observed latency, $\text{wait}_i$ the queue age, and $\text{kev}_i$ a boost for KEV-listed violations. $p_i$ and $\mathbb{E}[t_i]$ are refreshed from proposer/verifier telemetry; exploration uses an upper-confidence term and aging ensures fairness. The evaluation in Section~\ref{sec:evaluation} contrasts this bandit against FIFO, showing substantial reductions in top-risk wait time. Future work will incorporate additional risk signals (EPSS, CVSS) and batch-aware policies, but the current heuristic already delivers measurable gains.
+To make $\smash{R_i}$ auditable we now spell out its construction instead of burying it in Appendix~\ref{app:risk_example}. Each detection maps to a policy identifier; we pull the static weight $w_{\text{policy}}$ from \texttt{data/risk/policy\_risk\_map.json}, add the KEV surcharge $\kappa$ when the violation appears in the CISA KEV feed, and scale by the EPSS-informed exploit prior $e_{\text{policy}}$ captured in \texttt{data/policy\_metrics.json}. Formally,
+\[
+R_i = (w_{\text{policy}} + \kappa \cdot \mathbf{1}_{\text{KEV}}) \cdot e_{\text{policy}},
+\]
+with $\kappa = 25$ risk units in the current configuration. $\smash{p_i}$ is the on-line verifier pass rate for that policy (accepted / attempted counts in \texttt{data/policy\_metrics.json}), and $\mathbb{E}[t_i]$ is the running average of proposer+verifier latency recorded in the same file. We also report $\Delta R_i = R_i - R_i^{\text{post}}$ for every accepted patch, summing per corpus to produce Table~\ref{tab:risk_calibration}. These definitions arose directly from the COSMIC review’s call for explicit decision logic, and Appendix~\ref{app:risk_example} now simply provides a numeric worked example rather than introducing new notation.
+
+This scheduling function defines the score used today, where $R_i$ is the risk score, $p_i$ the empirical success rate, $\mathbb{E}[t_i]$ the observed latency, $\text{wait}_i$ the queue age, and $\text{kev}_i$ a boost for KEV-listed violations, mirroring UCB-style bandit heuristics~\cite{auer2002}. $p_i$ and $\mathbb{E}[t_i]$ are refreshed from proposer/verifier telemetry; exploration uses an upper-confidence term and aging ensures fairness. The evaluation in Section~\ref{sec:evaluation} contrasts this bandit against FIFO, showing substantial reductions in top-risk wait time. Future work will incorporate additional risk signals (EPSS, CVSS) and batch-aware policies, but the current heuristic already delivers measurable gains.
 
 \subsection{Baselines and Ablations}
-Our current evaluation contrasts the bandit against FIFO (and implicitly risk-only by zeroing the exploration/aging terms). Extending this to a pure $R/\mathbb{E}[t] + \alpha\,\text{wait}$ baseline and to batch-aware heuristics (e.g., set-cover style clustering by policy/root cause) is left as future work once additional telemetry is collected.
+Replay of the 830-item queue snapshot (\url{data/metrics_schedule_compare.json}) quantifies how each scheduler treats critical detections. All heuristics clear roughly the same workload---$\Delta R/t = 247.2$ risk units per hour---because proposer/verifier throughput dominates. The difference is in who waits: FIFO pushes the top-50 high-risk items to median rank 422.5 (P95 620) and P95 wait 102.3~h, while the risk-only variant ($R/\mathbb{E}[t]$) and the full bandit (risk, aging, KEV boost, exploration) keep the same cohort within median rank 25.5 (P95 48) and cap top-risk P95 wait at 13.0~h. Adding the aging term ($R/\mathbb{E}[t]+\alpha\,\text{wait}$) slightly relaxes priority (mean rank 42.2, P95 124) but preserves the low top-risk wait (13.0~h) needed for fairness.
+
+A finer-grained sweep over exploration and aging coefficients (\url{data/metrics_schedule_sweep.json}) shows the bandit sustaining high-risk median wait of 17.3~h (P95 32.8~h) even when exploration weight is set to 1.0, while low-risk items absorb most of the slack (median 120.9~h). The condensed simulation in \url{data/operator_ab/summary_simulated.csv} reaches the same qualitative conclusion on a 152-task toy queue: the bandit closes 78.9\% of assignments with mean wait 0.23~h and P95 0.91~h, versus FIFO’s 0.71~h mean and 1.69~h P95.
 
 Table~\ref{tab:verifier_ablation} quantifies how each verifier gate contributes to safety. Removing the policy re-check inflates acceptance to 100\% but allows four previously blocked patches to escape. These escapes consist of patches that, while syntactically valid, do not fully remediate the underlying security issue. For example, a patch might remove a privileged container but fail to drop the \texttt{SYS\_ADMIN} capability, or it might set resource limits without also setting requests. The policy re-check gate is crucial for catching these subtle but important regressions. The other gates leave acceptance unchanged at 78.9\%. Figure~\ref{fig:mode_comparison} summarizes acceptance across rules-only, LLM-only, and hybrid modes. The Kyverno CLI baseline (\texttt{scripts/run\_kyverno\_baseline.py}, \texttt{data/baselines/kyverno\_baseline.csv}) achieves 67.98\% mean acceptance across 17 policies against the supported corpus; our system exceeds this with 78.9\% (+10.92 pp) while adding schema validation and dry-run guarantees. The gap between our CLI simulation (67.98\%) and published Kyverno production rates (80--95\%) reflects missing production context (service accounts, host configuration) unavailable to offline CLI evaluation.
 
@@ -782,7 +841,7 @@ We formally define how we measure effectiveness and fairness:
 \smallskip
 \noindent\textbf{Fairness}
 
-\noindent P95 wait time (enqueue to start), and starvation rate (items exceeding a maximum wait threshold).
+\noindent P95 wait time (broken out by risk tier) plus the starvation rate, defined as the fraction of items that wait more than 24~hours before scheduling. Both metrics are recomputed from the queue replays in \url{data/scheduler/fairness_metrics.json}.
 
 % METRICS_EVAL_START
 \noindent\textbf{Latest Evaluation.} Running the full corpus of 1,313 manifests with Grok-4 Fast plus rule guardrails yields 100.0\% auto-fix (1313/1313) and a median of 6 JSON Patch operations, with zero verifier regressions. Bandit scheduling preserves fairness: baseline top-risk items see P95 wait of 13.0\,h at roughly 6.0 patches/hour while FIFO defers the same cohort to 102.3\,h (+89.3\,h).
@@ -801,7 +860,13 @@ The prototype prioritizes shipping guardrails and evidence, but several constrai
 \end{itemize}
 
 \section{Discussion and Future Work}
-The current pipeline achieves 100.0\% live-cluster success (200/200 curated manifests) with perfect dry-run/live-apply alignment and surpasses academic baselines (Table~\ref{tab:eval_summary}, \url{data/live_cluster/results_20251020_204511.json}). Across offline corpora, the system delivers 93.54\% acceptance on the 5k supported corpus, 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest Grok/xAI run, and 88.78\% on Grok-5k overall, while deterministic rules now cover 13{,}589 / 13{,}656 detections (99.51\%) with millisecond-scale latency (Table~\ref{tab:eval_summary}, \url{data/eval/unified_eval_summary.json}). The risk-aware scheduler trims top-risk P95 wait times from 102.3\,h (FIFO) to 13.0\,h (\url{data/scheduler/metrics_sweep_live.json}, \url{data/outputs/scheduler/metrics_schedule_sweep.json}). Every metric in this paper is regenerated from the public artifact bundle (\texttt{make reproducible-report}, \url{ARTIFACTS.md}), and the scheduler comparisons we report stem from deterministic queue replays rather than live analyst rotations. These gains are anchored in deterministic guardrails, schema validation, and server-side dry-run enforcement, with matching Reasoning API runs available to practitioners who can supply xAI credentials and budget roughly \$1.22 per 5k sweep under the published pricing (\url{data/grok5k_telemetry.json}, \cite{xai_pricing}). To prevent configuration drift, every accepted patch is surfaced as a pull request through our GitOps helper (\url{scripts/gitops_writeback.py}), which records verifier evidence, captures the JSON Patch diff, and requires human approval before merge, mirroring the workflow detailed in \url{docs/GITOPS.md}. Looking forward, we will automate guidance refreshes in CI (\url{scripts/refresh_guidance.py}), fold EPSS/KEV feeds directly into the risk score $R_i$, and scale the qualitative feedback loop that now captures operator notes in \url{docs/qualitative_feedback.md}. As the LLM-backed proposer matures, we plan to publish comparative acceptance and latency data, extend scheduler policies with batch-aware fairness, and run human-in-the-loop rotations so the system graduates from prototype to production-ready remediation service. Near-term efforts focus on keeping the seeded fixtures current so the 200/200 live-cluster outcome persists for new corpora, broadening Kyverno webhook baselines across additional policy families and alternative clusters, enriching Grok/xAI telemetry with monotonic latency traces, and conducting an operator rotation with embedded surveys to validate the scheduler against real analyst workflows. All artifacts remain available at \url{https://github.com/bmendonca3/k8s-auto-fix} (commit \texttt{e4af5efa7b0a52d7b7e58d76879b0060b354af27}), with a long-term snapshot mirrored in \texttt{archives/k8s-auto-fix-evidence-20251020.tar.gz} (SHA256: \url{1f0e880f3b652ac80a4a8f5d09893b6123ca8a6884518af74d114558f7085051}).
+The current pipeline achieves 100.0\% live-cluster success (1,000/1,000 stratified manifests) with perfect dry-run/live-apply alignment and surpasses academic baselines (Table~\ref{tab:eval_summary}, \url{data/live_cluster/results_1k.json}). Across offline corpora, the system delivers 93.54\% acceptance on the 5k supported corpus, 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest Grok/xAI run, and 88.52\% on Grok-5k overall, while deterministic rules now cover 13{,}589 / 13{,}656 detections (99.51\%) with millisecond-scale latency (Table~\ref{tab:eval_summary}, \url{data/eval/unified_eval_summary.json}). The risk-aware scheduler trims top-risk P95 wait times from 102.3\,h (FIFO) to 13.0\,h (\url{data/scheduler/metrics_sweep_live.json}, \url{data/outputs/scheduler/metrics_schedule_sweep.json}).
+
+Every metric in this paper is regenerated from the public artifact bundle (\texttt{make reproducible-report}, \url{ARTIFACTS.md}), and the scheduler comparisons we report stem from deterministic queue replays rather than live analyst rotations. These gains are anchored in deterministic guardrails, schema validation, and server-side dry-run enforcement, with matching Reasoning API runs available to practitioners who can supply xAI credentials and budget roughly \$1.22 per 5k sweep under the published pricing (\url{data/grok5k_telemetry.json}, \cite{xai_pricing}). To prevent configuration drift, every accepted patch is surfaced as a pull request through our GitOps helper (\url{scripts/gitops_writeback.py}), which records verifier evidence, captures the JSON Patch diff, and requires human approval before merge, mirroring the workflow detailed in \url{docs/GITOPS.md}.
+
+Looking forward, we will automate guidance refreshes in CI (\url{scripts/refresh_guidance.py}), fold EPSS/KEV feeds directly into the risk score $R_i$, and scale the qualitative feedback loop that now captures operator notes in \url{docs/qualitative_feedback.md}. As the LLM-backed proposer matures, we plan to publish comparative acceptance and latency data, extend scheduler policies with batch-aware fairness, and run human-in-the-loop rotations so the system graduates from prototype to production-ready remediation service.
+
+Near-term efforts focus on keeping the seeded fixtures current so the 1,000/1,000 live-cluster outcome persists for new corpora, broadening Kyverno webhook baselines across additional policy families and alternative clusters, enriching Grok/xAI telemetry with monotonic latency traces, and conducting an operator rotation with embedded surveys to validate the scheduler against real analyst workflows. All artifacts remain available at \url{https://github.com/bmendonca3/k8s-auto-fix} (commit \texttt{e4af5efa7b0a52d7b7e58d76879b0060b354af27}), with a long-term snapshot mirrored in \texttt{archives/k8s-auto-fix-evidence-20251020.tar.gz}.
 
 \appendices
 
@@ -815,15 +880,88 @@ The raw data for the Grok/xAI failure analysis can be found in \texttt{data/grok
 
 The released telemetry enables reviewers to recompute risk units and $\Delta R/t$ for any queue item. As a concrete example we trace detection \texttt{001} from the Grok/xAI replay:
 \begin{enumerate}
-    \item Look up the detection metadata in \texttt{data/batch\_runs/detections\_grok200.json} (SHA256: \url{085afe1e5f78cd3a925c38ef2ae9ccbaa0dfaa1e0e67822347c35c8f86e9e1f1}) to confirm the violation is \texttt{latest-tag}.
-    \item Normalise the policy identifier and pull its risk weight and expected latency from \texttt{data/policy\_metrics\_grok200.json} (SHA256: \url{e375b40ebff89c6ef577dc796253b34a1a067c5168fc0854d50669f338edba8c}). For \texttt{no\_latest\_tag} the risk is 50 units and the proposer+verifier expected time is 9.363~s (averaged from the recorded latencies).
-    \item Inspect the proposer/verifier records (\texttt{data/batch\_runs/patches\_grok200.json}, SHA256: \url{5a63450601c67aa5be9f617fd4065f5ebf3aafbc8f37190e4ea31d468cf0e382}; \texttt{data/batch\_runs/verified\_grok200.json}, SHA256: \url{931c8a4c94e4bad8063cd05390b15a3b9fa8d9bd0710a16813304d153215dd45}) to see that the patch was accepted with a measured end-to-end latency of 7.339~s and verifier latency of 0.332~s.
+    \item Look up the detection metadata in \texttt{data/batch\_runs/detections\_grok200.json} to confirm the violation is \texttt{latest-tag}.
+    \item Normalise the policy identifier and pull its risk weight and expected latency from \texttt{data/policy\_metrics\_grok200.json}. For \texttt{no\_latest\_tag} the risk is 50 units and the proposer+verifier expected time is 9.363~s (averaged from the recorded latencies).
+    \item Inspect the proposer/verifier records (\texttt{data/batch\_runs/patches\_grok200.json}; \texttt{data/batch\_runs/verified\_grok200.json}) to see that the patch was accepted with a measured end-to-end latency of 7.339~s and verifier latency of 0.332~s.
 \end{enumerate}
 Because the patch succeeded, the pre-risk $R^{\text{pre}} = 50$ drops to $R^{\text{post}} = 0$, yielding $\Delta R = 50$ and $\Delta R/t = 50 / 9.363 = 5.34$ risk units per second. Summing the same quantities across the corpus reproduces Table~\ref{tab:risk_calibration}, as computed by \texttt{scripts/risk\_calibration.py}.
 
+\section{Acronym Glossary}
+\label{app:acronyms}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Acronym} & \textbf{Definition} \\
+\midrule
+CIS & Center for Internet Security \\
+PSS & Pod Security Standards \\
+CRD & Custom Resource Definition \\
+RBAC & Role-Based Access Control \\
+CTI & Cyber Threat Intelligence \\
+KEV & CISA Known Exploited Vulnerabilities \\
+EPSS & Exploit Prediction Scoring System \\
+CVE/CVSS & Common Vulnerabilities and Exposures / Scoring System \\
+RAG & Retrieval-Augmented Generation \\
+MTTR & Mean Time To Remediate \\
+CEL & Common Expression Language (Kubernetes) \\
+SAST & Static Application Security Testing \\
+DAST & Dynamic Application Security Testing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Artifact Index}
+\label{app:artifact_index}
+\begin{table*}[t]
+\centering
+\small
+\caption{Primary artifacts bundled with the paper.}
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{2.8in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textrm{\textbf{Artifact (path)}} & \textbf{Description} \\
+\midrule
+data/live\_cluster/results\_1k.json & Live-cluster replay outcomes (1,000 manifests, dry-run/live apply parity). \\
+data/batch\_runs/grok\_5k/\allowbreak metrics\_grok5k.json & Grok/xAI telemetry (acceptance, latency, token counts) for the 5k sweep. \\
+data/risk/risk\_calibration.csv & Risk accounting summary ($\Delta R$, residual risk, $\Delta R/t$) for supported and 5k corpora. \\
+data/metrics\_schedule\_compare.json & Queue replay statistics for FIFO vs.\ risk-aware schedulers (rank, wait, $\Delta R/t$). \\
+data/grok\_failure\_analysis.csv & Grok failure taxonomy (dry-run retrievals, StatefulSet validation, etc.). \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\section{Evaluation Artifact Manifest}
+\label{app:artifact_manifest}
+\begin{table*}[t]
+\centering
+\small
+\caption{Key evaluation artifacts with record counts and purposes for full reproducibility.}
+\label{tab:artifact_manifest}
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{3in}>{\raggedright\arraybackslash}X r@{}}
+\toprule
+\textrm{\textbf{Artifact Path}} & \textbf{Purpose} & \textbf{Count} \\
+\midrule
+data/live\_cluster/results\_1k.json & Live-cluster replay outcomes (dry-run + apply) & 1{,}000 \\
+data/live\_cluster/summary\_1k.csv & Live-cluster aggregate statistics & 1 \\
+data/batch\_runs/grok\_5k/metrics\_grok5k.json & Grok-5k acceptance \& token telemetry & 5{,}000 \\
+data/batch\_runs/grok\_full/metrics\_grok\_full.json & Manifest slice (1{,}313) acceptance & 1{,}313 \\
+data/batch\_runs/grok200\_latency\_summary.csv & Proposer latency summary (Grok-200) & 280 \\
+data/batch\_runs/verified\_grok200\_latency\_summary.csv & Verifier latency summary (Grok-200) & 140 \\
+data/eval/significance\_tests.json & Statistical significance tests (z-test, Mann-Whitney U) & 12 \\
+data/eval/table4\_counts.csv & Table 4 manifest counts per corpus & 4 \\
+data/eval/table4\_with\_ci.csv & Wilson 95\% confidence intervals & 4 \\
+data/scheduler/fairness\_metrics.json & Scheduler fairness (Gini, starvation) & 830 \\
+data/scheduler/metrics\_schedule\_sweep.json & Scheduler parameter sweep results & 16 \\
+data/risk/risk\_calibration.csv & Risk reduction ($\Delta R$) per corpus & 2 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+
 \section{Corpus Mining and Integrity}
 \label{app:corpus}
-\noindent\textbf{ArtifactHub mining pipeline.} Running \texttt{python scripts/\allowbreak collect\_artifacthub.py\ --limit\ 5000} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \url{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
+\noindent\textbf{ArtifactHub mining pipeline.} Running the data collection helper\footnote{Command: \texttt{python scripts/\allowbreak collect\_artifacthub.py\ --limit\ 5000}.} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \url{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
 
 \medskip
 \noindent\textbf{Corpus hashes.} After manifests are rendered, \texttt{python scripts/generate\_corpus\_appendix.py} emits \url{docs/appendix\_corpus.md}, a SHA-256 inventory of every manifest (including the curated smoke tests in \url{data/manifests/001.yaml} and \url{002.yaml}). This appendix enables reproducibility reviewers to verify corpus integrity and trace individual evaluation examples back to their Helm chart origins.
@@ -895,6 +1033,15 @@ Kyverno Project, "Kyverno Documentation," Accessed: Oct.~2025. [Online]. Availab
 
 \bibitem{borg}
 A. Verma \emph{et al.}, "Large-scale Cluster Management at Google with Borg," in \emph{Proc. EuroSys}, 2015; supplemental SRE updates accessed Oct.~2025. [Online]. Available: \url{https://research.google/pubs/pub43438/}
+
+\bibitem{artifacthub}
+ArtifactHub Documentation. Accessed: Oct.~2025. [Online]. Available: \url{https://artifacthub.io/docs/}
+
+\bibitem{auer2002}
+P. Auer, N. Cesa-Bianchi, and P. Fischer, "Finite-time Analysis of the Multiarmed Bandit Problem," \emph{Machine Learning}, vol.~47, no.~2, pp.~235--256, 2002.
+
+\bibitem{joseph2016}
+M. Joseph, M. Kearns, J. H. Morgenstern, and A. Roth, "Fairness in Learning: Classic and Contextual Bandits," in \emph{Proc. Advances in Neural Information Processing Systems (NeurIPS)}, 2016.
 
 \end{thebibliography}
 

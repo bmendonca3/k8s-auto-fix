@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-kube-promethe-admission-patch
+  namespace: default
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app: kube-prometheus-stack-admission-patch
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 77.14.0
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    chart: kube-prometheus-stack-77.14.0
+    release: release-name
+    heritage: Helm
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+    app.kubernetes.io/component: prometheus-operator-webhook
+spec:
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      name: release-name-kube-promethe-admission-patch
+      labels:
+        app: kube-prometheus-stack-admission-patch
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: 77.14.0
+        app.kubernetes.io/part-of: kube-prometheus-stack
+        chart: kube-prometheus-stack-77.14.0
+        release: release-name
+        heritage: Helm
+        app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+        app.kubernetes.io/component: prometheus-operator-webhook
+    spec:
+      containers:
+      - name: patch
+        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.3
+        imagePullPolicy: IfNotPresent
+        args:
+        - patch
+        - --webhook-name=release-name-kube-promethe-admission
+        - --namespace=default
+        - --secret-name=release-name-kube-promethe-admission
+        - --patch-failure-policy=
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        resources: {}
+      restartPolicy: OnFailure
+      serviceAccountName: release-name-kube-promethe-admission
+      securityContext:
+        runAsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 2000
+        seccompProfile:
+          type: RuntimeDefault

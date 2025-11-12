@@ -1,0 +1,68 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: release-name-kyverno:cleanup-controller
+  labels:
+    app.kubernetes.io/component: cleanup-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: release-name-kyverno
+    app.kubernetes.io/version: 3.5.2
+    helm.sh/chart: kyverno-3.5.2
+  namespace: default
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - delete
+  - get
+  - list
+  - update
+  - watch
+  resourceNames:
+  - kyverno-cleanup-controller.default.svc.kyverno-tls-ca
+  - kyverno-cleanup-controller.default.svc.kyverno-tls-pair
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - release-name-kyverno
+  - release-name-kyverno-metrics
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - delete
+  - get
+  - patch
+  - update
+  resourceNames:
+  - kyverno-cleanup-controller
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch

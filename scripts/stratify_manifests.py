@@ -226,6 +226,44 @@ def analyze_resource_diversity(manifests: List[pathlib.Path]) -> Dict[str, int]:
     return dict(kind_counts)
 
 
+def sample_additional_from_corpus(
+    manifests_root: pathlib.Path,
+    selected: List[pathlib.Path],
+    target_size: int,
+) -> List[pathlib.Path]:
+    """
+    Top up the sampled manifests using the broader corpus.
+
+    Ensures we can hit larger targets (e.g., 1k) even when the detections
+    dataset only covers a subset of manifests.
+    """
+    needed = target_size - len(selected)
+    if needed <= 0:
+        return []
+
+    manifests_root = manifests_root.resolve()
+    selected_resolved = {p.resolve() for p in selected}
+    candidates: List[pathlib.Path] = []
+
+    for candidate in manifests_root.rglob("*.yaml"):
+        if not candidate.is_file():
+            continue
+        resolved = candidate.resolve()
+        if resolved in selected_resolved:
+            continue
+        if is_namespace_specific(candidate):
+            continue
+        candidates.append(candidate)
+
+    if not candidates:
+        return []
+
+    if len(candidates) <= needed:
+        return candidates
+
+    return random.sample(candidates, needed)
+
+
 def write_outputs(
     sampled: List[pathlib.Path],
     output_list: pathlib.Path,
@@ -243,10 +281,16 @@ def write_outputs(
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    root_resolved = manifests_root.resolve()
     
     for idx, manifest in enumerate(sorted(sampled), start=1):
         # Create a unique filename preserving some path structure
-        rel_path = manifest.relative_to(manifests_root) if manifest.is_relative_to(manifests_root) else manifest
+        manifest_resolved = manifest.resolve()
+        try:
+            rel_path = manifest_resolved.relative_to(root_resolved)
+        except ValueError:
+            rel_path = manifest
         safe_name = str(rel_path).replace("/", "_").replace(" ", "_")
         dest = output_dir / f"{idx:04d}_{safe_name}"
         shutil.copy2(manifest, dest)
@@ -256,6 +300,8 @@ def main() -> None:
     args = parse_args()
     random.seed(args.seed)
     
+    manifests_root = args.manifests_root.resolve()
+
     print(f"Loading detections from {args.detections}")
     detections = load_detections(args.detections)
     print(f"  Loaded {len(detections)} detections")
@@ -263,18 +309,32 @@ def main() -> None:
     print(f"\nStratifying manifests (target size: {args.target_size})")
     sampled, policy_counts = stratify_by_policy(
         detections,
-        args.manifests_root,
+        manifests_root,
         args.target_size,
         args.min_per_policy,
     )
     print(f"  Sampled {len(sampled)} manifests")
+
+    if len(sampled) < args.target_size:
+        print(
+            f"  Insufficient coverage from detections (needed {args.target_size}, "
+            f"have {len(sampled)}). Falling back to corpus sampling..."
+        )
+        additional = sample_additional_from_corpus(
+            manifests_root,
+            sampled,
+            args.target_size,
+        )
+        sampled.extend(additional)
+        sampled = sorted({p.resolve(): p for p in sampled}.values())
+        print(f"  Added {len(additional)} corpus manifests (total {len(sampled)})")
     
     print(f"\nPolicy distribution:")
     for policy, count in sorted(policy_counts.items(), key=lambda x: -x[1])[:10]:
         print(f"  {policy}: {count}")
     if len(policy_counts) > 10:
         print(f"  ... and {len(policy_counts) - 10} more policies")
-    
+
     print(f"\nResource kind diversity:")
     kinds = analyze_resource_diversity(sampled)
     for kind, count in sorted(kinds.items(), key=lambda x: -x[1])[:10]:
@@ -283,7 +343,7 @@ def main() -> None:
         print(f"  ... and {len(kinds) - 10} more kinds")
     
     print(f"\nWriting outputs:")
-    write_outputs(sampled, args.output_list, args.output_dir, args.manifests_root)
+    write_outputs(sampled, args.output_list, args.output_dir, manifests_root)
     print(f"  Manifest list: {args.output_list}")
     print(f"  Manifest copies: {args.output_dir}/")
     print(f"\nStratified sampling complete!")
@@ -291,4 +351,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

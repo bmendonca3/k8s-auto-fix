@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keda-olm-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: keda-olm-operator
+  template:
+    metadata:
+      labels:
+        name: keda-olm-operator
+    spec:
+      serviceAccountName: keda-olm-operator
+      containers:
+      - name: keda-olm-operator
+        image: ghcr.io/kedacore/keda-olm-operator:main
+        command:
+        - /manager
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 500m
+            memory: 500Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 25
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 20
+        env:
+        - name: WATCH_NAMESPACE
+          value: ''

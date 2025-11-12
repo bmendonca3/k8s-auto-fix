@@ -192,6 +192,30 @@ def load_filter_rules(path: pathlib.Path) -> List[Dict[str, Any]]:
     return rules
 
 
+def load_builtin_crds() -> Dict[str, str]:
+    """Load bundled CRDs shipped under data/live_cluster/crds/."""
+    crd_dir = pathlib.Path("data/live_cluster/crds")
+    crds: Dict[str, str] = {}
+    if not crd_dir.exists():
+        return crds
+    for path in crd_dir.glob("*.yaml"):
+        try:
+            documents = list(yaml.safe_load_all(path.read_text()))
+        except Exception as exc:  # pragma: no cover - defensive
+            logging.warning("Failed to load bundled CRD %s: %s", path, exc)
+            continue
+        for doc in documents:
+            if not isinstance(doc, dict):
+                continue
+            if doc.get("kind") != "CustomResourceDefinition":
+                continue
+            name = doc.get("metadata", {}).get("name")
+            if not name:
+                continue
+            crds[name] = yaml.safe_dump(doc, sort_keys=False)
+    return crds
+
+
 def _doc_matches_rule(doc: Dict[str, Any], rule: Dict[str, Any]) -> bool:
     if not isinstance(doc, dict):
         return False
@@ -258,7 +282,16 @@ def collect_crd_definitions(
 def install_crds(kubectl: str, crds: Dict[str, str]) -> List[str]:
     installed: List[str] = []
     for name, crd_yaml in crds.items():
-        proc = run_kubectl(kubectl, ["apply", "-f", "-"], input_data=crd_yaml)
+        # Best-effort cleanup to avoid schema drift from previous runs
+        run_kubectl(
+            kubectl,
+            ["delete", "crd", name, "--ignore-not-found"],
+        )
+        proc = run_kubectl(
+            kubectl,
+            ["apply", "--server-side", "--force-conflicts", "-f", "-"],
+            input_data=crd_yaml,
+        )
         if proc.returncode == 0:
             installed.append(name)
             continue
@@ -777,7 +810,15 @@ def evaluate_manifest(
         )
         notes.extend(sa_warnings)
 
+    is_crd_manifest = all(
+        isinstance(doc, dict) and doc.get("kind") == "CustomResourceDefinition"
+        for doc in preprocess_docs
+        if isinstance(doc, dict)
+    )
+
     dry_args = ["apply", "--dry-run=server", "-f", "-"]
+    if is_crd_manifest:
+        dry_args.insert(1, "--server-side")
     if ephemeral:
         dry_args.extend(["-n", target_namespace])
     dry_run_proc = run_kubectl(kubectl, dry_args, input_data=manifest_yaml)
@@ -788,6 +829,8 @@ def evaluate_manifest(
     try:
         if dry_pass:
             apply_args = ["apply", "-f", "-"]
+            if is_crd_manifest:
+                apply_args = ["apply", "--server-side", "--force-conflicts", "-f", "-"]
             if ephemeral:
                 apply_args.extend(["-n", target_namespace])
             apply_proc = run_kubectl(kubectl, apply_args, input_data=manifest_yaml)

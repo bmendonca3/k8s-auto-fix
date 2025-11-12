@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub
+  labels:
+    app.kubernetes.io/component: hub
+    helm.sh/chart: artifact-hub-1.21.0
+    app.kubernetes.io/name: artifact-hub
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 1.21.0
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: hub
+      app.kubernetes.io/name: artifact-hub
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: /metrics
+        prometheus.io/port: '8001'
+      labels:
+        app.kubernetes.io/component: hub
+        app.kubernetes.io/name: artifact-hub
+        app.kubernetes.io/instance: release-name
+    spec:
+      serviceAccountName: hub
+      initContainers:
+      - name: check-db-ready
+        image: docker.io/artifacthub/postgres:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PGHOST
+          value: release-name-postgresql.default
+        - name: PGPORT
+          value: '5432'
+        - name: PGUSER
+          value: postgres
+        command:
+        - sh
+        - -c
+        - until pg_isready; do echo waiting for database; sleep 2; done;
+      - name: check-db-migrator-run
+        image: bitnami/kubectl:1.34
+        imagePullPolicy: IfNotPresent
+        command:
+        - kubectl
+        - wait
+        - --namespace=default
+        - --for=condition=complete
+        - job/db-migrator-install
+        - --timeout=60s
+      containers:
+      - name: hub
+        image: artifacthub/hub:v1.21.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: hub-config
+          mountPath: /home/hub/.cfg
+          readOnly: true
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+      volumes:
+      - name: hub-config
+        secret:
+          secretName: hub-config

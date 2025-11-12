@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpg-buildbox
+  labels:
+    name: gpg-buildbox
+spec:
+  containers:
+  - name: gpg-local-registry
+    image: registry
+    ports:
+    - name: gpg-local-reg
+      hostPort: 5000
+      containerPort: 5000
+  - name: gpg-buildbox
+    image: gridpgadmin/gpg-buildbox
+    securityContext:
+      privileged: true
+    ports:
+    - name: ssh
+      containerPort: 22
+      hostPort: 30022
+      protocol: TCP
+    volumeMounts:
+    - name: dockersock
+      mountPath: /var/run/docker.sock
+  volumes:
+  - name: dockersock
+    hostPath:
+      path: /var/run/docker.sock

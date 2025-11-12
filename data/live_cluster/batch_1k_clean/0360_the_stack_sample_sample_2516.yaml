@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+  labels:
+    deployment: celery-beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: celery-beat
+  template:
+    metadata:
+      labels:
+        pod: celery-beat
+    spec:
+      containers:
+      - name: celery-beat
+        image: willwcchan/visual-option-chain-graph
+        command:
+        - celery
+        - -A
+        - visual-option-chain
+        - beat
+        - -l
+        - debug
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        - name: POSTGRES_HOST
+          value: postgres-service
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: SECRET_KEY
+        - name: TRADIER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: TRADIER_API_KEY
+        - name: EMAIL_HOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: EMAIL_HOST_PASSWORD

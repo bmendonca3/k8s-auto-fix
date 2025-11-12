@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrator-install
+  labels:
+    helm.sh/chart: artifact-hub-1.21.0
+    app.kubernetes.io/name: artifact-hub
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 1.21.0
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ttlSecondsAfterFinished: null
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: artifact-hub-1.21.0
+        app.kubernetes.io/name: artifact-hub
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: 1.21.0
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      automountServiceAccountToken: true
+      serviceAccountName: default
+      restartPolicy: Never
+      initContainers:
+      - name: check-db-ready
+        image: docker.io/artifacthub/postgres:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PGHOST
+          value: release-name-postgresql.default
+        - name: PGPORT
+          value: '5432'
+        - name: PGUSER
+          value: postgres
+        command:
+        - sh
+        - -c
+        - until pg_isready; do echo waiting for database; sleep 2; done;
+      containers:
+      - name: db-migrator
+        image: artifacthub/db-migrator:v1.21.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TERN_CONF
+          value: /home/db-migrator/.cfg/tern.conf
+        volumeMounts:
+        - name: db-migrator-config
+          mountPath: /home/db-migrator/.cfg
+          readOnly: true
+        command:
+        - ./migrate.sh
+      volumes:
+      - name: db-migrator-config
+        secret:
+          secretName: db-migrator-config

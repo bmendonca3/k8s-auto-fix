@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-postgresql
+  labels:
+    app: postgresql
+    chart: postgresql-8.2.1
+    release: release-name
+    heritage: Helm
+spec:
+  serviceName: release-name-postgresql-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: postgresql
+      release: release-name
+      role: master
+  template:
+    metadata:
+      name: release-name-postgresql
+      labels:
+        app: postgresql
+        chart: postgresql-8.2.1
+        release: release-name
+        heritage: Helm
+        role: master
+    spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+      - name: init-chmod-data
+        image: docker.io/bitnami/minideb:stretch
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        command:
+        - /bin/sh
+        - -c
+        - "mkdir -p /data/data\nchmod 700 /data/data\nfind /data -mindepth 0 -maxdepth\
+          \ 1 -not -name \".snapshot\" -not -name \"lost+found\" | \\\n  xargs chown\
+          \ -R 1001:1001\nchmod -R 777 /dev/shm\n"
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: data
+          mountPath: /data
+          subPath: null
+        - name: dshm
+          mountPath: /dev/shm
+      containers:
+      - name: release-name-postgresql
+        image: docker.io/artifacthub/postgres:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          runAsUser: 1001
+        env:
+        - name: BITNAMI_DEBUG
+          value: 'false'
+        - name: POSTGRESQL_PORT_NUMBER
+          value: '5432'
+        - name: POSTGRESQL_VOLUME_DIR
+          value: /data
+        - name: PGDATA
+          value: /data/pgdata
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: release-name-postgresql
+              key: postgresql-password
+        - name: POSTGRES_DB
+          value: hub
+        - name: POSTGRESQL_ENABLE_LDAP
+          value: 'no'
+        ports:
+        - name: tcp-postgresql
+          containerPort: 5432
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -d "hub" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - 'exec pg_isready -U "postgres" -d "hub" -h 127.0.0.1 -p 5432
+
+              '
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
+        - name: data
+          mountPath: /data
+          subPath: null
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi

@@ -1,6 +1,8 @@
 # Polish TODO Tracker
 
-## In-flight / Upcoming
+> **Archive:** This tracker has been frozen. Active planning now lives in `notes/to-do list`, which is the canonical source for outstanding work. The tables below are retained for historical context only.
+
+## In-flight / Upcoming (archived)
 
 | Task | Status | Notes |
 | ---- | ------ | ----- |
@@ -12,7 +14,7 @@
 | Paper/packaging polish | Complete | DOI placeholder set, evaluation table expanded with seeds/latencies, and Makefile/docs updated for fixtures/regression checks. |
 | RAG-backed proposer maturation | Complete | GuidanceRetriever + failure cache drive targeted prompt hints; semantic regression checks block destructive Grok patches. |
 
-## Next Improvements
+## Next Improvements (archived)
 
 | Task | Status | Notes |
 | ---- | ------ | ----- |
@@ -23,7 +25,7 @@
 | Threat/risk discussion | Complete | Added Threats & Mitigations subsection to the paper and referenced semantic regression safeguards in README/paper. |
 | Future-work roadmap | Complete | README Roadmap section now details quarterly milestones for reproducibility, telemetry reruns, external validation, operator surveys, and hardening. |
 
-## Baseline foundations (completed)
+## Baseline foundations (archived)
 
 | Task | Status | Notes |
 | ---- | ------ | ----- |

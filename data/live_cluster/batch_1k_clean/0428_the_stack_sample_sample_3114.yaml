@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+      version: v2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: web
+        version: v2
+    spec:
+      containers:
+      - image: greysd/kubernetes-intro:latest
+        name: web
+        volumeMounts:
+        - name: app
+          mountPath: /app
+        readinessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          httpGet:
+            path: /index.html
+            port: 8000
+        livenessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          tcpSocket:
+            port: 8000
+      initContainers:
+      - name: web-init
+        image: busybox:1.31.0
+        volumeMounts:
+        - name: app
+          mountPath: /app
+        command:
+        - sh
+        - -c
+        args:
+        - echo "Version 2" > /app/index.html
+      volumes:
+      - name: app
+        emptyDir: {}

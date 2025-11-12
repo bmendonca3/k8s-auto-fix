@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloudflow-patch-spark-mutatingwebhookconfig
+spec:
+  template:
+    spec:
+      serviceAccountName: cloudflow-operator
+      restartPolicy: OnFailure
+      containers:
+      - name: main
+        image: alpine:3.12
+        command:
+        - /bin/ash
+        - -c
+        - "apk update && apk add wget\nwget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl\
+          \ && chmod 755 /bin/kubectl\nNAME=\"spark-operator-sparkoperator\"\nAPI_VERSION=$(kubectl\
+          \ get deployment -n cloudflow $NAME -o jsonpath='{.apiVersion}')\nUUID=$(kubectl\
+          \ get deployment -n cloudflow $NAME -o jsonpath='{.metadata.uid}')\nKIND=$(kubectl\
+          \ get deployment -n cloudflow $NAME -o jsonpath='{.kind}')\nHOOK_NAME=\"\
+          spark-operator-sparkoperator-webhook-config\"\nJSON=$(cat <<EOF\n{\n  \"\
+          metadata\": {\n    \"ownerReferences\": [\n      {\n        \"apiVersion\"\
+          : \"$API_VERSION\",\n        \"blockOwnerDeletion\": true,\n        \"controller\"\
+          : true,\n        \"kind\": \"$KIND\",\n        \"name\": \"$NAME\",\n  \
+          \      \"uid\": \"$UUID\"\n      }\n    ]\n  }\n}\nEOF\n)\necho $JSON\n\
+          kubectl patch MutatingWebhookConfiguration $HOOK_NAME -n cloudflow -p \"\
+          $JSON\""

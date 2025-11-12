@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-case
+  labels:
+    app: mock-case
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-case
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      name: mock-case
+      labels:
+        app: mock-case
+    spec:
+      containers:
+      - name: mock-case
+        image: eu.gcr.io/sdc-int-ci/mock-case:0.35.0-rc.1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: '0.1'
+            memory: 512Mi
+          limits:
+            cpu: 0.5M
+            memory: 1024Mi
+        readinessProbe:
+          httpGet:
+            path: /info
+            port: 8161
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /info
+            port: 8161
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        ports:
+        - name: http-server
+          containerPort: 8161
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: -Dspring.profiles.active=dev -Dlogging.level.uk.gov.ons.ctp=DEBUG
+            -Dlogging.level.org.springframework=WARN -Dendpoints.autoconfig.enabled=false
+            -Dendpoints.beans.enabled=false -Dendpoints.configprops.enabled=false
+            -Dendpoints.dump.enabled=false -Dendpoints.env.enabled=false -Dendpoints.metrics.enabled=false
+            -Dendpoints.mapping.enabled=false -Dendpoints.shutdown.enabled=false -Dendpoints.trace.enabled=false
+            -Dmanagement.health.rabbit.enabled=false

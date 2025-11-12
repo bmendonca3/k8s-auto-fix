@@ -1,0 +1,180 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-redis-master
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/version: 8.2.2
+    helm.sh/chart: redis-23.1.1
+    app.kubernetes.io/component: master
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/component: master
+  serviceName: release-name-redis-headless
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/version: 8.2.2
+        helm.sh/chart: redis-23.1.1
+        app.kubernetes.io/component: master
+      annotations:
+        checksum/configmap: 95944ee35a19af37cefd156f19d93e157e578c1dc63ac01ce735ae93090b7580
+        checksum/health: aff24913d801436ea469d8d374b2ddb3ec4c43ee7ab24663d5f8ff1a1b6991a9
+        checksum/scripts: 796326939380261bbef30ebf93cef0ad202f8440491c7bfce6ca532637bd0271
+        checksum/secret: e604af60410e66fdbde895aaa50ef67a9838938e9197616eab6627edea05bc2a
+    spec:
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      serviceAccountName: release-name-redis-master
+      automountServiceAccountToken: false
+      affinity:
+        podAffinity: null
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/name: redis
+                  app.kubernetes.io/component: master
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+        nodeAffinity: null
+      enableServiceLinks: true
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: redis
+        image: registry-1.docker.io/bitnami/redis:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        command:
+        - /bin/bash
+        args:
+        - -ec
+        - /opt/bitnami/scripts/start-scripts/start-master.sh
+        env:
+        - name: BITNAMI_DEBUG
+          value: 'false'
+        - name: REDIS_REPLICATION_MODE
+          value: master
+        - name: ALLOW_EMPTY_PASSWORD
+          value: 'no'
+        - name: REDIS_PASSWORD_FILE
+          value: /opt/bitnami/redis/secrets/redis-password
+        - name: REDIS_TLS_ENABLED
+          value: 'no'
+        - name: REDIS_PORT
+          value: '6379'
+        ports:
+        - name: redis
+          containerPort: 6379
+        livenessProbe:
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 6
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - /bin/bash
+            - -ec
+            - /health/ping_liveness_local.sh 5
+        readinessProbe:
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - /bin/bash
+            - -ec
+            - /health/ping_readiness_local.sh 1
+        resources:
+          limits:
+            cpu: 150m
+            ephemeral-storage: 2Gi
+            memory: 192Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 128Mi
+        volumeMounts:
+        - name: start-scripts
+          mountPath: /opt/bitnami/scripts/start-scripts
+        - name: health
+          mountPath: /health
+        - name: redis-password
+          mountPath: /opt/bitnami/redis/secrets/
+        - name: redis-data
+          mountPath: /data
+        - name: config
+          mountPath: /opt/bitnami/redis/mounted-etc
+        - name: empty-dir
+          mountPath: /opt/bitnami/redis/etc/
+          subPath: app-conf-dir
+        - name: empty-dir
+          mountPath: /tmp
+          subPath: tmp-dir
+      volumes:
+      - name: start-scripts
+        configMap:
+          name: release-name-redis-scripts
+          defaultMode: 493
+      - name: health
+        configMap:
+          name: release-name-redis-health
+          defaultMode: 493
+      - name: redis-password
+        secret:
+          secretName: release-name-redis
+          items:
+          - key: redis-password
+            path: redis-password
+      - name: config
+        configMap:
+          name: release-name-redis-configuration
+      - name: empty-dir
+        emptyDir: {}
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: redis-data
+      labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: master
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi

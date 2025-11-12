@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: label-sync
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        name: label-sync
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: label-sync
+        image: gcr.io/k8s-prow/label_sync:v20200625-dd6a466605
+        args:
+        - --config=/etc/config/labels.yaml
+        - --confirm=true
+        - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs
+        - --token=/etc/github/oauth
+        volumeMounts:
+        - name: oauth
+          mountPath: /etc/github
+          readOnly: true
+        - name: config
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+      - name: oauth
+        secret:
+          secretName: oauth-token
+      - name: config
+        configMap:
+          name: label-config
