@@ -49,14 +49,15 @@ def create_comparison_chart():
     rects1 = ax.bar(x - width/2, k8s_auto_fix_scores, width, label='k8s-auto-fix (Post-hoc)')
     rects2 = ax.bar(x + width/2, kyverno_scores, width, label='Kyverno (Admission-time)')
 
-    ax.set_ylabel('Acceptance Rate (%)')
-    ax.set_title('Admission-time vs. Post-hoc Policy Enforcement')
+    ax.set_ylabel('Acceptance Rate (%)', fontsize=14)
+    ax.set_title('Admission-time vs. Post-hoc Policy Enforcement', fontsize=16)
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
-    ax.legend()
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=14)
+    ax.tick_params(axis='y', labelsize=14)
+    ax.legend(fontsize=12)
 
-    ax.bar_label(rects1, padding=3)
-    ax.bar_label(rects2, padding=3)
+    ax.bar_label(rects1, padding=3, fontsize=12)
+    ax.bar_label(rects2, padding=3, fontsize=12)
     ax.set_ylim(0, 110)
 
 

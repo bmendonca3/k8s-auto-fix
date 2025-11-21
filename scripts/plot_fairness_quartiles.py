@@ -97,10 +97,11 @@ def main() -> None:
         color="#C0504D",
         hatch="//",
     )
-    plt.ylabel("Wait time (hours)")
-    plt.xticks(positions, TIERS)
-    plt.title("Wait-time fairness by risk tier")
-    plt.legend()
+    plt.ylabel("Wait time (hours)", fontsize=14)
+    plt.xticks(positions, TIERS, fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.title("Wait-time fairness by risk tier", fontsize=16)
+    plt.legend(fontsize=12)
     plt.tight_layout()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
