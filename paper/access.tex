@@ -1,11 +1,10 @@
 \PassOptionsToPackage{table}{xcolor}
-\documentclass{ieeeaccess}
+\documentclass[10pt,journal,compsoc]{IEEEtran}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
-% \usepackage{caption} % Removed: Conflicts with the ieeeaccess class
 % \usepackage{mathptmx} % Disabled to avoid RSFS font requirement on minimal TeX
 \usepackage[english]{babel}
 % Enable microtype gently to reduce overfull boxes (protrusion/expansion)
@@ -19,6 +18,7 @@
 \usepackage{alltt}
 
 \usepackage{hyperref}
+\usepackage{xurl}
 \definecolor{accessblue}{rgb}{0,0.2,0.5}
 \hypersetup{
     colorlinks=true,
@@ -83,38 +83,26 @@
 %Your document starts from here ___________________________________________________
 
 \begin{document}
-\history{}
-\doi{DOI: TBD}
 
-% (Revert to default IEEE Access title page styling)
 \title{Closed-Loop Threat-Guided Auto-Fixing of Kubernetes Container Security Misconfigurations}
-\author{\uppercase{Brian Mendonca}\authorrefmark{1}, and
-\uppercase{Vijay K. Madisetti}\authorrefmark{2}, \IEEEmembership{Fellow, IEEE}}
 
-\address[1]{College of Computing, Georgia Institute of Technology, Atlanta, GA 30332 USA (e-mail: brian.mendonca6@gmail.com)}
-\address[2]{School of Cybersecurity and Privacy, Georgia Institute of Technology, Atlanta, GA 30332 USA (e-mail: vkm@gatech.edu)}
+\author{Brian Mendonca and Vijay K. Madisetti, \IEEEmembership{Fellow, IEEE}%
+\IEEEcompsocitemizethanks{\IEEEcompsocthanksitem Brian Mendonca is with the College of Computing, Georgia Institute of Technology, Atlanta, GA 30332 USA (e-mail: brian.mendonca6@gmail.com).
+\IEEEcompsocthanksitem Vijay K. Madisetti is with the School of Cybersecurity and Privacy, Georgia Institute of Technology, Atlanta, GA 30332 USA (e-mail: vkm@gatech.edu).}%
+\thanks{The authors thank the ArtifactHub maintainers for curating the public Helm corpus, the CNCF SIG-Security reviewers for early feedback, and xAI for providing Reasoning API credits that made the Grok evaluations possible.}}
 
-% Short running heads to avoid header overflow
-\markboth
-{Mendonca et al.: k8s-auto-fix}
-{Mendonca et al.: k8s-auto-fix}
-
-\corresp{Corresponding author: Dr. Vijay Madisetti (e-mail: vkm@gatech.edu).}
-
-\tfootnote{The authors thank the ArtifactHub maintainers for curating the public Helm corpus, the CNCF SIG-Security reviewers for early feedback, and xAI for providing Reasoning API credits that made the Grok evaluations possible.}
-
-\titlepgskip=-22pt
-
-% Abstract and keywords must be defined before \maketitle for ieeeaccess
+\IEEEtitleabstractindextext{%
 \begin{abstract}
 Kubernetes container security in cloud computing deployments is easy to breach, and most tools stop after identifying the problems. We propose a powerful new approach,  \texttt{k8s-auto-fix}, to close the loop: it detects an issue, suggests a small patch, verifies it safely, and lines it up for application. On a 1,000-manifest replay against a real cluster, our approach fixed every item without rollbacks (1,000/1,000). On a 15,718-detection offline run, deterministic rules plus safety checks accepted 13,338 of 13,373 patched items (99.74\%; auto-fix rate 0.8486; median patch length 9). An optional LLM mode reaches 88.78\% acceptance on a 5,000-manifest corpus. A simple risk-aware scheduler also cuts the worst-case wait for high-risk items by 7.9$\times$. We release all data and scripts so others can reproduce these results.
 \end{abstract}
 
-\begin{keywords}
+\begin{IEEEkeywords}
 Kubernetes, SAST, DAST, Admission control, Server-side dry-run, YAML, Pod Security, JSON Patch, Policy Enforcement, Kyverno, OPA Gatekeeper, Auto-fix, CI/CD, CVE, EPSS, RAG, Risk-based scheduling
-\end{keywords}
+\end{IEEEkeywords}}
 
 \maketitle
+\IEEEdisplaynontitleabstractindextext
+\IEEEpeerreviewmaketitle
 
 % Gentle line-breaking stretch to reduce overfull boxes
 \sloppy
@@ -889,104 +877,6 @@ Looking forward, we will automate guidance refreshes in CI (\url{scripts/refresh
 
 Near-term efforts focus on keeping the seeded fixtures current so the 1,000/1,000 live-cluster outcome persists for new corpora, broadening Kyverno webhook baselines across additional policy families and alternative clusters, enriching Grok/xAI telemetry with monotonic latency traces, and conducting an operator rotation with embedded surveys to validate the scheduler against real analyst workflows. All artifacts remain available at \url{https://github.com/bmendonca3/k8s-auto-fix} (commit \texttt{e4af5efa7b0a52d7b7e58d76879b0060b354af27}), with a long-term snapshot mirrored in \texttt{archives/k8s-auto-fix-evidence-20251020.tar.gz}.
 
-\appendices
-
-\section{Grok/xAI Failure Analysis}
-\label{app:grok_failures}
-
-The raw data for the Grok/xAI failure analysis can be found in \texttt{data/grok\_failure\_analysis.csv}. This file provides a comprehensive list of all failure causes and their corresponding counts, generated from the analysis of the 5,000-manifest Grok corpus.
-
-\section{Risk Score Worked Example}
-\label{app:risk_example}
-
-The released telemetry enables reviewers to recompute risk units and $\Delta R/t$ for any queue item. As a concrete example we trace detection \texttt{001} from the Grok/xAI replay:
-\begin{enumerate}
-    \item Look up the detection metadata in \texttt{data/batch\_runs/detections\_grok200.json} to confirm the violation is \texttt{latest-tag}.
-    \item Normalise the policy identifier and pull its risk weight and expected latency from \texttt{data/policy\_metrics\_grok200.json}. For \texttt{no\_latest\_tag} the risk is 50 units and the proposer+verifier expected time is 9.363~s (averaged from the recorded latencies).
-    \item Inspect the proposer/verifier records (\texttt{data/batch\_runs/patches\_grok200.json}; \texttt{data/batch\_runs/verified\_grok200.json}) to see that the patch was accepted with a measured end-to-end latency of 7.339~s and verifier latency of 0.332~s.
-\end{enumerate}
-Because the patch succeeded, the pre-risk $R^{\text{pre}} = 50$ drops to $R^{\text{post}} = 0$, yielding $\Delta R = 50$ and $\Delta R/t = 50 / 9.363 = 5.34$ risk units per second. Summing the same quantities across the corpus reproduces Table~\ref{tab:risk_calibration}, as computed by \texttt{scripts/risk\_calibration.py}.
-
-\section{Acronym Glossary}
-\label{app:acronyms}
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Acronym} & \textbf{Definition} \\
-\midrule
-CIS & Center for Internet Security \\
-PSS & Pod Security Standards \\
-CRD & Custom Resource Definition \\
-RBAC & Role-Based Access Control \\
-CTI & Cyber Threat Intelligence \\
-KEV & CISA Known Exploited Vulnerabilities \\
-EPSS & Exploit Prediction Scoring System \\
-CVE/CVSS & Common Vulnerabilities and Exposures / Scoring System \\
-RAG & Retrieval-Augmented Generation \\
-MTTR & Mean Time To Remediate \\
-CEL & Common Expression Language (Kubernetes) \\
-SAST & Static Application Security Testing \\
-DAST & Dynamic Application Security Testing \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Artifact Index}
-\label{app:artifact_index}
-\begin{table*}[t!]
-\centering
-\small
-\caption{Primary artifacts bundled with the paper.}
-\begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{2.8in}>{\raggedright\arraybackslash}X@{}}
-\toprule
-\textrm{\textbf{Artifact (path)}} & \textbf{Description} \\
-\midrule
-data/live\_cluster/results\_1k.json & Live-cluster replay outcomes (1,000 manifests, dry-run/live apply parity). \\
-data/batch\_runs/grok\_5k/\allowbreak metrics\_grok5k.json & Grok/xAI telemetry (acceptance, latency, token counts) for the 5k sweep. \\
-data/risk/risk\_calibration.csv & Risk accounting summary ($\Delta R$, residual risk, $\Delta R/t$) for supported and 5k corpora. \\
-data/metrics\_schedule\_compare.json & Queue replay statistics for FIFO vs.\ risk-aware schedulers (rank, wait, $\Delta R/t$). \\
-data/grok\_failure\_analysis.csv & Grok failure taxonomy (dry-run retrievals, StatefulSet validation, etc.). \\
-\bottomrule
-\end{tabularx}
-\end{table*}
-
-\section{Evaluation Artifact Manifest}
-\label{app:artifact_manifest}
-\begin{table*}[t!]
-\centering
-\small
-\caption{Key evaluation artifacts with record counts and purposes for full reproducibility.}
-\label{tab:artifact_manifest}
-\begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{3in}>{\raggedright\arraybackslash}X r@{}}
-\toprule
-\textrm{\textbf{Artifact Path}} & \textbf{Purpose} & \textbf{Count} \\
-\midrule
-data/live\_cluster/results\_1k.json & Live-cluster replay outcomes (dry-run + apply) & 1{,}000 \\
-data/live\_cluster/summary\_1k.csv & Live-cluster aggregate statistics & 1 \\
-data/batch\_runs/grok\_5k/metrics\_grok5k.json & Grok-5k acceptance \& token telemetry & 5{,}000 \\
-data/batch\_runs/grok\_full/metrics\_grok\_full.json & Manifest slice (1{,}313) acceptance & 1{,}313 \\
-data/batch\_runs/grok200\_latency\_summary.csv & Proposer latency summary (Grok-200) & 280 \\
-data/batch\_runs/verified\_grok200\_latency\_summary.csv & Verifier latency summary (Grok-200) & 140 \\
-data/eval/significance\_tests.json & Statistical significance tests (z-test, Mann-Whitney U) & 12 \\
-data/eval/table4\_counts.csv & Table 4 manifest counts per corpus & 4 \\
-data/eval/table4\_with\_ci.csv & Wilson 95\% confidence intervals & 4 \\
-data/scheduler/fairness\_metrics.json & Scheduler fairness (Gini, starvation) & 830 \\
-data/scheduler/metrics\_schedule\_sweep.json & Scheduler parameter sweep results & 16 \\
-data/risk/risk\_calibration.csv & Risk reduction ($\Delta R$) per corpus & 2 \\
-\bottomrule
-\end{tabularx}
-\end{table*}
-
-
-\section{Corpus Mining and Integrity}
-\label{app:corpus}
-\noindent\textbf{ArtifactHub mining pipeline.} Running the data collection helper\footnote{Command: \texttt{python scripts/\allowbreak collect\_artifacthub.py\ --limit\ 5000}.} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \url{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
-
-\medskip
-\noindent\textbf{Corpus hashes.} After manifests are rendered, \texttt{python scripts/generate\_corpus\_appendix.py} emits \url{docs/appendix\_corpus.md}, a SHA-256 inventory of every manifest (including the curated smoke tests in \url{data/manifests/001.yaml} and \url{002.yaml}). This appendix enables reproducibility reviewers to verify corpus integrity and trace individual evaluation examples back to their Helm chart origins.
-
 %====================
 % References
 %====================
@@ -1086,12 +976,117 @@ Prior to graduate study, he worked as an Aerospace Quality Engineer at BAE Syste
 He received the B.E.\ in Mechanical Engineering (summa cum laude, GPA 3.99) from Arizona State University in 2021. His research interests include secure configuration management for cloud-native systems, program analysis for infrastructure-as-code, and data-informed quality engineering.
 \end{IEEEbiography}
 
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{vijay.png}}]{Vijay K. Madisetti}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{vijay_madisetti_photo.png}}]{Vijay K. Madisetti}
 is Professor of Cybersecurity and Privacy at the Georgia Institute of Technology. He earned his Ph.D.\ in Electrical Engineering and Computer Sciences from the University of California at Berkeley.
 
 Professor Madisetti is a Fellow of the IEEE and has been honored with the Terman Medal by the American Society of Engineering Education (ASEE), and also received Georgia Tech's Outstanding PhD Dissertation Advisor Award. He has authored several widely referenced textbooks on topics including cloud computing, data analytics, blockchain, and microservices, and has extensive experience in secure system architectures and privacy-preserving technologies.  Dr. Madisetti is co-author of the IEEE VHDL RTL Language Standard, and inventor on over 80 issued US patents. 
 \end{IEEEbiography}
 
-\EOD
+\clearpage
+\appendices
+
+\clearpage
+\section{Grok/xAI Failure Analysis}
+\label{app:grok_failures}
+
+The raw data for the Grok/xAI failure analysis can be found in \texttt{data/grok\_failure\_analysis.csv}. This file provides a comprehensive list of all failure causes and their corresponding counts, generated from the analysis of the 5,000-manifest Grok corpus.
+
+\clearpage
+\section{Risk Score Worked Example}
+\label{app:risk_example}
+
+The released telemetry enables reviewers to recompute risk units and $\Delta R/t$ for any queue item. As a concrete example we trace detection \texttt{001} from the Grok/xAI replay:
+\begin{enumerate}
+    \item Look up the detection metadata in \texttt{data/batch\_runs/detections\_grok200.json} to confirm the violation is \texttt{latest-tag}.
+    \item Normalise the policy identifier and pull its risk weight and expected latency from \texttt{data/policy\_metrics\_grok200.json}. For \texttt{no\_latest\_tag} the risk is 50 units and the proposer+verifier expected time is 9.363~s (averaged from the recorded latencies).
+    \item Inspect the proposer/verifier records (\texttt{data/batch\_runs/patches\_grok200.json}; \texttt{data/batch\_runs/verified\_grok200.json}) to see that the patch was accepted with a measured end-to-end latency of 7.339~s and verifier latency of 0.332~s.
+\end{enumerate}
+Because the patch succeeded, the pre-risk $R^{\text{pre}} = 50$ drops to $R^{\text{post}} = 0$, yielding $\Delta R = 50$ and $\Delta R/t = 50 / 9.363 = 5.34$ risk units per second. Summing the same quantities across the corpus reproduces Table~\ref{tab:risk_calibration}, as computed by \texttt{scripts/risk\_calibration.py}.
+
+\clearpage
+\section{Acronym Glossary}
+\label{app:acronyms}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Acronym} & \textbf{Definition} \\
+\midrule
+CIS & Center for Internet Security \\
+PSS & Pod Security Standards \\
+CRD & Custom Resource Definition \\
+RBAC & Role-Based Access Control \\
+CTI & Cyber Threat Intelligence \\
+KEV & CISA Known Exploited Vulnerabilities \\
+EPSS & Exploit Prediction Scoring System \\
+CVE/CVSS & Common Vulnerabilities and Exposures / Scoring System \\
+RAG & Retrieval-Augmented Generation \\
+MTTR & Mean Time To Remediate \\
+CEL & Common Expression Language (Kubernetes) \\
+SAST & Static Application Security Testing \\
+DAST & Dynamic Application Security Testing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+\section{Artifact Index}
+\label{app:artifact_index}
+\begin{table}[h!]
+\centering
+\small
+\caption{Primary artifacts bundled with the paper.}
+\resizebox{\columnwidth}{!}{%
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{2.8in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textrm{\textbf{Artifact (path)}} & \textbf{Description} \\
+\midrule
+data/live\_cluster/results\_1k.json & Live-cluster replay outcomes (1,000 manifests, dry-run/live apply parity). \\
+data/batch\_runs/grok\_5k/\allowbreak metrics\_grok5k.json & Grok/xAI telemetry (acceptance, latency, token counts) for the 5k sweep. \\
+data/risk/risk\_calibration.csv & Risk accounting summary ($\Delta R$, residual risk, $\Delta R/t$) for supported and 5k corpora. \\
+data/metrics\_schedule\_compare.json & Queue replay statistics for FIFO vs.\ risk-aware schedulers (rank, wait, $\Delta R/t$). \\
+data/grok\_failure\_analysis.csv & Grok failure taxonomy (dry-run retrievals, StatefulSet validation, etc.). \\
+\bottomrule
+\end{tabularx}}
+\end{table}
+
+\clearpage
+\section{Evaluation Artifact Manifest}
+\label{app:artifact_manifest}
+\begin{table}[h!]
+\centering
+\small
+\caption{Key evaluation artifacts with record counts and purposes for full reproducibility.}
+\label{tab:artifact_manifest}
+\resizebox{\columnwidth}{!}{%
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{3in}>{\raggedright\arraybackslash}X r@{}}
+\toprule
+\textrm{\textbf{Artifact Path}} & \textbf{Purpose} & \textbf{Count} \\
+\midrule
+data/live\_cluster/results\_1k.json & Live-cluster replay outcomes (dry-run + apply) & 1{,}000 \\
+data/live\_cluster/summary\_1k.csv & Live-cluster aggregate statistics & 1 \\
+data/batch\_runs/grok\_5k/metrics\_grok5k.json & Grok-5k acceptance \& token telemetry & 5{,}000 \\
+data/batch\_runs/grok\_full/metrics\_grok\_full.json & Manifest slice (1{,}313) acceptance & 1{,}313 \\
+data/batch\_runs/grok200\_latency\_summary.csv & Proposer latency summary (Grok-200) & 280 \\
+data/batch\_runs/verified\_grok200\_latency\_summary.csv & Verifier latency summary (Grok-200) & 140 \\
+data/eval/significance\_tests.json & Statistical significance tests (z-test, Mann-Whitney U) & 12 \\
+data/eval/table4\_counts.csv & Table 4 manifest counts per corpus & 4 \\
+data/eval/table4\_with\_ci.csv & Wilson 95\% confidence intervals & 4 \\
+data/scheduler/fairness\_metrics.json & Scheduler fairness (Gini, starvation) & 830 \\
+data/scheduler/metrics\_schedule\_sweep.json & Scheduler parameter sweep results & 16 \\
+data/risk/risk\_calibration.csv & Risk reduction ($\Delta R$) per corpus & 2 \\
+\bottomrule
+\end{tabularx}}
+\end{table}
+
+
+\clearpage
+\section{Corpus Mining and Integrity}
+\label{app:corpus}
+\noindent\textbf{ArtifactHub mining pipeline.} Running the data collection helper\footnote{Command: \texttt{python scripts/\allowbreak collect\_artifacthub.py\ --limit\ 5000}.} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \url{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
+
+\medskip
+\noindent\textbf{Corpus hashes.} After manifests are rendered, \texttt{python scripts/generate\_corpus\_appendix.py} emits \url{docs/appendix\_corpus.md}, a SHA-256 inventory of every manifest (including the curated smoke tests in \url{data/manifests/001.yaml} and \url{002.yaml}). This appendix enables reproducibility reviewers to verify corpus integrity and trace individual evaluation examples back to their Helm chart origins.
 
 \end{document}
