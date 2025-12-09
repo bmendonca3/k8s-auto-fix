@@ -107,7 +107,7 @@
 
 % Abstract and keywords must be defined before \maketitle for ieeeaccess
 \begin{abstract}
-Kubernetes configs often ship with mistakes that weaken security. \texttt{k8s-auto-fix} is a simple loop—find an issue, propose a patch, verify it safely, and queue it—so fixes can be applied with confidence. In a 1,000-manifest live-cluster replay we succeed on every item (1,000/1,000). On a 15,718-detection offline run, deterministic rules plus guardrails accept 13,338 of 13,373 patched items (99.74\%; auto-fix rate 0.8486; median 9 patch ops). An optional LLM mode reaches 88.78\% acceptance on a 5,000-manifest corpus. A risk-aware scheduler also cuts the worst-case wait for high-risk items by 7.9$\times$. All data and scripts are released for repeatable results.
+Kubernetes YAML is easy to break, and most tools stop after pointing out the problems. We built \texttt{k8s-auto-fix} to close the loop: detect an issue, suggest a small patch, verify it safely, and line it up for application. On a 1,000-manifest replay against a real cluster we fixed every item without rollbacks (1,000/1,000). On a 15,718-detection offline run, deterministic rules plus safety checks accepted 13,338 of 13,373 patched items (99.74\%; auto-fix rate 0.8486; median patch length 9). An optional LLM mode reaches 88.78\% acceptance on a 5,000-manifest corpus. A simple risk-aware scheduler also cuts the worst-case wait for high-risk items by 7.9$\times$. We release all data and scripts so others can reproduce these results.
 \end{abstract}
 
 \begin{keywords}
@@ -121,14 +121,14 @@ Kubernetes, SAST, DAST, Admission control, Server-side dry-run, YAML, Pod Securi
 \emergencystretch=3em
 
 \section{Importance of the Problem}
-Kubernetes YAML is easy to get wrong: a single \texttt{privileged: true}, a floating \texttt{:latest} tag, or a missing \texttt{runAsNonRoot} can widen the blast radius. Industry guides (CIS, Pod Security Standards) spell out safe defaults, but most tooling stops at detection. Pipelines then stall, and fixes arrive slowly or with new breakage. We focus on shipping small, verified patches fast, measuring whether they remove the original issue, avoid new ones, and shorten time-to-fix—especially for the riskiest items.
+A few small YAML lines can decide whether a workload is safe: a stray \texttt{privileged: true}, a floating \texttt{:latest} tag, or a missing \texttt{runAsNonRoot} can all open unnecessary risk. Guidelines like CIS and the Pod Security Standards explain what “good” looks like, but many tools only flag issues and leave the fixes to humans. That slows delivery and invites regressions. Our goal is to ship small, checked patches quickly, proving that the original issue is gone, nothing new was broken, and the most urgent risks move first.
 
 \smallskip
-\noindent\textbf{Contributions.} In this paper we:
+\noindent\textbf{Contributions.} We:
 \begin{itemize}
-    \item Build a “detect $\rightarrow$ propose $\rightarrow$ verify $\rightarrow$ schedule” loop with three safety gates (policy re-check, schema check, server dry-run) that lands 100\% success on a 1,000-manifest live replay.
+    \item Build a detect $\rightarrow$ propose $\rightarrow$ verify $\rightarrow$ schedule loop with three safety gates (policy re-check, schema check, server dry-run) that lands 100\% success on a 1,000-manifest live replay.
     \item Prioritize work with a simple risk-aware scheduler that cuts the P95 wait for high-risk items by 7.9$\times$ while keeping fairness in check.
-    \item Release end-to-end artifacts—scripts, data, telemetry, and figures—so every number in the paper can be regenerated (\url{ARTIFACTS.md}).
+    \item Release scripts, data, telemetry, and figures so every number in the paper can be regenerated (\url{ARTIFACTS.md}).
 \end{itemize}
 
 %====================
@@ -186,7 +186,7 @@ Table~\ref{tab:baselines} grounds those qualitative differences with the head-to
 \end{itemize}
 Without these fixtures, manifests are rejected by the API server before the mutation webhook can even process them \cite{kyverno_docs}. Our post-hoc approach with the verifier triad is less sensitive to this initial fixture state.
 \section{Related Work}
-Prior work tackles different slices of the problem. GenKubeSec \cite{malul2024} uses LLM prompts to point out issues and suggest changes but leaves validation to humans. Kyverno \cite{kyverno_docs} enforces policies when manifests hit the cluster, but it does not order work by risk or auto-seed missing CRDs and namespaces. Large-scale SRE playbooks like Borg \cite{borg} automate fixes for infrastructure but are not open for manifest hardening. Our approach mixes rule-based and optional LLM patching, always runs through the same safety gates, and orders work by risk, with artifacts so others can replay the results (Table~\ref{tab:comparison}).
+Existing tools cover pieces of the pipeline but rarely close the loop. GenKubeSec \cite{malul2024} uses LLM prompts to highlight issues and suggest fixes, but people must review and apply them. Kyverno \cite{kyverno_docs} enforces policies at admission time yet does not rank work by risk or seed missing namespaces and CRDs. Large-scale SRE playbooks like Borg \cite{borg} automate infrastructure fixes but are not aimed at hardening application manifests. Our approach mixes rules and optional LLMs, runs every patch through the same safety gates, and orders work by risk, with artifacts so others can replay the results (Table~\ref{tab:comparison}).
 
 \smallskip
 \noindent\fbox{%
