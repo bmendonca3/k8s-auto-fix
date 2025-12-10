@@ -1,0 +1,113 @@
+\documentclass[10pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{url}
+
+\begin{document}
+
+\title{Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations\\Supplemental Appendices}
+\date{}
+\maketitle
+
+\appendix
+\section{Grok/xAI Failure Analysis}
+\label{app:grok_failures}
+The raw data for the Grok/xAI failure analysis can be found in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/grok_failure_analysis.csv}{\texttt{data/grok\_failure\_analysis.csv}}. This file provides a comprehensive list of all failure causes and their corresponding counts, generated from the analysis of the 5,000-manifest Grok corpus.
+
+\section{Risk Score Worked Example}
+\label{app:risk_example}
+The released telemetry enables reviewers to recompute risk units and $\Delta R/t$ for any queue item. As a concrete example we trace detection \texttt{001} from the Grok/xAI replay:
+\begin{enumerate}
+    \item Look up the detection metadata in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/detections_grok200.json}{\texttt{data/batch\_runs/detections\_grok200.json}} to confirm the violation is \texttt{latest-tag}.
+    \item Normalise the policy identifier and pull its risk weight and expected latency from \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics_grok200.json}{\texttt{data/policy\_metrics\_grok200.json}}. For \texttt{no\_latest\_tag} the risk is 50 units and the proposer+verifier expected time is 9.363~s (averaged from the recorded latencies).
+    \item Inspect the proposer/verifier records (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/patches_grok200.json}{\texttt{data/batch\_runs/patches\_grok200.json}}; \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/verified_grok200.json}{\texttt{data/batch\_runs/verified\_grok200.json}}) to see that the patch was accepted with a measured end-to-end latency of 7.339~s and verifier latency of 0.332~s.
+\end{enumerate}
+Because the patch succeeded, the pre-risk $R^{\text{pre}}=50$ drops to $R^{\text{post}} = 0$, yielding $\Delta R = 50$ and $\Delta R/t = 50 / 9.363 = 5.34$ risk units per second. Summing the same quantities across the corpus reproduces Table~\ref{tab:risk_calibration}, as computed by \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/scripts/risk_calibration.py}{\texttt{scripts/risk\_calibration.py}}.
+
+\section{Acronym Glossary}
+\label{app:acronyms}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Acronym} & \textbf{Definition} \\
+\midrule
+CIS & Center for Internet Security \\
+PSS & Pod Security Standards \\
+CRD & Custom Resource Definition \\
+RBAC & Role-Based Access Control \\
+CTI & Cyber Threat Intelligence \\
+KEV & CISA Known Exploited Vulnerabilities \\
+EPSS & Exploit Prediction Scoring System \\
+CVE/CVSS & Common Vulnerabilities and Exposures / Scoring System \\
+RAG & Retrieval-Augmented Generation \\
+MTTR & Mean Time To Remediate \\
+CEL & Common Expression Language (Kubernetes) \\
+SAST & Static Application Security Testing \\
+DAST & Dynamic Application Security Testing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Artifact Index}
+\label{app:artifact_index}
+\noindent Table~\ref{tab:primary_artifacts} lists the primary artifacts bundled with the paper so readers can jump directly to the JSON/CSV evidence.
+\begin{table}[h!]
+\centering
+\small
+\caption{Primary artifacts bundled with the paper.}
+\label{tab:primary_artifacts}
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{2.8in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textrm{\textbf{Artifact (path)}} & \textbf{Description} \\
+\midrule
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/live_cluster/results_1k.json}{\texttt{data/live\_cluster/results\_1k.json}} & Live-cluster replay outcomes (1,000 manifests, dry-run/live apply parity). \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/grok_5k/metrics_grok5k.json}{\texttt{data/batch\_runs/grok\_5k/\allowbreak metrics\_grok5k.json}} & Grok/xAI telemetry (acceptance, latency, token counts) for the 5k sweep. \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/risk_calibration.csv}{\texttt{data/risk/risk\_calibration.csv}} & Risk accounting summary ($\Delta R$, residual risk, $\Delta R/t$) for supported and 5k corpora. \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/metrics_schedule_compare.json}{\texttt{data/metrics\_schedule\_compare.json}} & Queue replay statistics for FIFO vs.\ risk-aware schedulers (rank, wait, $\Delta R/t$). \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/grok_failure_analysis.csv}{\texttt{data/grok\_failure\_analysis.csv}} & Grok failure taxonomy (dry-run retrievals, StatefulSet validation, etc.). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Evaluation Artifact Manifest}
+\label{app:artifact_manifest}
+\noindent Table~\ref{tab:artifact_manifest} expands the artifact index with record counts and purposes for full reproducibility.
+\begin{table}[h!]
+\centering
+\small
+\caption{Key evaluation artifacts with record counts and purposes for full reproducibility.}
+\label{tab:artifact_manifest}
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{4in}>{\raggedright\arraybackslash}X r@{}}
+\toprule
+\textrm{\textbf{Artifact Path}} & \textbf{Purpose} & \textbf{Count} \\
+\midrule
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/live_cluster/results_1k.json}{\texttt{data/live\_cluster/results\_1k.json}} & Live-cluster replay outcomes (dry-run + apply) & 1{,}000 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/live_cluster/summary_1k.csv}{\texttt{data/live\_cluster/summary\_1k.csv}} & Live-cluster aggregate statistics & 1 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/grok_5k/metrics_grok5k.json}{\texttt{data/batch\_runs/grok\_5k/metrics\_grok5k.json}} & Grok-5k acceptance \& token telemetry & 5{,}000 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/grok_full/metrics_grok_full.json}{\texttt{data/batch\_runs/grok\_full/metrics\_grok\_full.json}} & Manifest slice (1{,}313) acceptance & 1{,}313 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/grok200_latency_summary.csv}{\texttt{data/batch\_runs/grok200\_latency\_summary.csv}} & Proposer latency summary (Grok-200) & 280 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/batch_runs/verified_grok200_latency_summary.csv}{\texttt{data/batch\_runs/verified\_grok200_latency_summary.csv}} & Verifier latency summary (Grok-200) & 140 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/eval/significance_tests.json}{\texttt{data/eval/significance\_tests.json}} & Statistical significance tests \newline (z-test; \mbox{Mann--Whitney~U}) & 12 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/eval/table4_counts.csv}{\texttt{data/eval/table4\_counts.csv}} & Table 4 manifest counts per corpus & 4 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/eval/table4_with_ci.csv}{\texttt{data/eval/table4\_with\_ci.csv}} & Wilson 95\% confidence intervals & 4 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/scheduler/fairness_metrics.json}{\texttt{data/scheduler/fairness\_metrics.json}} & Scheduler fairness (Gini, starvation) & 830 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/scheduler/metrics_schedule_sweep.json}{\texttt{data/scheduler/metrics\_schedule\_sweep.json}} & Scheduler parameter sweep results & 16 \\
+\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/risk_calibration.csv}{\texttt{data/risk/risk\_calibration.csv}} & Risk reduction ($\Delta R$) per corpus & 2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Corpus Mining and Integrity}
+\label{app:corpus}
+\noindent\textbf{ArtifactHub mining pipeline.} Running the data collection helper\footnote{Command: \texttt{python \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/scripts/collect_artifacthub.py}{scripts/collect\_artifacthub.py}\ --limit\ 5000}.} renders Helm charts directly from ArtifactHub using \texttt{helm\ template}, normalizes resource filenames, and writes structured manifests under \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/manifests/artifacthub/}{data/manifests/artifacthub/}. The script records fetch failures and chart metadata so regenerated datasets can be diffed against the published summary.
+
+\medskip
+\noindent\textbf{Corpus hashes.} After manifests are rendered, \texttt{python \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/scripts/generate_corpus_appendix.py}{scripts/generate\_corpus\_appendix.py}} emits \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/docs/appendix_corpus.md}{docs/appendix\_corpus.md}, a SHA-256 inventory of every manifest (including the curated smoke tests in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/manifests/001.yaml}{data/manifests/001.yaml} and \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/manifests/002.yaml}{002.yaml}). This appendix enables reproducibility reviewers to verify corpus integrity and trace individual evaluation examples back to their Helm chart origins.
+
+\end{document}
