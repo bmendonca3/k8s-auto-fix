@@ -2,6 +2,7 @@
 
 **Date:** October 14, 2025  
 **Context:** Evaluation results from k8s-auto-fix system
+**Note:** This document is an internal scratchpad; Magpie references removed (no public source or maintained baseline).
 
 ---
 
@@ -10,8 +11,8 @@
 | Metric | Our System | Literature Range | Assessment |
 |--------|-----------|------------------|------------|
 | **Auto-fix acceptance** | 78.9–100% (depends on corpus) | 77–95% | ✅ **Competitive** |
-| **Live-cluster success** | 73.5% | 84% (Magpie dry-run only) | ⚠️ **Lower, but more rigorous** |
-| **Dry-run validation** | 84.0% | ~84% (Magpie) | ✅ **Comparable** |
+| **Live-cluster success** | 73.5% (live apply on stratified 200) | No public like-for-like comparator | — |
+| **Dry-run validation** | 84.0% (same stratified set) | No public like-for-like comparator | — |
 | **Kyverno baseline** | 81.22% | 80–95% (Kyverno docs) | ✅ **Matches reported range** |
 | **Corpus size** | 5,000 manifests | 200–9,556 | ✅ **Larger than most** |
 | **Verification rigor** | 3-gate triad | Typically 0–1 gates | ✅ **More comprehensive** |
@@ -23,29 +24,24 @@
 ### 1. **GenKubeSec (2024)** - LLM-Based Detection & Remediation
 **Citation:** E. Malul et al., *GenKubeSec: LLM-Based Kubernetes Misconfiguration Detection, Localization, Reasoning, and Remediation*. arXiv:2405.19954
 
-**Their Results:**
-- **Accuracy:** 85–92% detection/remediation accuracy
-- **Corpus:** 200 curated manifests
+**Their Results (published):**
+- **Precision/Recall:** 0.990 / 0.999 vs.\ RB tools (authors’ corpus)
+- **Corpus:** $\approx$277k labeled KCFs; 30-sample expert validation of explanations/remediation
 - **Approach:** LLM reasoning with manual review
 - **Guardrails:** None automated
 - **Scheduling:** Not addressed
 
 **Our Results:**
-- **Accuracy:** 78.9% (rules, supported corpus) to 100% (Grok mode)
+- **Acceptance (triad-verified):** 78.9% (rules, supported corpus) to 100% (Grok mode)
 - **Corpus:** 1,264–5,000 manifests
 - **Approach:** Rules + optional LLM with automated verification
 - **Guardrails:** Policy re-check + schema validation + dry-run
 - **Scheduling:** Risk-aware bandit
 
 **Comparison:**
-✅ **We win on:** Corpus size (5,000 vs 200), automated verification, scheduling  
-⚠️ **They win on:** Slightly higher peak accuracy (92% vs 88.78% Grok)  
-📊 **Net assessment:** Our system is more production-ready with larger-scale validation
-
-**Key Insight:** GenKubeSec achieves high accuracy on a small, curated corpus with manual review. Our slightly lower acceptance on a 25x larger corpus with full automation is actually **more impressive** because:
-1. We handle diverse real-world manifests, not just curated samples
-2. We enforce strict verification gates (they don't)
-3. We operate fully automated (they require manual review)
+✅ **We win on:** Automated verification and scheduling  
+⚠️ **They win on:** Published precision/recall on a large labeled corpus  
+📊 **Net assessment:** Complementary; we emphasize guardrails and live/dry-run verification, they emphasize large labeled detection quality. We have not reproduced their pipeline.
 
 ---
 
@@ -92,39 +88,7 @@
 
 ---
 
-### 4. **Magpie (2024)** - Guided Troubleshooting
-**Citation:** (Paper pending public link per our docs)
-
-**Their Results:**
-- **Dry-run acceptance:** ~84%
-- **Corpus:** 9,556 manifests
-- **Approach:** RBAC/PSP/static analysis with guided patches
-- **Guardrails:** Static analysis
-- **Scheduling:** None
-
-**Our Results:**
-- **Dry-run acceptance:** 84.0% (live-cluster, 200 manifests)
-- **Live-apply acceptance:** 73.5% (live-cluster, 200 manifests)
-- **Corpus:** 5,000 manifests (Grok-5k)
-- **Approach:** Rules + LLM with triad verification
-- **Guardrails:** Policy + schema + dry-run + live validation
-
-**Comparison:**
-✅ **Our dry-run acceptance (84.0%) exactly matches theirs (84%)**  
-✅ **We go further: live-apply validation (73.5%), not just dry-run**  
-⚠️ **Their corpus is larger (9,556 vs 5,000)**
-
-**Key Insight:** Magpie only validates dry-run acceptance. We found that **10.5% of manifests (21/200) pass dry-run but fail live-apply**, which Magpie doesn't measure. This is a **critical finding** that validates the need for live-cluster testing.
-
-**Our 73.5% live-apply is not directly comparable** to their 84% dry-run because we're measuring different things:
-- Dry-run: Server-side validation only
-- Live-apply: Actual cluster application (stricter)
-
-The 10.5% gap between our dry-run (84.0%) and live-apply (73.5%) is **novel empirical evidence** of validation-vs-reality divergence.
-
----
-
-### 5. **KubeDoctor (2022)** - Rule-Based Repair
+### 4. **KubeDoctor (2022)** - Rule-Based Repair
 **Citation:** GitHub: kubedoctor/kubedoctor
 
 **Their Results:**
@@ -154,8 +118,7 @@ The 10.5% gap between our dry-run (84.0%) and live-apply (73.5%) is **novel empi
 3. **Gap:** 10.5% (21 manifests passed dry-run but failed live-apply)
 
 **Why this matters:**
-- **Magpie reports 84% dry-run** acceptance but doesn't measure live-apply
-- **Our 84% dry-run matches Magpie**, validating our measurement
+<!-- Magpie references removed: no public source -->
 - **Our additional 73.5% live-apply** captures real-world cluster state divergence that static validation misses
 
 **This 10.5% gap is a novel research contribution.** No other system in the literature quantifies the divergence between:
@@ -171,11 +134,11 @@ Our acceptance rates appear lower than some literature values, but this is becau
 | GenKubeSec | Detection + suggested remediation (manual review) | 100% (we also detect + suggest) |
 | Kyverno | Admission-time mutation (no verification gates) | 81.22% (our Kyverno baseline) |
 | Borg | Auto-remediation in production (different domain) | 93.54% (supported 5k corpus) |
-| Magpie | Dry-run acceptance only | 84.0% (our dry-run) |
+<!-- Magpie row removed: no public source -->
 | **Our system** | **Policy + schema + dry-run + live-apply** | **73.5% (most rigorous)** |
 
 **Apples-to-apples comparison:**
-- If we only measured dry-run (like Magpie): **84.0%** ✅ matches literature
+<!-- Magpie comparison removed: no public source -->
 - If we skipped verification gates (like Kyverno): **81.22%** ✅ matches literature
 - If we only measured rules acceptance (like Supported corpus): **100.00%** ✅ exceeds literature
 
@@ -188,7 +151,7 @@ Our "lower" 73.5% live-apply is **more honest** because we're measuring end-to-e
 ### Where We Excel
 
 1. **Verification Rigor:** Only system with policy + schema + dry-run + live-apply validation
-2. **Corpus Size:** 5,000 manifests (larger than GenKubeSec, comparable to Magpie)
+2. **Corpus Size:** 5,000 manifests (larger than most published baselines; GenKubeSec uses a larger labeled corpus)
 3. **Scheduling:** Only system with risk-aware bandit scheduling
 4. **Transparency:** Full telemetry, ablation studies, failure taxonomy
 5. **Reproducibility:** All artifacts published (unlike Borg, Kyverno case studies)
@@ -196,7 +159,7 @@ Our "lower" 73.5% live-apply is **more honest** because we're measuring end-to-e
 ### Where We're Competitive
 
 1. **Acceptance Rates:** 78.9–100% falls in the 77–95% literature range
-2. **Dry-run Validation:** 84.0% matches Magpie's 84%
+2. **Dry-run Validation:** 84.0% (triad-verified on stratified set)
 3. **Kyverno Baseline:** Our measured 81.22% aligns with their 80–95% claims
 
 ### Where We're Honest About Gaps
@@ -211,7 +174,7 @@ Our "lower" 73.5% live-apply is **more honest** because we're measuring end-to-e
 
 ### What to Emphasize
 
-1. **"Our 84.0% dry-run acceptance matches Magpie's reported 84%, validating our measurement methodology."**
+<!-- Magpie validation claim removed: no public source -->
 
 2. **"Our 73.5% live-apply acceptance captures a critical 10.5% divergence between server-side validation and actual cluster state—a gap not measured by prior work."**
 
@@ -240,7 +203,7 @@ Add a subsection in Evaluation or Discussion:
 ```latex
 \subsection{Comparison with Published Baselines}
 
-Our results align with acceptance rates reported in the literature while providing more rigorous verification. GenKubeSec reports 85–92\% accuracy on 200 curated manifests \cite{genkubesec}; our 88.78\% acceptance on 5{,}000 Grok manifests and 93.54–100\% on curated corpora exceed this while operating at 25$\times$ scale. Kyverno case studies report 80–95\% mutation acceptance \cite{kyverno_docs}; our measured baseline (81.22\%) falls within this range, and our 78.9\% acceptance reflects the 2.3 percentage point cost of adding schema validation and dry-run gates. Magpie reports 84\% dry-run acceptance on 9{,}556 manifests \cite{magpie}; our 84.0\% dry-run success on 200 live-cluster manifests matches this, while our additional live-apply measurement (73.5\%) captures a 10.5\% divergence between validation and actual cluster state not quantified by prior work.
+Our results align with published baselines while providing more rigorous verification. GenKubeSec reports 0.990/0.999 precision/recall on a large labeled corpus \cite{genkubesec}; our 88.78% acceptance on 5{,}000 Grok manifests and 93.54–100% on curated corpora are measured under policy+schema+server dry-run guardrails. Kyverno case studies report admission metrics; our measured baseline (81.22%) falls in that range, and our 78.9% acceptance reflects the 2.3 percentage point cost of adding schema validation and dry-run gates. Magpie comparisons removed (no public source).
 
 Google Borg/SRE reports $\approx$90–95\% auto-remediation on millions of workloads \cite{borg}; our 93.54\% on the 5k supported corpus matches this range despite operating in a different domain (declarative manifests vs. running infrastructure). Across all comparisons, our verification rigor (policy + schema + dry-run + live-apply) exceeds prior work, and our slightly lower acceptance rates reflect intentional safety trade-offs validated by ablation studies showing zero regressions with full gates enabled.
 ```
@@ -251,7 +214,7 @@ Google Borg/SRE reports $\approx$90–95\% auto-remediation on millions of workl
 
 **Your results are strong and competitive with published literature.** The key is to frame them correctly:
 
-1. ✅ **Dry-run (84.0%) matches Magpie (84%)**
+<!-- Magpie validation claim removed: no public source -->
 2. ✅ **Kyverno baseline (81.22%) matches Kyverno's range (80–95%)**
 3. ✅ **Grok-5k (88.78%) and Supported-5k (93.54%) match Borg (90–95%)**
 4. ✅ **Rules curated corpus (100%) exceeds GenKubeSec (85–92%)**
@@ -259,11 +222,4 @@ Google Borg/SRE reports $\approx$90–95\% auto-remediation on millions of workl
 The live-apply gap (84% → 73.5%) is not a weakness—it's a **novel finding** that validates the need for rigorous live-cluster testing. No other system in the literature measures this.
 
 **Treat the disease, not the symptoms:** The "lower" numbers are actually evidence of treating the root cause (validation-vs-reality divergence) rather than just reporting optimistic dry-run statistics.
-
-
-
-
-
-
-
 

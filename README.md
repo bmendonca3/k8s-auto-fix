@@ -88,31 +88,26 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 - `make reproducible-report` - rebuilds the research appendix with current artifacts.
 - `scripts/parallel_runner.py` - parallelise proposer/verifier workloads; `scripts/probe_grok_rate.py` sizes safe LLM concurrency.
 
-## Datasets and metrics (Oct 2025 snapshot)
-- **Rules + guardrails (full detections)** – 13,338 / 13,373 patched (99.74%) with median patch length 9 (`data/patches.json` + `data/verified.json`; compressed mirrors live under `data/outputs/`).
-- **Supported corpus (rules)** – 1,264 / 1,264 accepted; artefacts and telemetry live at `data/batch_runs/secondary_supported/` and are mirrored under `data/outputs/batch_runs/secondary_supported/`.
-- **Grok-5k (LLM proposer)** – 4,439 / 5,000 accepted (88.78%); metrics under `data/batch_runs/grok_5k/metrics_grok5k.json` and `data/outputs/batch_runs/grok_5k/`.
-- **Manifest slice (Grok full)** – 1,313 / 1,313 accepted (100%); see `data/batch_runs/grok_full/metrics_grok_full.json` and the curated view in `data/outputs/batch_runs/grok_full/`.
-- Policy-level success probabilities and runtimes are regenerated via `scripts/compute_policy_metrics.py` into `data/policy_metrics.json`.
-- Scheduler evaluation (`docs/scheduler_visualisation.md`, viewable at `data/outputs/scheduler/metrics_schedule_sweep.json`) compares bandit, risk-only, and FIFO strategies.
+## Metrics aligned to the paper (traceable in-repo)
+- **Full rules + guardrails replay** – 13,589 / 13,656 accepted (auto-fix rate 0.9951; median patch ops 8) from `data/metrics_rules_full.json` (`patches_rules_full.json.gz`, `verified_rules_full.json.gz`).
+- **Rules on the 5k extended corpus** – 4,677 / 5,000 accepted (93.54%; median ops 6) from `data/metrics_rules_5000.json` (`patches_rules_5000.json`, `verified_rules_5000.json`).
+- **Grok/xAI 5k proposer** – 4,439 / 5,000 accepted (88.78%; median ops 9) per the `current_state` row in `data/batch_runs/grok_5k/metrics_history.json` (raw run summary in `data/outputs/batch_runs/grok_5k/metrics_grok5k.json`).
+- **Supported corpus (rules)** – 1,264 / 1,264 accepted (median ops 8) captured in `data/outputs/batch_runs/secondary_supported/summary.json` and `metrics_rules.json`.
+- **Live-cluster replay** – 1,000 / 1,000 dry-run and live-apply success on the stratified slice (`data/live_cluster/summary_1k.csv`).
+- **Scheduler fairness** – `data/metrics_schedule_compare.json` shows top-50 high-risk items at median rank 25.5 (P95 48) for the bandit vs median 422.5 (P95 620) under FIFO; wait-time sweeps live in `data/metrics_schedule_sweep.json`.
+
+Policy-level success probabilities and runtimes regenerate via `scripts/compute_policy_metrics.py` into `data/policy_metrics.json`. Scheduler sweeps and fairness telemetry are viewable at `data/outputs/scheduler/metrics_schedule_sweep.json`.
 
 Large corpus artefacts now live under `data/outputs/` and are stored as compressed `.json.gz` files to keep the repository lean. Gunzip the patches/verified/metrics files there before using tooling that expects plain `.json` inputs.
 
-## Roadmap
-- Q4 2025 - publish a containerised reproducibility bundle for one-command replays.
-- Q1 2026 - rerun Grok corpora with live latency/token telemetry.
-- Q1 2026 - validate against an external CNCF corpus.
-- Q2 2026 - expand operator studies and incorporate threat-mitigation guard metadata into CI.
-
 ## Related work
-| System | Acceptance / fix rate | Corpus | Guardrail highlights | Scheduling |
-| ------ | -------------------- | ------ | ------------------- | ---------- |
-| **k8s-auto-fix** | 88.78% (Grok-5k), 93.54% / 100% (supported rules), 100% (Grok 1.313k) | 5k + 1.3k manifests | Secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
-| GenKubeSec (2024) | ~85-92% (curated 200) | 200 manifests | LLM reasoning with human review | None |
-| Kyverno (2023+) | 80-95% (policy mutation) | Thousands | Policy-driven mutation/generation | Admission queue |
-| Magpie (2024) | ~84% dry-run acceptance | 9.5k manifests | RBAC and PSP static analysis | None |
-
-Note: Production SRE automation systems (e.g., Google Borg) discuss automation principles publicly, but we do not cite a public acceptance percentage and therefore avoid drawing numeric comparisons.
+| System | Scope in paper | Evidence / guardrails | Scheduling |
+| ------ | -------------- | --------------------- | ---------- |
+| **k8s-auto-fix (this work)** | Closed-loop detect → propose → verify → schedule | JSON Patch rules + optional LLMs behind policy/schema/`kubectl --dry-run` gates; secret sanitisation; CRD/fixture seeding | Risk-aware bandit with aging + KEV boost (`data/metrics_schedule_compare.json`) |
+| GenKubeSec (2024) | LLM-based detection/localization/remediation; authors report precision 0.990, recall 0.999 on a ~277k KCF corpus with 30-sample expert validation | Human review; no automated guardrails | None (FIFO human review) |
+| Kyverno (mutation engine) | Admission-time mutation/validation; depends on cluster fixtures | Policy-driven mutate/validate; CLI baseline scripted in `scripts/run_kyverno_baseline.py` with results in `data/baselines/kyverno_baseline.csv` | FIFO admission queue |
+| Borg/SRE playbooks | Production auto-remediation for infra fleets | Health checks, rollbacks, throttling; no public acceptance % | Priority queues / toil budgets |
+| LLMSecConfig (2025) | LLM remediation prompts with scanner checks | Scanner re-checks; no server-side dry-run | None |
 
 ## Baselines and Reproducibility
 
@@ -121,7 +116,7 @@ Note: Production SRE automation systems (e.g., Google Borg) discuss automation p
 - MutatingAdmissionPolicy baseline (simulate or YAML generation): `scripts/run_mutatingadmission_baseline.py`
 - LLMSecConfig-style slice: `scripts/run_llmsecconfig_slice.py` (requires `OPENAI_API_KEY`)
 - Risk throughput (KEV-weighted): `scripts/eval_risk_throughput.py`
- - Unified baseline comparison: `scripts/compare_baselines.py` (writes CSV/MD/TeX)
+- Unified baseline comparison: `scripts/compare_baselines.py` (writes CSV/MD/TeX)
 
 Quick start to regenerate bundles and baselines (simulation mode):
 ```
@@ -129,4 +124,3 @@ scripts/reproduce_all.sh
 ```
 
 See `ARTIFACTS.md` for artifact map, `docs/VERIFIER.md` for guardrails, `docs/BASELINES.md` to run baselines, `docs/RISK_EVAL.md` for prioritization metrics, and `docs/LIVE_EVAL.md` for live-cluster methodology.
-| Magpie (2024) | ~84% dry-run acceptance | 9.5k manifests | RBAC and PSP static analysis | None |
