@@ -1,7 +1,7 @@
 # Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations
 
 ## Abstract
-Containerized apps depend on short YAML files that wire images, permissions, and storage together; small typos or copy/paste errors can create outages or security gaps. Most tools only flag the problems, leaving people to guess at safe fixes. We built `k8s-auto-fix` to close the loop: detect an issue, suggest a small patch, verify it safely, and line it up for application. On a 1,000-manifest replay against a real cluster we fixed every item without rollbacks (1,000/1,000). On a 15,718-detection offline run, deterministic rules plus safety checks accepted 13,338 of 13,373 patched items (99.74%; auto-fix rate 0.8486; median patch length 9). An optional LLM mode reaches 88.78% acceptance on a 5,000-manifest corpus. A simple risk-aware scheduler also cuts the worst-case wait for high-risk items by 7.9×. We release all data and scripts so others can reproduce these results.
+Containerized apps depend on short YAML files that wire images, permissions, and storage together; small typos or copy/paste errors can create outages or security gaps. Most tools only flag the problems, leaving people to guess at safe fixes. We built `k8s-auto-fix` to close the loop: detect an issue, suggest a small patch, verify it safely, and line it up for application. On a 1,000-manifest replay against a real cluster we fixed every item without rollbacks (1,000/1,000). On a 15,718-detection offline run, deterministic rules plus safety checks accepted 13,589 of 13,656 patched items (99.51%; auto-fix rate 0.8646; median patch length 8). An optional LLM mode reaches 88.52% acceptance on a 5,000-manifest corpus. A simple risk-aware scheduler also cuts the worst-case wait for high-risk items by 7.9×. We release all data and scripts so others can reproduce these results.
 
 ## Key features
 - End-to-end detector -> proposer -> verifier -> risk -> scheduler -> queue workflow with reproducible CLI entry points.
@@ -88,9 +88,9 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 - `scripts/parallel_runner.py` - parallelise proposer/verifier workloads; `scripts/probe_grok_rate.py` sizes safe LLM concurrency.
 
 ## Datasets and metrics (Oct 2025 snapshot)
-- **Rules baseline (full corpus)** – 13,338 / 13,373 patched items (99.74%) (auto-fix rate 0.8486 over 15,718 detections) with median JSON Patch length 9 (`data/patches_rules_full.json.gz`, `data/verified_rules_full.json.gz`, `data/metrics_rules_full.json`; decompress the `.json.gz` files before consuming them).
+- **Rules baseline (full corpus)** – 13,589 / 13,656 patched items (99.51%) (auto-fix rate 0.8646 over 15,718 detections) with median JSON Patch length 8 (`data/patches_rules_full.json.gz`, `data/verified_rules_full.json.gz`, `data/metrics_rules_full.json`; decompress the `.json.gz` files before consuming them).
 - **Grok manifest slice** – 1,313 / 1,313 accepted (100.00%) (curated view `data/outputs/batch_runs/grok_full/metrics_grok_full.json` points to the canonical `data/batch_runs/grok_full/metrics_grok_full.json`).
-- **Grok 5k corpus** – 4,439 / 5,000 accepted (88.78%) (see `data/batch_runs/grok_5k/metrics_grok5k.json`).
+- **Grok 5k corpus** – 4,426 / 5,000 accepted (88.52%) (see `data/batch_runs/grok_5k/metrics_grok5k.json`).
 - **Secondary supported corpus** – 1,264 / 1,264 accepted (100.00%) in rules mode; artefacts and telemetry live at `data/batch_runs/secondary_supported/` with a companion symlink view under `data/outputs/batch_runs/secondary_supported/`.
 - Policy-level success probabilities and runtimes are regenerated via `scripts/compute_policy_metrics.py` into `data/policy_metrics.json`.
 - Scheduler evaluation (`docs/scheduler_visualisation.md`, viewable at `data/outputs/scheduler/metrics_schedule_sweep.json`) compares bandit, risk-only, and FIFO strategies.
@@ -105,7 +105,7 @@ Large corpus artefacts now live under `data/outputs/` and are stored as compress
 | **Fix Mode** | JSON Patch (rules + optional LLM) | LLM-generated YAML edits | Policy mutation/generation | Custom controllers and playbooks |
 | **Guardrails** | Policy re-check + schema + `kubectl apply --dry-run=server` + privileged/secret sanitization + CRD seeding | Manual review; no automated gates | Validation/mutation webhooks; assumes controllers | Health checks, automated rollback, throttling |
 | **Risk Prioritization** | Bandit ($R p / \mathbb{E}[t]$ + aging + KEV boost) | Not implemented | FIFO admission queue | Priority queues / toil budgets |
-| **Evaluation Corpus** | 15,718 detections (rules+guardrails: 13,338/13,373 patched = 99.74%; auto-fix 0.8486); 1,000 live-cluster manifests (100.0% success); 5,000 Grok manifests (88.78%) | 200 curated manifests (85–92% accuracy) | Thousands of user manifests (80–95% mutation acceptance) | Millions of production workloads (no public acceptance %) |
+| **Evaluation Corpus** | 15,718 detections (rules+guardrails: 13,589/13,656 patched = 99.51%; auto-fix 0.8646); 1,000 live-cluster manifests (100.0% success); 5,000 Grok manifests (88.52%) | 200 curated manifests (85–92% accuracy) | Thousands of user manifests (80–95% mutation acceptance) | Millions of production workloads (no public acceptance %) |
 | **Telemetry** | Policy-level success probabilities, latency histograms, failure taxonomy | Token/cost estimates; no pipeline telemetry | Admission latency <45 ms, violation counts | MTTR, incident counts, operator feedback |
 | **Outstanding Gaps** | Infrastructure-dependent rejects, operator study, scheduled guidance refresh in CI | Automated guardrails, risk-aware ordering | LLM-aware patching, risk-aware scheduling | Declarative manifest fixes, static analysis integration |
 
