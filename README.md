@@ -88,9 +88,10 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 - `scripts/parallel_runner.py` - parallelise proposer/verifier workloads; `scripts/probe_grok_rate.py` sizes safe LLM concurrency.
 
 ## Datasets and metrics (Oct 2025 snapshot)
-- **Rules baseline (full corpus)** – 13,589 / 13,656 fixes (99.5 percent) with median JSON Patch length 8 (`data/patches_rules_full.json.gz`, `data/verified_rules_full.json.gz`, `data/metrics_rules_full.json`; decompress the `.json.gz` files before consuming them).
-- **Grok full corpus** – 1,313 / 1,313 accepted (100 percent) with median JSON Patch length 6 (curated view `data/outputs/batch_runs/grok_full/metrics_grok_full.json` points to the canonical `data/batch_runs/grok_full/metrics_grok_full.json`).
-- **Secondary supported corpus** – 1,264 / 1,264 accepted in rules mode; artefacts and telemetry live at `data/batch_runs/secondary_supported/` with a companion symlink view under `data/outputs/batch_runs/secondary_supported/`.
+- **Rules baseline (full corpus)** – 13,338 / 13,373 patched items (99.74%) (auto-fix rate 0.8486 over 15,718 detections) with median JSON Patch length 9 (`data/patches_rules_full.json.gz`, `data/verified_rules_full.json.gz`, `data/metrics_rules_full.json`; decompress the `.json.gz` files before consuming them).
+- **Grok manifest slice** – 1,313 / 1,313 accepted (100.00%) (curated view `data/outputs/batch_runs/grok_full/metrics_grok_full.json` points to the canonical `data/batch_runs/grok_full/metrics_grok_full.json`).
+- **Grok 5k corpus** – 4,439 / 5,000 accepted (88.78%) (see `data/batch_runs/grok_5k/metrics_grok5k.json`).
+- **Secondary supported corpus** – 1,264 / 1,264 accepted (100.00%) in rules mode; artefacts and telemetry live at `data/batch_runs/secondary_supported/` with a companion symlink view under `data/outputs/batch_runs/secondary_supported/`.
 - Policy-level success probabilities and runtimes are regenerated via `scripts/compute_policy_metrics.py` into `data/policy_metrics.json`.
 - Scheduler evaluation (`docs/scheduler_visualisation.md`, viewable at `data/outputs/scheduler/metrics_schedule_sweep.json`) compares bandit, risk-only, and FIFO strategies.
 
@@ -123,14 +124,3 @@ scripts/reproduce_all.sh
 ```
 
 See `ARTIFACTS.md` for artifact map, `docs/VERIFIER.md` for guardrails, `docs/BASELINES.md` to run baselines, `docs/RISK_EVAL.md` for prioritization metrics, and `docs/LIVE_EVAL.md` for live-cluster methodology.
-
-## Citation
-If you find this work useful, please cite our paper:
-```bibtex
-@article{mendonca2025closedloop,
-  title={Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations},
-  author={Mendonca, Brian and Madisetti, Vijay K.},
-  journal={IEEE Access},
-  year={2025}
-}
-```
