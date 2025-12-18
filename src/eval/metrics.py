@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import statistics
 from pathlib import Path
@@ -93,9 +94,16 @@ def run(
 
 def _load_array(path: Path) -> List[Any]:
     try:
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+        if path.suffix == ".gz":
+            with gzip.open(path, "rt", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
     except FileNotFoundError:
+        return []
+    except Exception as e:
+        typer.echo(f"Error loading {path}: {e}", err=True)
         return []
     if not isinstance(data, list):
         return []
@@ -104,4 +112,3 @@ def _load_array(path: Path) -> List[Any]:
 
 if __name__ == "__main__":  # pragma: no cover
     typer.run(run)
-
