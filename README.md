@@ -1,6 +1,7 @@
-# k8s-auto-fix
+# Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations
 
-`k8s-auto-fix` is a closed-loop pipeline that detects Kubernetes misconfigurations, proposes JSON patches, verifies them against guardrails, and schedules accepted fixes. It supports deterministic rules as well as Grok and OpenAI-compatible LLM modes, and underpins the accompanying research paper.
+## Abstract
+Containerized apps depend on short YAML files that wire images, permissions, and storage together; small typos or copy/paste errors can create outages or security gaps. Most tools only flag the problems, leaving people to guess at safe fixes. We built `k8s-auto-fix` to close the loop: detect an issue, suggest a small patch, verify it safely, and line it up for application. On a 1,000-manifest replay against a real cluster we fixed every item without rollbacks (1,000/1,000). On a 15,718-detection offline run, deterministic rules plus safety checks accepted 13,338 of 13,373 patched items (99.74%; auto-fix rate 0.8486; median patch length 9). An optional LLM mode reaches 88.78% acceptance on a 5,000-manifest corpus. A simple risk-aware scheduler also cuts the worst-case wait for high-risk items by 7.9×. We release all data and scripts so others can reproduce these results.
 
 ## Key features
 - End-to-end detector -> proposer -> verifier -> risk -> scheduler -> queue workflow with reproducible CLI entry points.
@@ -40,15 +41,18 @@ Benchmark helpers (`make benchmark-grok200`, `make benchmark-full`, `make benchm
 - `archives/` – historical exports and large bundles kept out of the active workspace.
 - `configs/` – pipeline presets (`run.yaml`, `run_grok.yaml`, `run_rules.yaml`).
 - `data/` – retains the canonical folders (`data/manifests`, `data/batch_runs`, etc.) and now exposes curated views via `data/corpora/` (inputs) and `data/outputs/` (generated artefacts). See `data/README.md` for details.
+- `docker/` – container definition for reproducible environment.
 - `docs/` – research notes, policy guidance, reproducibility appendices, future work plans.
-- `infra/fixtures/` – RBAC, NetworkPolicies, and manifest samples (CronJob scanner, Bitnami PostgreSQL) for reproducing edge cases.
+- `figures/` – plots and diagrams used in the research paper and README.
+- `infra/` – infrastructure definitions (`fixtures/`, `crds/`).
 - `logs/` – proposer/verifier transcripts, Grok sweep summaries, and root-level logs (e.g. `logs/access.log`).
-- `notes/` – working notes and backlog items formerly at the repository root.
+- `notes/` – working notes and backlog items.
 - `paper/` – IEEE Access manuscript sources; archives in `paper/archives/` and the Overleaf export tracked under `paper/overleaf/`.
+- `policies/` – baseline policy definitions (e.g. Kyverno mutating rules).
 - `scripts/` – maintenance and evaluation helpers; see `scripts/README.md` for an index by pipeline stage.
 - `src/` – core packages (`common`, `detector`, `proposer`, `risk`, `scheduler`, `verifier`).
 - `tests/` – pytest suite validating detectors, proposer guardrails, verifier gates, scheduler scoring, CLI tooling.
-- `tmp/` – scratch workspace (ignored by git). Historic large exports remain under `archives/` if needed.
+- `verification/` – literature review materials and OCR references.
 
 ## Configuration
 `configs/run.yaml` centralises proposer configuration:
@@ -92,20 +96,17 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 
 Large corpus artefacts now live under `data/outputs/` and are stored as compressed `.json.gz` files to keep the repository lean. Run `gunzip data/patches_rules_full.json.gz` (and the verified counterpart) before tooling that expects the plain `.json` filenames.
 
-## Roadmap
-- Q4 2025 - publish a containerised reproducibility bundle for one-command replays.
-- Q1 2026 - rerun Grok corpora with live latency/token telemetry.
-- Q1 2026 - validate against an external CNCF corpus.
-- Q2 2026 - expand operator studies and incorporate threat-mitigation guard metadata into CI.
+## Comparison of automated Kubernetes remediation systems
 
-## Related work
-| System | Acceptance / fix rate | Corpus | Guardrail highlights | Scheduling |
-| ------ | -------------------- | ------ | ------------------- | ---------- |
-| **k8s-auto-fix** | 88.78% (Grok-5k), 93.54% / 100% (supported rules), 100% (Grok 1.313k) | 5k + 1.3k manifests | Secret sanitisation, privileged DaemonSet hardening, CRD seeding, triad verification | Bandit scheduler with policy metrics |
-| GenKubeSec (2024) | ~85-92% (curated 200) | 200 manifests | LLM reasoning with human review | None |
-| Kyverno (2023+) | 80-95% (policy mutation) | Thousands | Policy-driven mutation/generation | Admission queue |
-
-Note: Production SRE automation systems (e.g., Google Borg) discuss automation principles publicly, but we do not cite a public acceptance percentage and therefore avoid drawing numeric comparisons.
+| Capability | k8s-auto-fix (this work) | GenKubeSec (2024) | Kyverno (2023+) | Borg/SRE (2015+) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary Goal** | Closed-loop hardening (detect→patch→verify→prioritize) | LLM-based detection/remediation suggestions | Admission-time policy enforcement | Large-scale auto-remediation in production clusters |
+| **Fix Mode** | JSON Patch (rules + optional LLM) | LLM-generated YAML edits | Policy mutation/generation | Custom controllers and playbooks |
+| **Guardrails** | Policy re-check + schema + `kubectl apply --dry-run=server` + privileged/secret sanitization + CRD seeding | Manual review; no automated gates | Validation/mutation webhooks; assumes controllers | Health checks, automated rollback, throttling |
+| **Risk Prioritization** | Bandit ($R p / \mathbb{E}[t]$ + aging + KEV boost) | Not implemented | FIFO admission queue | Priority queues / toil budgets |
+| **Evaluation Corpus** | 15,718 detections (rules+guardrails: 13,338/13,373 patched = 99.74%; auto-fix 0.8486); 1,000 live-cluster manifests (100.0% success); 5,000 Grok manifests (88.78%) | 200 curated manifests (85–92% accuracy) | Thousands of user manifests (80–95% mutation acceptance) | Millions of production workloads (no public acceptance %) |
+| **Telemetry** | Policy-level success probabilities, latency histograms, failure taxonomy | Token/cost estimates; no pipeline telemetry | Admission latency <45 ms, violation counts | MTTR, incident counts, operator feedback |
+| **Outstanding Gaps** | Infrastructure-dependent rejects, operator study, scheduled guidance refresh in CI | Automated guardrails, risk-aware ordering | LLM-aware patching, risk-aware scheduling | Declarative manifest fixes, static analysis integration |
 
 ## Baselines and Reproducibility
 
@@ -122,4 +123,14 @@ scripts/reproduce_all.sh
 ```
 
 See `ARTIFACTS.md` for artifact map, `docs/VERIFIER.md` for guardrails, `docs/BASELINES.md` to run baselines, `docs/RISK_EVAL.md` for prioritization metrics, and `docs/LIVE_EVAL.md` for live-cluster methodology.
-| Magpie (2024) | ~84% dry-run acceptance | 9.5k manifests | RBAC and PSP static analysis | None |
+
+## Citation
+If you find this work useful, please cite our paper:
+```bibtex
+@article{mendonca2025closedloop,
+  title={Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations},
+  author={Mendonca, Brian and Madisetti, Vijay K.},
+  journal={IEEE Access},
+  year={2025}
+}
+```
