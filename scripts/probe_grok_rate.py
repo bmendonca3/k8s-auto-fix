@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 API_URL = "https://api.x.ai/v1/chat/completions"
-DEFAULT_MODEL = "grok-4-fast-reasoning"
+DEFAULT_MODEL = "grok-4.3"
 
 
 def build_payload(request_id: int) -> Dict[str, Any]:

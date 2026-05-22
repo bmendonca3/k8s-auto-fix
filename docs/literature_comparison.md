@@ -84,7 +84,7 @@
 
 **Our Positioning:**
 - We avoid numeric comparisons to Borg. Instead, we adopt similar safety tenets (guardrails, staged changes, rollback readiness) at the manifest level.
-- Our reported acceptance rates (e.g., 88.78% on Grok-5k; 93.54% on supported 5k) stand on their own with full verification and reproducibility.
+- Our reported acceptance rates (e.g., 88.52% on Grok-5k; 93.54% on supported 5k) stand on their own with full verification and reproducibility.
 
 ---
 
@@ -104,7 +104,7 @@
 **Comparison:**
 ✅ **We win on all dimensions:** acceptance rate, corpus size, verification rigor
 
-**Key Insight:** Our rules-based approach (78.9%) already beats KubeDoctor (77%), and our Grok mode (88.78–100%) significantly exceeds it. With a 40–167x larger corpus, this is a **strong validation**.
+**Key Insight:** Our rules-based approach (78.9%) already beats KubeDoctor (77%), and our Grok mode (88.52–100%) significantly exceeds it. With a 40–167x larger corpus, this is a **strong validation**.
 
 ---
 
@@ -180,7 +180,7 @@ Our "lower" 73.5% live-apply is **more honest** because we're measuring end-to-e
 
 3. **"Our measured Kyverno baseline (81.22%) falls within Kyverno's documented range (80–95%), while our system's 78.9% acceptance reflects the intentional trade-off of adding schema validation and dry-run verification gates."**
 
-4. **"Across our largest corpus (5,000 Grok manifests), we achieve 88.78% acceptance, matching Google Borg/SRE's reported 90–95% auto-remediation rates despite operating in a different domain (declarative manifests vs. running workloads)."**
+4. **"Across our largest corpus (5,000 Grok manifests), we achieve 88.52% acceptance, approaching Google Borg/SRE's reported 90–95% auto-remediation rates despite operating in a different domain (declarative manifests vs. running workloads)."**
 
 5. **"Our rules-based approach achieves 93.54–100% acceptance on curated corpora, exceeding all comparable systems while maintaining zero regressions through triad verification."**
 
@@ -203,7 +203,7 @@ Add a subsection in Evaluation or Discussion:
 ```latex
 \subsection{Comparison with Published Baselines}
 
-Our results align with published baselines while providing more rigorous verification. GenKubeSec reports 0.990/0.999 precision/recall on a large labeled corpus \cite{genkubesec}; our 88.78% acceptance on 5{,}000 Grok manifests and 93.54–100% on curated corpora are measured under policy+schema+server dry-run guardrails. Kyverno case studies report admission metrics; our measured baseline (81.22%) falls in that range, and our 78.9% acceptance reflects the 2.3 percentage point cost of adding schema validation and dry-run gates. Magpie comparisons removed (no public source).
+Our results align with published baselines while providing more rigorous verification. GenKubeSec reports 0.990/0.999 precision/recall on a large labeled corpus \cite{genkubesec}; our 88.52% acceptance on 5{,}000 Grok manifests and 93.54–100% on curated corpora are measured under policy+schema+server dry-run guardrails. Kyverno case studies report admission metrics; our measured baseline (81.22%) falls in that range, and our 78.9% acceptance reflects the 2.3 percentage point cost of adding schema validation and dry-run gates. Magpie comparisons removed (no public source).
 
 Google Borg/SRE reports $\approx$90–95\% auto-remediation on millions of workloads \cite{borg}; our 93.54\% on the 5k supported corpus matches this range despite operating in a different domain (declarative manifests vs. running infrastructure). Across all comparisons, our verification rigor (policy + schema + dry-run + live-apply) exceeds prior work, and our slightly lower acceptance rates reflect intentional safety trade-offs validated by ablation studies showing zero regressions with full gates enabled.
 ```
@@ -216,10 +216,9 @@ Google Borg/SRE reports $\approx$90–95\% auto-remediation on millions of workl
 
 <!-- Magpie validation claim removed: no public source -->
 2. ✅ **Kyverno baseline (81.22%) matches Kyverno's range (80–95%)**
-3. ✅ **Grok-5k (88.78%) and Supported-5k (93.54%) match Borg (90–95%)**
+3. ✅ **Grok-5k (88.52%) approaches Borg (90–95%) while Supported-5k (93.54%) matches that range**
 4. ✅ **Rules curated corpus (100%) exceeds GenKubeSec (85–92%)**
 
 The live-apply gap (84% → 73.5%) is not a weakness—it's a **novel finding** that validates the need for rigorous live-cluster testing. No other system in the literature measures this.
 
 **Treat the disease, not the symptoms:** The "lower" numbers are actually evidence of treating the root cause (validation-vs-reality divergence) rather than just reporting optimistic dry-run statistics.
-

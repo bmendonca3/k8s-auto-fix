@@ -1,0 +1,80 @@
+[
+  {
+    "id": "tiny-no-latest",
+    "description": "Rule-based proposer replaces a latest image tag with a stable tag and verifier accepts it.",
+    "manifest": "manifests/latest-tag-pod.yaml",
+    "policy_id": "no_latest_tag",
+    "expected_accepted": true,
+    "risk": 60.0,
+    "probability": 0.92,
+    "expected_time": 6.0,
+    "kev": false
+  },
+  {
+    "id": "tiny-no-privileged",
+    "description": "Rule-based proposer disables a privileged container and verifier accepts it.",
+    "manifest": "manifests/privileged-pod.yaml",
+    "policy_id": "no_privileged",
+    "expected_accepted": true,
+    "risk": 90.0,
+    "probability": 0.95,
+    "expected_time": 5.0,
+    "kev": true,
+    "expected_scheduler_rank": 1,
+    "expected_queue_next": true
+  },
+  {
+    "id": "tiny-no-host-path",
+    "description": "Rule-based proposer replaces a hostPath volume with emptyDir and verifier accepts it.",
+    "manifest": "manifests/hostpath-hostport-pod.yaml",
+    "policy_id": "no_host_path",
+    "expected_accepted": true,
+    "risk": 80.0,
+    "probability": 0.84,
+    "expected_time": 8.0,
+    "kev": false
+  },
+  {
+    "id": "tiny-drop-sys-admin",
+    "description": "Rule-based proposer removes SYS_ADMIN from capabilities.add, adds it to capabilities.drop, and verifier accepts it.",
+    "manifest": "manifests/sys-admin-cap-pod.yaml",
+    "policy_id": "drop_cap_sys_admin",
+    "expected_accepted": true,
+    "risk": 85.0,
+    "probability": 0.88,
+    "expected_time": 7.0,
+    "kev": true,
+    "expected_scheduler_rank": 2
+  },
+  {
+    "id": "tiny-env-var-secret",
+    "description": "Rule-based proposer moves a password-like env value into a secretKeyRef and verifier accepts it.",
+    "manifest": "manifests/env-secret-pod.yaml",
+    "policy_id": "env_var_secret",
+    "expected_accepted": true,
+    "risk": 45.0,
+    "probability": 0.7,
+    "expected_time": 4.0,
+    "kev": false
+  },
+  {
+    "id": "tiny-reject-latest-unresolved",
+    "description": "Verifier rejects an override patch that changes metadata but leaves the latest image tag unresolved.",
+    "manifest": "manifests/latest-tag-pod.yaml",
+    "policy_id": "no_latest_tag",
+    "expected_accepted": false,
+    "risk": 60.0,
+    "probability": 0.25,
+    "expected_time": 6.0,
+    "kev": false,
+    "patch_override": [
+      {
+        "op": "add",
+        "path": "/metadata/annotations",
+        "value": {
+          "tiny-regression": "still-latest"
+        }
+      }
+    ]
+  }
+]

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import typer
 
+from .batches import schedule_batches
 from .schedule import EPSILON, PatchCandidate, schedule_patches
 from src.common.policy_ids import normalise_policy_id
 
@@ -59,6 +60,21 @@ def schedule(
         1.0,
         help="Weight applied to the exploration bonus when computing scores.",
     ),
+    batch_group_by: Optional[str] = typer.Option(
+        None,
+        "--batch-group-by",
+        help="Optional batch summary grouping: policy, namespace, owner, team, or root_cause.",
+    ),
+    batch_max_size: Optional[int] = typer.Option(
+        None,
+        "--batch-max-size",
+        help="Optional maximum number of scheduled patches per batch summary.",
+    ),
+    batches_out: Optional[Path] = typer.Option(
+        None,
+        "--batches-out",
+        help="Optional path for batch summary JSON. Defaults to stdout when batching is enabled.",
+    ),
 ) -> None:
     verified_records = _load_array(verified, "verified")
     detection_map = _load_detection_policies(detections)
@@ -100,7 +116,28 @@ def schedule(
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(output, indent=2), encoding="utf-8")
-    typer.echo(f"Scheduled {len(output)} patch(es) to {out.resolve()}")
+    batches_to_stdout = False
+    if batch_group_by:
+        try:
+            batches = schedule_batches(
+                output,
+                group_by=batch_group_by,
+                metadata=detection_map,
+                max_batch_size=batch_max_size,
+            )
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+
+        batch_output = [batch.to_dict() for batch in batches]
+        batch_json = json.dumps(batch_output, indent=2)
+        if batches_out:
+            batches_out.parent.mkdir(parents=True, exist_ok=True)
+            batches_out.write_text(batch_json, encoding="utf-8")
+            typer.echo(f"Wrote {len(batch_output)} batch(es) to {batches_out.resolve()}")
+        else:
+            batches_to_stdout = True
+            typer.echo(batch_json)
+    typer.echo(f"Scheduled {len(output)} patch(es) to {out.resolve()}", err=batches_to_stdout)
 
 
 def _open_json(path: Path):
@@ -130,9 +167,9 @@ def _load_detection_policies(path: Path) -> Dict[str, Dict[str, Any]]:
         if not isinstance(record, dict):
             continue
         detection_id = str(record.get("id"))
-        mapping[detection_id] = {
-            "policy_id": normalise_policy_id(record.get("policy_id")),
-        }
+        metadata = dict(record)
+        metadata["policy_id"] = normalise_policy_id(record.get("policy_id"))
+        mapping[detection_id] = metadata
     return mapping
 
 

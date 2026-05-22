@@ -67,6 +67,9 @@ def process_batches(
             if suffix in allowed_suffixes:
                 filtered.append(path)
         detections_paths = filtered
+        if not detections_paths:
+            requested = ", ".join(sorted(allowed_suffixes))
+            raise FileNotFoundError(f"No detection batches matched requested suffix(es): {requested}")
 
     patches_dir.mkdir(parents=True, exist_ok=True)
     verified_dir.mkdir(parents=True, exist_ok=True)
@@ -196,4 +199,3 @@ def main() -> None:
 
 if __name__ == "__main__":  # pragma: no cover
     main()
-

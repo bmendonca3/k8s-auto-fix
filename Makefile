@@ -4,19 +4,45 @@ export RUNPOD_API_KEY ?=
 ENDPOINT ?= https://api.openai.com/v1/chat/completions
 MODEL ?= gpt-4o-mini
 
-PYTHON ?= python
-PIP ?= pip
+PYTHON ?= $(shell if [ -x .venv/bin/python ]; then printf '%s\n' .venv/bin/python; else command -v python3 || command -v python; fi)
+PIP ?= $(PYTHON) -m pip
 
-.PHONY: setup kind-up fixtures reproducible-report detect propose verify schedule test e2e smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
+.PHONY: setup doctor validate-configs docs-link-check metrics-consistency secret-scan clean-generated kind-up fixtures reproducible-report detect propose verify schedule test artifact-test e2e pipeline-plan pipeline-manifest-smoke pipeline-status-smoke tiny-regression artifact-index-smoke artifact-traceability-smoke evidence-manifest-smoke evidence-manifest-pipeline-smoke evidence-manifest-claims-smoke evidence-manifest-claims-enforce gitops-plan-smoke patch-diff-smoke verifier-report scheduler-explain-smoke scheduler-batches-smoke queue-report-smoke review-packet-smoke review-packet-concise-smoke review-packet-rollout-smoke smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok43-50 benchmark-grok43-200 benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
 
 JOBS ?= 4
 GROK_PROPOSER_CONFIG ?= configs/run_grok.yaml
 GROK_VERIFY_FLAGS ?= --include-errors --no-require-kubectl
 GROK5K_VERIFY_FLAGS ?= --include-errors --enable-rescan --policies-dir data/policies/kyverno
 GROK5K_MIN_ACCEPTANCE ?= 0.75
+GROK43_RUN_DATE ?= $(shell date +%Y%m%d)
+GROK43_JOBS ?= 1
+GROK43_BATCH_SIZE ?= 25
+GROK43_SOURCE_GLOB ?= data/batch_runs/grok_5k/detections_grok5k_batch_*.json
+GROK43_TOOL_CACHE ?= tmp/tool-cache/bin
+GROK43_KUBE_LINTER_CMD ?= $(GROK43_TOOL_CACHE)/kube-linter
+GROK43_KYVERNO_CMD ?= $(GROK43_TOOL_CACHE)/kyverno
+GROK43_RESUME ?=
 
 setup:
 	$(PIP) install -r requirements.txt
+
+doctor:
+	$(PYTHON) scripts/doctor.py
+
+validate-configs:
+	$(PYTHON) scripts/validate_configs.py
+
+docs-link-check:
+	$(PYTHON) scripts/check_docs_links.py README.md docs configs scripts/README.md data/README.md
+
+metrics-consistency:
+	$(PYTHON) scripts/check_metrics_consistency.py
+
+secret-scan:
+	$(PYTHON) scripts/scan_secrets.py
+
+clean-generated:
+	$(PYTHON) scripts/clean_generated.py
 
 kind-up:
 	./scripts/kind_up.sh
@@ -50,10 +76,75 @@ schedule-with-risk:
 	$(PYTHON) -m src.scheduler.cli --verified data/verified.json --out data/schedule.json --detections data/detections.json --risk data/risk.json
 
 test:
-	$(PYTHON) -m unittest discover -s tests -q
+	$(PYTHON) -m pytest -q
+
+artifact-test:
+	K8S_AUTO_FIX_ARTIFACT_TESTS=1 $(PYTHON) -m unittest tests.test_patch_minimality -q
 
 e2e:
 	$(PYTHON) scripts/e2e_smoke.py
+
+pipeline-plan:
+	$(PYTHON) scripts/run_pipeline.py --dry-run
+
+pipeline-manifest-smoke:
+	$(PYTHON) scripts/run_pipeline.py --dry-run --manifest-out tmp/pipeline-manifest.json
+
+pipeline-status-smoke:
+	$(PYTHON) scripts/run_pipeline.py --dry-run --status-out tmp/pipeline-status.json >/dev/null
+
+tiny-regression:
+	$(PYTHON) scripts/run_tiny_regression.py
+
+artifact-index-smoke:
+	$(PYTHON) scripts/artifact_index.py --limit 10
+
+artifact-traceability-smoke:
+	$(PYTHON) scripts/artifact_traceability.py --artifact data/patches.json --producer "make propose" --category generated-output >/dev/null
+
+evidence-manifest-smoke:
+	$(PYTHON) scripts/build_evidence_manifest.py --artifact data/patches.json --producer-command "make propose" --claim patch-output --category generated-output --out tmp/evidence-manifest-smoke.json
+
+evidence-manifest-pipeline-smoke:
+	$(PYTHON) scripts/run_pipeline.py --dry-run --manifest-out tmp/pipeline-manifest.json --status-out tmp/pipeline-status.json >/dev/null
+	$(PYTHON) scripts/build_evidence_manifest.py --artifact data/patches.json --producer-command "make propose" --claim patch-output --category generated-output --pipeline-manifest tmp/pipeline-manifest.json --pipeline-status tmp/pipeline-status.json --out tmp/evidence-manifest-pipeline-smoke.json
+
+evidence-manifest-claims-smoke:
+	mkdir -p tmp
+	printf '%s\n' '{"claims":[{"id":"patch-output","title":"Patch output exists"},{"id":"uncovered-claim","title":"Uncovered smoke claim"}]}' > tmp/claims-table-smoke.json
+	$(PYTHON) scripts/build_evidence_manifest.py --artifact data/patches.json --producer-command "make propose" --claim patch-output --category generated-output --claims-table tmp/claims-table-smoke.json --out tmp/evidence-manifest-claims-smoke.json
+
+evidence-manifest-claims-enforce:
+	mkdir -p tmp
+	$(PYTHON) scripts/build_evidence_manifest.py --spec data/eval/paper_evidence_spec.json --claims-table data/eval/paper_claims.json --fail-on-uncovered-claims --out tmp/evidence-manifest-claims-enforce.json
+
+gitops-plan-smoke:
+	$(PYTHON) scripts/gitops_writeback.py --detections data/detections.json --verified data/verified.json --repo-root . --plan-out tmp/gitops-writeback-plan-smoke.json >/dev/null
+
+patch-diff-smoke:
+	$(PYTHON) scripts/render_patch_diff.py --detections data/detections.json --patches data/patches.json --id 002
+
+verifier-report:
+	$(PYTHON) scripts/verifier_report.py data/verified.json --max-groups 5 --max-ids 5
+
+scheduler-explain-smoke:
+	printf '%s\n' '[{"id":"demo","risk":80,"probability":0.9,"expected_time":10,"kev":true}]' | $(PYTHON) scripts/scheduler_explain.py --json >/dev/null
+
+scheduler-batches-smoke:
+	$(PYTHON) -m src.scheduler.cli --verified data/verified.json --detections data/detections.json --risk data/risk.json --out tmp/schedule-smoke.json --batch-group-by policy --batch-max-size 3 --batches-out tmp/schedule-batches-smoke.json >/dev/null
+
+queue-report-smoke:
+	$(PYTHON) scripts/queue_report.py data/queue.db --json >/dev/null
+
+review-packet-smoke:
+	$(PYTHON) scripts/build_review_packet.py --detections data/detections.json --patches data/patches.json --verified data/verified.json --schedule data/schedule.json --artifact data/patches.json --id 002 --max-diffs 1 >/dev/null
+
+review-packet-concise-smoke:
+	$(PYTHON) scripts/build_review_packet.py --detections data/detections.json --patches data/patches.json --verified data/verified.json --schedule data/schedule.json --artifact data/patches.json --id 002 --max-diffs 1 --markdown-mode concise >/dev/null
+
+review-packet-rollout-smoke:
+	$(PYTHON) -m src.scheduler.cli --verified data/verified.json --detections data/detections.json --risk data/risk.json --out tmp/schedule-rollout-smoke.json --batch-group-by namespace --batch-max-size 3 --batches-out tmp/schedule-rollout-batches-smoke.json >/dev/null
+	$(PYTHON) scripts/build_review_packet.py --detections data/detections.json --patches data/patches.json --verified data/verified.json --schedule tmp/schedule-rollout-smoke.json --batches tmp/schedule-rollout-batches-smoke.json --rollout-max-count 3 --rollout-max-policies 2 --id 002 --max-diffs 1 --markdown-mode concise >/dev/null
 
 smoke-proposer:
 	curl -s $(ENDPOINT) -H "Authorization: Bearer $(OPENAI_API_KEY)" -H "Content-Type: application/json" \
@@ -70,6 +161,32 @@ queue-next:
 
 metrics:
 	$(PYTHON) -m src.eval.metrics --detections data/detections.json --patches data/patches.json --verified data/verified.json --out data/metrics.json
+
+benchmark-grok43-50:
+	@echo "Running safe Grok 4.3 benchmark across 50 detections"
+	@[ -n "$$XAI_API_KEY" ] || (echo "XAI_API_KEY environment variable is required for Grok mode" >&2; exit 1)
+	$(PYTHON) scripts/run_grok43_benchmark.py \
+		--limit 50 \
+		--run-id grok43_$(GROK43_RUN_DATE)_50 \
+		--source-glob "$(GROK43_SOURCE_GLOB)" \
+		--batch-size $(GROK43_BATCH_SIZE) \
+		--jobs $(GROK43_JOBS) \
+		--kube-linter-cmd $(GROK43_KUBE_LINTER_CMD) \
+		--kyverno-cmd $(GROK43_KYVERNO_CMD) \
+		$(GROK43_RESUME)
+
+benchmark-grok43-200:
+	@echo "Running safe Grok 4.3 benchmark across 200 detections"
+	@[ -n "$$XAI_API_KEY" ] || (echo "XAI_API_KEY environment variable is required for Grok mode" >&2; exit 1)
+	$(PYTHON) scripts/run_grok43_benchmark.py \
+		--limit 200 \
+		--run-id grok43_$(GROK43_RUN_DATE)_200 \
+		--source-glob "$(GROK43_SOURCE_GLOB)" \
+		--batch-size $(GROK43_BATCH_SIZE) \
+		--jobs $(GROK43_JOBS) \
+		--kube-linter-cmd $(GROK43_KUBE_LINTER_CMD) \
+		--kyverno-cmd $(GROK43_KYVERNO_CMD) \
+		$(GROK43_RESUME)
 
 benchmark-grok200:
 	@echo "Running Grok benchmark across 200 detections"

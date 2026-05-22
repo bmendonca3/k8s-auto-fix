@@ -8,9 +8,7 @@ import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
-
-from functools import lru_cache
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import copy
 import jsonpatch
@@ -18,77 +16,14 @@ import jsonpatch
 import typer
 import yaml
 
-from .guidance_store import GuidanceStore
 from .guards import PatchError, extract_json_array
 from .model_client import ClientOptions, ModelClient
-from .retriever import GuidanceRetriever, FailureCache
+from .patch_safety import minimize_redundant_patch_ops, sanitize_patch_paths
+from . import prompts as prompt_helpers
+from .response_cache import ModelResponseCache, ResponseCacheMetadata, build_response_cache_metadata
+from .retry import resolve_retry_budget
 from src.common.policy_ids import normalise_policy_id
 from src.verifier.jsonpatch_guard import validate_paths_exist
-
-# --- JSON Pointer sanitization helpers (acceptance improvements) ---
-def _rfc6901_escape(segment: str) -> str:
-    return segment.replace("~", "~0").replace("/", "~1")
-
-
-def _decode_percent(s: str) -> str:
-    try:
-        from urllib.parse import unquote
-        return unquote(s)
-    except Exception:
-        return s
-
-
-def _sanitize_pointer(path: str) -> str:
-    if not isinstance(path, str) or not path.startswith("/"):
-        return path
-    raw = _decode_percent(path)
-    parts = raw.split("/")
-    anchors = (
-        ["metadata", "annotations"],
-        ["metadata", "labels"],
-        ["spec", "selector"],
-        ["spec", "template", "metadata", "labels"],
-        ["spec", "template", "metadata", "annotations"],
-    )
-    def match_anchor(prefix):
-        n = len(prefix)
-        if len(parts) <= 1 + n:
-            return None
-        if [p for p in parts[1:1+n]] == prefix:
-            return 1 + n
-        return None
-    join_from = None
-    for pref in anchors:
-        idx = match_anchor(pref)
-        if idx is not None:
-            join_from = idx
-            break
-    if join_from is not None and join_from < len(parts):
-        head = parts[:join_from]
-        tail = parts[join_from:]
-        tail_key = "/".join(tail)
-        escaped_tail = _rfc6901_escape(tail_key)
-        encoded = "/".join(head + [escaped_tail])
-    else:
-        escaped = [_rfc6901_escape(seg) for seg in parts[1:]]
-        encoded = "/" + "/".join(escaped)
-    return encoded
-
-
-def _sanitize_patch_paths(patch_ops):
-    if not isinstance(patch_ops, list):
-        return patch_ops
-    out = []
-    for op in patch_ops:
-        if not isinstance(op, dict):
-            out.append(op)
-            continue
-        op2 = dict(op)
-        for key in ("path", "from"):
-            if key in op2 and isinstance(op2[key], str):
-                op2[key] = _sanitize_pointer(op2[key])
-        out.append(op2)
-    return out
 
 POLICIES_REQUIRE_MANIFEST_PATH = {"job_ttl_after_finished"}
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -100,7 +35,14 @@ SERVICE_SELECTOR_LABEL_CANDIDATES = (
     "component",
     "name",
 )
-SERVICE_ACCOUNT_ALLOW_ANNOTATION = "k8s-auto-fix.dev/allow-default-service-account"
+SERVICE_ACCOUNT_ALLOW_ANNOTATION = prompt_helpers.SERVICE_ACCOUNT_ALLOW_ANNOTATION
+GUIDANCE_DIR = prompt_helpers.GUIDANCE_DIR
+GUIDANCE_STORE = prompt_helpers.GUIDANCE_STORE
+GUIDANCE_RETRIEVER = prompt_helpers.GUIDANCE_RETRIEVER
+FAILURE_CACHE = prompt_helpers.FAILURE_CACHE
+_build_prompt = prompt_helpers._build_prompt
+_load_external_guidance = prompt_helpers._load_external_guidance
+_policy_guidance = prompt_helpers._policy_guidance
 
 app = typer.Typer(help="Generate JSON patches from detections using configurable backends.")
 
@@ -109,6 +51,82 @@ def _is_truthy(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes", "y"}
     return bool(value)
+
+
+def _as_dict(value: Any) -> Dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _prepare_cache_config(
+    config_data: Dict[str, Any],
+    cache_dir: Optional[Path],
+    config_path: Path,
+) -> Dict[str, Any]:
+    proposer_cfg = config_data.get("proposer", {})
+    if not isinstance(proposer_cfg, dict):
+        if cache_dir is not None:
+            raise typer.BadParameter("proposer config must be a mapping when --cache-dir is used")
+        return config_data
+
+    configured_cache_dir = proposer_cfg.get("cache_dir")
+    selected_cache_dir = cache_dir if cache_dir is not None else configured_cache_dir
+    if selected_cache_dir is None or not str(selected_cache_dir).strip():
+        return config_data
+
+    cache_path = Path(str(selected_cache_dir))
+    if not cache_path.is_absolute():
+        base_dir = Path.cwd() if cache_dir is not None else config_path.parent.resolve()
+        cache_path = (base_dir / cache_path).resolve()
+
+    updated = copy.deepcopy(config_data)
+    updated_proposer = updated.setdefault("proposer", {})
+    if not isinstance(updated_proposer, dict):
+        raise typer.BadParameter("proposer config must be a mapping when response caching is enabled")
+    updated_proposer["cache_dir"] = str(cache_path)
+    return updated
+
+
+def _response_cache_from_config(config_data: Dict[str, Any]) -> Optional[ModelResponseCache]:
+    proposer_cfg = _as_dict(config_data.get("proposer"))
+    cache_dir = proposer_cfg.get("cache_dir")
+    if cache_dir is None or not str(cache_dir).strip():
+        return None
+    return ModelResponseCache(Path(str(cache_dir)))
+
+
+def _generator_cache_config(
+    config_data: Dict[str, Any],
+    source: str,
+    mode: str,
+    seed: Optional[int],
+) -> Dict[str, Any]:
+    proposer_cfg = _as_dict(config_data.get("proposer"))
+    backend_cfg = _as_dict(config_data.get(source))
+
+    def pick(name: str, default: Any = None) -> Any:
+        value = backend_cfg.get(name)
+        if value is None:
+            value = proposer_cfg.get(name)
+        return default if value is None else value
+
+    identity: Dict[str, Any] = {
+        "source": source,
+        "mode": (mode or "rules").lower(),
+        "seed": seed,
+    }
+    if source in {"vendor", "vllm", "grok"}:
+        identity.update(
+            {
+                "endpoint": pick("endpoint", "http://localhost:8000"),
+                "model": pick("model", "proposer-model"),
+                "api_key_env": backend_cfg.get("api_key_env"),
+                "timeout_seconds": float(proposer_cfg.get("timeout_seconds", 60)),
+                "retries": int(proposer_cfg.get("retries", 0)),
+                "auth_header": pick("auth_header", "Authorization"),
+                "auth_scheme": pick("auth_scheme", "Bearer"),
+            }
+        )
+    return identity
 
 
 @app.command()
@@ -143,9 +161,15 @@ def propose(
         "--metrics-out",
         help="Optional path to write proposer telemetry (latency, token usage).",
     ),
+    cache_dir: Optional[Path] = typer.Option(
+        None,
+        "--cache-dir",
+        help="Optional directory for non-rules model response cache.",
+    ),
 ) -> None:
     detections_data = _load_json(detections)
     config_data = _load_yaml(config)
+    config_data = _prepare_cache_config(config_data, cache_dir, config)
     base_dir = detections.parent.resolve()
 
     mode = config_data.get("proposer", {}).get("mode", "rules")
@@ -216,6 +240,7 @@ def _generate_patch_record(
     detection_id = detection["id"]
     mode = config_data.get("proposer", {}).get("mode", "rules")
     seed = config_data.get("seed")
+    attempt_budget = resolve_retry_budget(config_data, policy_id, max_attempts)
 
     local_generator = generator if generator is not None else _build_generator(mode, config_data, seed)
     if rng is not None:
@@ -230,7 +255,10 @@ def _generate_patch_record(
 
     patch_ops: Optional[List[Dict[str, Any]]] = None
     rule_guard_ops: List[Dict[str, Any]] = []
-    generation_usage: Optional[Dict[str, Any]] = None
+    generation_usage: Any = None
+    response_cache = _response_cache_from_config(config_data)
+    cache_record_fields: Optional[Dict[str, Any]] = None
+    pending_cache_write: Optional[Tuple[ResponseCacheMetadata, Any, Optional[Dict[str, Any]]]] = None
     overall_start = time.perf_counter()
     generation_latency_ms: Optional[int] = None
     if local_generator.source != "rules":
@@ -241,23 +269,46 @@ def _generate_patch_record(
 
     attempts = 0
     errors: List[str] = []
-    while attempts < max_attempts and patch_ops is None:
+    while attempts < attempt_budget and patch_ops is None:
         attempts += 1
         attempt_start = time.perf_counter()
         try:
             detection_for_prompt = dict(detection)
             if errors:
                 detection_for_prompt["retry_feedback"] = "; ".join(errors[-3:])
-            generation = local_generator(detection_for_prompt, local_rng)
-            if isinstance(generation, dict):
-                raw_patch = generation.get("content")
-                generation_usage = generation.get("usage")
+            cache_metadata: Optional[ResponseCacheMetadata] = None
+            cached_generation: Optional[Dict[str, Any]] = None
+            cache_hit = False
+            if response_cache is not None and local_generator.source != "rules":
+                prompt_text = _build_prompt(detection_for_prompt)
+                cache_metadata = build_response_cache_metadata(
+                    detection=detection_for_prompt,
+                    generator_config=_generator_cache_config(config_data, local_generator.source, mode, seed),
+                    prompt=prompt_text,
+                )
+                cached_generation = response_cache.read(cache_metadata)
+
+            if cached_generation is not None:
+                raw_patch = cached_generation["raw_response"]
+                usage = cached_generation.get("usage")
+                generation_usage = usage if isinstance(usage, dict) else None
+                cache_hit = True
             else:
-                raw_patch = generation
+                generation = local_generator(detection_for_prompt, local_rng)
+                if isinstance(generation, dict):
+                    raw_patch = generation.get("content")
+                    generation_usage = generation.get("usage")
+                else:
+                    raw_patch = generation
             patch_list = extract_json_array(raw_patch) if isinstance(raw_patch, str) else raw_patch
-            patch_list = _sanitize_patch_paths(patch_list)
+            patch_list = sanitize_patch_paths(patch_list, yaml.safe_load(manifest_yaml))
             validate_paths_exist(manifest_yaml, patch_list)
             patch_ops = patch_list
+            if response_cache is not None and cache_metadata is not None:
+                cache_record_fields = response_cache.record_fields(cache_metadata, cache_hit=cache_hit)
+                if not cache_hit:
+                    cached_usage = generation_usage if isinstance(generation_usage, dict) else None
+                    pending_cache_write = (cache_metadata, raw_patch, cached_usage)
             generation_latency_ms = int((time.perf_counter() - attempt_start) * 1000)
         except Exception as exc:  # noqa: BLE001
             message = str(exc)
@@ -271,7 +322,7 @@ def _generate_patch_record(
             hardened = True
         else:
             raise RuntimeError(
-                f"Unable to produce patch for detection {detection_id} after {max_attempts} attempts: {errors}"
+                f"Unable to produce patch for detection {detection_id} after {attempt_budget} attempts: {errors}"
             )
 
     if rule_guard_ops and local_generator.source != "rules":
@@ -286,6 +337,9 @@ def _generate_patch_record(
 
     if local_generator.source != "rules":
         _assert_no_semantic_regression(patch_ops)
+        if response_cache is not None and pending_cache_write is not None:
+            metadata, raw_response, usage = pending_cache_write
+            response_cache.write(metadata, raw_response=raw_response, usage=usage)
 
     total_latency_ms = int((time.perf_counter() - overall_start) * 1000)
     if generation_latency_ms is None:
@@ -299,9 +353,13 @@ def _generate_patch_record(
         "source": local_generator.source,
         "hardened": hardened,
         "patch": patch_ops,
+        "attempt_count": attempts,
+        "retry_budget": attempt_budget,
         "latency_ms": generation_latency_ms,
         "total_latency_ms": total_latency_ms,
     }
+    if cache_record_fields:
+        result.update(cache_record_fields)
     if generation_usage and local_generator.source != "rules":
         result["model_usage"] = generation_usage
     if errors:
@@ -410,213 +468,57 @@ def _build_generator(mode: str, config: Dict[str, Any], seed: Optional[int]) -> 
     raise typer.BadParameter(f"Unsupported proposer mode: {mode}")
 
 
-def _build_prompt(detection: Dict[str, Any]) -> str:
-    manifest_yaml = detection["manifest_yaml"]
-    policy_id = detection["policy_id"]
-    violation_text = detection["violation_text"]
-    sections = [
-        "You are fixing a Kubernetes manifest.",
-        "Manifest YAML:",
-        manifest_yaml,
-        f"Policy: {policy_id}",
-        f"Violation: {violation_text}",
-    ]
-    sections.append(
-        "Global requirements:\n"
-        "- Never leave securityContext.privileged set to true; set it to false for every container.\n"
-        "- Always supply concrete CPU and memory values when creating resources.requests or resources.limits (e.g. cpu 100m, memory 128Mi).\n"
-        "- When configuring securityContext.capabilities, drop NET_RAW, NET_ADMIN, SYS_ADMIN, SYS_MODULE, SYS_PTRACE, SYS_CHROOT and remove them from capabilities.add.\n"
-        "- Prefer secure defaults: replace hostPath volumes with emptyDir: {} unless explicitly instructed otherwise.\n"
-        "- Use RFC6901 JSON Pointer encoding in patch paths: escape '~' as '~0' and '/' as '~1' within key names (do NOT use URL encoding)."
-    )
-    feedback = detection.get("retry_feedback")
-    failure_hint = ""
-    if isinstance(feedback, str) and feedback.strip():
-        failure_hint = feedback.strip()
-        sections.append(f"Verifier feedback: {failure_hint}")
-    else:
-        failure_hint = FAILURE_CACHE.lookup(detection.get("id", ""))
-        if failure_hint:
-            sections.append(f"Verifier feedback: {failure_hint}")
-    guidance = _policy_guidance(policy_id, failure_hint or None)
-    if guidance:
-        sections.append(f"Guidance:\n{guidance}")
-    sections.append("Return ONLY a valid RFC6902 JSON Patch array.")
-    return "\n\n".join(sections)
-
-
-def _policy_guidance(policy_id: str, failure_hint: Optional[str] = None) -> str:
-    retrieved = GUIDANCE_RETRIEVER.retrieve(policy_id, failure_hint)
-    if retrieved:
-        return retrieved
-    key = (policy_id or "").lower()
-    external = _load_external_guidance(key)
-    if external:
-        return external
-    if key == "set_requests_limits":
-        return (
-            "If resources.requests or resources.limits are missing, add the missing object(s). "
-            "Do not remove fields that don't exist. Use paths like /spec/containers/0/resources, "
-            "/spec/containers/0/resources/requests, and /spec/containers/0/resources/limits. "
-            "Populate cpu and memory with sane defaults (e.g. requests.cpu=100m, requests.memory=128Mi, limits.cpu=500m, limits.memory=256Mi)."
-        )
-    if key == "read_only_root_fs":
-        return (
-            "Ensure /spec/containers/0/securityContext exists. Then set readOnlyRootFilesystem to true and make sure privileged is set to false."
-        )
-    if key == "run_as_non_root":
-        return (
-            "Ensure /spec/containers/0/securityContext exists. Then set runAsNonRoot to true."
-        )
-    if key == "no_host_path":
-        return (
-            "Replace any volume hostPath usage by removing hostPath and adding emptyDir: {} for that volume."
-        )
-    if key == "no_host_ports":
-        return (
-            "Remove the hostPort field from every container port entry so pods rely on service networking instead."
-        )
-    if key == "run_as_user":
-        return (
-            "Ensure securityContext exists and set runAsUser to a non-root UID such as 1000. "
-            "Only add or update securityContext/runAsUser (and create securityContext if missing); avoid unrelated changes."
-        )
-    if key == "enforce_seccomp":
-        return (
-            "Set securityContext.seccompProfile.type to \"RuntimeDefault\" (create securityContext/seccompProfile if missing)."
-        )
-    if key == "drop_capabilities":
-        return (
-            "Ensure dangerous capabilities (NET_RAW, NET_ADMIN, SYS_ADMIN, SYS_MODULE, SYS_PTRACE, SYS_CHROOT) are dropped and absent from capabilities.add."
-        )
-    if key == "dangling_service":
-        return (
-            "Ensure the Service stays ClusterIP-backed and targets a stable label. Prefer reusing metadata.labels (e.g. app=...) to populate spec.selector, and do not remove ports or clusterIP entries. If no safe selector exists, leave the Service for manual review."
-        )
-    if key == "non_existent_service_account":
-        return (
-            f"Ensure every Pod spec uses an existing ServiceAccount. Only switch serviceAccountName/serviceAccount to \"default\" when the manifest opts in via the annotation {SERVICE_ACCOUNT_ALLOW_ANNOTATION}=true."
-        )
-    if key == "pdb_unhealthy_eviction_policy":
-        return (
-            "Set spec.unhealthyPodEvictionPolicy explicitly (e.g., \"AlwaysAllow\") so disruptions are controlled even when pods report unhealthy status."
-        )
-    if key == "job_ttl_after_finished":
-        return (
-            "Add spec.ttlSecondsAfterFinished with a reasonable value (for example 3600) so finished Jobs are garbage collected."
-        )
-    if key == "unsafe_sysctls":
-        return (
-            "Remove securityContext.sysctls so the pod inherits the cluster defaults instead of forcing unsafe kernel settings."
-        )
-    if key == "no_anti_affinity":
-        return (
-            "Add a podAntiAffinity stanza (topologyKey kubernetes.io/hostname) that matches an existing label such as app=... so replicas avoid co-locating."
-        )
-    if key == "deprecated_service_account_field":
-        return (
-            "Replace spec.serviceAccount with spec.serviceAccountName and drop the deprecated field."
-        )
-    if key == "env_var_secret":
-        return (
-            "Environment variables containing secrets should source values from a Secret. Replace plain `value` assignments with `valueFrom.secretKeyRef` entries."
-        )
-    if key == "liveness_port":
-        return (
-            "Ensure the container `ports` list exposes the port referenced by the livenessProbe so HTTP checks can succeed."
-        )
-    if key == "readiness_port":
-        return (
-            "Ensure the container `ports` list exposes the port referenced by the readinessProbe so HTTP checks can succeed."
-        )
-    if key == "startup_port":
-        return (
-            "Ensure the container `ports` list exposes the port referenced by the startupProbe so HTTP checks can succeed during boot."
-        )
-    return ""
-
-
-@lru_cache(maxsize=None)
-def _load_external_guidance(policy_id: str) -> str:
-    candidate = GUIDANCE_DIR / f"{policy_id}.md"
-    if candidate.exists():
-        try:
-            return candidate.read_text(encoding="utf-8").strip()
-        except OSError:
-            return ""
-    return ""
-
-
 def _rule_based_patch(detection: Dict[str, Any]) -> List[Dict[str, Any]]:
     manifest_yaml = detection["manifest_yaml"]
     policy_id = detection["policy_id"]
     obj = yaml.safe_load(manifest_yaml) or {}
-    if policy_id == "dangling_service":
-        selector_hint = _assert_service_safety(obj)
-        ops = _patch_dangling_service(obj, selector_hint=selector_hint)
-    elif policy_id == "no_latest_tag":
-        ops = _patch_no_latest(obj)
-    elif policy_id == "no_privileged":
-        ops = _patch_no_privileged(obj)
-    elif policy_id == "read_only_root_fs":
-        ops = _patch_read_only_root_fs(obj)
-    elif policy_id == "run_as_non_root":
-        ops = _patch_run_as_non_root(obj)
-    elif policy_id == "set_requests_limits":
-        ops = _patch_set_requests_limits(obj)
-    elif policy_id == "no_allow_privilege_escalation":
-        ops = _patch_no_allow_privilege_escalation(obj)
-    elif policy_id == "no_host_network":
-        ops = _patch_no_host_flag(obj, flag="hostNetwork")
-    elif policy_id == "no_host_pid":
-        ops = _patch_no_host_flag(obj, flag="hostPID")
-    elif policy_id == "no_host_ipc":
-        ops = _patch_no_host_flag(obj, flag="hostIPC")
-    elif policy_id == "drop_cap_sys_admin":
-        ops = _patch_drop_cap_sys_admin(obj)
-    elif policy_id == "no_host_path":
-        ops = _patch_no_host_path(obj)
-    elif policy_id == "no_host_ports":
-        ops = _patch_no_host_ports(obj)
-    elif policy_id == "run_as_user":
-        ops = _patch_run_as_user(obj)
-    elif policy_id == "enforce_seccomp":
-        ops = _patch_enforce_seccomp(obj)
-    elif policy_id == "drop_capabilities":
-        ops = _patch_drop_capabilities(obj)
-    elif policy_id == "non_existent_service_account":
-        _assert_service_account_safety(obj)
-        ops = _patch_non_existent_service_account(obj)
-    elif policy_id == "pdb_unhealthy_eviction_policy":
-        ops = _patch_pdb_unhealthy_eviction(obj)
-    elif policy_id == "job_ttl_after_finished":
-        ops = _patch_job_ttl_after_finished(obj)
-    elif policy_id == "unsafe_sysctls":
-        ops = _patch_unsafe_sysctls(obj)
-    elif policy_id == "no_anti_affinity":
-        ops = _patch_no_anti_affinity(obj)
-    elif policy_id == "deprecated_service_account_field":
-        ops = _patch_deprecated_service_account_field(obj)
-    elif policy_id == "env_var_secret":
-        ops = _patch_env_var_secret(obj)
-    elif policy_id == "liveness_port":
-        ops = _patch_probe_port(obj, "liveness")
-    elif policy_id == "readiness_port":
-        ops = _patch_probe_port(obj, "readiness")
-    elif policy_id == "startup_port":
-        ops = _patch_probe_port(obj, "startup")
-    elif policy_id == "invalid_target_ports":
-        ops = _patch_invalid_target_ports(obj)
-    elif policy_id == "mismatching_selector":
-        ops = _patch_mismatching_selector(obj)
-    elif policy_id == "ssh_port":
-        ops = _patch_ssh_port(obj)
-    elif policy_id == "duplicate_env_var":
-        ops = _patch_duplicate_env_var(obj)
-    else:
-        raise PatchError(f"no rule available for policy {policy_id}")
+    ops = _apply_rule_strategy(policy_id, obj)
 
-    return _augment_with_guardrails(obj, ops, policy_id)
+    return minimize_redundant_patch_ops(obj, _augment_with_guardrails(obj, ops, policy_id))
+
+
+RuleStrategy = Callable[[Dict[str, Any]], List[Dict[str, Any]]]
+
+
+def _apply_rule_strategy(policy_id: str, obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    strategy = RULE_STRATEGIES.get(policy_id)
+    if strategy is None:
+        raise PatchError(f"no rule available for policy {policy_id}")
+    return strategy(obj)
+
+
+def _patch_dangling_service_policy(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    selector_hint = _assert_service_safety(obj)
+    return _patch_dangling_service(obj, selector_hint=selector_hint)
+
+
+def _patch_non_existent_service_account_policy(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    _assert_service_account_safety(obj)
+    return _patch_non_existent_service_account(obj)
+
+
+def _patch_no_host_network(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _patch_no_host_flag(obj, flag="hostNetwork")
+
+
+def _patch_no_host_pid(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _patch_no_host_flag(obj, flag="hostPID")
+
+
+def _patch_no_host_ipc(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _patch_no_host_flag(obj, flag="hostIPC")
+
+
+def _patch_liveness_port(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _patch_probe_port(obj, "liveness")
+
+
+def _patch_readiness_port(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _patch_probe_port(obj, "readiness")
+
+
+def _patch_startup_port(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _patch_probe_port(obj, "startup")
 
 
 def _merge_patch_ops(primary: List[Dict[str, Any]], guard: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -633,6 +535,18 @@ def _merge_patch_ops(primary: List[Dict[str, Any]], guard: List[Dict[str, Any]])
 
 
 def _assert_no_semantic_regression(patch_ops: Sequence[Dict[str, Any]]) -> None:
+    def removes_list_or_item(path: str, list_name: str) -> bool:
+        parts = [part.replace("~1", "/").replace("~0", "~") for part in path.strip("/").split("/")]
+        for index, part in enumerate(parts):
+            if part != list_name:
+                continue
+            if index == len(parts) - 1:
+                return True
+            next_part = parts[index + 1]
+            if next_part == "-" or next_part.isdigit():
+                return index + 1 == len(parts) - 1
+        return False
+
     for op in patch_ops:
         if not isinstance(op, dict):
             continue
@@ -642,9 +556,9 @@ def _assert_no_semantic_regression(patch_ops: Sequence[Dict[str, Any]]) -> None:
         if not isinstance(path, str):
             continue
         normalized = path.rstrip("/")
-        if normalized.endswith("/containers") or "/containers/" in normalized:
+        if removes_list_or_item(normalized, "containers"):
             raise PatchError("semantic regression: refusing to remove container definitions in LLM mode")
-        if normalized.endswith("/volumes") or "/volumes/" in normalized:
+        if removes_list_or_item(normalized, "volumes"):
             raise PatchError("semantic regression: refusing to remove volume definitions in LLM mode")
 
 
@@ -1835,8 +1749,8 @@ def _patch_duplicate_env_var(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
             if to_remove:
                 for idx in sorted(to_remove, reverse=True):
                     ops.append({"op": "remove", "path": f"{base_path}/{c_idx}/env/{idx}"})
-            if ops:
-                return ops
+    if ops:
+        return ops
     raise PatchError("no duplicate environment variables found")
 
 
@@ -2494,6 +2408,7 @@ def _patch_set_requests_limits(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 def _patch_no_allow_privilege_escalation(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     containers_info = _find_containers(obj)
+    ops: List[Dict[str, Any]] = []
     for base_path, containers in containers_info:
         for idx, container in enumerate(containers):
             security = container.get("securityContext")
@@ -2501,10 +2416,13 @@ def _patch_no_allow_privilege_escalation(obj: Dict[str, Any]) -> List[Dict[str, 
                 ape = security.get("allowPrivilegeEscalation")
                 if ape is not False:
                     path = f"{base_path}/{idx}/securityContext/allowPrivilegeEscalation"
-                    return [{"op": "add", "path": path, "value": False}]
+                    op = "replace" if "allowPrivilegeEscalation" in security else "add"
+                    ops.append({"op": op, "path": path, "value": False})
             else:
                 path = f"{base_path}/{idx}/securityContext"
-                return [{"op": "add", "path": path, "value": {"allowPrivilegeEscalation": False}}]
+                ops.append({"op": "add", "path": path, "value": {"allowPrivilegeEscalation": False}})
+    if ops:
+        return ops
     raise PatchError("no container found to set allowPrivilegeEscalation=false")
 
 
@@ -2521,12 +2439,13 @@ def _patch_no_host_flag(obj: Dict[str, Any], flag: str) -> List[Dict[str, Any]]:
 
 def _patch_drop_cap_sys_admin(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     containers_info = _find_containers(obj)
+    ops: List[Dict[str, Any]] = []
     for base_path, containers in containers_info:
         for idx, container in enumerate(containers):
             sec = container.get("securityContext")
             if not isinstance(sec, dict):
                 path = f"{base_path}/{idx}/securityContext"
-                return [
+                ops.append(
                     {
                         "op": "add",
                         "path": path,
@@ -2537,26 +2456,27 @@ def _patch_drop_cap_sys_admin(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
                             "allowPrivilegeEscalation": False,
                         },
                     }
-                ]
+                )
+                continue
             caps = sec.get("capabilities")
-            ops: List[Dict[str, Any]] = []
+            container_ops: List[Dict[str, Any]] = []
             if not isinstance(caps, dict):
                 path = f"{base_path}/{idx}/securityContext/capabilities"
-                ops.append({"op": "add", "path": path, "value": {"drop": ["SYS_ADMIN"]}})
+                container_ops.append({"op": "add", "path": path, "value": {"drop": ["SYS_ADMIN"]}})
             else:
                 drop = caps.get("drop")
                 if isinstance(drop, list):
                     if "SYS_ADMIN" not in [str(item).upper() for item in drop]:
                         path = f"{base_path}/{idx}/securityContext/capabilities/drop/-"
-                        ops.append({"op": "add", "path": path, "value": "SYS_ADMIN"})
+                        container_ops.append({"op": "add", "path": path, "value": "SYS_ADMIN"})
                 else:
                     path = f"{base_path}/{idx}/securityContext/capabilities/drop"
-                    ops.append({"op": "add", "path": path, "value": ["SYS_ADMIN"]})
+                    container_ops.append({"op": "add", "path": path, "value": ["SYS_ADMIN"]})
                 add_list = caps.get("add")
                 if isinstance(add_list, list):
                     for pos in reversed(range(len(add_list))):
                         if str(add_list[pos]).upper() == "SYS_ADMIN":
-                            ops.append(
+                            container_ops.append(
                                 {
                                     "op": "remove",
                                     "path": f"{base_path}/{idx}/securityContext/capabilities/add/{pos}",
@@ -2566,9 +2486,10 @@ def _patch_drop_cap_sys_admin(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
                 if sec.get("allowPrivilegeEscalation") is not False:
                     path = f"{base_path}/{idx}/securityContext/allowPrivilegeEscalation"
                     op = "replace" if "allowPrivilegeEscalation" in sec else "add"
-                    ops.append({"op": op, "path": path, "value": False})
-            if ops:
-                return ops
+                    container_ops.append({"op": op, "path": path, "value": False})
+            ops.extend(container_ops)
+    if ops:
+        return ops
     raise PatchError("no container found to drop CAP_SYS_ADMIN")
 
 DANGEROUS_CAPABILITIES = ("NET_RAW", "NET_ADMIN", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_CHROOT")
@@ -2621,20 +2542,15 @@ def _patch_ssh_port(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
             ports = container.get("ports")
             if not isinstance(ports, list):
                 continue
-            for p_idx, port in enumerate(ports):
+            for p_idx in reversed(range(len(ports))):
+                port = ports[p_idx]
                 if not isinstance(port, dict):
                     continue
                 container_port = port.get("containerPort")
                 if isinstance(container_port, int) and container_port == 22:
                     ops.append({"op": "remove", "path": f"{base_path}/{c_idx}/ports/{p_idx}"})
-                    break
-                if isinstance(container_port, str) and container_port.strip() == "22":
+                elif isinstance(container_port, str) and container_port.strip() == "22":
                     ops.append({"op": "remove", "path": f"{base_path}/{c_idx}/ports/{p_idx}"})
-                    break
-            if ops:
-                break
-        if ops:
-            break
     if ops:
         return ops
     raise PatchError("no ssh port entries found")
@@ -2642,6 +2558,7 @@ def _patch_ssh_port(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 def _patch_run_as_user(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     containers_info = _find_containers(obj)
+    ops: List[Dict[str, Any]] = []
     for base_path, containers in containers_info:
         for idx, container in enumerate(containers):
             security = container.get("securityContext")
@@ -2649,15 +2566,19 @@ def _patch_run_as_user(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
                 run_as_user = security.get("runAsUser")
                 if not isinstance(run_as_user, int) or run_as_user == 0:
                     path = f"{base_path}/{idx}/securityContext/runAsUser"
-                    return [{"op": "add", "path": path, "value": 1000}]
+                    op = "replace" if "runAsUser" in security else "add"
+                    ops.append({"op": op, "path": path, "value": 1000})
             else:
                 path = f"{base_path}/{idx}/securityContext"
-                return [{"op": "add", "path": path, "value": {"runAsUser": 1000}}]
+                ops.append({"op": "add", "path": path, "value": {"runAsUser": 1000}})
+    if ops:
+        return ops
     raise PatchError("no container found to set runAsUser")
 
 
 def _patch_enforce_seccomp(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     containers_info = _find_containers(obj)
+    ops: List[Dict[str, Any]] = []
     for base_path, containers in containers_info:
         for idx, container in enumerate(containers):
             security = container.get("securityContext")
@@ -2666,10 +2587,13 @@ def _patch_enforce_seccomp(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
                 if isinstance(profile, dict) and profile.get("type") == "RuntimeDefault":
                     continue
                 path = f"{base_path}/{idx}/securityContext/seccompProfile"
-                return [{"op": "add", "path": path, "value": {"type": "RuntimeDefault"}}]
+                op = "replace" if "seccompProfile" in security else "add"
+                ops.append({"op": op, "path": path, "value": {"type": "RuntimeDefault"}})
             else:
                 path = f"{base_path}/{idx}/securityContext"
-                return [{"op": "add", "path": path, "value": {"seccompProfile": {"type": "RuntimeDefault"}}}]
+                ops.append({"op": "add", "path": path, "value": {"seccompProfile": {"type": "RuntimeDefault"}}})
+    if ops:
+        return ops
     raise PatchError("no container found to set seccompProfile")
 
 
@@ -2748,9 +2672,6 @@ def _find_volumes(obj: Dict[str, Any]) -> List[tuple[str, List[Dict[str, Any]]]]
                 template_candidates.append((direct_template, f"{base_path}/jobTemplate/template/spec"))
             for template_obj, next_path in template_candidates:
                 visit(template_obj.get("spec"), next_path)
-            direct_template = job_template.get("template")
-            if isinstance(direct_template, dict):
-                visit(direct_template.get("spec"), f"{base_path}/jobTemplate/template/spec")
 
     visit(obj.get("spec"), "/spec")
     return results
@@ -2834,9 +2755,45 @@ def _find_containers(obj: Dict[str, Any]) -> List[tuple[str, List[Dict[str, Any]
     return results
 
 
+RULE_STRATEGIES: Dict[str, RuleStrategy] = {
+    "dangling_service": _patch_dangling_service_policy,
+    "no_latest_tag": _patch_no_latest,
+    "no_privileged": _patch_no_privileged,
+    "read_only_root_fs": _patch_read_only_root_fs,
+    "run_as_non_root": _patch_run_as_non_root,
+    "set_requests_limits": _patch_set_requests_limits,
+    "no_allow_privilege_escalation": _patch_no_allow_privilege_escalation,
+    "no_host_network": _patch_no_host_network,
+    "no_host_pid": _patch_no_host_pid,
+    "no_host_ipc": _patch_no_host_ipc,
+    "drop_cap_sys_admin": _patch_drop_cap_sys_admin,
+    "no_host_path": _patch_no_host_path,
+    "no_host_ports": _patch_no_host_ports,
+    "run_as_user": _patch_run_as_user,
+    "enforce_seccomp": _patch_enforce_seccomp,
+    "drop_capabilities": _patch_drop_capabilities,
+    "non_existent_service_account": _patch_non_existent_service_account_policy,
+    "pdb_unhealthy_eviction_policy": _patch_pdb_unhealthy_eviction,
+    "job_ttl_after_finished": _patch_job_ttl_after_finished,
+    "unsafe_sysctls": _patch_unsafe_sysctls,
+    "no_anti_affinity": _patch_no_anti_affinity,
+    "deprecated_service_account_field": _patch_deprecated_service_account_field,
+    "env_var_secret": _patch_env_var_secret,
+    "liveness_port": _patch_liveness_port,
+    "readiness_port": _patch_readiness_port,
+    "startup_port": _patch_startup_port,
+    "invalid_target_ports": _patch_invalid_target_ports,
+    "mismatching_selector": _patch_mismatching_selector,
+    "ssh_port": _patch_ssh_port,
+    "duplicate_env_var": _patch_duplicate_env_var,
+}
+
+
 def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
     records: List[Dict[str, Any]] = []
     latencies: List[int] = []
+    attempt_counts: List[int] = []
+    retry_budgets: List[int] = []
     tokens_prompt: List[float] = []
     tokens_completion: List[float] = []
     tokens_total: List[float] = []
@@ -2851,6 +2808,16 @@ def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
         latency = entry.get("total_latency_ms")
         if isinstance(latency, (int, float)):
             latencies.append(int(latency))
+        attempt_count = entry.get("attempt_count")
+        if isinstance(attempt_count, (int, float)):
+            attempt_count = int(attempt_count)
+            record["attempt_count"] = attempt_count
+            attempt_counts.append(attempt_count)
+        retry_budget = entry.get("retry_budget")
+        if isinstance(retry_budget, (int, float)):
+            retry_budget = int(retry_budget)
+            record["retry_budget"] = retry_budget
+            retry_budgets.append(retry_budget)
         usage = entry.get("model_usage") if isinstance(entry.get("model_usage"), dict) else None
         if isinstance(usage, dict):
             prompt = usage.get("prompt_tokens")
@@ -2873,6 +2840,17 @@ def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
             "mean": statistics.mean(latencies),
             "p95": _percentile(latencies, 95),
             "max": max(latencies),
+        }
+    if attempt_counts:
+        summary["attempts"] = {
+            "total": sum(attempt_counts),
+            "retries": sum(max(count - 1, 0) for count in attempt_counts),
+            "max": max(attempt_counts),
+        }
+    if retry_budgets:
+        summary["retry_budget"] = {
+            "total": sum(retry_budgets),
+            "max": max(retry_budgets),
         }
     if tokens_total:
         summary["tokens"] = {
@@ -2902,12 +2880,6 @@ def _percentile(values: List[int], percentile: float) -> float:
     lower_value = ordered[lower]
     upper_value = ordered[upper]
     return float(lower_value + (upper_value - lower_value) * (rank - lower))
-
-
-GUIDANCE_DIR = Path(__file__).resolve().parents[2] / "docs" / "policy_guidance"
-GUIDANCE_STORE = GuidanceStore.default()
-GUIDANCE_RETRIEVER = GuidanceRetriever(GUIDANCE_STORE)
-FAILURE_CACHE = FailureCache()
 
 
 if __name__ == "__main__":  # pragma: no cover

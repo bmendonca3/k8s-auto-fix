@@ -120,6 +120,8 @@ class Verifier:
         if self.enable_rescan and self.gates.rescan and ok_schema and ok_policy and ok_safety:
             try:
                 ok_rescan = self._rescan_policy_cleared(patched_yaml, policy_id)
+                if not ok_rescan:
+                    errors.append("rescan failed: targeted policy still present")
             except Exception as exc:  # pragma: no cover - unexpected rescan error
                 ok_rescan = False
                 errors.append(f"rescan failed: {exc}")
@@ -217,9 +219,13 @@ class Verifier:
                 security = container.get("securityContext") if isinstance(container, dict) else None
                 run_as_non_root = security.get("runAsNonRoot") if isinstance(security, dict) else None
                 run_as_user = security.get("runAsUser") if isinstance(security, dict) else None
+                run_as_user_is_int = isinstance(run_as_user, int) and not isinstance(run_as_user, bool)
+                if run_as_user_is_int and run_as_user == 0:
+                    errors.append("container explicitly runs as root")
+                    continue
                 if run_as_non_root is True:
                     continue
-                if isinstance(run_as_user, int) and run_as_user != 0:
+                if run_as_user_is_int and run_as_user != 0:
                     continue
                 errors.append("container still permitted to run as root")
             return (not errors, errors)
@@ -459,6 +465,81 @@ class Verifier:
                     errors.append(f"{probe_field} port {label} not exposed in container ports")
             return (not errors, errors)
 
+        if policy_id == "invalid_target_ports":
+            spec = manifest.get("spec")
+            if isinstance(spec, dict):
+                service_ports = spec.get("ports")
+                if isinstance(service_ports, list):
+                    for index, port in enumerate(service_ports):
+                        if not isinstance(port, dict):
+                            continue
+                        name = port.get("name")
+                        if isinstance(name, str) and not self._valid_port_name(name):
+                            errors.append(f"service port {index} has invalid name {name!r}")
+                        target_port = port.get("targetPort")
+                        if isinstance(target_port, str):
+                            if target_port.strip().isdigit() or not self._valid_port_name(target_port):
+                                errors.append(f"service port {index} has invalid targetPort {target_port!r}")
+            for container in containers:
+                ports = container.get("ports")
+                if not isinstance(ports, list):
+                    continue
+                for index, port in enumerate(ports):
+                    if not isinstance(port, dict):
+                        continue
+                    name = port.get("name")
+                    if isinstance(name, str) and not self._valid_port_name(name):
+                        errors.append(f"container port {index} has invalid name {name!r}")
+            return (not errors, errors)
+
+        if policy_id == "mismatching_selector":
+            spec = manifest.get("spec")
+            selector = spec.get("selector") if isinstance(spec, dict) else None
+            match_labels = selector.get("matchLabels") if isinstance(selector, dict) else None
+            template_labels = self._template_labels_for_manifest(manifest)
+            if not isinstance(match_labels, dict) or not match_labels:
+                errors.append("selector.matchLabels missing after patch")
+            elif not isinstance(template_labels, dict) or not template_labels:
+                errors.append("template metadata labels missing after patch")
+            else:
+                for key, value in match_labels.items():
+                    if not isinstance(key, str) or not isinstance(value, str) or not value.strip():
+                        errors.append("selector.matchLabels contains invalid entry")
+                        continue
+                    if template_labels.get(key) != value:
+                        errors.append(f"selector label {key!r} does not match template labels")
+            return (not errors, errors)
+
+        if policy_id == "ssh_port":
+            for container in containers:
+                ports = container.get("ports")
+                if not isinstance(ports, list):
+                    continue
+                for port in ports:
+                    if not isinstance(port, dict):
+                        continue
+                    container_port = port.get("containerPort")
+                    if container_port == 22 or (isinstance(container_port, str) and container_port.strip() == "22"):
+                        errors.append("container still exposes SSH port 22")
+            return (not errors, errors)
+
+        if policy_id == "duplicate_env_var":
+            for container in containers:
+                env_list = container.get("env")
+                if not isinstance(env_list, list):
+                    continue
+                seen: set[str] = set()
+                for env_entry in env_list:
+                    if not isinstance(env_entry, dict):
+                        continue
+                    name = env_entry.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        continue
+                    if name in seen:
+                        errors.append(f"environment variable {name} is duplicated")
+                    seen.add(name)
+            return (not errors, errors)
+
         if policy_id == "unsafe_sysctls":
             specs = self._collect_pod_specs(manifest)
             for spec in specs:
@@ -529,6 +610,7 @@ class Verifier:
                 "deprecated_service_account_field",
                 "no_anti_affinity",
                 "job_ttl_after_finished",
+                "invalid_target_ports",
             }
             if normalise_policy_id(policy_id) not in allowed:
                 errors.append("no containers found in manifest")
@@ -619,6 +701,45 @@ class Verifier:
             if port_name and entry.get("name") == port_name:
                 return True
         return False
+
+    @staticmethod
+    def _valid_port_name(value: str) -> bool:
+        if not isinstance(value, str):
+            return False
+        candidate = value.strip()
+        if not candidate or len(candidate) > 15:
+            return False
+        if not any(char.isalpha() for char in candidate):
+            return False
+        if not all(char.islower() or char.isdigit() or char == "-" for char in candidate):
+            return False
+        return candidate[0].isalnum() and candidate[-1].isalnum()
+
+    @staticmethod
+    def _template_labels_for_manifest(manifest: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        spec = manifest.get("spec")
+        if not isinstance(spec, dict):
+            return None
+        template = spec.get("template")
+        if isinstance(template, dict):
+            metadata = template.get("metadata")
+            labels = metadata.get("labels") if isinstance(metadata, dict) else None
+            return labels if isinstance(labels, dict) else None
+        job_template = spec.get("jobTemplate")
+        if isinstance(job_template, dict):
+            job_spec = job_template.get("spec")
+            if isinstance(job_spec, dict):
+                template = job_spec.get("template")
+                if isinstance(template, dict):
+                    metadata = template.get("metadata")
+                    labels = metadata.get("labels") if isinstance(metadata, dict) else None
+                    return labels if isinstance(labels, dict) else None
+            direct_template = job_template.get("template")
+            if isinstance(direct_template, dict):
+                metadata = direct_template.get("metadata")
+                labels = metadata.get("labels") if isinstance(metadata, dict) else None
+                return labels if isinstance(labels, dict) else None
+        return None
 
     def _collect_volumes(self, manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
         volumes: List[Dict[str, Any]] = []

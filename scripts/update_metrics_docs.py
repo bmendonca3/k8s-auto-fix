@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 README_PATH = Path("README.md")
 PAPER_PATH = Path("paper/access.tex")
+OVERLEAF_PAPER_PATH = Path("paper/overleaf/paper/access.tex")
 
 README_MARKERS = ("<!-- METRICS_SECTION_START -->", "<!-- METRICS_SECTION_END -->")
 PAPER_MARKERS = ("% METRICS_EVAL_START", "% METRICS_EVAL_END")
@@ -35,13 +36,23 @@ def load_json(path: Path) -> Optional[object]:
         return None
 
 
-def format_ratio(numerator: int, denominator: int) -> Tuple[str, str]:
+def format_ratio(numerator: int, denominator: int, *, precision: int = 1) -> Tuple[str, str]:
     if denominator <= 0:
         return "0/0", "0%"
     pct = (numerator / denominator) * 100.0
     ratio = f"{numerator}/{denominator}"
-    percentage = f"{pct:.1f}%"
+    percentage = f"{pct:.{precision}f}%"
     return ratio, percentage
+
+
+def format_metric_number(value: object) -> str:
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def latex_int(value: int) -> str:
+    return f"{value:,}".replace(",", "{,}")
 
 
 def format_hours(value: Optional[float]) -> str:
@@ -67,7 +78,10 @@ def replace_section(text: str, start_marker: str, end_marker: str, replacement: 
 @dataclass
 class MetricsBundle:
     rules: Optional[Dict[str, object]]
+    rules_5000: Optional[Dict[str, object]]
+    supported_rules: Optional[Dict[str, object]]
     grok_full: Optional[Dict[str, object]]
+    grok5k: Optional[Dict[str, object]]
     schedule: Optional[Dict[str, object]]
     grok200_results: Optional[Sequence[Dict[str, object]]]
 
@@ -75,7 +89,10 @@ class MetricsBundle:
     def load(cls) -> "MetricsBundle":
         return cls(
             rules=load_json(Path("data/metrics_rules_full.json")),
+            rules_5000=load_json(Path("data/metrics_rules_5000.json")),
+            supported_rules=load_json(Path("data/outputs/batch_runs/secondary_supported/summary.json")),
             grok_full=load_json(Path("data/batch_runs/grok_full/metrics_grok_full.json")),
+            grok5k=load_json(Path("data/outputs/batch_runs/grok_5k/metrics_grok5k.json")),
             schedule=load_json(Path("data/metrics_schedule_compare.json")),
             grok200_results=load_json(Path("data/batch_runs/results_grok200.json")),
         )
@@ -86,29 +103,33 @@ def build_rules_summary(data: Optional[Dict[str, object]]) -> Optional[str]:
         return None
     detections = int(data.get("detections", 0))
     accepted = int(data.get("accepted", 0))
+    patches = int(data.get("patches", detections))
     median_ops = data.get("median_patch_ops")
-    ratio, percentage = format_ratio(accepted, detections)
-    median_text = str(median_ops) if median_ops is not None else "n/a"
+    _, acceptance_percentage = format_ratio(accepted, patches, precision=2)
+    median_text = format_metric_number(median_ops) if median_ops is not None else "n/a"
     return (
-        "- **Rules baseline (full corpus)** – `make benchmark-full` produces "
-        f"{ratio} fixes ({percentage}) with median JSON Patch length {median_text} "
-        "(`data/patches_rules_full.json`, `data/verified_rules_full.json`, `data/metrics_rules_full.json`)."
+        "- **Full rules + guardrails replay** – "
+        f"{accepted:,} / {patches:,} patched items accepted "
+        f"({acceptance_percentage}; auto-fix rate {float(data.get('auto_fix_rate', 0.0)):.4f} over "
+        f"{detections:,} detections; median patch ops {median_text}) from "
+        "`data/metrics_rules_full.json` (`patches_rules_full.json.gz`, `verified_rules_full.json.gz`)."
     )
 
 
-def build_grok_full_summary(data: Optional[Dict[str, object]]) -> Optional[str]:
+def build_simple_acceptance_summary(
+    data: Optional[Dict[str, object]],
+    *,
+    label: str,
+    source: str,
+) -> Optional[str]:
     if not isinstance(data, dict):
         return None
     detections = int(data.get("detections", 0))
     accepted = int(data.get("accepted", 0))
     median_ops = data.get("median_patch_ops")
     ratio, percentage = format_ratio(accepted, detections)
-    median_text = str(median_ops) if median_ops is not None else "n/a"
-    return (
-        "- **Grok full corpus** – `make benchmark-grok-full` covers the 1,313-case corpus with "
-        f"{ratio} accepted patches ({percentage}) and median JSON Patch length {median_text} "
-        "(`data/batch_runs/grok_full/metrics_grok_full.json`)."
-    )
+    median_text = format_metric_number(median_ops) if median_ops is not None else "n/a"
+    return f"- **{label}** – {ratio} accepted ({percentage}; median ops {median_text}) from `{source}`."
 
 
 def build_grok200_summary(results: Optional[Sequence[Dict[str, object]]]) -> Optional[str]:
@@ -181,52 +202,55 @@ def build_readme_section(metrics: MetricsBundle) -> str:
     rules_line = build_rules_summary(metrics.rules)
     if rules_line:
         bullets.append(rules_line)
-    grok_full_line = build_grok_full_summary(metrics.grok_full)
-    if grok_full_line:
-        bullets.append(grok_full_line)
-    grok200_line = build_grok200_summary(metrics.grok200_results)
-    if grok200_line:
-        bullets.append(grok200_line)
+    rules_5000_line = build_simple_acceptance_summary(
+        metrics.rules_5000,
+        label="Rules on the 5k extended corpus",
+        source="data/metrics_rules_5000.json",
+    )
+    if rules_5000_line:
+        bullets.append(rules_5000_line)
+    grok5k_line = build_simple_acceptance_summary(
+        metrics.grok5k,
+        label="Grok/xAI 5k proposer",
+        source="data/outputs/batch_runs/grok_5k/metrics_grok5k.json",
+    )
+    if grok5k_line:
+        bullets.append(grok5k_line)
+    supported_line = build_simple_acceptance_summary(
+        metrics.supported_rules,
+        label="Supported corpus (rules)",
+        source="data/outputs/batch_runs/secondary_supported/summary.json",
+    )
+    if supported_line:
+        bullets.append(supported_line)
     rank_line = extract_rank_summary(metrics.schedule)
     if rank_line:
         bullets.append(rank_line)
     telemetry_line = extract_telemetry_summary(metrics.schedule)
     if telemetry_line:
         bullets.append(telemetry_line)
-    bullets.append(
-        "- **Parallel rules baseline** – `scripts/parallel_runner.py` can propose and verify the corpus with "
-        "configurable `--jobs` (see `make benchmark-full JOBS=8` for an example run)."
-    )
-    bullets.append(
-        "- **Latency probes (`scripts/probe_grok_rate.py`)** – keep Grok/API concurrency under observed limits "
-        "before launching full-corpus batches."
-    )
     return "\n".join(bullets)
 
 
 def build_paper_paragraph(metrics: MetricsBundle) -> str:
     rules = metrics.rules if isinstance(metrics.rules, dict) else None
-    grok_full = metrics.grok_full if isinstance(metrics.grok_full, dict) else None
     schedule = metrics.schedule if isinstance(metrics.schedule, dict) else None
 
     parts: List[str] = []
-    if grok_full:
-        detections = int(grok_full.get("detections", 0))
-        accepted = int(grok_full.get("accepted", 0))
-        ratio, percentage = format_ratio(accepted, detections)
-        median_ops = grok_full.get("median_patch_ops")
-        median_part = f"a median of {median_ops} JSON Patch operations" if median_ops is not None else "stable patch sizes"
-        parts.append(
-            f"Running the full corpus of {detections:,} manifests with Grok-4 Fast plus rule guardrails yields "
-            f"{percentage} auto-fix ({ratio}) and {median_part}, with zero verifier regressions."
-        )
-
-    if rules and not grok_full:
+    if rules:
         detections = int(rules.get("detections", 0))
         accepted = int(rules.get("accepted", 0))
-        ratio, percentage = format_ratio(accepted, detections)
+        patches = int(rules.get("patches", detections))
+        _, acceptance_percentage = format_ratio(accepted, patches, precision=2)
+        median_ops = rules.get("median_patch_ops")
+        median_text = format_metric_number(median_ops) if median_ops is not None else "n/a"
+        safety_failures = int(rules.get("failed_safety", 0))
         parts.append(
-            f"The rules-only sweep covers {detections:,} detections with {percentage} acceptance ({ratio})."
+            f"Running the full corpus of {latex_int(detections)} detections in rules+guardrails mode yields "
+            f"{latex_int(accepted)} accepted out of {latex_int(patches)} patched items ({acceptance_percentage}; "
+            f"auto-fix rate {float(rules.get('auto_fix_rate', 0.0)):.4f} over detections) with a median "
+            f"of {median_text} JSON Patch operations and {safety_failures} safety failures "
+            "(all non-hostPath edge cases)."
         )
 
     telemetry = (schedule or {}).get("telemetry", {}) if schedule else {}
@@ -262,9 +286,26 @@ def build_paper_paragraph(metrics: MetricsBundle) -> str:
     )
 
 
+def replace_heading_section(text: str, heading: str, replacement: str) -> str:
+    heading_line = f"## {heading}"
+    start = text.find(heading_line)
+    if start == -1:
+        raise ValueError(f"Heading {heading_line!r} not found")
+    content_start = text.find("\n", start)
+    if content_start == -1:
+        return text[: start + len(heading_line)] + "\n\n" + replacement.strip() + "\n"
+    next_heading = text.find("\n## ", content_start + 1)
+    if next_heading == -1:
+        next_heading = len(text)
+    return text[: content_start + 1] + "\n" + replacement.strip() + "\n" + text[next_heading:]
+
+
 def update_readme(readme_path: Path, section: str) -> None:
     text = readme_path.read_text(encoding="utf-8")
-    updated = replace_section(text, README_MARKERS[0], README_MARKERS[1], section)
+    if README_MARKERS[0] in text and README_MARKERS[1] in text:
+        updated = replace_section(text, README_MARKERS[0], README_MARKERS[1], section)
+    else:
+        updated = replace_heading_section(text, "Metrics aligned to the paper (traceable in-repo)", section)
     readme_path.write_text(updated, encoding="utf-8")
 
 
@@ -286,17 +327,19 @@ def run(dry_run: bool = False, skip_readme: bool = False, skip_paper: bool = Fal
         "scheduler_telemetry": schedule_telemetry or {},
     }
 
+    if dry_run:
+        return readme_section, paper_paragraph
+
     dashboards_path = Path("data/dashboard_metrics.json")
     dashboards_path.parent.mkdir(parents=True, exist_ok=True)
     dashboards_path.write_text(json.dumps(dashboards_payload, indent=2), encoding="utf-8")
-
-    if dry_run:
-        return readme_section, paper_paragraph
 
     if not skip_readme:
         update_readme(README_PATH, readme_section)
     if not skip_paper:
         update_paper(PAPER_PATH, paper_paragraph)
+        if OVERLEAF_PAPER_PATH.exists():
+            update_paper(OVERLEAF_PAPER_PATH, paper_paragraph)
     return readme_section, paper_paragraph
 
 

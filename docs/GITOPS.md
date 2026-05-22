@@ -12,15 +12,28 @@ Proposed flow
 - Provide rollback hooks (revert PR or `kubectl rollout undo`) in case of post-merge validation failures.
 
 Command example
+Preview the writeback first:
 ```
 python scripts/gitops_writeback.py \
   --detections data/detections.json \
   --verified data/verified.json \
   --repo-root /path/to/your/manifest-repo \
-  --branch k8s-auto-fix/patches
+  --plan-out tmp/gitops-writeback-plan.json
+```
+
+Apply the accepted plan to a branch:
+```
+python scripts/gitops_writeback.py \
+  --detections data/detections.json \
+  --verified data/verified.json \
+  --repo-root /path/to/your/manifest-repo \
+  --branch k8s-auto-fix/patches \
+  --no-pr
 ```
 
 Notes
-- The script modifies only files under `--repo-root` and skips detections without on-disk manifest paths.
-- To automatically open a GitHub PR, install the `gh` CLI and stay authenticated.
-
+- `--dry-run` prints the plan to stdout. `--plan-out` writes the same plan as JSON and exits without changing files, branches, commits, or PRs.
+- The plan reports files that would be modified and skipped patches with reasons such as missing `manifest_path`, rejected patches, unsafe paths outside `--repo-root`, missing files, and invalid JSON Patch application.
+- In write mode, the script modifies only files under `--repo-root` and skips detections without on-disk manifest paths.
+- Add `--require-kubectl` in write mode to run `kubectl apply --dry-run=server -f <file>` for every modified manifest file before staging and committing.
+- PR creation is opt-in. Add `--create-pr` only after installing the `gh` CLI and authenticating to the host used by the repo remote (`github.com` or `github.gatech.edu`).
