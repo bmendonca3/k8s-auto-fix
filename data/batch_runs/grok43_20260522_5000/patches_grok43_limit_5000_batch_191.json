@@ -1,0 +1,4179 @@
+[
+  {
+    "id": "04776",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8488,
+    "total_latency_ms": 8488,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04777",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8479,
+    "total_latency_ms": 8479,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04778",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8512,
+    "total_latency_ms": 8512,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04779",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  },
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8427,
+    "total_latency_ms": 8427,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04780",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8455,
+    "total_latency_ms": 8455,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04781",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8613,
+    "total_latency_ms": 8613,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04782",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8433,
+    "total_latency_ms": 8433,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04783",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8363,
+    "total_latency_ms": 8363,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04784",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "reserved.cloud-tpus.google.com": "false",
+                "tf-version.cloud-tpus.google.com": "nightly"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/health-monitor:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "monitor",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                },
+                {
+                  "args": [
+                    "/bin/bash",
+                    "-c",
+                    "set -u\nset -e\nset -x\n\nexport PATH=$PATH:/root/google-cloud-sdk/bin\ngcloud source repos clone tf2-api-tests --project=xl-ml-test\ncd tf2-api-tests\npip3 install behave\nbehave -e ipynb_checkpoints --tags=-fails  -i aaa_connection\n"
+                  ],
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/tensorflow:nightly",
+                  "imagePullPolicy": "Always",
+                  "name": "train",
+                  "resources": {
+                    "limits": {
+                      "cloud-tpus.google.com/preemptible-v3": 8,
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    },
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "volumeMounts": [
+                    {
+                      "mountPath": "/dev/shm",
+                      "name": "dshm",
+                      "readOnly": false
+                    }
+                  ],
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "initContainers": [
+                {
+                  "env": [
+                    {
+                      "name": "POD_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_UID",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.uid"
+                        }
+                      }
+                    },
+                    {
+                      "name": "POD_NAMESPACE",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "name": "JOB_NAME",
+                      "valueFrom": {
+                        "fieldRef": {
+                          "fieldPath": "metadata.labels['job-name']"
+                        }
+                      }
+                    },
+                    {
+                      "name": "MODEL_DIR",
+                      "value": "$(OUTPUT_BUCKET)/tf-nightly/keras-api/connection/v3-8/$(JOB_NAME)"
+                    },
+                    {
+                      "name": "METRIC_CONFIG",
+                      "value": "{\n \"metric_collection_config\": {\n  \"default_aggregation_strategies\": [\n   \"final\"\n  ],\n  \"metric_to_aggregation_strategies\": {\n   \"examples_per_second\": [\n    \"average\"\n   ]\n  },\n  \"use_run_name_prefix\": true,\n  \"write_to_bigquery\": true\n },\n \"regression_test_config\": {\n  \"alert_for_failed_jobs\": true\n },\n \"test_name\": \"tf-nightly-keras-api-connection-v3-8\"\n}\n"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "gcs-buckets"
+                      }
+                    }
+                  ],
+                  "image": "gcr.io/xl-ml-test/publisher:stable",
+                  "imagePullPolicy": "Always",
+                  "name": "publisher",
+                  "resources": {
+                    "requests": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "limits": {
+                      "cpu": "500m",
+                      "memory": "256Mi"
+                    }
+                  },
+                  "securityContext": {
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "volumes": [
+                {
+                  "emptyDir": {
+                    "medium": "Memory"
+                  },
+                  "name": "dshm"
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8597,
+    "total_latency_ms": 8597,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04785",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8498,
+    "total_latency_ms": 8498,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04786",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8500,
+    "total_latency_ms": 8500,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04787",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8495,
+    "total_latency_ms": 8495,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04788",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8420,
+    "total_latency_ms": 8420,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04789",
+    "policy_id": "env_var_secret",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/1",
+        "value": {
+          "name": "GIT_SECRET_MOUNT_PATH",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "tekton-git",
+              "key": "git_secret_mount_path"
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8492,
+    "total_latency_ms": 8492,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04790",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/1",
+        "value": {
+          "name": "GIT_SECRET_MOUNT_PATH",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "tekton-git",
+              "key": "git_secret_mount_path"
+            }
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8379,
+    "total_latency_ms": 8379,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04791",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/1",
+        "value": {
+          "name": "GIT_SECRET_MOUNT_PATH",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "tekton-git",
+              "key": "git_secret_mount_path"
+            }
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8359,
+    "total_latency_ms": 8359,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04792",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8580,
+    "total_latency_ms": 8580,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04793",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8585,
+    "total_latency_ms": 8585,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04794",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8431,
+    "total_latency_ms": 8431,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04795",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8492,
+    "total_latency_ms": 8492,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04796",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8612,
+    "total_latency_ms": 8612,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04797",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8533,
+    "total_latency_ms": 8533,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04798",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8449,
+    "total_latency_ms": 8449,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04799",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8532,
+    "total_latency_ms": 8532,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "04800",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/1/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/2/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/3/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/4/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/5/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8513,
+    "total_latency_ms": 8513,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  }
+]

@@ -9,10 +9,15 @@ did not update paper-facing or canonical Grok-5k metrics.
 | --- | ---: | ---: | ---: | --- |
 | `data/batch_runs/grok43_20260521_50` | 50 | 50 | 100.0% | Passed the 50-detection gate. |
 | `data/batch_runs/grok43_20260521_200` | 200 | 171 | 85.5% | Passed the 170/200 gate. |
+| `data/batch_runs/grok43_20260522_smoke50` | 50 | 50 | 100.0% | Stable scanner-path smoke gate before 5k. |
+| `data/batch_runs/grok43_20260522_5000` | 5,000 | 4,473 | 89.46% | Full Grok 4.3 run; not promoted to paper-facing metrics. |
 
-The complete 5k Grok 4.3 result should be generated only after the scanner setup
-is pinned and repeatable. Keep historical Grok-5k artifacts intact until a full
-Grok 4.3 run is explicitly selected for publication.
+The complete 5k Grok 4.3 result now exists under a fresh namespace with stable
+scanner paths and run-manifest scanner metadata. Keep historical Grok-5k
+artifacts intact until this result is explicitly selected for publication.
+Pre-run probes are retained under `data/batch_runs/grok43_20260522_probe_c1`,
+`data/batch_runs/grok43_20260522_probe_c2`, and
+`data/batch_runs/grok43_20260522_probe_c4`.
 
 ## Failure Triage
 
@@ -27,6 +32,13 @@ Record `00120` is the one non-Cilium miss. It is a PostgreSQL StatefulSet
 `run_as_non_root` finding where an init container combines `runAsNonRoot: true`
 with `runAsUser: 0`. The verifier now rejects that contradiction directly instead
 of relying on the rescan gate to catch it.
+
+The 5k run rejected 527 records: 519 included safety failures, 13 included policy
+failures, and 2 included rescan failures. The most common failure family remains
+hostPath safety blocks for privileged infrastructure paths outside the verifier
+allowlist. The 5k run also exposed an optional patch-minimization crash on an
+invalid JSON Pointer; the minimizer now keeps the original patch instead of
+crashing a Grok batch.
 
 ## Reproducible Scanner Setup
 

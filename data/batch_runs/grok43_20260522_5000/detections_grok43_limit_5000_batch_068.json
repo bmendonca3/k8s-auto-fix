@@ -1,0 +1,177 @@
+[
+  {
+    "id": "01701",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0575.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: node-refiner-test\n  labels:\n    app: node-refiner\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: node-refiner\n  template:\n    metadata:\n      labels:\n        app: node-refiner\n    spec:\n      serviceAccountName: node-refiner-sa\n      containers:\n      - name: application\n        image: alisoliman/node-refiner:${IMAGE_TAGGED}\n        imagePullPolicy: Always\n        ports:\n        - name: health\n          containerPort: 9102\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /alive\n            port: health\n        env:\n        - name: LISTENING_PORT\n          value: '8080'\n        resources:\n          requests:\n            cpu: 50m\n            memory: 256Mi\n          limits:\n            cpu: 200m\n            memory: 512Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"application\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01702",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0582.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mattermost\n    role: mattermost-worker\n  name: mattermost-worker\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      role: mattermost-worker\n  template:\n    metadata:\n      labels:\n        app: mattermost\n        role: mattermost-worker\n    spec:\n      containers:\n      - image: __REGISTRY_IP__/mattermost-worker:5.21.0\n        name: mattermost-worker\n        ports:\n        - containerPort: 80\n          protocol: TCP\n        volumeMounts:\n        - name: config-volume\n          mountPath: /var/mattermost/config\n      volumes:\n      - name: config-volume\n        configMap:\n          name: mattermost-v1\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"mattermost-worker\" does not have a read-only root file system"
+  },
+  {
+    "id": "01703",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0582.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mattermost\n    role: mattermost-worker\n  name: mattermost-worker\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      role: mattermost-worker\n  template:\n    metadata:\n      labels:\n        app: mattermost\n        role: mattermost-worker\n    spec:\n      containers:\n      - image: __REGISTRY_IP__/mattermost-worker:5.21.0\n        name: mattermost-worker\n        ports:\n        - containerPort: 80\n          protocol: TCP\n        volumeMounts:\n        - name: config-volume\n          mountPath: /var/mattermost/config\n      volumes:\n      - name: config-volume\n        configMap:\n          name: mattermost-v1\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"mattermost-worker\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01704",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0582.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mattermost\n    role: mattermost-worker\n  name: mattermost-worker\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      role: mattermost-worker\n  template:\n    metadata:\n      labels:\n        app: mattermost\n        role: mattermost-worker\n    spec:\n      containers:\n      - image: __REGISTRY_IP__/mattermost-worker:5.21.0\n        name: mattermost-worker\n        ports:\n        - containerPort: 80\n          protocol: TCP\n        volumeMounts:\n        - name: config-volume\n          mountPath: /var/mattermost/config\n      volumes:\n      - name: config-volume\n        configMap:\n          name: mattermost-v1\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"mattermost-worker\" has cpu request 0"
+  },
+  {
+    "id": "01705",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0582.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mattermost\n    role: mattermost-worker\n  name: mattermost-worker\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      role: mattermost-worker\n  template:\n    metadata:\n      labels:\n        app: mattermost\n        role: mattermost-worker\n    spec:\n      containers:\n      - image: __REGISTRY_IP__/mattermost-worker:5.21.0\n        name: mattermost-worker\n        ports:\n        - containerPort: 80\n          protocol: TCP\n        volumeMounts:\n        - name: config-volume\n          mountPath: /var/mattermost/config\n      volumes:\n      - name: config-volume\n        configMap:\n          name: mattermost-v1\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"mattermost-worker\" has memory limit 0"
+  },
+  {
+    "id": "01706",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0583.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: aws-efa-k8s-device-plugin-daemonset\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      name: aws-efa-k8s-device-plugin\n  template:\n    metadata:\n      annotations:\n        scheduler.alpha.kubernetes.io/critical-pod: ''\n      labels:\n        name: aws-efa-k8s-device-plugin\n    spec:\n      serviceAccount: default\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: beta.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n            - matchExpressions:\n              - key: node.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n      containers:\n      - image: '%s.dkr.ecr.%s.%s/eks/aws-efa-k8s-device-plugin:v0.3.3'\n        name: aws-efa-k8s-device-plugin\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n        volumeMounts:\n        - name: device-plugin\n          mountPath: /var/lib/kubelet/device-plugins\n      volumes:\n      - name: device-plugin\n        hostPath:\n          path: /var/lib/kubelet/device-plugins\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"aws-efa-k8s-device-plugin\" does not have a read-only root file system"
+  },
+  {
+    "id": "01707",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0583.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: aws-efa-k8s-device-plugin-daemonset\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      name: aws-efa-k8s-device-plugin\n  template:\n    metadata:\n      annotations:\n        scheduler.alpha.kubernetes.io/critical-pod: ''\n      labels:\n        name: aws-efa-k8s-device-plugin\n    spec:\n      serviceAccount: default\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: beta.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n            - matchExpressions:\n              - key: node.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n      containers:\n      - image: '%s.dkr.ecr.%s.%s/eks/aws-efa-k8s-device-plugin:v0.3.3'\n        name: aws-efa-k8s-device-plugin\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n        volumeMounts:\n        - name: device-plugin\n          mountPath: /var/lib/kubelet/device-plugins\n      volumes:\n      - name: device-plugin\n        hostPath:\n          path: /var/lib/kubelet/device-plugins\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"aws-efa-k8s-device-plugin\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01708",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0583.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: aws-efa-k8s-device-plugin-daemonset\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      name: aws-efa-k8s-device-plugin\n  template:\n    metadata:\n      annotations:\n        scheduler.alpha.kubernetes.io/critical-pod: ''\n      labels:\n        name: aws-efa-k8s-device-plugin\n    spec:\n      serviceAccount: default\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: beta.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n            - matchExpressions:\n              - key: node.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n      containers:\n      - image: '%s.dkr.ecr.%s.%s/eks/aws-efa-k8s-device-plugin:v0.3.3'\n        name: aws-efa-k8s-device-plugin\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n        volumeMounts:\n        - name: device-plugin\n          mountPath: /var/lib/kubelet/device-plugins\n      volumes:\n      - name: device-plugin\n        hostPath:\n          path: /var/lib/kubelet/device-plugins\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"aws-efa-k8s-device-plugin\" has cpu request 0"
+  },
+  {
+    "id": "01709",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0583.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: aws-efa-k8s-device-plugin-daemonset\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      name: aws-efa-k8s-device-plugin\n  template:\n    metadata:\n      annotations:\n        scheduler.alpha.kubernetes.io/critical-pod: ''\n      labels:\n        name: aws-efa-k8s-device-plugin\n    spec:\n      serviceAccount: default\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: beta.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n            - matchExpressions:\n              - key: node.kubernetes.io/instance-type\n                operator: In\n                values:\n                - c5n.18xlarge\n                - c5n.metal\n                - g4dn.metal\n                - i3en.24xlarge\n                - i3en.metal\n                - inf1.24xlarge\n                - m5dn.24xlarge\n                - m5n.24xlarge\n                - p3dn.24xlarge\n                - r5dn.24xlarge\n                - r5n.24xlarge\n                - p4d.24xlarge\n      containers:\n      - image: '%s.dkr.ecr.%s.%s/eks/aws-efa-k8s-device-plugin:v0.3.3'\n        name: aws-efa-k8s-device-plugin\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n        volumeMounts:\n        - name: device-plugin\n          mountPath: /var/lib/kubelet/device-plugins\n      volumes:\n      - name: device-plugin\n        hostPath:\n          path: /var/lib/kubelet/device-plugins\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"aws-efa-k8s-device-plugin\" has memory limit 0"
+  },
+  {
+    "id": "01710",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0584.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20210421-8709509fc9\n        args:\n        - --blob-storage-workers=1\n        - --config-path=/etc/config/config.yaml\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --github-workers=5\n        - --job-config-path=/etc/job-config\n        - --kubernetes-blob-storage-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --slack-workers=1\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"crier\" does not have a read-only root file system"
+  },
+  {
+    "id": "01711",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0584.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20210421-8709509fc9\n        args:\n        - --blob-storage-workers=1\n        - --config-path=/etc/config/config.yaml\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --github-workers=5\n        - --job-config-path=/etc/job-config\n        - --kubernetes-blob-storage-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --slack-workers=1\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"crier\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01712",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0584.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20210421-8709509fc9\n        args:\n        - --blob-storage-workers=1\n        - --config-path=/etc/config/config.yaml\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --github-workers=5\n        - --job-config-path=/etc/job-config\n        - --kubernetes-blob-storage-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --slack-workers=1\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"crier\" has cpu request 0"
+  },
+  {
+    "id": "01713",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0584.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: crier\n  labels:\n    app: crier\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: crier\n  template:\n    metadata:\n      labels:\n        app: crier\n    spec:\n      serviceAccountName: crier\n      containers:\n      - name: crier\n        image: gcr.io/k8s-prow/crier:v20210421-8709509fc9\n        args:\n        - --blob-storage-workers=1\n        - --config-path=/etc/config/config.yaml\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-token-path=/etc/github/oauth\n        - --github-workers=5\n        - --job-config-path=/etc/job-config\n        - --kubernetes-blob-storage-workers=1\n        - --slack-token-file=/etc/slack/token\n        - --slack-workers=1\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: slack\n          mountPath: /etc/slack\n          readOnly: true\n      volumes:\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: slack\n        secret:\n          secretName: slack-token\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"crier\" has memory limit 0"
+  },
+  {
+    "id": "01714",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0587.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx/alpine\n    ports:\n    - containerPort: 80\n    readinessProbe:\n      httpGet:\n        path: /\n        port: 80\n      initialDelaySeconds: 5\n      periodSeconds: 10\n    livenessProbe:\n      tcpSocket:\n        port: 80\n      initialDelaySeconds: 15\n      periodSeconds: 20\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx/alpine\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01715",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0587.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx/alpine\n    ports:\n    - containerPort: 80\n    readinessProbe:\n      httpGet:\n        path: /\n        port: 80\n      initialDelaySeconds: 5\n      periodSeconds: 10\n    livenessProbe:\n      tcpSocket:\n        port: 80\n      initialDelaySeconds: 15\n      periodSeconds: 20\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "01716",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0587.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx/alpine\n    ports:\n    - containerPort: 80\n    readinessProbe:\n      httpGet:\n        path: /\n        port: 80\n      initialDelaySeconds: 5\n      periodSeconds: 10\n    livenessProbe:\n      tcpSocket:\n        port: 80\n      initialDelaySeconds: 15\n      periodSeconds: 20\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01717",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0587.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx/alpine\n    ports:\n    - containerPort: 80\n    readinessProbe:\n      httpGet:\n        path: /\n        port: 80\n      initialDelaySeconds: 5\n      periodSeconds: 10\n    livenessProbe:\n      tcpSocket:\n        port: 80\n      initialDelaySeconds: 15\n      periodSeconds: 20\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "01718",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0587.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx\n  labels:\n    app: nginx\nspec:\n  containers:\n  - name: nginx\n    image: nginx/alpine\n    ports:\n    - containerPort: 80\n    readinessProbe:\n      httpGet:\n        path: /\n        port: 80\n      initialDelaySeconds: 5\n      periodSeconds: 10\n    livenessProbe:\n      tcpSocket:\n        port: 80\n      initialDelaySeconds: 15\n      periodSeconds: 20\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "01719",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0588.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "01720",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0588.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "01721",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0588.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "01722",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0588.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "01723",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0588.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-flexvolume-driver-disallowed\n  labels:\n    app: nginx-flexvolume-driver\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n    volumeMounts:\n    - mountPath: /test\n      name: test\n      readOnly: true\n  volumes:\n  - name: test\n    flexVolume:\n      driver: example/customdriver\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "01724",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0590.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: label-sync\nspec:\n  jobTemplate:\n    template:\n      spec:\n        containers:\n        - name: label-sync\n          image: gcr.io/k8s-prow/label_sync:v20200812-8936af3bd4\n          args:\n          - --config=/etc/config/labels.yaml\n          - --confirm=true\n          - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n          - --token=/etc/github/oauth\n          volumeMounts:\n          - name: oauth\n            mountPath: /etc/github\n            readOnly: true\n          - name: config\n            mountPath: /etc/config\n            readOnly: true\n        volumes:\n        - name: oauth\n          secret:\n            secretName: oauth-token\n        - name: config\n          configMap:\n            name: label-config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"label-sync\" does not have a read-only root file system"
+  },
+  {
+    "id": "01725",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0590.yaml",
+    "manifest_yaml": "apiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: label-sync\nspec:\n  jobTemplate:\n    template:\n      spec:\n        containers:\n        - name: label-sync\n          image: gcr.io/k8s-prow/label_sync:v20200812-8936af3bd4\n          args:\n          - --config=/etc/config/labels.yaml\n          - --confirm=true\n          - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-incubator,kubernetes-sigs\n          - --token=/etc/github/oauth\n          volumeMounts:\n          - name: oauth\n            mountPath: /etc/github\n            readOnly: true\n          - name: config\n            mountPath: /etc/config\n            readOnly: true\n        volumes:\n        - name: oauth\n          secret:\n            secretName: oauth-token\n        - name: config\n          configMap:\n            name: label-config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"label-sync\" is not set to runAsNonRoot"
+  }
+]

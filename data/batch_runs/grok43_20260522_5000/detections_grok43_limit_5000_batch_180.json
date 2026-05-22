@@ -1,0 +1,177 @@
+[
+  {
+    "id": "04501",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2068.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ebs-csi-controller\n  namespace: kube-system\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: ebs-csi-controller\n  template:\n    metadata:\n      labels:\n        app: ebs-csi-controller\n    spec:\n      serviceAccount: ebs-csi-controller-sa\n      containers:\n      - name: ebs-plugin\n        image: amazon/aws-ebs-csi-driver:latest\n        args:\n        - --endpoint=$(CSI_ENDPOINT)\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock\n        - name: AWS_ACCESS_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: aws-secret\n              key: key_id\n              optional: true\n        - name: AWS_SECRET_ACCESS_KEY\n          valueFrom:\n            secretKeyRef:\n              name: aws-secret\n              key: access_key\n              optional: true\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n        ports:\n        - name: healthz\n          containerPort: 9808\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n          initialDelaySeconds: 10\n          timeoutSeconds: 3\n          periodSeconds: 10\n          failureThreshold: 5\n      - name: csi-provisioner\n        image: quay.io/k8scsi/csi-provisioner:v1.5.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --v=5\n        - --feature-gates=Topology=true\n        - --enable-leader-election\n        - --leader-election-type=leases\n        env:\n        - name: ADDRESS\n          value: /var/lib/csi/sockets/pluginproxy/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n      - name: csi-attacher\n        image: quay.io/k8scsi/csi-attacher:v1.2.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --v=5\n        - --leader-election=true\n        - --leader-election-type=leases\n        env:\n        - name: ADDRESS\n          value: /var/lib/csi/sockets/pluginproxy/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n      - name: liveness-probe\n        image: quay.io/k8scsi/livenessprobe:v1.1.0\n        args:\n        - --csi-address=/csi/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /csi\n      volumes:\n      - name: socket-dir\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"csi-provisioner\" has memory limit 0"
+  },
+  {
+    "id": "04502",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2068.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ebs-csi-controller\n  namespace: kube-system\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: ebs-csi-controller\n  template:\n    metadata:\n      labels:\n        app: ebs-csi-controller\n    spec:\n      serviceAccount: ebs-csi-controller-sa\n      containers:\n      - name: ebs-plugin\n        image: amazon/aws-ebs-csi-driver:latest\n        args:\n        - --endpoint=$(CSI_ENDPOINT)\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock\n        - name: AWS_ACCESS_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: aws-secret\n              key: key_id\n              optional: true\n        - name: AWS_SECRET_ACCESS_KEY\n          valueFrom:\n            secretKeyRef:\n              name: aws-secret\n              key: access_key\n              optional: true\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n        ports:\n        - name: healthz\n          containerPort: 9808\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n          initialDelaySeconds: 10\n          timeoutSeconds: 3\n          periodSeconds: 10\n          failureThreshold: 5\n      - name: csi-provisioner\n        image: quay.io/k8scsi/csi-provisioner:v1.5.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --v=5\n        - --feature-gates=Topology=true\n        - --enable-leader-election\n        - --leader-election-type=leases\n        env:\n        - name: ADDRESS\n          value: /var/lib/csi/sockets/pluginproxy/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n      - name: csi-attacher\n        image: quay.io/k8scsi/csi-attacher:v1.2.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --v=5\n        - --leader-election=true\n        - --leader-election-type=leases\n        env:\n        - name: ADDRESS\n          value: /var/lib/csi/sockets/pluginproxy/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n      - name: liveness-probe\n        image: quay.io/k8scsi/livenessprobe:v1.1.0\n        args:\n        - --csi-address=/csi/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /csi\n      volumes:\n      - name: socket-dir\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"ebs-plugin\" has memory limit 0"
+  },
+  {
+    "id": "04503",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2068.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ebs-csi-controller\n  namespace: kube-system\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: ebs-csi-controller\n  template:\n    metadata:\n      labels:\n        app: ebs-csi-controller\n    spec:\n      serviceAccount: ebs-csi-controller-sa\n      containers:\n      - name: ebs-plugin\n        image: amazon/aws-ebs-csi-driver:latest\n        args:\n        - --endpoint=$(CSI_ENDPOINT)\n        - --logtostderr\n        - --v=5\n        env:\n        - name: CSI_ENDPOINT\n          value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock\n        - name: AWS_ACCESS_KEY_ID\n          valueFrom:\n            secretKeyRef:\n              name: aws-secret\n              key: key_id\n              optional: true\n        - name: AWS_SECRET_ACCESS_KEY\n          valueFrom:\n            secretKeyRef:\n              name: aws-secret\n              key: access_key\n              optional: true\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n        ports:\n        - name: healthz\n          containerPort: 9808\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: healthz\n          initialDelaySeconds: 10\n          timeoutSeconds: 3\n          periodSeconds: 10\n          failureThreshold: 5\n      - name: csi-provisioner\n        image: quay.io/k8scsi/csi-provisioner:v1.5.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --v=5\n        - --feature-gates=Topology=true\n        - --enable-leader-election\n        - --leader-election-type=leases\n        env:\n        - name: ADDRESS\n          value: /var/lib/csi/sockets/pluginproxy/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n      - name: csi-attacher\n        image: quay.io/k8scsi/csi-attacher:v1.2.0\n        args:\n        - --csi-address=$(ADDRESS)\n        - --v=5\n        - --leader-election=true\n        - --leader-election-type=leases\n        env:\n        - name: ADDRESS\n          value: /var/lib/csi/sockets/pluginproxy/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /var/lib/csi/sockets/pluginproxy/\n      - name: liveness-probe\n        image: quay.io/k8scsi/livenessprobe:v1.1.0\n        args:\n        - --csi-address=/csi/csi.sock\n        volumeMounts:\n        - name: socket-dir\n          mountPath: /csi\n      volumes:\n      - name: socket-dir\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"liveness-probe\" has memory limit 0"
+  },
+  {
+    "id": "04504",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2069.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reviews-v2\n  labels:\n    app: reviews\n    version: v2\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: reviews\n      version: v2\n  template:\n    metadata:\n      labels:\n        app: reviews\n        version: v2\n    spec:\n      containers:\n      - name: reviews\n        image: docker.io/istio/examples-bookinfo-reviews-v2:1.16.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: LOG_DIR\n          value: /tmp/logs\n        ports:\n        - containerPort: 9080\n        volumeMounts:\n        - name: tmp\n          mountPath: /tmp\n        - name: wlp-output\n          mountPath: /opt/ibm/wlp/output\n      volumes:\n      - name: wlp-output\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"reviews\" does not have a read-only root file system"
+  },
+  {
+    "id": "04505",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2069.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reviews-v2\n  labels:\n    app: reviews\n    version: v2\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: reviews\n      version: v2\n  template:\n    metadata:\n      labels:\n        app: reviews\n        version: v2\n    spec:\n      containers:\n      - name: reviews\n        image: docker.io/istio/examples-bookinfo-reviews-v2:1.16.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: LOG_DIR\n          value: /tmp/logs\n        ports:\n        - containerPort: 9080\n        volumeMounts:\n        - name: tmp\n          mountPath: /tmp\n        - name: wlp-output\n          mountPath: /opt/ibm/wlp/output\n      volumes:\n      - name: wlp-output\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"reviews\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04506",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2069.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reviews-v2\n  labels:\n    app: reviews\n    version: v2\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: reviews\n      version: v2\n  template:\n    metadata:\n      labels:\n        app: reviews\n        version: v2\n    spec:\n      containers:\n      - name: reviews\n        image: docker.io/istio/examples-bookinfo-reviews-v2:1.16.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: LOG_DIR\n          value: /tmp/logs\n        ports:\n        - containerPort: 9080\n        volumeMounts:\n        - name: tmp\n          mountPath: /tmp\n        - name: wlp-output\n          mountPath: /opt/ibm/wlp/output\n      volumes:\n      - name: wlp-output\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"reviews\" has cpu request 0"
+  },
+  {
+    "id": "04507",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2069.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reviews-v2\n  labels:\n    app: reviews\n    version: v2\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: reviews\n      version: v2\n  template:\n    metadata:\n      labels:\n        app: reviews\n        version: v2\n    spec:\n      containers:\n      - name: reviews\n        image: docker.io/istio/examples-bookinfo-reviews-v2:1.16.0\n        imagePullPolicy: IfNotPresent\n        env:\n        - name: LOG_DIR\n          value: /tmp/logs\n        ports:\n        - containerPort: 9080\n        volumeMounts:\n        - name: tmp\n          mountPath: /tmp\n        - name: wlp-output\n          mountPath: /opt/ibm/wlp/output\n      volumes:\n      - name: wlp-output\n        emptyDir: {}\n      - name: tmp\n        emptyDir: {}\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"reviews\" has memory limit 0"
+  },
+  {
+    "id": "04508",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2072.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: burpsuite\nspec:\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: burpsuite\n        app.kubernetes.io/instance: burpsuite\n        app.kubernetes.io/version: 2022.1.1\n    spec:\n      containers:\n      - name: burpsuite\n        image: ghcr.io/k4yt3x/burpsuite:2022.1.1\n        env:\n        - name: DISPLAY\n          value: :0\n        ports:\n        - containerPort: 8080\n        volumeMounts:\n        - name: x11-unix\n          mountPath: /tmp/.X11-unix\n      volumes:\n      - name: x11-unix\n        hostPath:\n          path: /tmp/.X11-unix\n          type: Directory\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"burpsuite\" does not have a read-only root file system"
+  },
+  {
+    "id": "04509",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2072.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: burpsuite\nspec:\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: burpsuite\n        app.kubernetes.io/instance: burpsuite\n        app.kubernetes.io/version: 2022.1.1\n    spec:\n      containers:\n      - name: burpsuite\n        image: ghcr.io/k4yt3x/burpsuite:2022.1.1\n        env:\n        - name: DISPLAY\n          value: :0\n        ports:\n        - containerPort: 8080\n        volumeMounts:\n        - name: x11-unix\n          mountPath: /tmp/.X11-unix\n      volumes:\n      - name: x11-unix\n        hostPath:\n          path: /tmp/.X11-unix\n          type: Directory\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"burpsuite\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04510",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2072.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: burpsuite\nspec:\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: burpsuite\n        app.kubernetes.io/instance: burpsuite\n        app.kubernetes.io/version: 2022.1.1\n    spec:\n      containers:\n      - name: burpsuite\n        image: ghcr.io/k4yt3x/burpsuite:2022.1.1\n        env:\n        - name: DISPLAY\n          value: :0\n        ports:\n        - containerPort: 8080\n        volumeMounts:\n        - name: x11-unix\n          mountPath: /tmp/.X11-unix\n      volumes:\n      - name: x11-unix\n        hostPath:\n          path: /tmp/.X11-unix\n          type: Directory\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"burpsuite\" has cpu request 0"
+  },
+  {
+    "id": "04511",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2072.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: burpsuite\nspec:\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: burpsuite\n        app.kubernetes.io/instance: burpsuite\n        app.kubernetes.io/version: 2022.1.1\n    spec:\n      containers:\n      - name: burpsuite\n        image: ghcr.io/k4yt3x/burpsuite:2022.1.1\n        env:\n        - name: DISPLAY\n          value: :0\n        ports:\n        - containerPort: 8080\n        volumeMounts:\n        - name: x11-unix\n          mountPath: /tmp/.X11-unix\n      volumes:\n      - name: x11-unix\n        hostPath:\n          path: /tmp/.X11-unix\n          type: Directory\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"burpsuite\" has memory limit 0"
+  },
+  {
+    "id": "04512",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"project-app\" does not have a read-only root file system"
+  },
+  {
+    "id": "04513",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"project-service\" does not have a read-only root file system"
+  },
+  {
+    "id": "04514",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"project-app\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04515",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"project-service\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04516",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"project-app\" has cpu request 0"
+  },
+  {
+    "id": "04517",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"project-service\" has cpu request 0"
+  },
+  {
+    "id": "04518",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"project-app\" has memory limit 0"
+  },
+  {
+    "id": "04519",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2073.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: project-dep\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: project-app\n  template:\n    metadata:\n      labels:\n        app: project-app\n    spec:\n      volumes:\n      - name: shared-data\n        persistentVolumeClaim:\n          claimName: local-claim\n      - name: config\n        configMap:\n          name: project-app-config\n          items:\n          - key: app.properties\n            path: config.js\n      containers:\n      - name: project-app\n        image: robsondepaula/project:1_13\n        ports:\n        - containerPort: 80\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n        - name: config\n          mountPath: /usr/share/nginx/html/config.js\n          subPath: config.js\n      - name: project-service\n        image: robsondepaula/project-service:1_13\n        ports:\n        - containerPort: 3001\n        volumeMounts:\n        - name: shared-data\n          mountPath: /data\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"project-service\" has memory limit 0"
+  },
+  {
+    "id": "04520",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2074.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: buildkitd\nspec:\n  containers:\n  - name: buildkitd\n    image: moby/buildkit:master\n    readinessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    livenessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    securityContext:\n      privileged: true\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"buildkitd\" does not have a read-only root file system"
+  },
+  {
+    "id": "04521",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2074.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: buildkitd\nspec:\n  containers:\n  - name: buildkitd\n    image: moby/buildkit:master\n    readinessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    livenessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    securityContext:\n      privileged: true\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"buildkitd\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "04522",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2074.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: buildkitd\nspec:\n  containers:\n  - name: buildkitd\n    image: moby/buildkit:master\n    readinessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    livenessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    securityContext:\n      privileged: true\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"buildkitd\" is privileged"
+  },
+  {
+    "id": "04523",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2074.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: buildkitd\nspec:\n  containers:\n  - name: buildkitd\n    image: moby/buildkit:master\n    readinessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    livenessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    securityContext:\n      privileged: true\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"buildkitd\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04524",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2074.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: buildkitd\nspec:\n  containers:\n  - name: buildkitd\n    image: moby/buildkit:master\n    readinessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    livenessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    securityContext:\n      privileged: true\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"buildkitd\" has cpu request 0"
+  },
+  {
+    "id": "04525",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2074.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: buildkitd\nspec:\n  containers:\n  - name: buildkitd\n    image: moby/buildkit:master\n    readinessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    livenessProbe:\n      exec:\n        command:\n        - buildctl\n        - debug\n        - workers\n      initialDelaySeconds: 5\n      periodSeconds: 30\n    securityContext:\n      privileged: true\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"buildkitd\" has memory limit 0"
+  }
+]

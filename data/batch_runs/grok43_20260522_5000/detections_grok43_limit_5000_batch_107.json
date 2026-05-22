@@ -1,0 +1,177 @@
+[
+  {
+    "id": "02676",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: test-${storageClass}\nspec:\n  selector:\n    matchLabels:\n      app: test-${storageClass}\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: test-${storageClass}\n    spec:\n      containers:\n      - name: nginx\n        image: sreworks-registry.cn-beijing.cr.aliyuncs.com/mirror/alpine:latest\n        command:\n        - df\n        volumeMounts:\n        - name: test\n          mountPath: /test\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "02677",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: test-${storageClass}\nspec:\n  selector:\n    matchLabels:\n      app: test-${storageClass}\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: test-${storageClass}\n    spec:\n      containers:\n      - name: nginx\n        image: sreworks-registry.cn-beijing.cr.aliyuncs.com/mirror/alpine:latest\n        command:\n        - df\n        volumeMounts:\n        - name: test\n          mountPath: /test\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02678",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: test-${storageClass}\nspec:\n  selector:\n    matchLabels:\n      app: test-${storageClass}\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: test-${storageClass}\n    spec:\n      containers:\n      - name: nginx\n        image: sreworks-registry.cn-beijing.cr.aliyuncs.com/mirror/alpine:latest\n        command:\n        - df\n        volumeMounts:\n        - name: test\n          mountPath: /test\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "02679",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: test-${storageClass}\nspec:\n  selector:\n    matchLabels:\n      app: test-${storageClass}\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: test-${storageClass}\n    spec:\n      containers:\n      - name: nginx\n        image: sreworks-registry.cn-beijing.cr.aliyuncs.com/mirror/alpine:latest\n        command:\n        - df\n        volumeMounts:\n        - name: test\n          mountPath: /test\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "02680",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1091.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: trousseau-hcvault\n  namespace: kube-system\n  labels:\n    tier: control-plane\n    app: trousseau-hcvault\nspec:\n  selector:\n    matchLabels:\n      name: trousseau-hcvault\n  template:\n    metadata:\n      labels:\n        name: trousseau-hcvault\n    spec:\n      containers:\n      - name: trousseau-hcvault\n        image: ghcr.io/ondat/trousseau:v1.1.0\n        imagePullPolicy: Always\n        env:\n        - name: VAULT_NAMESPACE\n          value: admin\n        - name: VAULT_SKIP_VERIFY\n          value: 'false'\n        args:\n        - -v=5\n        - --config-file-path=/opt/vault-kms/config.yaml\n        - --listen-addr=unix:///opt/vault-kms/vaultkms.socket\n        - --zap-encoder=json\n        - --v=3\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n          readOnlyRootFilesystem: true\n          runAsUser: 0\n        ports:\n        - containerPort: 8787\n          protocol: TCP\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8787\n          failureThreshold: 3\n          periodSeconds: 10\n        resources:\n          requests:\n            cpu: 50m\n            memory: 64Mi\n          limits:\n            cpu: 300m\n            memory: 256Mi\n        volumeMounts:\n        - name: vault-kms\n          mountPath: /opt/vault-kms\n      volumes:\n      - name: vault-kms\n        hostPath:\n          path: /opt/vault-kms\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: node-role.kubernetes.io/control-plane\n                operator: Exists\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"trousseau-hcvault\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02681",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1092.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"wrk\" is using an invalid container image, \"williamyeh/wrk\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "02682",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1092.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"wrk\" does not have a read-only root file system"
+  },
+  {
+    "id": "02683",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1092.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"wrk\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02684",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1092.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"wrk\" has cpu request 0"
+  },
+  {
+    "id": "02685",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1092.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: tool-wrk\n  labels:\n    app: tool-wrk\n    rel: dev\nspec:\n  containers:\n  - name: wrk\n    image: williamyeh/wrk\n    command:\n    - /bin/sh\n    - -c\n    - --\n    args:\n    - while :; do sleep 365d; done\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"wrk\" has memory limit 0"
+  },
+  {
+    "id": "02686",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"jenkins\" is using an invalid container image, \"andreamendoza/modified-jenkins:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "02687",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"dind\" does not have a read-only root file system"
+  },
+  {
+    "id": "02688",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"jenkins\" does not have a read-only root file system"
+  },
+  {
+    "id": "02689",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "privilege-escalation-container",
+    "violation_text": "container \"dind\" is Privileged hence allows privilege escalation."
+  },
+  {
+    "id": "02690",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "privileged-container",
+    "violation_text": "container \"dind\" is privileged"
+  },
+  {
+    "id": "02691",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"dind\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02692",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"jenkins\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02693",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"dind\" has cpu request 0"
+  },
+  {
+    "id": "02694",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"jenkins\" has cpu request 0"
+  },
+  {
+    "id": "02695",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"dind\" has memory limit 0"
+  },
+  {
+    "id": "02696",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: jenkins\n  labels:\n    app: jenkins\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: jenkins\n  template:\n    metadata:\n      labels:\n        app: jenkins\n    spec:\n      volumes:\n      - name: dind-storage\n        emptyDir: {}\n      containers:\n      - name: jenkins\n        image: andreamendoza/modified-jenkins:latest\n        ports:\n        - containerPort: 8080\n        - containerPort: 50000\n        env:\n        - name: DOCKER_HOST\n          value: tcp://localhost:2375\n      - name: dind\n        image: docker:18.05-dind\n        securityContext:\n          privileged: true\n        volumeMounts:\n        - name: dind-storage\n          mountPath: /var/lib/docker\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"jenkins\" has memory limit 0"
+  },
+  {
+    "id": "02697",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1097.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: canary-demo\n  labels:\n    app: canary-demo\nspec:\n  selector:\n    matchLabels:\n      app: canary-demo\n  template:\n    metadata:\n      labels:\n        app: canary-demo\n    spec:\n      containers:\n      - name: container\n        image: canary-demo:1\n        imagePullPolicy: Never\n        ports:\n        - containerPort: 8080\n        resources:\n          limits:\n            memory: 128M\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"container\" does not have a read-only root file system"
+  },
+  {
+    "id": "02698",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1097.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: canary-demo\n  labels:\n    app: canary-demo\nspec:\n  selector:\n    matchLabels:\n      app: canary-demo\n  template:\n    metadata:\n      labels:\n        app: canary-demo\n    spec:\n      containers:\n      - name: container\n        image: canary-demo:1\n        imagePullPolicy: Never\n        ports:\n        - containerPort: 8080\n        resources:\n          limits:\n            memory: 128M\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"container\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "02699",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1097.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: canary-demo\n  labels:\n    app: canary-demo\nspec:\n  selector:\n    matchLabels:\n      app: canary-demo\n  template:\n    metadata:\n      labels:\n        app: canary-demo\n    spec:\n      containers:\n      - name: container\n        image: canary-demo:1\n        imagePullPolicy: Never\n        ports:\n        - containerPort: 8080\n        resources:\n          limits:\n            memory: 128M\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"container\" has cpu request 0"
+  },
+  {
+    "id": "02700",
+    "manifest_path": "data/manifests/the_stack_sample/sample_1098.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: cronjob\nspec:\n  template:\n    spec:\n      serviceAccount: k8sland\n      containers:\n      - name: lab\n        image: k8sland/verifier:v1.2.1\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/verifier\n        - --u=fernand\n        - --l=cronjob\n        - --s\n        volumeMounts:\n        - mountPath: /assets\n          name: assets\n      volumes:\n      - name: assets\n        secret:\n          secretName: cronjob\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"lab\" does not have a read-only root file system"
+  }
+]

@@ -1,0 +1,1529 @@
+[
+  {
+    "id": "02276",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "check-acr-sync",
+                  "image": "hmctspublic.azurecr.io/check-acr-sync:dbbbwb",
+                  "imagePullPolicy": "IfNotPresent",
+                  "resources": {
+                    "requests": {
+                      "memory": "64Mi",
+                      "cpu": "250m"
+                    },
+                    "limits": {
+                      "memory": "256Mi",
+                      "cpu": "500m"
+                    }
+                  },
+                  "env": [
+                    {
+                      "name": "SLACK_WEBHOOK",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "monitoring-values",
+                          "key": "slack-webhook"
+                        }
+                      }
+                    },
+                    {
+                      "name": "SLACK_ICON",
+                      "value": "flux"
+                    },
+                    {
+                      "name": "ACR_MAX_RESULTS",
+                      "value": "3000"
+                    },
+                    {
+                      "name": "ACR_SYNC_DEBUG",
+                      "value": "true"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "secretRef": {
+                        "name": "acr-sync"
+                      }
+                    }
+                  ],
+                  "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "runAsNonRoot": true
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8547,
+    "total_latency_ms": 8547,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02277",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/schedule",
+        "value": "0 0 * * *"
+      },
+      {
+        "op": "add",
+        "path": "/spec/jobTemplate/spec",
+        "value": {
+          "template": {
+            "spec": {
+              "containers": [
+                {
+                  "name": "check-acr-sync",
+                  "image": "hmctspublic.azurecr.io/check-acr-sync:dbbbwb",
+                  "imagePullPolicy": "IfNotPresent",
+                  "resources": {
+                    "requests": {
+                      "memory": "64Mi",
+                      "cpu": "250m"
+                    },
+                    "limits": {
+                      "memory": "256Mi",
+                      "cpu": "500m"
+                    }
+                  },
+                  "env": [
+                    {
+                      "name": "SLACK_WEBHOOK",
+                      "valueFrom": {
+                        "secretKeyRef": {
+                          "name": "monitoring-values",
+                          "key": "slack-webhook"
+                        }
+                      }
+                    },
+                    {
+                      "name": "SLACK_ICON",
+                      "value": "flux"
+                    },
+                    {
+                      "name": "ACR_MAX_RESULTS",
+                      "value": "3000"
+                    },
+                    {
+                      "name": "ACR_SYNC_DEBUG",
+                      "value": "true"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "secretRef": {
+                        "name": "acr-sync"
+                      }
+                    }
+                  ],
+                  "securityContext": {
+                    "runAsNonRoot": true,
+                    "privileged": false,
+                    "capabilities": {
+                      "drop": [
+                        "ALL",
+                        "NET_RAW",
+                        "NET_ADMIN",
+                        "SYS_ADMIN",
+                        "SYS_MODULE",
+                        "SYS_PTRACE",
+                        "SYS_CHROOT"
+                      ]
+                    },
+                    "allowPrivilegeEscalation": false,
+                    "readOnlyRootFilesystem": true
+                  }
+                }
+              ],
+              "restartPolicy": "OnFailure"
+            }
+          }
+        }
+      },
+      {
+        "op": "remove",
+        "path": "/spec/jobTemplate/template"
+      },
+      {
+        "op": "replace",
+        "path": "/apiVersion",
+        "value": "batch/v1"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8598,
+    "total_latency_ms": 8598,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02278",
+    "policy_id": "no_latest_tag",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "localhost:5000/fortunes:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8546,
+    "total_latency_ms": 8546,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02279",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "localhost:5000/fortunes:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8461,
+    "total_latency_ms": 8461,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02280",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "localhost:5000/fortunes:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8472,
+    "total_latency_ms": 8472,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02281",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "localhost:5000/fortunes:stable"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8621,
+    "total_latency_ms": 8621,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02282",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "localhost:5000/fortunes:stable"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8589,
+    "total_latency_ms": 8589,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02283",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "add": [
+              "IPC_LOCK"
+            ],
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8527,
+    "total_latency_ms": 8527,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02284",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "add": [
+              "IPC_LOCK"
+            ],
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "runAsNonRoot": true,
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8497,
+    "total_latency_ms": 8497,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02285",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "add": [
+              "IPC_LOCK"
+            ],
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8605,
+    "total_latency_ms": 8605,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02286",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "add": [
+              "IPC_LOCK"
+            ],
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8463,
+    "total_latency_ms": 8463,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02287",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/0",
+        "value": {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "mysql-root-password-secret",
+              "key": "mysql_root_password"
+            }
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8457,
+    "total_latency_ms": 8457,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02288",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/0",
+        "value": {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "mysql-root-password-secret",
+              "key": "mysql_root_password"
+            }
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8530,
+    "total_latency_ms": 8530,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02289",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/0",
+        "value": {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "mysql-root-password-secret",
+              "key": "mysql_root_password"
+            }
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8425,
+    "total_latency_ms": 8425,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02290",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/env/0",
+        "value": {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "mysql-root-password-secret",
+              "key": "mysql_root_password"
+            }
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8412,
+    "total_latency_ms": 8412,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02291",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8490,
+    "total_latency_ms": 8490,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02292",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8594,
+    "total_latency_ms": 8594,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02293",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8458,
+    "total_latency_ms": 8458,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02294",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8428,
+    "total_latency_ms": 8428,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02295",
+    "policy_id": "no_latest_tag",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "skaffold-hello:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8387,
+    "total_latency_ms": 8387,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02296",
+    "policy_id": "read_only_root_fs",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "readOnlyRootFilesystem": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "skaffold-hello:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8427,
+    "total_latency_ms": 8427,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02297",
+    "policy_id": "run_as_non_root",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "runAsNonRoot": true,
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "skaffold-hello:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8450,
+    "total_latency_ms": 8450,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02298",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "skaffold-hello:stable"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8564,
+    "total_latency_ms": 8564,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02299",
+    "policy_id": "set_requests_limits",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "privileged": false,
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "skaffold-hello:stable"
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8515,
+    "total_latency_ms": 8515,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  },
+  {
+    "id": "02300",
+    "policy_id": "no_latest_tag",
+    "source": "grok",
+    "hardened": true,
+    "patch": [
+      {
+        "op": "replace",
+        "path": "/spec/containers/0/image",
+        "value": "busybox:stable"
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/securityContext",
+        "value": {
+          "capabilities": {
+            "drop": [
+              "ALL",
+              "NET_RAW",
+              "NET_ADMIN",
+              "SYS_ADMIN",
+              "SYS_MODULE",
+              "SYS_PTRACE",
+              "SYS_CHROOT"
+            ]
+          },
+          "privileged": false,
+          "allowPrivilegeEscalation": false,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/containers/0/resources",
+        "value": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "attempt_count": 3,
+    "retry_budget": 3,
+    "latency_ms": 8504,
+    "total_latency_ms": 8504,
+    "attempt_errors": [
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "Client error '403 Forbidden' for url 'https://api.x.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+    ]
+  }
+]

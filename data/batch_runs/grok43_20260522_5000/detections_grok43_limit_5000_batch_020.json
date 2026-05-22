@@ -1,0 +1,177 @@
+[
+  {
+    "id": "00501",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0006.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20210414-378dc3ffc3\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"statusreconciler\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00502",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0006.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20210414-378dc3ffc3\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"statusreconciler\" has cpu request 0"
+  },
+  {
+    "id": "00503",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0006.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: statusreconciler\n  labels:\n    app: statusreconciler\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: statusreconciler\n  template:\n    metadata:\n      labels:\n        app: statusreconciler\n    spec:\n      serviceAccountName: statusreconciler\n      containers:\n      - name: statusreconciler\n        image: gcr.io/k8s-prow/status-reconciler:v20210414-378dc3ffc3\n        imagePullPolicy: Always\n        args:\n        - --dry-run=false\n        - --continue-on-error=true\n        - --plugin-config=/etc/plugins/plugins.yaml\n        - --config-path=/etc/config/config.yaml\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --job-config-path=/etc/job-config\n        - --denylist=kubernetes/kubernetes\n        volumeMounts:\n        - name: oauth\n          mountPath: /etc/github\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n      volumes:\n      - name: oauth\n        secret:\n          secretName: oauth-token\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"statusreconciler\" has memory limit 0"
+  },
+  {
+    "id": "00504",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"healthcheck-ready\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00505",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"holder-vcs-add-profiles\" is using an invalid container image, \"alpine:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00506",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"wait\" is using an invalid container image, \"busybox\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00507",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"healthcheck-ready\" does not have a read-only root file system"
+  },
+  {
+    "id": "00508",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"holder-vcs-add-profiles\" does not have a read-only root file system"
+  },
+  {
+    "id": "00509",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"wait\" does not have a read-only root file system"
+  },
+  {
+    "id": "00510",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"healthcheck-ready\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00511",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"holder-vcs-add-profiles\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00512",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"wait\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00513",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"healthcheck-ready\" has cpu request 0"
+  },
+  {
+    "id": "00514",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"holder-vcs-add-profiles\" has cpu request 0"
+  },
+  {
+    "id": "00515",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"wait\" has cpu request 0"
+  },
+  {
+    "id": "00516",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"healthcheck-ready\" has memory limit 0"
+  },
+  {
+    "id": "00517",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"holder-vcs-add-profiles\" has memory limit 0"
+  },
+  {
+    "id": "00518",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0013.yaml",
+    "manifest_yaml": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: holder-vcs-add-profiles\nspec:\n  template:\n    spec:\n      volumes:\n      - name: script\n        configMap:\n          name: holder-vcs-add-profiles-script\n      initContainers:\n      - name: wait\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - sh\n        args:\n        - -c\n        - sleep 5\n      - name: healthcheck-ready\n        image: busybox\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - -c\n        - 'while [[ \"$(wget -T 5 -S --spider http://${HOLDER_VCS_SERVICE_HOST}/healthcheck\n          2>&1 | grep ''200 OK'')\" == \"\" ]];\n\n          do echo \"waiting for endpoint\";\n\n          sleep 5;\n\n          done;\n\n          '\n      containers:\n      - name: holder-vcs-add-profiles\n        image: alpine:latest\n        imagePullPolicy: IfNotPresent\n        command:\n        - /bin/sh\n        args:\n        - /opt/vcs_holder_configure.sh\n        volumeMounts:\n        - name: script\n          mountPath: /opt\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"wait\" has memory limit 0"
+  },
+  {
+    "id": "00519",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0014.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "00520",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0014.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "00521",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0014.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "00522",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0014.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "00523",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0014.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-654\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "00524",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0015.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"pipeline\" does not have a read-only root file system"
+  },
+  {
+    "id": "00525",
+    "manifest_path": "data/manifests/the_stack_sample/sample_0015.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: prow-pipeline\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: prow-pipeline\n  template:\n    metadata:\n      labels:\n        app: prow-pipeline\n    spec:\n      serviceAccountName: prow-pipeline\n      containers:\n      - name: pipeline\n        image: gcr.io/k8s-prow/pipeline:v20210525-8b942ff77a\n        args:\n        - --all-contexts\n        - --config=/etc/prow-config/config.yaml\n        env:\n        - name: KUBECONFIG\n          value: /etc/kubeconfig/config\n        volumeMounts:\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - mountPath: /etc/prow-config\n          name: prow-config\n          readOnly: true\n      volumes:\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: kubeconfig\n      - name: prow-config\n        configMap:\n          name: config\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"pipeline\" is not set to runAsNonRoot"
+  }
+]

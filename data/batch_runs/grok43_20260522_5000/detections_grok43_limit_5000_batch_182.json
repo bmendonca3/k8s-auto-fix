@@ -1,0 +1,177 @@
+[
+  {
+    "id": "04551",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2088.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cassandra-stress-normal\n  labels:\n    app: cassandra-stress\nspec:\n  volumes:\n  - name: cassandra-stress-profile-volume\n    configMap:\n      name: cassandra-stress-normal\n  securityContext:\n    fsGroup: 1\n    runAsNonRoot: true\n    runAsUser: 1006\n    supplementalGroups:\n    - 1\n  containers:\n  - name: cassie1-cassandra-stress\n    image: cassandra\n    imagePullPolicy: IfNotPresent\n    securityContext:\n      capabilities:\n        add:\n        - IPC_LOCK\n    command:\n    - /bin/sh\n    args:\n    - -c\n    - cassandra-stress 'user profile=/opt/cassandra-stress/normal_stress.yaml ops(insert=10,query_by_sub_id=8)\n      duration=120m cl=one -node cassandra-demo -mode native cql3 user=bench password=monbench\n      -rate threads=30 -pop seq=0..100M -tokenrange -graph file=/tmp/stress-normal.html'\n      && echo END && while true ; do sleep 60; done\n    resources:\n      limits:\n        cpu: '3'\n        memory: 8Gi\n      requests:\n        cpu: '3'\n        memory: 8Gi\n    volumeMounts:\n    - name: cassandra-stress-profile-volume\n      mountPath: /opt/cassandra-stress\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"cassie1-cassandra-stress\" does not have a read-only root file system"
+  },
+  {
+    "id": "04552",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "env-var-secret",
+    "violation_text": "environment variable AGENTS_JWT_SECRET in container \"imicros-users\" found"
+  },
+  {
+    "id": "04553",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "env-var-secret",
+    "violation_text": "environment variable JWT_SECRET in container \"imicros-users\" found"
+  },
+  {
+    "id": "04554",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"imicros-users\" is using an invalid container image, \"al66/imicros-backend:latest\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04555",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"imicros-users\" does not have a read-only root file system"
+  },
+  {
+    "id": "04556",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"imicros-users\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04557",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"imicros-users\" has cpu request 0"
+  },
+  {
+    "id": "04558",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2089.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: imicros-users-deployment\nspec:\n  selector:\n    matchLabels:\n      app: imicros-users\n  template:\n    metadata:\n      labels:\n        app: imicros-users\n        version: '0.1'\n    spec:\n      containers:\n      - name: imicros-users\n        image: al66/imicros-backend:latest\n        imagePullPolicy: Always\n        env:\n        - name: SERVICES\n          value: master, user, groups, agents, acl\n        - name: MASTER_TOKEN\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: SERVICE_TOKEN\n          valueFrom:\n            secretKeyRef:\n              name: service-token\n              key: token\n        - name: TRANSPORTER_NATS\n          value: nats://nats:4222\n        - name: CASSANDRA_CONTACTPOINTS\n          value: cassandra\n        - name: CASSANDRA_DATACENTER\n          value: datacenter1\n        - name: CASSANDRA_KEYSPACE_KEYS\n          value: imicros_keys\n        - name: CASSANDRA_PORT\n          value: '9042'\n        - name: CASSANDRA_USER\n          value: cassandra\n        - name: CASSANDRA_PASSWORD\n          value: cassandra\n        - name: NEO4J_URI\n          value: bolt://neo4j:7687\n        - name: NEO4J_USER\n          value: neo4j\n        - name: NEO4J_PASSWORD\n          value: neo4j\n        - name: JWT_SECRET\n          value: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG\n        - name: AGENTS_JWT_SECRET\n          value: my JWT secret - should be set as a Kubernetes secret\n        - name: EVENT_OWNER_ID\n          value: 096f1dff-681a-4746-b5cd-2228f69630c7\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"imicros-users\" has memory limit 0"
+  },
+  {
+    "id": "04559",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2090.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx\n  namespace: test\n  labels:\n    app: nginx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 1\n            memory: 500Mi\n          limits:\n            cpu: 2\n            memory: 1024Mi\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04560",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2090.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx\n  namespace: test\n  labels:\n    app: nginx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 1\n            memory: 500Mi\n          limits:\n            cpu: 2\n            memory: 1024Mi\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "04561",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2090.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx\n  namespace: test\n  labels:\n    app: nginx\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    metadata:\n      labels:\n        app: nginx\n    spec:\n      containers:\n      - name: nginx\n        image: nginx\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 1\n            memory: 500Mi\n          limits:\n            cpu: 2\n            memory: 1024Mi\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04562",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2092.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: user\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: user\n  template:\n    metadata:\n      labels:\n        app: user\n    spec:\n      containers:\n      - name: user\n        image: p3fightclub.azurecr.io/user\n        ports:\n        - containerPort: 5001\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"user\" is using an invalid container image, \"p3fightclub.azurecr.io/user\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04563",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2092.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: user\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: user\n  template:\n    metadata:\n      labels:\n        app: user\n    spec:\n      containers:\n      - name: user\n        image: p3fightclub.azurecr.io/user\n        ports:\n        - containerPort: 5001\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"user\" does not have a read-only root file system"
+  },
+  {
+    "id": "04564",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2092.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: user\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: user\n  template:\n    metadata:\n      labels:\n        app: user\n    spec:\n      containers:\n      - name: user\n        image: p3fightclub.azurecr.io/user\n        ports:\n        - containerPort: 5001\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"user\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04565",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2092.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: user\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: user\n  template:\n    metadata:\n      labels:\n        app: user\n    spec:\n      containers:\n      - name: user\n        image: p3fightclub.azurecr.io/user\n        ports:\n        - containerPort: 5001\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"user\" has cpu request 0"
+  },
+  {
+    "id": "04566",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2092.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: user\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: user\n  template:\n    metadata:\n      labels:\n        app: user\n    spec:\n      containers:\n      - name: user\n        image: p3fightclub.azurecr.io/user\n        ports:\n        - containerPort: 5001\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"user\" has memory limit 0"
+  },
+  {
+    "id": "04567",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2094.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5924\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "latest-tag",
+    "violation_text": "The container \"nginx\" is using an invalid container image, \"nginx\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]"
+  },
+  {
+    "id": "04568",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2094.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5924\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"nginx\" does not have a read-only root file system"
+  },
+  {
+    "id": "04569",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2094.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5924\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"nginx\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04570",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2094.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5924\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"nginx\" has cpu request 0"
+  },
+  {
+    "id": "04571",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2094.yaml",
+    "manifest_yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: image-demo-5924\nspec:\n  containers:\n  - name: nginx\n    image: nginx\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"nginx\" has memory limit 0"
+  },
+  {
+    "id": "04572",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: tickets-celery\n  labels:\n    app: tickets-celery\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: tickets-celery\n  template:\n    metadata:\n      labels:\n        name: tickets-celery\n    spec:\n      containers:\n      - name: tickets-celery\n        image: ckreuzberger/tickets:1.0\n        imagePullPolicy: Always\n        command:\n        - celery\n        args:\n        - -A\n        - tickets\n        - worker\n        - --loglevel=info\n        env:\n        - name: POSTGRES_USER\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: user\n        - name: POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: password\n        - name: POSTGRES_DB\n          value: tickets\n        - name: DATABASE_URL\n          value: postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)\n        - name: DJANGO_SETTINGS_MODULE\n          value: tickets.settings.prod\n        - name: SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: django-secret-key\n              key: secret_key\n",
+    "policy_id": "no-read-only-root-fs",
+    "violation_text": "container \"tickets-celery\" does not have a read-only root file system"
+  },
+  {
+    "id": "04573",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: tickets-celery\n  labels:\n    app: tickets-celery\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: tickets-celery\n  template:\n    metadata:\n      labels:\n        name: tickets-celery\n    spec:\n      containers:\n      - name: tickets-celery\n        image: ckreuzberger/tickets:1.0\n        imagePullPolicy: Always\n        command:\n        - celery\n        args:\n        - -A\n        - tickets\n        - worker\n        - --loglevel=info\n        env:\n        - name: POSTGRES_USER\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: user\n        - name: POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: password\n        - name: POSTGRES_DB\n          value: tickets\n        - name: DATABASE_URL\n          value: postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)\n        - name: DJANGO_SETTINGS_MODULE\n          value: tickets.settings.prod\n        - name: SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: django-secret-key\n              key: secret_key\n",
+    "policy_id": "run-as-non-root",
+    "violation_text": "container \"tickets-celery\" is not set to runAsNonRoot"
+  },
+  {
+    "id": "04574",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: tickets-celery\n  labels:\n    app: tickets-celery\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: tickets-celery\n  template:\n    metadata:\n      labels:\n        name: tickets-celery\n    spec:\n      containers:\n      - name: tickets-celery\n        image: ckreuzberger/tickets:1.0\n        imagePullPolicy: Always\n        command:\n        - celery\n        args:\n        - -A\n        - tickets\n        - worker\n        - --loglevel=info\n        env:\n        - name: POSTGRES_USER\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: user\n        - name: POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: password\n        - name: POSTGRES_DB\n          value: tickets\n        - name: DATABASE_URL\n          value: postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)\n        - name: DJANGO_SETTINGS_MODULE\n          value: tickets.settings.prod\n        - name: SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: django-secret-key\n              key: secret_key\n",
+    "policy_id": "unset-cpu-requirements",
+    "violation_text": "container \"tickets-celery\" has cpu request 0"
+  },
+  {
+    "id": "04575",
+    "manifest_path": "data/manifests/the_stack_sample/sample_2095.yaml",
+    "manifest_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: tickets-celery\n  labels:\n    app: tickets-celery\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      name: tickets-celery\n  template:\n    metadata:\n      labels:\n        name: tickets-celery\n    spec:\n      containers:\n      - name: tickets-celery\n        image: ckreuzberger/tickets:1.0\n        imagePullPolicy: Always\n        command:\n        - celery\n        args:\n        - -A\n        - tickets\n        - worker\n        - --loglevel=info\n        env:\n        - name: POSTGRES_USER\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: user\n        - name: POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: postgres-credentials\n              key: password\n        - name: POSTGRES_DB\n          value: tickets\n        - name: DATABASE_URL\n          value: postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)\n        - name: DJANGO_SETTINGS_MODULE\n          value: tickets.settings.prod\n        - name: SECRET_KEY\n          valueFrom:\n            secretKeyRef:\n              name: django-secret-key\n              key: secret_key\n",
+    "policy_id": "unset-memory-requirements",
+    "violation_text": "container \"tickets-celery\" has memory limit 0"
+  }
+]

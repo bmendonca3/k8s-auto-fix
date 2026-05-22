@@ -1,0 +1,345 @@
+[
+  {
+    "id": "03151",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: example\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: example\n  template:\n    metadata:\n      labels:\n        app: example\n    spec:\n      containers:\n      - name: example\n        image: ealen/echo-server:stable\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 80\n        resources:\n          requests:\n            cpu: 50m\n            memory: 128Mi\n          limits:\n            cpu: 100m\n            memory: 256Mi\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n",
+    "latency_ms": 530,
+    "kubectl_ms": 7,
+    "errors": []
+  },
+  {
+    "id": "03152",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210318-ffb8032f91\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=status-dev.prow.build.kyma-project.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: workload-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "latency_ms": 611,
+    "kubectl_ms": 13,
+    "errors": []
+  },
+  {
+    "id": "03153",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210318-ffb8032f91\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=status-dev.prow.build.kyma-project.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: workload-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "latency_ms": 640,
+    "kubectl_ms": 6,
+    "errors": []
+  },
+  {
+    "id": "03154",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210318-ffb8032f91\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=status-dev.prow.build.kyma-project.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: workload-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "latency_ms": 551,
+    "kubectl_ms": 1,
+    "errors": []
+  },
+  {
+    "id": "03155",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  namespace: default\n  name: deck\n  labels:\n    app: deck\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: deck\n  template:\n    metadata:\n      labels:\n        app: deck\n    spec:\n      serviceAccountName: deck\n      containers:\n      - name: deck\n        image: gcr.io/k8s-prow/deck:v20210318-ffb8032f91\n        imagePullPolicy: Always\n        ports:\n        - name: http\n          containerPort: 8080\n        args:\n        - --kubeconfig=/etc/kubeconfig/config\n        - --tide-url=http://tide/\n        - --hook-url=http://hook:8888/plugin-help\n        - --redirect-http-to=status-dev.prow.build.kyma-project.io\n        - --oauth-url=/github-login\n        - --config-path=/etc/config/config.yaml\n        - --job-config-path=/etc/job-config\n        - --spyglass=true\n        - --rerun-creates-job\n        - --github-token-path=/etc/github/oauth\n        - --github-endpoint=http://ghproxy\n        - --github-endpoint=https://api.github.com\n        - --github-oauth-config-file=/etc/githuboauth/secret\n        - --cookie-secret=/etc/cookie/secret\n        - --plugin-config=/etc/plugins/plugins.yaml\n        volumeMounts:\n        - name: oauth-config\n          mountPath: /etc/githuboauth\n          readOnly: true\n        - name: cookie-secret\n          mountPath: /etc/cookie\n          readOnly: true\n        - mountPath: /etc/kubeconfig\n          name: kubeconfig\n          readOnly: true\n        - name: config\n          mountPath: /etc/config\n          readOnly: true\n        - name: job-config\n          mountPath: /etc/job-config\n          readOnly: true\n        - name: oauth-token\n          mountPath: /etc/github\n          readOnly: true\n        - name: plugins\n          mountPath: /etc/plugins\n          readOnly: true\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: 8081\n          initialDelaySeconds: 3\n          periodSeconds: 3\n        readinessProbe:\n          httpGet:\n            path: /healthz/ready\n            port: 8081\n          initialDelaySeconds: 10\n          periodSeconds: 3\n          timeoutSeconds: 600\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n      volumes:\n      - name: oauth-config\n        secret:\n          secretName: github-oauth-config\n      - name: oauth-token\n        secret:\n          secretName: oauth-token\n      - name: cookie-secret\n        secret:\n          secretName: cookie\n      - name: kubeconfig\n        secret:\n          defaultMode: 420\n          secretName: workload-clusters-kubeconfig\n      - name: config\n        configMap:\n          name: config\n      - name: job-config\n        configMap:\n          name: job-config\n      - name: plugins\n        configMap:\n          name: plugins\n",
+    "latency_ms": 500,
+    "kubectl_ms": 2,
+    "errors": []
+  },
+  {
+    "id": "03156",
+    "policy_id": "no_latest_tag",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 19,
+    "kubectl_ms": 9,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03157",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 54,
+    "kubectl_ms": 45,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03158",
+    "policy_id": "read_only_root_fs",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 42,
+    "kubectl_ms": 22,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03159",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 23,
+    "kubectl_ms": 17,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03160",
+    "policy_id": "run_as_non_root",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 22,
+    "kubectl_ms": 15,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03161",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 25,
+    "kubectl_ms": 18,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03162",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 24,
+    "kubectl_ms": 17,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03163",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 20,
+    "kubectl_ms": 12,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03164",
+    "policy_id": "set_requests_limits",
+    "accepted": false,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": false,
+    "ok_rescan": true,
+    "patched_yaml": null,
+    "latency_ms": 14,
+    "kubectl_ms": 5,
+    "errors": [
+      "hostPath '/sys' not in allowlist"
+    ]
+  },
+  {
+    "id": "03165",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "latency_ms": 504,
+    "kubectl_ms": 8,
+    "errors": []
+  },
+  {
+    "id": "03166",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "latency_ms": 492,
+    "kubectl_ms": 4,
+    "errors": []
+  },
+  {
+    "id": "03167",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "latency_ms": 518,
+    "kubectl_ms": 3,
+    "errors": []
+  },
+  {
+    "id": "03168",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    kraken.service: redis\n  name: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      kraken.service: redis\n  template:\n    metadata:\n      labels:\n        kraken.service: redis\n    spec:\n      containers:\n      - name: redis\n        image: redis:6\n        ports:\n        - name: redis\n          containerPort: 6379\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "latency_ms": 492,
+    "kubectl_ms": 2,
+    "errors": []
+  },
+  {
+    "id": "03169",
+    "policy_id": "no_latest_tag",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: servicecenter\n  labels:\n    app: serviceCenter\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: serviceCenter\n  template:\n    metadata:\n      labels:\n        app: serviceCenter\n    spec:\n      containers:\n      - name: serviceCenter\n        image: username/serviceCenter:stable\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 10\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 10\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 120\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 5\n        securityContext:\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          privileged: false\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "latency_ms": 523,
+    "kubectl_ms": 5,
+    "errors": []
+  },
+  {
+    "id": "03170",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: servicecenter\n  labels:\n    app: serviceCenter\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: serviceCenter\n  template:\n    metadata:\n      labels:\n        app: serviceCenter\n    spec:\n      containers:\n      - name: serviceCenter\n        image: username/serviceCenter:stable\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 10\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 10\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 120\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 5\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "latency_ms": 501,
+    "kubectl_ms": 2,
+    "errors": []
+  },
+  {
+    "id": "03171",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: servicecenter\n  labels:\n    app: serviceCenter\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: serviceCenter\n  template:\n    metadata:\n      labels:\n        app: serviceCenter\n    spec:\n      containers:\n      - name: serviceCenter\n        image: username/serviceCenter:stable\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 10\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 10\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 120\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 5\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n",
+    "latency_ms": 505,
+    "kubectl_ms": 4,
+    "errors": []
+  },
+  {
+    "id": "03172",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: servicecenter\n  labels:\n    app: serviceCenter\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: serviceCenter\n  template:\n    metadata:\n      labels:\n        app: serviceCenter\n    spec:\n      containers:\n      - name: serviceCenter\n        image: username/serviceCenter:stable\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 10\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 10\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 120\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 5\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "latency_ms": 497,
+    "kubectl_ms": 2,
+    "errors": []
+  },
+  {
+    "id": "03173",
+    "policy_id": "set_requests_limits",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: servicecenter\n  labels:\n    app: serviceCenter\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: serviceCenter\n  template:\n    metadata:\n      labels:\n        app: serviceCenter\n    spec:\n      containers:\n      - name: serviceCenter\n        image: username/serviceCenter:stable\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 10\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 10\n        livenessProbe:\n          httpGet:\n            path: /actuator/health\n            port: 8080\n          initialDelaySeconds: 120\n          timeoutSeconds: 2\n          periodSeconds: 5\n          failureThreshold: 5\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n        securityContext:\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n",
+    "latency_ms": 468,
+    "kubectl_ms": 2,
+    "errors": []
+  },
+  {
+    "id": "03174",
+    "policy_id": "read_only_root_fs",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: eventstore\nspec:\n  selector:\n    matchLabels:\n      app: eventstore\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: eventstore\n    spec:\n      containers:\n      - name: eventstore\n        image: eventstore/eventstore:release-5.0.2\n        volumeMounts:\n        - mountPath: /usr/data/eventstore\n          name: eventstore-pv-storage\n        env:\n        - name: EVENTSTORE_INT_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: EVENTSTORE_EXT_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: EVENTSTORE_INT_TCP_PORT\n          value: '1111'\n        - name: EVENTSTORE_EXT_TCP_PORT\n          value: '1112'\n        - name: EVENTSTORE_INT_HTTP_PORT\n          value: '2114'\n        - name: EVENTSTORE_EXT_HTTP_PORT\n          value: '2113'\n        - name: EVENTSTORE_CLUSTER_SIZE\n          value: '2'\n        - name: EVENTSTORE_CLUSTER_DNS\n          value: eventstore.default.svc.cluster.local\n        - name: EVENTSTORE_CLUSTER_GOSSIP_PORT\n          value: '2114'\n        - name: EVENTSTORE_GOSSIP_ALLOWED_DIFFERENCE_MS\n          value: '600000'\n        - name: EVENTSTORE_INT_HTTP_PREFIXES\n          value: http://*:2114/\n        - name: EVENTSTORE_EXT_HTTP_PREFIXES\n          value: http://*:2113/\n        ports:\n        - containerPort: 2113\n        - containerPort: 2114\n        - containerPort: 1111\n        - containerPort: 1112\n        securityContext:\n          readOnlyRootFilesystem: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          runAsNonRoot: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: eventstore-pv-storage\n        emptyDir: {}\n",
+    "latency_ms": 522,
+    "kubectl_ms": 4,
+    "errors": []
+  },
+  {
+    "id": "03175",
+    "policy_id": "run_as_non_root",
+    "accepted": true,
+    "ok_schema": true,
+    "ok_policy": true,
+    "ok_safety": true,
+    "ok_rescan": true,
+    "patched_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: eventstore\nspec:\n  selector:\n    matchLabels:\n      app: eventstore\n  replicas: 3\n  template:\n    metadata:\n      labels:\n        app: eventstore\n    spec:\n      containers:\n      - name: eventstore\n        image: eventstore/eventstore:release-5.0.2\n        volumeMounts:\n        - mountPath: /usr/data/eventstore\n          name: eventstore-pv-storage\n        env:\n        - name: EVENTSTORE_INT_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: EVENTSTORE_EXT_IP\n          valueFrom:\n            fieldRef:\n              fieldPath: status.podIP\n        - name: EVENTSTORE_INT_TCP_PORT\n          value: '1111'\n        - name: EVENTSTORE_EXT_TCP_PORT\n          value: '1112'\n        - name: EVENTSTORE_INT_HTTP_PORT\n          value: '2114'\n        - name: EVENTSTORE_EXT_HTTP_PORT\n          value: '2113'\n        - name: EVENTSTORE_CLUSTER_SIZE\n          value: '2'\n        - name: EVENTSTORE_CLUSTER_DNS\n          value: eventstore.default.svc.cluster.local\n        - name: EVENTSTORE_CLUSTER_GOSSIP_PORT\n          value: '2114'\n        - name: EVENTSTORE_GOSSIP_ALLOWED_DIFFERENCE_MS\n          value: '600000'\n        - name: EVENTSTORE_INT_HTTP_PREFIXES\n          value: http://*:2114/\n        - name: EVENTSTORE_EXT_HTTP_PREFIXES\n          value: http://*:2113/\n        ports:\n        - containerPort: 2113\n        - containerPort: 2114\n        - containerPort: 1111\n        - containerPort: 1112\n        securityContext:\n          runAsNonRoot: true\n          privileged: false\n          capabilities:\n            drop:\n            - ALL\n            - NET_RAW\n            - NET_ADMIN\n            - SYS_ADMIN\n            - SYS_MODULE\n            - SYS_PTRACE\n            - SYS_CHROOT\n          allowPrivilegeEscalation: false\n          readOnlyRootFilesystem: true\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n      volumes:\n      - name: eventstore-pv-storage\n        emptyDir: {}\n",
+    "latency_ms": 522,
+    "kubectl_ms": 2,
+    "errors": []
+  }
+]

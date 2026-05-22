@@ -4,9 +4,11 @@ import copy
 from typing import Any, Optional
 
 import jsonpatch
+import jsonpointer
 
 _MISSING = object()
 _COALESCE_PARENT_KEYS = {"resources", "securityContext"}
+_PATCH_APPLY_EXCEPTIONS = (jsonpatch.JsonPatchException, jsonpointer.JsonPointerException)
 
 
 def _rfc6901_escape(segment: str) -> str:
@@ -181,7 +183,7 @@ def _coalesce_parent_ops(document: Any, patch_ops: list[Any], final_document: An
             candidate_document = jsonpatch.apply_patch(
                 copy.deepcopy(document), replacement_candidate, in_place=False
             )
-        except jsonpatch.JsonPatchException:
+        except _PATCH_APPLY_EXCEPTIONS:
             continue
         if candidate_document == final_document and len(replacement_candidate) < len(candidate):
             candidate = replacement_candidate
@@ -194,7 +196,7 @@ def minimize_redundant_patch_ops(document: Any, patch_ops: Any) -> Any:
         return patch_ops
     try:
         final_document = jsonpatch.apply_patch(copy.deepcopy(document), patch_ops, in_place=False)
-    except jsonpatch.JsonPatchException:
+    except _PATCH_APPLY_EXCEPTIONS:
         return patch_ops
 
     minimized = list(patch_ops)
@@ -202,7 +204,7 @@ def minimize_redundant_patch_ops(document: Any, patch_ops: Any) -> Any:
         candidate = minimized[:index] + minimized[index + 1 :]
         try:
             candidate_document = jsonpatch.apply_patch(copy.deepcopy(document), candidate, in_place=False)
-        except jsonpatch.JsonPatchException:
+        except _PATCH_APPLY_EXCEPTIONS:
             continue
         if candidate_document == final_document:
             minimized = candidate

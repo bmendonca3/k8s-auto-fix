@@ -193,6 +193,12 @@ class ProposerGuardsTests(unittest.TestCase):
             jsonpatch.apply_patch(document, patch_ops, in_place=False),
         )
 
+    def test_minimize_redundant_patch_ops_keeps_invalid_patch_instead_of_crashing(self) -> None:
+        document = {}
+        patch_ops = [{"op": "add", "path": "/spec/containers/0/securityContext", "value": {"runAsNonRoot": True}}]
+
+        self.assertEqual(minimize_redundant_patch_ops(document, patch_ops), patch_ops)
+
     def test_rule_based_patch_dispatches_known_policy(self) -> None:
         detection = {
             "id": "latest-001",
