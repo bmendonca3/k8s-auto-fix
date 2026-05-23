@@ -12,6 +12,11 @@ paper claims and pipeline metrics.
 - Keep generated outputs in git only when they are cited by the paper, used by a
   documented reproduction command, or needed as compact regression evidence.
   Prefer compressed JSON for large machine-readable outputs.
+- Treat namespaced benchmark outputs as raw validation evidence when a review
+  packet, validation note, or paper claim cites them. Retaining those artifacts
+  does not by itself promote their metrics into the manuscript; the citing
+  document should state whether the run is canonical, supplemental, or
+  validation-only.
 - Keep logs only when they are curated evidence for a documented run. Do not add
   ad hoc local logs, secrets, API responses with tokens, or full terminal dumps.
 - Keep archives only as intentional release or evidence bundles. Prefer external

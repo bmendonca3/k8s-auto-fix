@@ -355,6 +355,53 @@ spec:
         self.assertFalse(result.ok_policy)
         self.assertIn("container explicitly runs as root", result.errors)
 
+    def test_run_as_non_root_proposer_replaces_explicit_root_users_and_verifies(self) -> None:
+        manifest = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root-users
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 0
+      containers:
+        - name: app
+          image: nginx:1.23
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_run_as_non_root(obj)
+
+        self.assertIn(
+            {
+                "op": "replace",
+                "path": "/spec/template/spec/initContainers/0/securityContext/runAsUser",
+                "value": 1000,
+            },
+            patch,
+        )
+        self.assertIn(
+            {
+                "op": "replace",
+                "path": "/spec/template/spec/containers/0/securityContext/runAsUser",
+                "value": 1000,
+            },
+            patch,
+        )
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        result = verifier.verify(manifest, patch, "run_as_non_root")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_policy)
+        self.assertTrue(result.ok_rescan)
+
     def test_verify_read_only_root_fs_policy(self) -> None:
         manifest = """
 apiVersion: v1

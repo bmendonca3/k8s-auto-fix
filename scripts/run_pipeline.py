@@ -415,11 +415,23 @@ def _resume_output_metadata_matches(stage: dict[str, Any]) -> bool:
     return True
 
 
-def _resumable_stages(resume_status: dict[str, Any]) -> dict[str, list[str]]:
-    resumable: dict[str, list[str]] = {}
+def _resume_input_metadata_matches(stage: dict[str, Any], input_paths: Sequence[str]) -> bool:
+    current_metadata = [_input_metadata(path) for path in input_paths]
+    metadata = stage.get("input_metadata")
+    if metadata is None and not current_metadata:
+        return True
+    if not isinstance(metadata, list):
+        return False
+    return metadata == current_metadata
+
+
+def _resumable_stages(resume_status: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    resumable: dict[str, dict[str, Any]] = {}
     for stage in resume_status.get("stages", []):
         if stage.get("status") in {"completed", "skipped"} and _resume_output_metadata_matches(stage):
-            resumable[str(stage.get("name"))] = list(stage.get("command", []))
+            name = stage.get("name")
+            if isinstance(name, str):
+                resumable[name] = stage
     return resumable
 
 
@@ -435,7 +447,12 @@ def build_status(
     for step in plan:
         input_paths = _stage_input_paths(args, step)
         output_paths = _stage_output_paths(args, step)
-        if resumable.get(step.name) == list(step.command):
+        resume_stage = resumable.get(step.name)
+        if (
+            resume_stage is not None
+            and resume_stage.get("command") == list(step.command)
+            and _resume_input_metadata_matches(resume_stage, input_paths)
+        ):
             record = _stage_status_record(step, "skipped", input_paths=input_paths, output_paths=output_paths)
             record["skip_reason"] = "already satisfied by resume status"
         else:

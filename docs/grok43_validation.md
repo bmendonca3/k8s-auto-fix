@@ -3,18 +3,25 @@
 ## Staged Results
 
 The safe Grok 4.3 staged validation on 2026-05-21 used namespaced artifacts and
-did not update paper-facing or canonical Grok-5k metrics.
+did not update canonical Grok-5k metrics.
 
 | Run namespace | Detections | Accepted | Rate | Notes |
 | --- | ---: | ---: | ---: | --- |
 | `data/batch_runs/grok43_20260521_50` | 50 | 50 | 100.0% | Passed the 50-detection gate. |
 | `data/batch_runs/grok43_20260521_200` | 200 | 171 | 85.5% | Passed the 170/200 gate. |
 | `data/batch_runs/grok43_20260522_smoke50` | 50 | 50 | 100.0% | Stable scanner-path smoke gate before 5k. |
-| `data/batch_runs/grok43_20260522_5000` | 5,000 | 4,473 | 89.46% | Full Grok 4.3 run; not promoted to paper-facing metrics. |
+| `data/batch_runs/grok43_20260522_5000` | 5,000 | 4,473 | 89.46% | Full Grok 4.3 run retained as validation evidence; not the canonical Grok-5k metric. |
 
-The complete 5k Grok 4.3 result now exists under a fresh namespace with stable
-scanner paths and run-manifest scanner metadata. Keep historical Grok-5k
-artifacts intact until this result is explicitly selected for publication.
+The complete 5k Grok 4.3 result is represented under a fresh namespace with
+stable scanner paths and run-manifest scanner metadata. Retain compact metrics,
+run manifests, failure summaries, and probe outputs in git as validation and
+review evidence under the artifact policy; keep full raw batch shards outside
+the repository or regenerate them from the recorded command context. Historical
+Grok-5k artifacts and manuscript metrics stay intact unless this result is
+explicitly selected and cited as a publication result.
+Token totals use provider-reported totals. For Grok 4.3, `total_tokens` includes
+reported reasoning tokens from `completion_tokens_details.reasoning_tokens`, and
+usage telemetry covers only records that returned provider usage metadata.
 Pre-run probes are retained under `data/batch_runs/grok43_20260522_probe_c1`,
 `data/batch_runs/grok43_20260522_probe_c2`, and
 `data/batch_runs/grok43_20260522_probe_c4`.

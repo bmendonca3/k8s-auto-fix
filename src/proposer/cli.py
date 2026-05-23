@@ -2325,6 +2325,9 @@ def _patch_run_as_non_root(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
                 path = f"{security_path}/runAsNonRoot"
                 op = "add" if "runAsNonRoot" not in security else "replace"
                 ops.append({"op": op, "path": path, "value": True})
+            run_as_user = security.get("runAsUser")
+            if isinstance(run_as_user, int) and not isinstance(run_as_user, bool) and run_as_user == 0:
+                ops.append({"op": "replace", "path": f"{security_path}/runAsUser", "value": 1000})
             if security.get("privileged") is not False:
                 path = f"{security_path}/privileged"
                 op = "replace" if "privileged" in security else "add"
@@ -2796,7 +2799,10 @@ def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
     retry_budgets: List[int] = []
     tokens_prompt: List[float] = []
     tokens_completion: List[float] = []
+    tokens_reasoning: List[float] = []
+    tokens_unattributed: List[float] = []
     tokens_total: List[float] = []
+    token_usage_records = 0
 
     for entry in patches:
         record = {
@@ -2820,18 +2826,29 @@ def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
             retry_budgets.append(retry_budget)
         usage = entry.get("model_usage") if isinstance(entry.get("model_usage"), dict) else None
         if isinstance(usage, dict):
+            token_usage_records += 1
             prompt = usage.get("prompt_tokens")
             completion = usage.get("completion_tokens")
             total = usage.get("total_tokens")
+            reasoning = _completion_reasoning_tokens(usage)
             if isinstance(prompt, (int, float)):
                 record["prompt_tokens"] = prompt
                 tokens_prompt.append(float(prompt))
             if isinstance(completion, (int, float)):
                 record["completion_tokens"] = completion
                 tokens_completion.append(float(completion))
+            if reasoning:
+                record["reasoning_tokens"] = reasoning
+                tokens_reasoning.append(reasoning)
             if isinstance(total, (int, float)):
                 record["total_tokens"] = total
                 tokens_total.append(float(total))
+                prompt_value = float(prompt) if isinstance(prompt, (int, float)) else 0.0
+                completion_value = float(completion) if isinstance(completion, (int, float)) else 0.0
+                unattributed = max(float(total) - prompt_value - completion_value - reasoning, 0.0)
+                if unattributed:
+                    record["unattributed_tokens"] = unattributed
+                    tokens_unattributed.append(unattributed)
         records.append(record)
 
     summary: Dict[str, Any] = {"count": len(records)}
@@ -2854,14 +2871,29 @@ def _write_proposer_metrics(path: Path, patches: List[Dict[str, Any]]) -> None:
         }
     if tokens_total:
         summary["tokens"] = {
+            "usage_records": token_usage_records,
             "prompt": sum(tokens_prompt),
             "completion": sum(tokens_completion),
+            "reasoning": sum(tokens_reasoning),
+            "unattributed": sum(tokens_unattributed),
             "total": sum(tokens_total),
         }
 
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {"records": records, "summary": summary}
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _completion_reasoning_tokens(usage: Dict[str, Any]) -> float:
+    details = usage.get("completion_tokens_details")
+    if not isinstance(details, dict):
+        return 0.0
+    value = details.get("reasoning_tokens")
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
 
 
 def _percentile(values: List[int], percentile: float) -> float:

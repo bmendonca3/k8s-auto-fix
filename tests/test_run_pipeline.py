@@ -573,6 +573,68 @@ class RunPipelineTests(unittest.TestCase):
 
         self.assertEqual(status["stages"][0]["status"], "planned")
 
+    def test_resume_does_not_skip_when_prior_input_hash_changed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            manifest = tmp_path / "pod.yaml"
+            original_manifest_bytes = b"apiVersion: v1\nkind: Pod\nmetadata:\n  name: old\n"
+            changed_manifest_bytes = b"apiVersion: v1\nkind: Pod\nmetadata:\n  name: new\n"
+            manifest.write_bytes(original_manifest_bytes)
+            detections = tmp_path / "detections.json"
+            detections_bytes = b'{"detections": []}\n'
+            detections.write_bytes(detections_bytes)
+            args = run_pipeline.parse_args(
+                [
+                    "--run",
+                    "--status-out",
+                    "status.json",
+                    "--resume",
+                    "--manifests",
+                    str(manifest),
+                    "--no-policies-dir",
+                    "--detections",
+                    str(detections),
+                ]
+            )
+            plan = run_pipeline.build_plan(args, python="python")
+            resume_status = {
+                "schema_version": 1,
+                "stages": [
+                    {
+                        "command": list(plan[0].command),
+                        "command_string": " ".join(plan[0].command),
+                        "input_metadata": [
+                            {
+                                "exists": True,
+                                "path": str(manifest),
+                                "sha256": hashlib.sha256(original_manifest_bytes).hexdigest(),
+                                "size_bytes": len(original_manifest_bytes),
+                                "type": "file",
+                            }
+                        ],
+                        "input_paths": [str(manifest)],
+                        "name": "detect",
+                        "output_metadata": [
+                            {
+                                "exists": True,
+                                "path": str(detections),
+                                "sha256": hashlib.sha256(detections_bytes).hexdigest(),
+                                "size_bytes": len(detections_bytes),
+                            }
+                        ],
+                        "output_paths": [str(detections)],
+                        "returncode": 0,
+                        "status": "completed",
+                    }
+                ],
+            }
+            manifest.write_bytes(changed_manifest_bytes)
+
+            status = run_pipeline.build_status(args, plan, resume_status=resume_status)
+
+        self.assertEqual(status["stages"][0]["status"], "planned")
+        self.assertNotIn("skip_reason", status["stages"][0])
+
     def test_resume_requires_status_out(self) -> None:
         with self.assertRaises(SystemExit):
             with redirect_stderr(io.StringIO()), redirect_stdout(io.StringIO()):

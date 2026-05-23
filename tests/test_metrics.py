@@ -52,6 +52,51 @@ class MetricsTests(unittest.TestCase):
             self.assertEqual(metrics["failed_rescan"], 1)
             self.assertAlmostEqual(metrics["auto_fix_rate"], round(1 / 3, 4))
 
+    def test_metrics_accounts_for_reasoning_tokens(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            detections_path = tmp_path / "detections.json"
+            patches_path = tmp_path / "patches.json"
+            verified_path = tmp_path / "verified.json"
+            out_path = tmp_path / "metrics.json"
+
+            detections_path.write_text(json.dumps([{"id": "001"}]), encoding="utf-8")
+            patches_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": "001",
+                            "source": "vendor",
+                            "patch": [],
+                            "model_usage": {
+                                "prompt_tokens": 10,
+                                "completion_tokens": 3,
+                                "completion_tokens_details": {"reasoning_tokens": 7},
+                                "total_tokens": 20,
+                            },
+                        }
+                    ],
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            verified_path.write_text(json.dumps([{"id": "001", "accepted": True}]), encoding="utf-8")
+
+            metrics_run(
+                detections=detections_path,
+                patches=patches_path,
+                verified=verified_path,
+                out=out_path,
+            )
+
+            usage = json.loads(out_path.read_text(encoding="utf-8"))["model_usage"]
+            self.assertEqual(usage["usage_records"], 1.0)
+            self.assertEqual(usage["prompt_tokens"], 10.0)
+            self.assertEqual(usage["completion_tokens"], 3.0)
+            self.assertEqual(usage["reasoning_tokens"], 7.0)
+            self.assertEqual(usage["unattributed_tokens"], 0.0)
+            self.assertEqual(usage["total_tokens"], 20.0)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

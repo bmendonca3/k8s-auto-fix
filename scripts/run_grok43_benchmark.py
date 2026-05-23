@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import verifier_report
+from src.common.policy_ids import normalise_policy_id
 from src.eval.metrics import run as metrics_run
 
 
@@ -235,6 +236,13 @@ def _run_proposer_batches(
     for detections_path, patch_path in zip(plan.detection_batches, plan.patch_batches):
         _assert_under(patch_path, plan.run_dir)
         if patch_path.exists() and resume:
+            _validate_stage_batch(
+                patch_path,
+                reference_path=detections_path,
+                kind="patch",
+                reference_kind="detection",
+                require_patch=True,
+            )
             continue
         if patch_path.exists():
             raise FileExistsError(f"Refusing to overwrite existing artifact: {_display_path(patch_path, repo_root)}")
@@ -255,6 +263,13 @@ def _run_proposer_batches(
         plan.commands.append(command)
         if not patch_path.exists():
             raise FileNotFoundError(f"Proposer did not create expected artifact: {_display_path(patch_path, repo_root)}")
+        _validate_stage_batch(
+            patch_path,
+            reference_path=detections_path,
+            kind="patch",
+            reference_kind="detection",
+            require_patch=True,
+        )
 
 
 def _run_verifier_batches(
@@ -274,12 +289,26 @@ def _run_verifier_batches(
         plan.verified_batches,
     ):
         _assert_under(verified_path, plan.run_dir)
+        if not patch_path.exists():
+            raise FileNotFoundError(f"Patches missing for verifier: {_display_path(patch_path, repo_root)}")
+        _validate_stage_batch(
+            patch_path,
+            reference_path=detections_path,
+            kind="patch",
+            reference_kind="detection",
+            require_patch=True,
+        )
         if verified_path.exists() and resume:
+            _validate_stage_batch(
+                verified_path,
+                reference_path=patch_path,
+                kind="verified",
+                reference_kind="patch",
+                require_accepted=True,
+            )
             continue
         if verified_path.exists():
             raise FileExistsError(f"Refusing to overwrite existing artifact: {_display_path(verified_path, repo_root)}")
-        if not patch_path.exists():
-            raise FileNotFoundError(f"Patches missing for verifier: {_display_path(patch_path, repo_root)}")
         command = [
             sys.executable,
             "-m",
@@ -306,6 +335,13 @@ def _run_verifier_batches(
         plan.commands.append(command)
         if not verified_path.exists():
             raise FileNotFoundError(f"Verifier did not create expected artifact: {_display_path(verified_path, repo_root)}")
+        _validate_stage_batch(
+            verified_path,
+            reference_path=patch_path,
+            kind="verified",
+            reference_kind="patch",
+            require_accepted=True,
+        )
 
 
 def _write_failure_summary(verified_path: Path, out_path: Path, *, run_dir: Path) -> None:
@@ -537,8 +573,55 @@ def _write_or_validate_json_array(
         raise FileExistsError(f"Refusing to overwrite existing artifact: {path}")
 
     existing = _load_json_array(path)
-    if _ids(existing) != _ids(data):
+    if existing != list(data):
         raise ValueError(f"Existing detection batch does not match requested slice: {path}")
+
+
+def _validate_stage_batch(
+    path: Path,
+    *,
+    reference_path: Path,
+    kind: str,
+    reference_kind: str,
+    require_patch: bool = False,
+    require_accepted: bool = False,
+) -> None:
+    records = _load_json_array(path)
+    references = _load_json_array(reference_path)
+    if len(records) != len(references):
+        raise ValueError(
+            f"Existing {kind} batch length {len(records)} does not match "
+            f"{reference_kind} batch length {len(references)}: {path}"
+        )
+
+    for index, (record, reference) in enumerate(zip(records, references)):
+        if not isinstance(record, dict):
+            raise ValueError(f"Existing {kind} batch contains a non-object record at index {index}: {path}")
+        if not isinstance(reference, dict):
+            raise ValueError(f"Reference {reference_kind} batch contains a non-object record at index {index}: {reference_path}")
+
+        record_id = _required_string(record, "id", path=path, kind=kind, index=index)
+        reference_id = _required_string(reference, "id", path=reference_path, kind=reference_kind, index=index)
+        if record_id != reference_id:
+            raise ValueError(
+                f"Existing {kind} batch id mismatch at index {index}: "
+                f"{record_id!r} != {reference_id!r}: {path}"
+            )
+
+        record_policy = normalise_policy_id(_required_string(record, "policy_id", path=path, kind=kind, index=index))
+        reference_policy = normalise_policy_id(
+            _required_string(reference, "policy_id", path=reference_path, kind=reference_kind, index=index)
+        )
+        if record_policy != reference_policy:
+            raise ValueError(
+                f"Existing {kind} batch policy_id mismatch for id {record_id!r}: "
+                f"{record_policy!r} != {reference_policy!r}: {path}"
+            )
+
+        if require_patch and not isinstance(record.get("patch"), list):
+            raise ValueError(f"Existing {kind} batch record {record_id!r} missing list patch: {path}")
+        if require_accepted and not isinstance(record.get("accepted"), bool):
+            raise ValueError(f"Existing {kind} batch record {record_id!r} missing boolean accepted: {path}")
 
 
 def _write_json_array(path: Path, data: list[Any], *, run_dir: Path, overwrite: bool) -> None:
@@ -548,8 +631,12 @@ def _write_json_array(path: Path, data: list[Any], *, run_dir: Path, overwrite: 
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def _ids(records: Sequence[Any]) -> list[str]:
-    return [str(record.get("id")) if isinstance(record, dict) else "" for record in records]
+def _required_string(record: dict[str, Any], field: str, *, path: Path, kind: str, index: int) -> str:
+    value = record.get(field)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"Existing {kind} batch record at index {index} missing string {field}: {path}")
+    return value
+
 
 
 def _load_json_array(path: Path) -> list[Any]:

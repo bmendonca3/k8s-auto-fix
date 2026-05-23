@@ -346,6 +346,39 @@ class ProposerRetryBudgetTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["attempts"], {"total": 4, "retries": 2, "max": 3})
         self.assertEqual(payload["summary"]["retry_budget"], {"total": 5, "max": 3})
 
+    def test_write_proposer_metrics_accounts_for_reasoning_tokens(self) -> None:
+        patches = [
+            {
+                "id": "tokens-001",
+                "policy_id": "no_latest_tag",
+                "source": "vendor",
+                "model_usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 3,
+                    "completion_tokens_details": {"reasoning_tokens": 7},
+                    "total_tokens": 20,
+                },
+            }
+        ]
+
+        with TemporaryDirectory() as tmpdir:
+            metrics_path = Path(tmpdir) / "metrics.json"
+            _write_proposer_metrics(metrics_path, patches)
+            payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["records"][0]["reasoning_tokens"], 7.0)
+        self.assertEqual(
+            payload["summary"]["tokens"],
+            {
+                "usage_records": 1,
+                "prompt": 10.0,
+                "completion": 3.0,
+                "reasoning": 7.0,
+                "unattributed": 0,
+                "total": 20.0,
+            },
+        )
+
 
 def _retry_detection():
     return {

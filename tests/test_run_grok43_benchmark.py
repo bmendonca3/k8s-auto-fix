@@ -130,6 +130,63 @@ def test_grok43_benchmark_resume_reuses_existing_namespace(tmp_path: Path) -> No
     assert len(_load(plan.merged_detections)) == 1
 
 
+def test_grok43_benchmark_resume_rejects_stale_detection_batch(tmp_path: Path) -> None:
+    _write_repo_scaffold(tmp_path)
+    _write_source_batches(tmp_path, [[_record("001")]])
+    run_dir = tmp_path / "data" / "batch_runs" / "bench-stale-detection"
+    run_dir.mkdir(parents=True)
+    stale = _record("001")
+    stale["violation_text"] = "stale violation text"
+    _write_json(run_dir / "detections_grok43_limit_1_batch_000.json", [stale])
+
+    with pytest.raises(ValueError, match="Existing detection batch does not match requested slice"):
+        run_benchmark(
+            _options(tmp_path, run_id="bench-stale-detection", limit=1, resume=True),
+            repo_root=tmp_path,
+            runner=_unexpected_runner,
+        )
+
+
+def test_grok43_benchmark_resume_rejects_mismatched_patch_batch(tmp_path: Path) -> None:
+    _write_repo_scaffold(tmp_path)
+    _write_source_batches(tmp_path, [[_record("001")]])
+    run_dir = tmp_path / "data" / "batch_runs" / "bench-stale-patch"
+    run_dir.mkdir(parents=True)
+    _write_json(
+        run_dir / "patches_grok43_limit_1_batch_000.json",
+        [{"id": "999", "policy_id": "latest-tag", "patch": []}],
+    )
+
+    with pytest.raises(ValueError, match="Existing patch batch id mismatch"):
+        run_benchmark(
+            _options(tmp_path, run_id="bench-stale-patch", limit=1, resume=True),
+            repo_root=tmp_path,
+            runner=_unexpected_runner,
+        )
+
+
+def test_grok43_benchmark_resume_rejects_mismatched_verified_batch(tmp_path: Path) -> None:
+    _write_repo_scaffold(tmp_path)
+    _write_source_batches(tmp_path, [[_record("001")]])
+    run_dir = tmp_path / "data" / "batch_runs" / "bench-stale-verified"
+    run_dir.mkdir(parents=True)
+    _write_json(
+        run_dir / "patches_grok43_limit_1_batch_000.json",
+        [{"id": "001", "policy_id": "no_latest_tag", "patch": []}],
+    )
+    _write_json(
+        run_dir / "verified_grok43_limit_1_batch_000.json",
+        [{"id": "999", "policy_id": "no_latest_tag", "accepted": True}],
+    )
+
+    with pytest.raises(ValueError, match="Existing verified batch id mismatch"):
+        run_benchmark(
+            _options(tmp_path, run_id="bench-stale-verified", limit=1, resume=True),
+            repo_root=tmp_path,
+            runner=_unexpected_runner,
+        )
+
+
 def test_grok43_benchmark_preflights_scanner_binaries(tmp_path: Path) -> None:
     _write_repo_scaffold(tmp_path)
     _write_source_batches(tmp_path, [[_record("001")]])
@@ -266,6 +323,14 @@ def _fake_pipeline_command(command: Sequence[str], cwd: Path) -> None:
         return
 
     raise AssertionError(f"unexpected command: {command}")
+
+
+def _unexpected_runner(command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    raise AssertionError(f"unexpected command: {command}")
+
+
+def _write_json(path: Path, records: list[dict[str, object]]) -> None:
+    path.write_text(json.dumps(records, indent=2), encoding="utf-8")
 
 
 def _load(path: Path) -> list[dict[str, object]]:

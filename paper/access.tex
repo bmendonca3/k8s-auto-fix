@@ -396,7 +396,7 @@ Scheduler & \begin{tabular}[t]{@{}l@{}}\href{https://github.com/bmendonca3/k8s-a
 \midrule
 Automation & \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/Makefile}{\texttt{Makefile}} & Reproducible commands for each stage: \texttt{make detect}, \texttt{make propose}, \texttt{make verify}, \texttt{make schedule}, \texttt{make e2e}. \\
 \midrule
-Testing & \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/tests/}{\texttt{tests/}} & \texttt{python -m unittest discover -s tests} (16 tests, 2 skipped until patches exist) covering detector contracts, proposer guards, verifier gates, scheduler ordering, patch idempotence. \\
+Testing & \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/tests/}{\texttt{tests/}} & \texttt{make test} invokes \texttt{python -m pytest -q} over the test suite, covering detector contracts, proposer guards, verifier gates, scheduler ordering, artifact helpers, docs-link drift checks, and patch idempotence. Optional generated-artifact checks run separately with \texttt{make artifact-test}. \\
 \midrule
 \multicolumn{3}{@{}l@{}}{\textbf{Runtime Toolchain Versions (Evaluation Environment)}} \\
 \midrule
@@ -424,8 +424,8 @@ When detector binaries are available, running \texttt{make detect} (rules mode) 
 
 The \texttt{manifest\_yaml} field embeds the literal YAML to decouple downstream stages from the filesystem.
 
-\subsection{Unit Test Evidence}
-Executing \texttt{python -m unittest discover -s tests} yields \texttt{16 tests in 0.02s, OK (skipped=2)} on macOS (Apple M-series, Python~3.12). The skipped cases correspond to the optional patch minimality suite, which activates after \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/patches.json}{\texttt{data/patches.json}} is generated.
+\subsection{Test Evidence}
+Executing \texttt{make test} delegates to \texttt{python -m pytest -q} in the current Makefile. The suite mixes unittest-style \texttt{TestCase} modules with pytest-style tests; generated patch minimality checks are split into \texttt{make artifact-test}, which sets \texttt{K8S\_AUTO\_FIX\_ARTIFACT\_TESTS=1} for \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/tests/test_patch_minimality.py}{\texttt{tests/test\_patch\_minimality.py}}.
 
 \smallskip
 \noindent\textbf{Property-based tests.} In addition to the deterministic contract tests, \texttt{tests/test\_property\_guards.py} exercises hundreds of randomized manifests per run to verify that the per-policy patchers behave safely (e.g., \texttt{drop\_capabilities}, \texttt{drop\_cap\_sys\_admin}, \texttt{run\_as\_non\_root}, \texttt{enforce\_seccomp}, \texttt{no\_allow\_privilege\_escalation}, \texttt{no\_host\_path}). These checks validate that those patchers add the expected hardening (like dropping dangerous capabilities, denying privilege escalation, enforcing RuntimeDefault seccomp, and preferring non-privileged defaults) and remain idempotent; they do not expand the universal verifier gate beyond the checks enumerated above.
