@@ -18,6 +18,7 @@ Large swaths of the Grok 5k corpus include privileged DaemonSets (CNI plugins, C
 - No pending privileged-container rejects remain in Grok 5k.
 - Placeholder RBAC bindings (`infra/fixtures/rbac/placeholder_clusterroles.yaml`) seed service accounts/roles referenced by CNIs and CSI DaemonSets so RBAC checks pass during dry-run.
 - NetworkPolicies under `infra/fixtures/network_policies/` provide a baseline default-deny posture for smoke tests while keeping DNS egress open.
+- Grok 4.3 limit-200 follow-up (2026-05-21): Cilium ids `00173`-`00200` are expected full-profile safety rejects, not privileged-rewrite regressions. The patches clear targeted policy, schema, and rescan gates, but retain CNI hostPath mounts outside the verifier allowlist, so `ok_safety=false` is correct unless an operator-approved Cilium exception is introduced.
 
 ## Next Steps
 - Expand fixture coverage if new corpora introduce additional privileged workloads.

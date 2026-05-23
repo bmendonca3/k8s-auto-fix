@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 from pathlib import Path
 
@@ -8,6 +9,8 @@ import yaml
 
 class PatchMinimalityTests(unittest.TestCase):
     def setUp(self) -> None:
+        if os.environ.get("K8S_AUTO_FIX_ARTIFACT_TESTS") != "1":
+            self.skipTest("set K8S_AUTO_FIX_ARTIFACT_TESTS=1 to validate generated patch artifacts")
         self.patches_path = Path("data/patches.json")
         self.detections_path = Path("data/detections.json")
         if not self.patches_path.exists() or not self.detections_path.exists():

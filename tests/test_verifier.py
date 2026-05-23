@@ -94,6 +94,19 @@ class VerifierTests(unittest.TestCase):
         self.assertTrue(result.ok_rescan)
         self.assertIsNotNone(result.patched_yaml)
 
+    def test_rescan_policy_failure_includes_error_reason(self) -> None:
+        verifier = Verifier(enable_rescan=True)
+        self._stub_kubectl(verifier, True)
+        verifier._rescan_policy_cleared = types.MethodType(
+            lambda _self, _yaml, _policy: False, verifier
+        )
+        patch = [{"op": "replace", "path": "/spec/containers/0/image", "value": "nginx:stable"}]
+        result = verifier.verify(LATEST_MANIFEST, patch, "no_latest_tag")
+
+        self.assertFalse(result.accepted)
+        self.assertFalse(result.ok_rescan)
+        self.assertIn("rescan failed: targeted policy still present", result.errors)
+
     def test_verify_policy_failure(self) -> None:
         verifier = Verifier()
         self._stub_kubectl(verifier, True)
@@ -312,6 +325,81 @@ spec:
         result = verifier.verify(manifest, patch, "run_as_non_root")
         self.assertTrue(result.accepted)
         self.assertTrue(result.ok_safety)
+        self.assertTrue(result.ok_rescan)
+
+    def test_run_as_non_root_rejects_explicit_root_user_contradiction(self) -> None:
+        manifest = """
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init-chmod-data
+          image: postgres:16
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 0
+      containers:
+        - name: postgres
+          image: postgres:16
+          securityContext:
+            runAsNonRoot: true
+"""
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        result = verifier.verify(manifest, [], "run_as_non_root")
+        self.assertFalse(result.accepted)
+        self.assertFalse(result.ok_policy)
+        self.assertIn("container explicitly runs as root", result.errors)
+
+    def test_run_as_non_root_proposer_replaces_explicit_root_users_and_verifies(self) -> None:
+        manifest = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root-users
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 0
+      containers:
+        - name: app
+          image: nginx:1.23
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_run_as_non_root(obj)
+
+        self.assertIn(
+            {
+                "op": "replace",
+                "path": "/spec/template/spec/initContainers/0/securityContext/runAsUser",
+                "value": 1000,
+            },
+            patch,
+        )
+        self.assertIn(
+            {
+                "op": "replace",
+                "path": "/spec/template/spec/containers/0/securityContext/runAsUser",
+                "value": 1000,
+            },
+            patch,
+        )
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+        result = verifier.verify(manifest, patch, "run_as_non_root")
+        self.assertTrue(result.accepted)
+        self.assertTrue(result.ok_policy)
         self.assertTrue(result.ok_rescan)
 
     def test_verify_read_only_root_fs_policy(self) -> None:
@@ -922,6 +1010,62 @@ spec:
         self.assertIn("/spec/containers/1/image", paths)
         self.assertIn("/spec/initContainers/0/image", paths)
 
+    def test_first_offender_strategies_update_all_containers(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-hardening
+spec:
+  containers:
+    - name: first
+      image: nginx:1.23
+      ports:
+        - containerPort: 22
+      securityContext:
+        capabilities:
+          add: ["SYS_ADMIN"]
+    - name: second
+      image: busybox:stable
+      ports:
+        - containerPort: "22"
+"""
+        obj = yaml.safe_load(manifest)
+
+        self.assertGreaterEqual(len(proposer_cli._patch_ssh_port(obj)), 2)
+        self.assertGreaterEqual(len(proposer_cli._patch_drop_cap_sys_admin(obj)), 2)
+        self.assertGreaterEqual(len(proposer_cli._patch_no_allow_privilege_escalation(obj)), 2)
+        self.assertGreaterEqual(len(proposer_cli._patch_run_as_user(obj)), 2)
+        self.assertGreaterEqual(len(proposer_cli._patch_enforce_seccomp(obj)), 2)
+
+    def test_duplicate_env_var_patch_updates_all_containers(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: duplicate-env
+spec:
+  containers:
+    - name: first
+      image: nginx:1.23
+      env:
+        - name: LOG_LEVEL
+          value: info
+        - name: LOG_LEVEL
+          value: debug
+    - name: second
+      image: busybox:stable
+      env:
+        - name: MODE
+          value: one
+        - name: MODE
+          value: two
+"""
+        obj = yaml.safe_load(manifest)
+        paths = {op["path"] for op in proposer_cli._patch_duplicate_env_var(obj)}
+
+        self.assertIn("/spec/containers/0/env/1", paths)
+        self.assertIn("/spec/containers/1/env/1", paths)
 
     def test_verify_non_existent_service_account_policy(self) -> None:
         manifest = """
@@ -1137,6 +1281,110 @@ spec:
         self._stub_kubectl(verifier, True)
         result = verifier.verify(manifest, patch, "no_anti_affinity")
         self.assertTrue(result.accepted)
+
+    def test_verify_invalid_target_ports_policy(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-ports
+spec:
+  ports:
+    - name: "8080"
+      port: 80
+      targetPort: "8080"
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_invalid_target_ports(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+
+        bad = verifier.verify(manifest, [], "invalid_target_ports")
+        good = verifier.verify(manifest, patch, "invalid_target_ports")
+
+        self.assertFalse(bad.accepted)
+        self.assertTrue(good.accepted)
+
+    def test_verify_mismatching_selector_policy(self) -> None:
+        manifest = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selector-demo
+spec:
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.23
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_mismatching_selector(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+
+        bad = verifier.verify(manifest, [], "mismatching_selector")
+        good = verifier.verify(manifest, patch, "mismatching_selector")
+
+        self.assertFalse(bad.accepted)
+        self.assertTrue(good.accepted)
+
+    def test_verify_ssh_port_policy(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ssh-port
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+      ports:
+        - containerPort: 22
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_ssh_port(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+
+        bad = verifier.verify(manifest, [], "ssh_port")
+        good = verifier.verify(manifest, patch, "ssh_port")
+
+        self.assertFalse(bad.accepted)
+        self.assertTrue(good.accepted)
+
+    def test_verify_duplicate_env_var_policy(self) -> None:
+        manifest = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: duplicate-env
+spec:
+  containers:
+    - name: app
+      image: nginx:1.23
+      env:
+        - name: LOG_LEVEL
+          value: info
+        - name: LOG_LEVEL
+          value: debug
+"""
+        obj = yaml.safe_load(manifest)
+        patch = proposer_cli._patch_duplicate_env_var(obj)
+        verifier = Verifier(require_kubectl=False)
+        self._stub_kubectl(verifier, True)
+
+        bad = verifier.verify(manifest, [], "duplicate_env_var")
+        good = verifier.verify(manifest, patch, "duplicate_env_var")
+
+        self.assertFalse(bad.accepted)
+        self.assertTrue(good.accepted)
 
 
 if __name__ == "__main__":  # pragma: no cover

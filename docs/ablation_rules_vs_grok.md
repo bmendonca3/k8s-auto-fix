@@ -1,10 +1,10 @@
-# Rules vs Grok Ablation (1.313-manifest slice)
+# Rules vs Grok Ablation
 
 ## Overview
 
 | Mode | Acceptance | Median verifier (ms) | Verifier P95 (ms) | Median proposer (ms) | Notes |
 | ---- | ---------- | -------------------- | ----------------- | -------------------- | ----- |
-| Rules (`configs/run_rules.yaml`) | 13589/13656 (99.51%) | 77 | 178.4 | 5 | Deterministic baseline; zero retries required. |
+| Rules (`configs/run_rules.yaml`) | 13338/13373 patched items (99.74%; auto-fix 0.8486 over 15,718 detections) | n/a | n/a | n/a | Deterministic full-corpus baseline; full-corpus latency was not archived in `data/eval/unified_eval_summary.json`. |
 | Grok/xAI (`configs/run_grok.yaml`) | 1313/1313 (100.00%) | n/a | n/a | n/a | Latest rerun succeeds across the slice; telemetry enumerating generated patches now lives in `data/grok1k_telemetry.json` (per-request latency remains unavailable). |
 
 Token/cost telemetry for the Grok run was not captured during the original sweep. The Grok-5k evaluation provides a proxy mean of ~2.27k tokens/patch (4.36M prompt + 0.69M completion tokens total), which would translate to roughly 3.0M tokens ($\approx\$0.90$) for the 1.313k slice if re-run under the same prompt template.
@@ -18,13 +18,13 @@ Token/cost telemetry for the Grok run was not captured during the original sweep
 
 ## Latency and safety
 
-- **Verifier latency:** Rules-mode verification completes quickly (median 77 ms, P95 178.4 ms). Grok timing telemetry was not captured in the archival sweep.
-- **Proposer latency:** Rules-mode generation now averages 5 ms per detection in the parallel runner. Future Grok reruns should pass `--metrics-out` to capture comparable telemetry alongside token usage.
+- **Verifier latency:** Full-corpus rules latency is not archived in the unified evaluation summary; the supported replay remains the latency reference (median 242 ms, P95 517.8 ms).
+- **Proposer latency:** Full-corpus proposer timing is likewise not archived. Future Grok reruns should pass `--metrics-out` to capture comparable telemetry alongside token usage.
 - **Semantic regressions:** No new policy or safety regressions slipped through verification. The remaining Grok failures are attributable to type mismatches rather than unsafe edits; applying the rules-mode guard (stringifying CPU quantities) resolves them.
 
 ## Grok-5k failure taxonomy (context)
 
-`logs/grok5k/failure_summary_latest.txt` shows that 552/561 rejects (98.4%) stem from `kubectl --dry-run=server` errors tied to missing real-world infrastructure (empty resource names, absent PVCs, controller-specific fields). Only 23 rejects are policy-driven, primarily `unset-{cpu,memory}-requirements`. These figures align with the 1.313k slice analysis: the Grok path is safe but sensitive to resource quantity formatting and external dependencies. Broadening CRD/namespace fixtures remains the primary lever for improving Grok acceptance beyond 88.78\%.
+`logs/grok5k/failure_summary_latest.txt` shows that 552/561 rejects (98.4%) stem from `kubectl --dry-run=server` errors tied to missing real-world infrastructure (empty resource names, absent PVCs, controller-specific fields). Only 23 rejects are policy-driven, primarily `unset-{cpu,memory}-requirements`. These figures align with the 1.313k slice analysis: the Grok path is safe but sensitive to resource quantity formatting and external dependencies. Broadening CRD/namespace fixtures remains the primary lever for improving Grok acceptance beyond 88.52\%.
 
 ## Artifacts
 

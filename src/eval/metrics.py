@@ -32,8 +32,11 @@ def run(
     failed_safety = 0
     failed_rescan = 0
     usage_totals: Dict[str, float] = {
+        "usage_records": 0.0,
         "prompt_tokens": 0.0,
         "completion_tokens": 0.0,
+        "reasoning_tokens": 0.0,
+        "unattributed_tokens": 0.0,
         "total_tokens": 0.0,
     }
 
@@ -67,10 +70,16 @@ def run(
         usage = record.get("model_usage")
         if not isinstance(usage, dict):
             continue
-        for key in usage_totals:
-            value = usage.get(key)
-            if isinstance(value, (int, float)):
-                usage_totals[key] += float(value)
+        usage_totals["usage_records"] += 1.0
+        prompt = _usage_number(usage.get("prompt_tokens"))
+        completion = _usage_number(usage.get("completion_tokens"))
+        total = _usage_number(usage.get("total_tokens"))
+        reasoning = _reasoning_tokens(usage)
+        usage_totals["prompt_tokens"] += prompt
+        usage_totals["completion_tokens"] += completion
+        usage_totals["reasoning_tokens"] += reasoning
+        usage_totals["total_tokens"] += total
+        usage_totals["unattributed_tokens"] += max(total - prompt - completion - reasoning, 0.0)
 
     metrics = {
         "detections": num_detections,
@@ -102,6 +111,20 @@ def _load_array(path: Path) -> List[Any]:
     return data
 
 
+def _usage_number(value: Any) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
+
+
+def _reasoning_tokens(usage: Dict[str, Any]) -> float:
+    details = usage.get("completion_tokens_details")
+    if not isinstance(details, dict):
+        return 0.0
+    return _usage_number(details.get("reasoning_tokens"))
+
+
 if __name__ == "__main__":  # pragma: no cover
     typer.run(run)
-

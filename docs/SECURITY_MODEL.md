@@ -1,0 +1,113 @@
+# Security Model
+
+`k8s-auto-fix` is a patch proposal and verification pipeline. It is designed to
+make Kubernetes security hardening easier to review, not to bypass operator
+judgment or cluster change-control.
+
+## What The Tool Changes
+
+The proposer emits RFC 6902 JSON Patch operations for a detected Kubernetes
+misconfiguration. Deterministic rules currently focus on narrow hardening changes
+such as:
+
+- replacing mutable image tags and unsafe security context settings
+- setting resource requests and limits
+- disabling host networking, host PID, host IPC, hostPath, and hostPort usage
+- dropping dangerous Linux capabilities and blocking privilege escalation
+- normalizing service account fields when safe
+- adding probe ports, anti-affinity, Job TTL, and PDB eviction policy fields
+- rewriting secret-like environment variables to `valueFrom.secretKeyRef`
+- repairing selected Service selector and targetPort mismatches when safe labels
+  are available
+
+The tool does not intentionally remove containers or volumes as a remediation
+strategy, create live cluster Secrets, rotate credentials, deploy directly to a
+cluster, or decide production rollout timing. Accepted patches are inputs for
+review, scheduling, and GitOps writeback.
+
+## Trust Boundaries
+
+- The detector reads manifests and emits structured findings.
+- The proposer, including any LLM-backed mode, produces candidate patches only.
+- The verifier is the acceptance boundary. A patch is usable only when the active
+  verifier gates accept it.
+- The scheduler and queue prioritize accepted work; they do not make rejected
+  patches safe.
+- The operator or GitOps review process remains responsible for production
+  approval, rollout, monitoring, and rollback.
+
+## Verifier Gates
+
+Use the full verifier profile for release candidates unless you are deliberately
+running an offline experiment. The full profile checks:
+
+- policy conformance for the targeted kube-linter, Kyverno, or custom rule
+- project safety assertions for privileged containers, hostPath, dangerous
+  capabilities, missing images, and related semantic regressions
+- `kubectl apply --dry-run=server` for API-server schema and admission behavior
+- optional rescan with kube-linter and Kyverno when `--enable-rescan` is enabled
+
+For production-bound changes, treat `--no-require-kubectl`, `--disable-gate`, and
+non-full gate profiles as test-only shortcuts. They are useful for local
+debugging, but they weaken the evidence that a patch is safe.
+
+## Secrets Handling
+
+The `env_var_secret` rule removes inline secret-like environment values from the
+patch payload and replaces them with `secretKeyRef` references. Generated Secret
+names and keys are sanitized for Kubernetes naming rules.
+
+This protects artifacts such as `data/patches.json` from carrying raw secret
+material, but it does not create, rotate, or validate the live Secret value.
+Before merge or apply, an operator must confirm the referenced Secret exists in
+the target namespace, contains the expected key, and is managed by the approved
+secret workflow.
+
+## LLM Boundaries
+
+LLM-backed modes are optional patch generators. They receive manifest and finding
+context and must return JSON Patch operations. Their output is constrained by
+patch parsing, semantic regression checks, retry feedback, and the same verifier
+gates used for deterministic rules.
+
+Do not treat provider output as trusted because it is plausible or well-formed.
+Review LLM patches more closely when they touch workload identity, networking,
+storage, probes, resource sizing, or anything outside the targeted finding. Keep
+API keys in environment variables or a secret manager, and do not commit model
+credentials or raw provider transcripts.
+
+## GitOps Review
+
+The preferred path is source-controlled change review:
+
+1. Generate detections and patches.
+2. Verify with the full gate profile and include errors for rejected records.
+3. Write accepted patches to a branch in the owning manifest repository.
+4. Open a PR with the minimal manifest diff and verifier artifacts.
+5. Let CI re-run policy checks and server-side dry-run against the intended
+   cluster profile.
+6. Merge after review and allow Argo CD, Flux, or the platform deployment system
+   to reconcile.
+
+Avoid direct cluster mutation for normal remediation. Direct `kubectl apply`
+belongs in a controlled incident path with a linked source-control follow-up.
+
+## When Human Review Is Required
+
+Require a human operator or service owner before merge or apply when any of these
+conditions are true:
+
+- the patch affects production, regulated, customer-facing, or stateful workloads
+- the patch changes service selectors, target ports, service accounts, RBAC,
+  host networking, hostPath, capabilities, probes, or resource sizing
+- the patch rewrites inline secrets and the referenced Secret has not been
+  independently confirmed
+- the workload is generated by Helm, Kustomize, an operator, or another
+  controller and the owning source is not the patched file
+- any verifier gate is disabled, skipped, or fails
+- an LLM-generated patch includes attempt errors, broad replacements, or changes
+  beyond the targeted policy
+- the change window, rollback owner, or blast radius is unclear
+
+Rejected patches should stay out of the queue until regenerated, manually fixed,
+or explicitly parked with a reason.
