@@ -2,11 +2,54 @@
 
 `k8s-auto-fix` is a closed-loop pipeline that detects Kubernetes misconfigurations, proposes JSON patches, verifies them against guardrails, and schedules accepted fixes. It supports deterministic rules as well as Grok and OpenAI-compatible LLM modes, and underpins the accompanying research paper.
 
+## Why this matters
+Automated remediation is only useful if operators can trust the proposed change. This project treats the model or rules engine as a candidate generator, then makes verification the acceptance boundary: patches must survive JSON Patch safety checks, policy re-checks, schema validation, optional rescans, and Kubernetes server-side dry-run before they reach scheduling or review.
+
+The practical claim is narrow: validate security fixes before they hit infrastructure.
+
+```mermaid
+flowchart LR
+    manifests["Kubernetes manifests"] --> detector["Detector"]
+    detector --> proposer["Proposer"]
+    proposer --> verifier["Verifier"]
+    verifier --> risk["Risk enrichment"]
+    risk --> scheduler["Scheduler"]
+    scheduler --> review["Review queue"]
+    proposer -. "candidate patches" .-> verifier
+    verifier -. "acceptance boundary" .-> scheduler
+    review -. "operator evidence" .-> reviewer["Human reviewer"]
+```
+
 ## Key features
 - End-to-end detector -> proposer -> verifier -> risk -> scheduler -> queue workflow with reproducible CLI entry points.
 - Switchable proposer backends (rules, Grok, vendor, vLLM) with semantic regression checks, targeted policy guidance, and optional response caching for remote model runs.
 - Verifier integrates kube-linter, Kyverno, `kubectl apply --dry-run=server`, and bespoke safety gates before a patch is accepted.
 - Metrics bundles, benchmarks, and reproducibility scripts that back the paper's evaluation.
+
+## Reviewer quick path
+If you are reviewing the project for research, hiring, or collaboration, start here:
+
+1. Read the architecture overview: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+2. Check local prerequisites without changing cluster state:
+   ```bash
+   make doctor
+   ```
+3. Run the CI-safe fixture regression. This does not require kube-linter, Kyverno, kubectl, a cluster, or API keys:
+   ```bash
+   make tiny-regression
+   ```
+4. Preview the lightweight pipeline plan without writing outputs:
+   ```bash
+   make pipeline-plan
+   ```
+5. Inspect evidence packaging and operator review helpers:
+   ```bash
+   make evidence-manifest-smoke
+   make review-packet-concise-smoke
+   ```
+
+See [docs/DEMO.md](docs/DEMO.md) for a short review script and expected signals.
+For cluster-backed validation, use a local Kind/dev cluster and follow [docs/LIVE_EVAL.md](docs/LIVE_EVAL.md).
 
 ## Getting started
 ```bash
