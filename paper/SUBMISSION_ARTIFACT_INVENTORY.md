@@ -1,6 +1,6 @@
 # Submission Artifact Inventory
 
-Last checked: 2026-05-31 14:58 MST.
+Last checked: 2026-05-31 16:19 MST.
 
 This is a local inventory for the TCC-2025-12-0666 packet. It is not a
 submission artifact and should not be uploaded.
@@ -15,8 +15,8 @@ major revision.
 
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
-| `paper/access.pdf` | Main manuscript PDF | `308f1d7202540bc1a8d32a294b54282fe6d422b8f52dc9c852607d5ca0733d54` |
-| `paper/access.tex` | Authoritative standalone manuscript source | `63763e15c5865e9574b95045f698d924151b112d2f153afed8749310f32057b0` |
+| `paper/access.pdf` | Main manuscript PDF | `6dcbd3eb1084d2a604f535ca97dfb0a2838d8565bb80dfd94d8b98b56dcb0364` |
+| `paper/access.tex` | Authoritative standalone manuscript source | `e0c4c73b1b09404bc25eb9ac42067a84c8fd93b1e1b8dd27aad0d52299de3458` |
 | `paper/cover_letter.md` | Cover-letter draft | `995bdbfdb1888f64d6279e91de80089f82831a206f95dcfe0731d43d3d1f3dae` |
 | `paper/response_to_reviewers.md` | Point-by-point response draft | `38b15bfd99599baed33641774ca6fa742130e8764fb27175b13da7ca19f0a482` |
 | `paper/references.bib` | BibTeX mirror of the active inline bibliography | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
@@ -29,8 +29,8 @@ together:
 
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
-| `paper/appendices.pdf` | Optional supplemental appendix PDF | `1c414d0ae6a7e7a67d9e88b5ea1e32646e867fa970e4301067a2100bcf8cdcca` |
-| `paper/appendices.tex` | Optional supplemental appendix source | `3a5fb8817bde9f8a5cc409bc5f7f1d9d5ca3881cf22036de9ef21dd79babfd53` |
+| `paper/appendices.pdf` | Optional supplemental appendix PDF | `0e18198495ee755bbeda49a15b02c94e67c94d45b31bf7682318a4a6cf284700` |
+| `paper/appendices.tex` | Optional supplemental appendix source | `fa1e8b6f7b0c4b1681c1b7d8d848fa5b9a00c5a42df25f7b51b60a163d59b681` |
 
 ## Standalone Source Dependencies
 
@@ -64,7 +64,7 @@ helper copies are unused and excluded from clean package previews.
 A dry-run clean-package preview is available with:
 
 ```sh
-rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
+rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='paper/overleaf_images/' --exclude='figures/failure_taxonomy.png' --exclude='paper/author1.png' --exclude='paper/aws.jpg' --exclude='paper/bullet.png' --exclude='paper/equation3.png' --exclude='paper/fig1.png' --exclude='paper/logo.png' --exclude='paper/notaglinelogo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
 ```
 
 This preview command does not write files because it keeps `-n`.
@@ -74,9 +74,9 @@ Current key Overleaf hashes:
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
 | `paper/overleaf/main.tex` | Overleaf entry point | `6df68ddd89f4e5716fd0e8c16d005e0a11ac4c481675e28cf861148b15f3c7a8` |
-| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `e7ab2173156bbb5924917510d7fb547ae76912f7af6c475f28489ac6f50c3c08` |
+| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `40a3fccae7eae753b47e1f4faa004404c09f698d8dc8cffcefb486595a763c97` |
 | `paper/overleaf/paper/references.bib` | Overleaf BibTeX mirror | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
-| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `6553c51bfafd6ef8277d3c83ebb9e095332ff97158eb13513773104ac41c3343` |
+| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `971d294887ec3b7ffe45e083346686499681b43799228e95f3ed9cce88935d40` |
 | `paper/overleaf/paper/grok_failures_table.tex` | Included failure-taxonomy table | `93211d9fde64b27cc0d07376d30fd7dc83dd63882c597f6a1a1d235fdf30a7ef` |
 | `paper/overleaf/paper/reproducibility/baselines.tex` | Included baseline table | `6ca9d5f49d4d07a5b2980330ff0caad8d7219f2a15c34376367e4677ea804fcd` |
 
@@ -124,6 +124,10 @@ font map paths, table input paths, figure paths, and biography image paths.
 - Unreferenced image leftovers, including stale copies of
   `paper/dheer_toprani_photo.png` or
   `paper/overleaf/paper/dheer_toprani_photo.png` if they reappear.
+- Unreferenced Overleaf template/image leftovers, including
+  `paper/overleaf/paper/overleaf_images/`,
+  `paper/overleaf/figures/failure_taxonomy.png`, and unused IEEE template
+  images such as `paper/overleaf/paper/fig1.png`.
 - Antigravity, Kiro, panel-review, or local scratch logs.
 
 The local packet-control and audit-summary files listed here are intentionally public in the repository for traceability, but they are not part of the
@@ -138,9 +142,9 @@ shasum -a 256 paper/access.pdf paper/access.tex paper/appendices.pdf paper/appen
 diff -u paper/references.bib paper/overleaf/paper/references.bib
 diff -u paper/grok_failures_table.tex paper/overleaf/paper/grok_failures_table.tex
 diff -u docs/reproducibility/baselines.tex paper/overleaf/paper/reproducibility/baselines.tex
-tectonic -X compile access.tex --outdir /tmp/k8s_swarm_final_standalone --keep-logs
-tectonic -X compile main.tex --outdir /tmp/k8s_swarm_final_overleaf --keep-logs
-tectonic -X compile appendices.tex --outdir /tmp/k8s_appendices_swarm --keep-logs
+tectonic -X compile access.tex --outdir /tmp/k8s_nitpick_final_standalone --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_nitpick_final_overleaf --keep-logs
+tectonic -X compile appendices.tex --outdir /tmp/k8s_nitpick_appendices --keep-logs
 find paper/overleaf -maxdepth 3 -type f \( -name '*.aux' -o -name '*.log' -o -name '*.out' -o -name 'missfont.log' -o -name '.DS_Store' \) -print | sort
-rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
+rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='paper/overleaf_images/' --exclude='figures/failure_taxonomy.png' --exclude='paper/author1.png' --exclude='paper/aws.jpg' --exclude='paper/bullet.png' --exclude='paper/equation3.png' --exclude='paper/fig1.png' --exclude='paper/logo.png' --exclude='paper/notaglinelogo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
 ```

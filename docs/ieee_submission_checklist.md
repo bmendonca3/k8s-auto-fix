@@ -73,7 +73,8 @@
   `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 - Transient build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
-- Unreferenced author-photo leftovers such as `dheer_toprani_photo.png`.
+- Unreferenced image leftovers such as `dheer_toprani_photo.png`,
+  `paper/overleaf/paper/overleaf_images/`, and unused IEEE template figures.
 - Antigravity, Kiro, or panel-review logs.
 
 ## Rebuild Commands
@@ -106,7 +107,7 @@ the upload package.
 To preview a clean package without writing files or uploading anything, run:
 
 ```
-rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
+rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='paper/overleaf_images/' --exclude='figures/failure_taxonomy.png' --exclude='paper/author1.png' --exclude='paper/aws.jpg' --exclude='paper/bullet.png' --exclude='paper/equation3.png' --exclude='paper/fig1.png' --exclude='paper/logo.png' --exclude='paper/notaglinelogo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
 ```
 
 Remove `-n` only after the submission gate is satisfied and the portal's source

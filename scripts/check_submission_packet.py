@@ -98,6 +98,18 @@ RETIRED_PUBLIC_ARTIFACTS = [
     "logs/access.log",
 ]
 
+UNREFERENCED_OVERLEAF_ASSETS = [
+    "paper/overleaf/figures/failure_taxonomy.png",
+    "paper/overleaf/paper/author1.png",
+    "paper/overleaf/paper/aws.jpg",
+    "paper/overleaf/paper/bullet.png",
+    "paper/overleaf/paper/equation3.png",
+    "paper/overleaf/paper/fig1.png",
+    "paper/overleaf/paper/logo.png",
+    "paper/overleaf/paper/notaglinelogo.png",
+    "paper/overleaf/paper/overleaf_images",
+]
+
 def chars(*codes: int) -> str:
     return "".join(chr(code) for code in codes)
 
@@ -420,6 +432,12 @@ def check_retired_public_artifacts_removed(failures: list[str]) -> None:
             fail(f"{path}: retired or local-only artifact is still tracked", failures)
 
 
+def check_unref_overleaf_assets_removed(failures: list[str]) -> None:
+    for path in UNREFERENCED_OVERLEAF_ASSETS:
+        if (ROOT / path).exists():
+            fail(f"{path}: unreferenced source-package asset should not be present", failures)
+
+
 def check_stale_wording(failures: list[str]) -> None:
     for path in STALE_WORDING_DOCS:
         text = read_text(path)
@@ -459,6 +477,7 @@ def main() -> int:
         check_packet_tag_alignment(failures)
         check_no_mutable_github_links(failures)
         check_retired_public_artifacts_removed(failures)
+        check_unref_overleaf_assets_removed(failures)
         check_stale_wording(failures)
         check_upload_facing_residue(failures)
 
