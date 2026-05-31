@@ -65,11 +65,13 @@
   `data/batch_runs/grok_5k/metrics_history.json` — retired stale summaries; use
   `data/metrics_rules_full.json`,
   `data/batch_runs/grok_5k/metrics_grok5k.json`, and cited taxonomy artifacts.
-- Local helper binaries and class copies such as `paper/tectonic`,
-  `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
+- Local helper binaries, logs, and class copies such as `paper/tectonic`,
+  `paper/missfont.log`, `paper/ieeeaccess.cls`,
+  `paper/ieeeaccess.cls.backup`, `paper/overleaf/ieeeaccess.cls`, and
+  `paper/overleaf/paper/ieeeaccess.cls`.
 - Local cloud helper scripts or failed build logs such as
   `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
-- Transient Overleaf build products such as `main.aux`, `main.log`, `main.out`,
+- Transient build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
 - Unreferenced author-photo leftovers such as `dheer_toprani_photo.png`.
 - Antigravity, Kiro, or panel-review logs.

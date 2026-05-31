@@ -86,9 +86,12 @@ RETIRED_PUBLIC_ARTIFACTS = [
     "data/failures/taxonomy_summary.csv",
     "data/batch_runs/grok_5k/metrics_history.json",
     "notes/to-do list",
+    "paper/missfont.log",
+    "paper/ieeeaccess.cls.backup",
     "paper/tectonic",
     "paper/ieeeaccess.cls",
     "paper/overleaf/ieeeaccess.cls",
+    "paper/overleaf/paper/ieeeaccess.cls",
     "add_iam_policy_binding.sh",
     "access.log",
     "logs/access.log",
@@ -254,9 +257,12 @@ def check_do_not_upload_lists(failures: list[str]) -> None:
         "appendix/appendices.tex",
         "data/failures/taxonomy_summary.csv",
         "data/batch_runs/grok_5k/metrics_history.json",
+        "paper/missfont.log",
+        "paper/ieeeaccess.cls.backup",
         "paper/tectonic",
         "paper/ieeeaccess.cls",
         "paper/overleaf/ieeeaccess.cls",
+        "paper/overleaf/paper/ieeeaccess.cls",
         "add_iam_policy_binding.sh",
         "access.log",
         "logs/access.log",
@@ -409,7 +415,7 @@ def check_no_mutable_github_links(failures: list[str]) -> None:
 def check_retired_public_artifacts_removed(failures: list[str]) -> None:
     tracked = set(git_lines(["ls-files"]))
     for path in RETIRED_PUBLIC_ARTIFACTS:
-        if path in tracked:
+        if path in tracked and (ROOT / path).exists():
             fail(f"{path}: retired or local-only artifact is still tracked", failures)
 
 

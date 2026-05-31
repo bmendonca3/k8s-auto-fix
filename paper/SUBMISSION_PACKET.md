@@ -60,11 +60,13 @@ before upload.
 - Stale failure and run-history summaries such as
   `data/failures/taxonomy_summary.csv` and
   `data/batch_runs/grok_5k/metrics_history.json`.
-- Local helper binaries and class copies such as `paper/tectonic`,
-  `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
+- Local helper binaries, logs, and class copies such as `paper/tectonic`,
+  `paper/missfont.log`, `paper/ieeeaccess.cls`,
+  `paper/ieeeaccess.cls.backup`, `paper/overleaf/ieeeaccess.cls`, and
+  `paper/overleaf/paper/ieeeaccess.cls`.
 - Local cloud helper scripts or failed build logs such as
   `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
-- Transient Overleaf build products such as `main.aux`, `main.log`, `main.out`,
+- Transient build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
 - `paper/overleaf/main.pdf` for source-only uploads; use `paper/access.pdf` as
   the portal manuscript PDF.
