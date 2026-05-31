@@ -46,6 +46,8 @@ class DatasetConfig:
             "mode": self.mode,
             "seed": self.seed,
             "note": self.note,
+            "detections": metrics.get("detections"),
+            "auto_fix_rate": metrics.get("auto_fix_rate"),
             "total": acceptance["total"],
             "accepted": acceptance["accepted"],
             "acceptance_rate": acceptance["rate"],
@@ -204,13 +206,15 @@ def _summarise_patches(path: Optional[Path]) -> Dict[str, Any]:
 
 
 def _derive_acceptance(metrics: Dict[str, Any]) -> Dict[str, Optional[float]]:
-    total = metrics.get("detections") or metrics.get("total")
+    total = metrics.get("patches") or metrics.get("detections") or metrics.get("total")
     accepted = metrics.get("accepted")
     if accepted is None:
         accepted = metrics.get("auto_fix")
 
     rate = metrics.get("auto_fix_rate")
-    if rate is None and accepted is not None and total:
+    if metrics.get("patches") and accepted is not None and total:
+        rate = float(accepted) / float(total)
+    elif rate is None and accepted is not None and total:
         rate = float(accepted) / float(total)
 
     return {
@@ -234,6 +238,14 @@ def _format_acceptance(entry: Dict[str, Any]) -> str:
         return "n/a"
     if rate is None or rate != rate:
         return f"{accepted}/{total}"
+    if entry.get("dataset") == "Full corpus":
+        detections = entry.get("detections")
+        auto_fix_rate = entry.get("auto_fix_rate")
+        if isinstance(detections, int) and isinstance(auto_fix_rate, (int, float)):
+            return (
+                f"{accepted}/{total} patched items ({rate * 100:.2f}%; "
+                f"auto-fix {auto_fix_rate:.4f} over {detections:,} detections)"
+            )
     return f"{accepted}/{total} ({rate * 100:.2f}%)"
 
 
@@ -287,6 +299,15 @@ def _format_acceptance_latex(entry: Dict[str, Any]) -> str:
     if rate is None or rate != rate:
         return f"{accepted}/{total}"
     percentage = f"{rate * 100:.2f}"
+    if entry.get("dataset") == "Full corpus":
+        detections = entry.get("detections")
+        auto_fix_rate = entry.get("auto_fix_rate")
+        if isinstance(detections, int) and isinstance(auto_fix_rate, (int, float)):
+            detections_text = f"{detections:,}"
+            return (
+                rf"{accepted}/{total} patched items ({percentage}\%; "
+                rf"auto-fix {auto_fix_rate:.4f} over {detections_text} detections)"
+            )
     return rf"{accepted}/{total} ({percentage}\%)"
 
 
@@ -400,10 +421,10 @@ def _build_results() -> List[Dict[str, Any]]:
             verified_path=DATA_DIR / "verified_rules_5000.json",
         ),
         DatasetConfig(
-            dataset="Manifest 1.313k",
-            mode="rules",
+            dataset="Full corpus",
+            mode="rules+guardrails",
             seed=1337,
-            note="Full manifest slice in deterministic rules mode.",
+            note="Full deterministic rules+guardrails replay.",
             metrics_path=DATA_DIR / "metrics_rules_full.json",
             patches_path=DATA_DIR / "patches_rules_full.json",
             verified_path=DATA_DIR / "verified_rules_full.json",

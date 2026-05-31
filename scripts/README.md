@@ -61,6 +61,9 @@ here by function so you can quickly locate the right tool.
   sanity checks.
 - `check_docs_links.py` – local Markdown link and heading-anchor checks for the
   docs set.
+- `check_submission_packet.py` – local TCC packet hygiene checks for gate
+  wording, do-not-upload coverage, artifact hashes, dirty-worktree snapshot
+  coverage, and clean Overleaf package guidance.
 - `scan_secrets.py` – lightweight stdlib scanner for tracked and unignored
   repo text files; reports common token/private-key patterns with redacted
   evidence and skips artifact-heavy sample/generated paths by default.

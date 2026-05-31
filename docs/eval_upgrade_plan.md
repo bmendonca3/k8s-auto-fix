@@ -16,8 +16,9 @@ This document captures concrete steps, owners, and expected artefacts for the ni
 - **Outputs:** `data/manifests_live_subset/` (13-manifest validation), `data/live_cluster/batch/` (200-manifest stratified sample), `data/live_cluster/results.json`, `data/live_cluster/summary.csv`; Section~V cites the aggregate results.
 - **Status:** ✓ **COMPLETED**
   - Validation run (13 manifests): 100% success
-  - Full evaluation (200 manifests): 84.0% dry-run (168/200), 73.5% live-apply (147/200), 21 rollbacks
-  - Captured divergence between server-side dry-run validation and actual cluster application
+  - Historical 200-manifest evaluation: 84.0% dry-run (168/200), 73.5% live-apply (147/200), 21 rollbacks
+  - Current manuscript result: 1,000/1,000 dry-run and live-apply passes in the fixture-seeded Kind/Kubernetes 1.34.0 evaluation environment (`data/live_cluster/summary_1k.csv`)
+  - Historical 200-manifest divergence retained as provenance, but not used as the current headline result
 - **Evidence Hooks:** Section V-D bullet "Live-cluster validation" updated with actual metrics; Discussion checklist marked complete; Limitations reference fixtures/namespace cleanup.
 
 ## A2. Verifier Gate Ablation Study
@@ -36,7 +37,7 @@ This document captures concrete steps, owners, and expected artefacts for the ni
   - `scripts/run_kyverno_baseline.py` processes detections and simulates Kyverno mutation acceptance based on policy coverage.
   - `--simulate` mode provides deterministic results without requiring Kyverno CLI installation.
 - **Outputs:** `data/baselines/kyverno_baseline.csv` with per-policy acceptance rates and aggregate metrics.
-- **Status:** ✓ Completed. Baseline shows 81.22% acceptance (1,038/1,278 detections), comparable to our system's 78.9% with the trade-off being our additional schema validation and dry-run verification gates.
+- **Status:** ✓ Completed. Current artifacts report two Kyverno views: a 95.54% live aggregate (364/381 detections) once patched manifests pass our verifier, and a 67.98% unweighted mean across 17 simulated policy rows. The manuscript treats the separate 78.9% verifier-gate ablation as directional evidence about safety-gate cost/value, not as a like-for-like aggregate win.
 - **Evidence Hooks:** Section V-D bullet "Kyverno baseline comparison"; Baselines and Ablations subsection updated with acceptance comparison; Discussion checklist marked complete.
 
 ## A3. Additional Scheduling Baselines

@@ -1,20 +1,17 @@
 import json
 import os
 import pandas as pd
-import numpy as np
 from collections import Counter
 
-def analyze_grok_failures(data_dir, patches_file):
+def analyze_grok_failures(data_dir):
     """
-    Analyzes the Grok verification data to extract failure causes and latencies,
-    and generate a CSV and a LaTeX table.
+    Analyzes the Grok verification data to extract failure causes and generate
+    a CSV plus LaTeX table.
 
     Args:
         data_dir (str): The directory containing the 'verified_grok5k_batch_*.json' files.
-        patches_file (str): The path to the 'patches.json' file.
     """
     all_failures = []
-    all_latencies = []
 
     # Read all verified files
     for filename in sorted(os.listdir(data_dir)):
@@ -25,13 +22,6 @@ def analyze_grok_failures(data_dir, patches_file):
                 for entry in data:
                     if not entry["accepted"]:
                         all_failures.append(entry)
-
-    # Read patches file to get latencies
-    with open(patches_file, 'r') as f:
-        patches_data = json.load(f)
-        for patch in patches_data:
-            all_latencies.append(patch.get("total_latency_ms", 0))
-
 
     failure_causes = []
     for failure in all_failures:
@@ -57,15 +47,10 @@ def analyze_grok_failures(data_dir, patches_file):
     df.to_csv(csv_path, index=False)
     print(f"Generated failure analysis CSV at: {csv_path}")
 
-    # Calculate latency stats
-    p50_latency = np.percentile(all_latencies, 50)
-    p95_latency = np.percentile(all_latencies, 95)
-
-
     # Create a LaTeX table using tabularx for wrapping text
     latex_table = "\\begin{table}[h!]\n"
     latex_table += "\\centering\n"
-    latex_table += "\\caption{Top 10 Grok/xAI Failure Causes and Latencies}\n"
+    latex_table += "\\caption{Top 10 Grok/xAI dry-run failure causes}\n"
     latex_table += "\\label{tab:grok_failures}\n"
     latex_table += "\\begin{tabularx}{\\columnwidth}{>{\\raggedright\\arraybackslash}X r}\n"
     latex_table += "\\toprule\n"
@@ -73,9 +58,6 @@ def analyze_grok_failures(data_dir, patches_file):
     latex_table += "\\midrule\n"
     for cause, count in failure_counts.most_common(10):
         latex_table += f"{cause} & {count} \\\\\n"
-    latex_table += "\\midrule\n"
-    latex_table += f"P50 Latency & {p50_latency:.2f} ms \\\\\n"
-    latex_table += f"P95 Latency & {p95_latency:.2f} ms \\\\\n"
     latex_table += "\\bottomrule\n"
     latex_table += "\\end{tabularx}\n"
     latex_table += "\\end{table}\n"
@@ -87,4 +69,4 @@ def analyze_grok_failures(data_dir, patches_file):
 
 
 if __name__ == "__main__":
-    analyze_grok_failures("data/batch_runs/grok_5k", "data/patches.json")
+    analyze_grok_failures("data/batch_runs/grok_5k")

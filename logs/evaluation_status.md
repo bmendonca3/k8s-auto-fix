@@ -1,6 +1,10 @@
-# Live-Cluster Evaluation Status Report
+# Historical Live-Cluster Evaluation Status Report
 
-**Generated:** $(date)
+**Generated:** historical intermediate run log.
+**Current note:** This file is retained for provenance only. The manuscript now
+uses the artifact-backed 1,000-manifest live replay and the current Kyverno
+baseline framing in `paper/access.tex`, `docs/eval_upgrade_plan.md`, and
+`docs/literature_comparison.md`.
 
 ## Completed Tasks
 
@@ -20,7 +24,11 @@
 ### ✓ Phase 3: Kyverno Baseline
 - **Status:** Complete
 - **Duration:** 2 seconds
-- **Results:** 81.22% acceptance (1,038/1,278 detections)
+- **Historical result:** 81.22% acceptance (1,038/1,278 detections)
+- **Current framing:** Use the current artifact-backed Kyverno numbers instead:
+  95.54% live aggregate (364/381 detections) and 67.98% simulated unweighted
+  mean across 17 policy rows. Do not compare either directly to the 78.9%
+  verifier-gate ablation as a like-for-like win.
 - **Top policies:**
   - set_requests_limits: 81.84%
   - run_as_non_root: 81.82%
@@ -35,9 +43,9 @@
   - `scripts/finalize_live_cluster_results.py` - Auto-update paper when eval completes
 
 ### ✓ Phase 5: Documentation Updates
-- **Status:** Partial (Kyverno complete, live-cluster pending results)
+- **Status:** Historical intermediate status; superseded by current TCC package.
 - **Updated files:**
-  - `paper/access.tex` - Added Kyverno baseline comparison (81.22% vs 78.9%)
+  - `paper/access.tex` - historical note superseded by current baseline framing
   - `docs/eval_upgrade_plan.md` - Updated A1 and added A2.5 for Kyverno baseline
   - Discussion checklist - Marked Kyverno complete, live-cluster in progress
 
@@ -130,6 +138,5 @@ watch -n 30 'ls -lh data/live_cluster/results.json 2>/dev/null || echo "Not read
 - `paper/access.tex` - Line 286: Live-cluster validation bullet
 - `data/live_cluster/results.json`
 - `data/live_cluster/summary.csv`
-
 
 
