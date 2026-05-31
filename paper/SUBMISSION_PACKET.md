@@ -1,6 +1,6 @@
 # TCC Submission Packet Index
 
-Last local organization pass: 2026-05-31 12:45 MST.
+Last local organization pass: 2026-05-31 14:16 MST.
 
 This file is the local front door for the TCC-2025-12-0666 major-revision
 packet. It is not an instruction to submit. Do not email, upload, open a pull
@@ -95,7 +95,7 @@ must not be copied into a portal upload or Overleaf source package.
 The most recent organization and packaging pass verified:
 
 - `paper/access.pdf` and `paper/overleaf/main.pdf` were rebuilt from the
-  2026-05-31 03:55 MST source-precision manuscript edits.
+  2026-05-31 14:16 MST escape-narrative source-precision edits.
 - Standalone and Overleaf Tectonic builds both produced 17 pages with 0 fatal
   errors, 0 undefined references/citations, 0 `??` markers, and 0 overfull boxes.
 - `.venv/bin/python -m unittest discover -s tests -p 'test_verifier.py'` passed.

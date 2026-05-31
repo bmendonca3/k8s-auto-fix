@@ -1,6 +1,6 @@
 # Response Letter Claim Check
 
-Last checked: 2026-05-31 11:28 MST.
+Last checked: 2026-05-31 14:16 MST.
 
 This is a local evidence checklist for `paper/response_to_reviewers.md`. It is
 not a submission artifact and should not be uploaded.
@@ -22,7 +22,7 @@ not a submission artifact and should not be uploaded.
 | Architecture/setup include concrete component versions. | Figure caption in `paper/access.tex` lists kube-linter 0.7.6, kubectl 1.34.1, kind 0.30.0, Kubernetes 1.34.0, and Grok/xAI `grok-4.3`; evidence table records the environment. | verified locally |
 | Limitations distinguish API-admission safety from full semantic equivalence. | `paper/access.tex` limitations state the verifier establishes policy, schema, and API-admission safety, not full workload semantic equivalence. | verified locally |
 | Operator-study language is scoped to replay/simulation, not a finished live study. | Evidence-status table marks scheduler comparison as replay-based and Operator A/B as simulated only; stale scan found no completed-live-operator wording. | verified locally |
-| No-policy ablation supports the agent-style acceptance-regime discussion without claiming a named-agent head-to-head. | `data/ablation/verifier_gate_metrics.json` reports 19 total patches, 15 baseline accepted, baseline acceptance 0.789474, no-policy 19 accepted, no-policy acceptance 1.0, no-new-violations 0.789474, and escapes `007`, `012`, `013`, `016`; manuscript labels this as a guardrail ablation and future work for named agents. | verified locally |
+| No-policy ablation supports the agent-style acceptance-regime discussion without claiming a named-agent head-to-head. | `data/ablation/verifier_gate_metrics.json` reports 19 total patches, 15 baseline accepted, baseline acceptance 0.789474, no-policy 19 accepted, no-policy acceptance 1.0, no-new-violations 0.789474, and escapes `007`, `012`, `013`, `016`; `data/ablation/verifier_gate_details.json` records all four as policy re-check failures with `capabilities.drop missing ALL`; manuscript labels this as a guardrail ablation and future work for named agents. | verified locally |
 | Live replay and cross-cluster rows are scoped to current artifacts. | `data/live_cluster/results_1k.json` has 1000 records, 1000 dry-run pass, 1000 live-apply pass, and 0 rollbacks; cross-cluster summaries show AKS 200/200, GKE 200/200, EKS 198/200, matching the manuscript table. | verified locally |
 | Grok/xAI metrics use token counts and current-pricing guidance instead of a stale fixed dollar estimate. | `data/batch_runs/grok_5k/metrics_grok5k.json` reports 4426/5000 accepted, auto-fix rate 0.8852, 4,376,199 prompt tokens, 689,779 visible completion tokens, and 11,399,926 total tokens including xAI-reported reasoning tokens; manuscript cites `xai_pricing` rather than a fixed dollar total. | verified locally |
 | Scheduler headline numbers are artifact-backed. | `data/metrics_schedule_compare.json` reports FIFO top-risk P95 102.3333 hours and bandit top-risk P95 13.0 hours; manuscript rounds these as 102.3 h and 13.0 h. | verified locally |
@@ -38,6 +38,8 @@ jq '{detections, patches, verified, accepted, auto_fix_rate, median_patch_ops}' 
 jq '{detections, patches, verified, accepted, auto_fix_rate, median_patch_ops, model_usage}' data/batch_runs/grok_5k/metrics_grok5k.json
 jq '{fifo_p95: .telemetry.fifo.top_risk_wait_hours.p95, bandit_p95: .telemetry.baseline.top_risk_wait_hours.p95}' data/metrics_schedule_compare.json
 jq '{count: length, dry_run_pass: ([.[] | select(.dry_run_pass==true)] | length), live_apply_pass: ([.[] | select(.live_apply_pass==true)] | length), rollback_triggered: ([.[] | select(.rollback_triggered==true)] | length)}' data/live_cluster/results_1k.json
+jq '[.[] | select(.id=="007" or .id=="012" or .id=="013" or .id=="016") | {id, accepted, ok_policy, errors}]' data/ablation/verifier_gate_details.json
+jq '{count: length, dry_run_pass: ([.[] | select(.dry_run_pass==true)] | length), live_apply_pass: ([.[] | select(.live_apply_pass==true)] | length)}' data/cross_cluster/aks/results.json data/cross_cluster/gke/results.json data/cross_cluster/eks/results.json
 diff -u paper/access.tex paper/overleaf/paper/access.tex
 # Also ran the targeted stale-wording scan used by the packet checklist against
 # the manuscript, cover letter, response letter, packet index, and checklist.
