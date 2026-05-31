@@ -1,33 +1,38 @@
-# IEEE Access Submission Checklist — k8s-auto-fix
+# TCC / ScholarOne Submission Checklist — k8s-auto-fix
 
-## Artifacts
-- `paper/access.pdf` — final manuscript (compiled with `pdflatex access.tex` repeated twice).
-- `paper/cover_letter.md` — submission letter (copy into the IEEE Access portal or convert to PDF).
-- `data/grok5k_telemetry.json`, `data/grok1k_telemetry.json` — referenced telemetry supporting Grok evaluations.
-- `data/eval/detector_metrics.json` — detector precision/recall/F1 evidence.
-- `data/metrics_schedule_compare.json` — scheduler benchmarks (FIFO vs bandit).
-- `docs/ablation_rules_vs_grok.md` — rules vs Grok ablation notes cited in the manuscript.
-- Optional supplementary bundle: compress `data/`, `docs/`, and `scripts/` subsets as permitted by IEEE Access.
+## Submission Gate
+- Do not submit until IEEE Transactions on Cloud Computing confirms that
+  TCC-2025-12-0666 may be resubmitted or reopened as a major revision.
+- If permission is denied or the paper must be submitted as a new manuscript,
+  update the cover letter and any response text before upload.
+
+## Main Artifacts
+- `paper/access.pdf` — final manuscript PDF compiled from `paper/access.tex`.
+- `paper/access.tex` — authoritative source for the manuscript.
+- `paper/grok_failures_table.tex` — included failure-taxonomy table.
+- `docs/reproducibility/baselines.tex` — included baseline table source.
+- `figures/*.png` plus author photos in `paper/` — figures and biography images used by the source.
+- `paper/cover_letter.md` — TCC resubmission cover-letter draft.
+- `paper/overleaf/` — self-contained package when an online TeX upload is needed.
 
 ## Rebuild Commands
 ```
 cd paper
-pdflatex access.tex
-pdflatex access.tex
+./tectonic -X compile access.tex --outdir /tmp/k8s_tcc_build --keep-logs
 cd ..
-python -m unittest tests.test_verifier
-python -c "import json, sys; d=json.load(open('data/metrics_schedule_compare.json')); print('FIFO P95:', d['telemetry']['fifo']['top_risk_wait_hours']['p95']); print('Bandit P95:', d['telemetry']['baseline']['top_risk_wait_hours']['p95'])"
+cd paper/overleaf
+../tectonic -X compile main.tex --outdir /tmp/k8s_overleaf_build --keep-logs
+cd ../..
+.venv/bin/python -m unittest discover -s tests -p 'test_verifier.py'
+python -c "import json; d=json.load(open('data/metrics_schedule_compare.json')); print('FIFO P95:', d['telemetry']['fifo']['top_risk_wait_hours']['p95']); print('Bandit P95:', d['telemetry']['baseline']['top_risk_wait_hours']['p95'])"
 python -c "import json; print('Detector F1:', json.load(open('data/eval/detector_metrics.json'))['f1'])"
-ls -lh data/grok*_telemetry.json
 ```
 
 ## Portal Checklist
-1. Upload `access.pdf` as the main manuscript.
-2. Provide the cover letter text (`paper/cover_letter.md`).
-3. Attach supplementary material bundle if allowed (telemetry JSON, scripts).
-4. Complete author/affiliation metadata:
-   - Brian Mendonca (Corresponding author)
-   - Vijay K. Madisetti
-5. Confirm keywords match the manuscript and template.
-6. Review DOI placeholder (`\doi{DOI: TBD}`) — update once assigned by IEEE Access.
-7. Submit and retain the confirmation email/ID.
+1. Upload `paper/access.pdf` as the main manuscript.
+2. Paste or upload `paper/cover_letter.md` only after the resubmission gate is satisfied.
+3. Attach supplemental/reproducibility materials if the portal allows them.
+4. Complete author and affiliation metadata exactly as in the manuscript.
+5. Confirm keywords match the manuscript.
+6. Confirm that all reviewer-response claims match the current PDF and artifacts.
+7. Retain the portal confirmation email and manuscript ID.

@@ -6,13 +6,18 @@ Misconfigurations"). Every row is verified against the current source/compile, n
 against prior chat or changelog prose. Authorship/commit identity: `bmendonca3`;
 manuscript byline left unchanged.
 
-## Authoritative compile facts (reverified 2026-05-30 14:10 MST)
+## Authoritative compile facts (reverified 2026-05-30 18:39 MST)
 
-- Engine: bundled `./tectonic` 0.15.0, `-X compile access.tex --outdir /tmp/k8s_verify`.
-- Result: **17 pages**, **0 undefined references/citations**, exit 0.
-- Hbox warnings: **118 total (2 overfull, 116 underfull)** — all cosmetic
-  line-breaking; none affect correctness or references.
-- Citation graph: 21 keys cited, 29 `\bibitem` defined, **0 cited-but-undefined**.
+- Engine: bundled `./tectonic` 0.15.0, `-X compile access.tex --outdir /tmp/k8s_tcc_build --keep-logs`.
+- Result: **17 pages**, **0 undefined references/citations**, exit 0. Overleaf package compile also exits 0 via `../tectonic -X compile main.tex --outdir /tmp/k8s_overleaf_build --keep-logs`.
+- Box warnings: **0 overfull**, 117 underfull hboxes, 2 underfull vboxes — all
+  cosmetic line-breaking; none affect correctness or references.
+- Citation graph: 29 keys cited, 29 `\bibitem` defined, **0 cited-but-undefined**
+  and **0 uncited bibitems**.
+- PDF image review: rendered 17 page PNGs to `/tmp/k8s_pdf_review_final3/pages`
+  and contact sheets to `/tmp/k8s_pdf_review_final3/sheets`; visual pass and
+  text-block margin scan found no margin overflow, missing figures, or incoherent
+  overlaps. Main and Overleaf PDFs have identical extracted-text and rendered-page hashes.
 - Byline: `\author{Brian Mendonca and Vijay K. Madisetti, ...}` — byte-identical to
   HEAD (verified by content diff of the `\author` block).
 
@@ -34,6 +39,13 @@ manuscript byline left unchanged.
 | 12 | 2026-05-30 14:09 MST | R3 | Literal experimental head-to-head vs Aardvark / KubeIntellect | **OPEN (blocked)** | Aardvark = closed beta, no public interface; XAI/Grok API returned HTTP 403 "used all available credits"; no other LLM endpoint configured | needs funded API access or KubeIntellect runnable code + author sign-off on protocol |
 | 13 | 2026-05-30 14:09 MST | R3 | "Novelty is just a tool-combination" rebuttal | **OPEN** | positioning text sharpened in Related Work/Introduction | substantive scientific argument requires author (Madisetti) decision; not auto-fixable |
 | 14 | 2026-05-30 14:09 MST | procedural | Resubmission allowed as major revision? | **OPEN (external)** | decision of record = Reject (TCC email); co-author asked EIC whether major-revision resubmission is permitted | awaiting EIC reply |
+| 15 | 2026-05-30 18:29 MST | panel | Cover letter venue mismatch and unsupported operator-study claim | done | `paper/cover_letter.md` rewritten for TCC resubmission gate; no `IEEE Access`, `4.3/5`, or completed live-operator claim remains | do not submit until EIC permission is received |
+| 16 | 2026-05-30 18:29 MST | panel | Grok failure table latency rows used wrong source | done | `paper/grok_failures_table.tex` now reports failure causes only; latency prose now cites `grok200_latency_summary.csv` and `verified_grok200_latency_summary.csv` values | full Grok-5k latency bundle still future work, as stated in paper |
+| 17 | 2026-05-30 18:29 MST | panel | Patch-minimality target appeared to conflict with full-corpus median 9 | done | Targets paragraph now scopes <=6 to curated rules-mode smoke sweeps and states full-corpus median patch length 9 separately | none |
+| 18 | 2026-05-30 18:29 MST | panel | Bibliography hygiene | done | `references.bib` patch marker removed; citation graph now 29 cited / 29 bibitems / 0 uncited / 0 missing | DOI re-fetch not repeated in this pass |
+| 19 | 2026-05-30 18:39 MST | panel | Source/PDF and Overleaf package synchronization | done | `paper/access.pdf` copied from `/tmp/k8s_tcc_build/access.pdf`; `paper/overleaf/main.pdf` copied from `/tmp/k8s_overleaf_build/main.pdf`; both compiles output 17 pages with no overfull/ref/citation/map-file errors | ScholarOne upload behavior still depends on portal requirements |
+| 20 | 2026-05-30 18:39 MST | panel | Claim/evidence reconciliation pass after Kiro/Opus audit | done | Corrected AKS cross-cluster row to 200/200, scoped the 1k live replay to Kind/Kubernetes 1.34.0, removed unsupported Grok failure denominator, fixed risk-weight examples, scoped Kyverno webhook >98%, removed unsupported FIFO toy-queue comparison, and narrowed 78.9% vs 67.98% to directional evidence | `paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md` is an untracked audit artifact, not submission content |
+| 21 | 2026-05-30 18:39 MST | panel | Final rendered-layout image review | done | `/tmp/k8s_pdf_review_final3/pages` and `/tmp/k8s_pdf_review_final3/sheets`; text-block margins remain within page bounds on all 17 pages; page 9 failure table and pages 13--17 reviewed visually | page 17 has large whitespace between bios but no overlap or overflow |
 
 ## Notes / corrections to prior logs
 

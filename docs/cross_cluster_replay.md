@@ -1,6 +1,6 @@
 # Cross-Cluster Replay Checklist
 
-This document tracks the outstanding IEEE Access request for replicated live-cluster replays on managed Kubernetes providers. Once the data below is collected, Table&nbsp;9 in `paper/access.tex` can be populated automatically.
+This document tracks the reviewer request for replicated live-cluster replays on managed Kubernetes providers. Once the data below is collected, Table&nbsp;9 in `paper/access.tex` can be populated automatically.
 
 ## Target Artifacts
 
@@ -10,7 +10,7 @@ Produce the following per provider (drop them into the repository so the LaTeX b
 | -------- | ------------ | ----------- | ----- |
 | EKS | `data/cross_cluster/eks/results.json` | `data/cross_cluster/eks/summary.csv` | ✅ 198/200 dry-run + live success; cluster created with `eksctl` (t3.medium, AL2023) |
 | GKE | `data/cross_cluster/gke/results.json` | `data/cross_cluster/gke/summary.csv` | ✅ 200/200 dry-run + live success (e2-standard-4, 1.33.5-gke); default add-ons only |
-| AKS | `data/cross_cluster/aks/results.json` | `data/cross_cluster/aks/summary.csv` | ✅ 197/200 dry-run + live success (Standard\_D4s\_v3, AKS 1.33.3); default add-ons |
+| AKS | `data/cross_cluster/aks/results.json` | `data/cross_cluster/aks/summary.csv` | ✅ 200/200 dry-run + live success (Standard\_D4s\_v3, AKS 1.33.3); default add-ons |
 
 Each summary CSV should contain the header emitted by `scripts/run_live_cluster_eval.py` (`generated,manifests,dry_run_pass,live_apply_pass,live_failures`). The JSON captures per-manifest outcomes that feed the failure taxonomy if we need to drill down.
 

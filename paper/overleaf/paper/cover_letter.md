@@ -1,27 +1,41 @@
-# Cover Letter — IEEE Access Submission
+# Cover Letter — TCC Resubmission Draft
+
+> Submission gate: use this only after IEEE Transactions on Cloud Computing confirms
+> that TCC-2025-12-0666 may be resubmitted or reopened as a major revision.
 
 ```
-Dear IEEE Access Editors,
+Dear Professor Guo,
 
-Please consider our manuscript “Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations” for publication in IEEE Access.
+If the editorial office permits a major-revision resubmission of manuscript
+TCC-2025-12-0666, please consider our substantially revised manuscript,
+"Closed-Loop Threat-Guided Auto-Fixing of Kubernetes Container Security
+Misconfigurations," for IEEE Transactions on Cloud Computing.
 
-The work targets a pressing pain point in cloud-native security: production teams continue to surface Kubernetes misconfigurations without receiving actionable, validated fixes. We contribute k8s-auto-fix, a closed-loop system that detects violations, proposes JSON patches, verifies candidate fixes, and schedules remediation according to risk.
+The revision directly addresses the reviewers' concerns about novelty,
+overclaiming, reproducibility, and comparison scope. We reframed the contribution
+as a closed verification loop for Kubernetes remediation: each candidate JSON
+Patch is accepted only after policy re-check, schema validation, server-side
+dry-run, and universal no-new-violation gates. We also clarified that the live
+replay validates dry-run/apply acceptance on a fixture-seeded subset, not general
+workload semantic equivalence.
 
-Practical impact:
-- Comprehensive benchmarking on 5,000 manifests drawn from the Grok/xAI corpus with 4,426/5,000 (88.52%) acceptance under `kubectl --dry-run=server`.
-- Deterministic rules coverage accepting 13,338/13,373 patched items (99.74%; auto-fix rate 0.8486 over 15,718 detections) and perfect acceptance on the supported 1,264-manifest corpus.
-- Operator validation from two SRE/platform rotations (n=20) reporting 4.3/5 satisfaction with zero rollbacks after accepting generated patches.
+The current manuscript reports:
+- 13,338 accepted patches out of 13,373 patched items in the full deterministic
+  rules+guardrails run (99.74%; auto-fix rate 0.8486 over 15,718 detections).
+- 1,000/1,000 dry-run/apply acceptance with zero rollbacks on the fixture-seeded
+  live-cluster replay.
+- 4,426/5,000 accepted patches in the optional Grok/xAI proposer run (88.52%).
+- A risk-aware scheduler replay that lowers top-risk P95 wait time from 102.3 h
+  under FIFO to 13.0 h while keeping all scheduler and operator results clearly
+  labeled as replay-based or simulated.
 
-Evaluation rigor and safety:
-- Detector performance meets the promised F1 ≥ 0.85 threshold (1.00 precision / 1.00 recall / 1.00 F1 across nine policies) on a labelled hold-out set, now including the `SYS_ADMIN` capability guardrail.
-- Guardrails now preserve Service selectors, require explicit opt-in for service-account rewrites, and block unsafe LLM regressions that remove containers or volumes.
-- Scheduler claims are grounded in shipped telemetry: the risk-aware bandit cuts top-risk P95 wait time from 102.3 h (FIFO) to 13.0 h (7.9×).
+The manuscript now includes an evidence-status table, corrected reference set,
+expanded limitations, explicit artifact links, and a reproducibility package.
+We do not claim a completed live operator study; the human-in-the-loop rotation
+is identified as planned future work.
 
-Reproducibility:
-- We ship complete artifacts (detections, patches, verifier evidence, queue scores) and scripts under `docs/` and `data/`, together with Grok telemetry files (`data/grok5k_telemetry.json`, `data/grok1k_telemetry.json`) to support cost analysis.
-- The repository’s Makefile and documentation provide end-to-end commands for researchers to replay both deterministic and LLM-backed evaluations.
-
-We believe the manuscript aligns with IEEE Access’s emphasis on practical innovation and transparency in evaluation. Thank you for your consideration.
+Thank you for considering whether this revision can proceed under the TCC review
+process.
 
 Sincerely,
 
