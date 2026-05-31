@@ -1,6 +1,6 @@
 # Submission Artifact Inventory
 
-Last checked: 2026-05-31 11:28 MST.
+Last checked: 2026-05-31 12:05 MST.
 
 This is a local inventory for the TCC-2025-12-0666 packet. It is not a
 submission artifact and should not be uploaded.
@@ -92,8 +92,9 @@ font map paths, table input paths, figure paths, and biography image paths.
   `main.out`, `missfont.log`, and nested `missfont.log` files.
 - `paper/overleaf/main.pdf` for source-only uploads; it is a local reference PDF,
   while `paper/access.pdf` is the manuscript PDF selected for portal upload.
-- Unreferenced image leftovers, including `paper/dheer_toprani_photo.png` and
-  `paper/overleaf/paper/dheer_toprani_photo.png`.
+- Unreferenced image leftovers, including stale copies of
+  `paper/dheer_toprani_photo.png` or
+  `paper/overleaf/paper/dheer_toprani_photo.png` if they reappear.
 - Antigravity, Kiro, panel-review, or local scratch logs.
 
 The local packet-control and audit-summary files listed here are intentionally public in the repository for traceability, but they are not part of the

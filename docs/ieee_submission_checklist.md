@@ -9,7 +9,7 @@
 ## Local Packet Map
 - `paper/SUBMISSION_PACKET.md` — local packet index and current gate summary;
   use it to navigate the packet, but do not upload it.
-- `paper/LOCAL_WORKTREE_STATE.md` — local dirty-worktree preservation note; do
+- `paper/LOCAL_WORKTREE_STATE.md` — local worktree preservation note; do
   not upload it.
 - `paper/SUBMISSION_GAP_REGISTER.md` — local risk-ranked register of remaining
   gaps and closeout evidence; do not upload it.
@@ -36,7 +36,7 @@
 
 ## Do Not Upload
 - `paper/SUBMISSION_PACKET.md` — local organization note.
-- `paper/LOCAL_WORKTREE_STATE.md` — local dirty-worktree preservation note, not
+- `paper/LOCAL_WORKTREE_STATE.md` — local worktree preservation note, not
   submission prose.
 - `paper/SUBMISSION_GAP_REGISTER.md` — local gap register, not submission prose.
 - `paper/SUBMISSION_ARTIFACT_INVENTORY.md` — local artifact inventory, not

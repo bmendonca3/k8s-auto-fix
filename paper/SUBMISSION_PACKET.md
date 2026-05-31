@@ -1,6 +1,6 @@
 # TCC Submission Packet Index
 
-Last local organization pass: 2026-05-31 03:55 MST.
+Last local organization pass: 2026-05-31 12:05 MST.
 
 This file is the local front door for the TCC-2025-12-0666 major-revision
 packet. It is not an instruction to submit. Do not email, upload, open a pull
@@ -21,9 +21,10 @@ before upload.
 - `paper/access.pdf` - manuscript PDF.
 - `paper/access.tex` - authoritative manuscript source.
 - `paper/overleaf/` - source-package root for assembling a clean Overleaf upload.
-- `paper/cover_letter.md` - gated cover-letter draft.
-- `paper/response_to_reviewers.md` - gated point-by-point response draft.
-- `paper/LOCAL_WORKTREE_STATE.md` - local dirty-worktree preservation note; do
+- `paper/cover_letter.md` - cover-letter draft gated by editorial permission.
+- `paper/response_to_reviewers.md` - point-by-point response draft gated by
+  editorial permission.
+- `paper/LOCAL_WORKTREE_STATE.md` - local worktree preservation note; do
   not upload it.
 - `paper/SUBMISSION_GAP_REGISTER.md` - local risk-ranked register of remaining
   gaps and closeout evidence; do not upload it.
@@ -104,5 +105,5 @@ Before any upload, rerun the checklist in `docs/ieee_submission_checklist.md` an
 confirm the final PDF, cover letter, and response letter still agree.
 
 If source upload is requested, assemble a clean package from `paper/overleaf/`
-instead of dragging the directory as-is; the current tree contains local build
-products that are explicitly excluded above.
+instead of dragging the directory as-is; exclude `main.pdf`, local-only notes,
+stale archives, and any regenerated build products.
