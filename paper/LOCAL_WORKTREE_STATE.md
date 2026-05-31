@@ -1,21 +1,26 @@
 # Local Worktree State
 
-Last checked: 2026-05-31 11:43 MST.
+Last checked: 2026-05-31 14:24 MST.
 
 This is a local preservation note for the `k8s-auto-fix` worktree around the
-2026-05-31 packet cleanup. It is not a submission artifact and should not be
-uploaded.
+2026-05-31 packet cleanup and follow-up panel review. It is not a submission
+artifact and should not be uploaded.
 
 ## Repository
 
 - Branch: `improvmenets`.
 - Upstream: `origin/improvmenets`.
-- Local branch state at capture time: ahead by 2 commits before the packet
-  cleanup push.
+- Local branch state at capture time: aligned with `origin/improvmenets` before
+  this local-control note was refreshed.
 - Remote verified: `https://github.com/bmendonca3/k8s-auto-fix.git`.
-- Latest local commits:
-  - `6c82e58` (`2026-05-30T23:16:48-07:00`) by `bmendonca3`: Tighten K8S camera-ready claims and rank labels.
-  - `12f255e` (`2026-05-30T22:51:41-07:00`) by `bmendonca3`: Cite scheduling evidence and update cost-reference prose.
+- Packet commits verified before this note refresh:
+  - `651645d` by `bmendonca3`: Align verifier ablation escape narrative.
+  - `3abfe0d` by `bmendonca3`: Remove stale submission package artifacts.
+
+Because this file is tracked, a commit that updates this note necessarily
+changes `HEAD`. Treat the commit bullets above as a preservation record, not as
+a self-validating current-HEAD assertion; use `git status --short --branch`,
+`git log -2 --oneline`, and `git ls-remote` for the live state.
 
 ## Preservation Rule
 
@@ -23,53 +28,20 @@ Do not clean, reset, checkout, or revert these local changes unless explicitly
 asked. Some files are local-only packet controls, and some tracked changes may be
 user-owned.
 
-The tracked/untracked file set below was rechecked at 2026-05-31 11:43 MST
-before the packet-cleanup commit. After commit or push, use `git status --short
---branch` as the current state and treat this section as a preservation record.
+The tracked/untracked file set below was rechecked at 2026-05-31 14:24 MST after
+the packet-cleanup and escape-narrative commits. After any later commit or push,
+use `git status --short --branch` as the current state and treat this section as
+a preservation record.
 
 ## Tracked Modified Files
 
-Current `git diff --name-status` reports:
-
-- `.DS_Store`
-- `ARTIFACTS.md`
-- `Makefile`
-- `README.md`
-- `data/baselines/mode_comparison.csv`
-- `data/eval/unified_eval_summary.json`
-- `docs/REVIEW_RESPONSE.md`
-- `docs/ieee_submission_checklist.md`
-- `figures/mode_comparison.png`
-- `notes/to-do list`
-- `paper/REFERENCE_FIX_CHANGES.md`
-- `paper/REVISION_CHANGES_2026-05-30.md`
-- `paper/REVISION_TRACKING.md`
-- `paper/access.pdf`
-- `paper/access.tex`
-- `paper/cover_letter.md`
-- `paper/overleaf/figures/mode_comparison.png`
-- `paper/overleaf/main.pdf`
-- `paper/overleaf/paper/access.tex`
-- `paper/overleaf/paper/cover_letter.md`
-- `paper/overleaf/paper/references.bib`
-- `paper/references.bib`
-- `scripts/README.md`
-- `scripts/build_repro_bundle.py`
+Current `git diff --name-status` reports no tracked modifications at the
+verified commit before this note refresh.
 
 ## Untracked Files
 
-Current `git ls-files --others --exclude-standard` reports:
-
-- `paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md`
-- `paper/LOCAL_WORKTREE_STATE.md`
-- `paper/RESPONSE_LETTER_CLAIM_CHECK.md`
-- `paper/SOURCE_VERIFICATION_MCP_2026-05-31.md`
-- `paper/SUBMISSION_ARTIFACT_INVENTORY.md`
-- `paper/SUBMISSION_GAP_REGISTER.md`
-- `paper/SUBMISSION_PACKET.md`
-- `paper/response_to_reviewers.md`
-- `paper/source_verification_mcp_2026-05-31.json`
-- `scripts/check_submission_packet.py`
+Current `git ls-files --others --exclude-standard` reports no untracked files at
+the verified commit before this note refresh.
 
 ## Packet Role Summary
 
@@ -95,12 +67,17 @@ Current `git ls-files --others --exclude-standard` reports:
 
 ## Verification Snapshot
 
-- Fresh standalone compile to `/tmp/k8s_goal_wholepaper_standalone` passed and
+- Fresh standalone compile to `/tmp/k8s_parent_escape_fix_standalone` passed and
   reported 17 pages.
-- Fresh Overleaf compile to `/tmp/k8s_goal_wholepaper_overleaf` passed and
+- Fresh Overleaf compile to `/tmp/k8s_parent_escape_fix_overleaf` passed and
   reported 17 pages.
 - Hard-error scan over both fresh logs found no fatal errors, undefined
   references/citations, `??` markers, or overfull boxes.
+- `make submission-packet-check`, `make metrics-consistency`,
+  `make docs-link-check`, `.venv/bin/python -m unittest discover -s tests -p
+  'test_verifier.py'`, and `git diff --check` passed before this note refresh.
+- `/tmp/k8s_submission_harness_v4.py` reported `VERDICT: DONE` after commit
+  `651645d` was pushed and the packet tag was moved to that commit.
 
 ## Commands Used
 
@@ -111,7 +88,13 @@ git diff --name-status
 git ls-files --others --exclude-standard
 git log -2 --pretty=format:'%h %cI %an <%ae> %s'
 .venv/bin/python scripts/check_submission_packet.py
-tectonic -X compile access.tex --outdir /tmp/k8s_goal_wholepaper_standalone --keep-logs
-tectonic -X compile main.tex --outdir /tmp/k8s_goal_wholepaper_overleaf --keep-logs
-rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_goal_wholepaper_standalone/access.log /tmp/k8s_goal_wholepaper_overleaf/main.log
+make submission-packet-check
+make metrics-consistency
+make docs-link-check
+.venv/bin/python -m unittest discover -s tests -p 'test_verifier.py'
+git diff --check
+tectonic -X compile access.tex --outdir /tmp/k8s_parent_escape_fix_standalone --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_parent_escape_fix_overleaf --keep-logs
+rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_parent_escape_fix_standalone/access.log /tmp/k8s_parent_escape_fix_overleaf/main.log
+python3 /tmp/k8s_submission_harness_v4.py
 ```
