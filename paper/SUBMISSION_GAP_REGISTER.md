@@ -1,6 +1,6 @@
 # Submission Gap Register
 
-Last checked: 2026-05-31 03:55 MST.
+Last checked: 2026-05-31 12:17 MST.
 
 This is the local risk-ranked gap register for the TCC-2025-12-0666
 major-revision packet. It is not a submission artifact and should not be
@@ -17,7 +17,7 @@ the editorial permission gate remains unresolved.
 
 | Priority | Gap | Risk if ignored | Current evidence | Required closeout |
 |---|---|---|---|---|
-| P0 | TCC/EIC permission to resubmit or reopen TCC-2025-12-0666 as a major revision | Submitting through the wrong path could create a procedural rejection or duplicate/new-manuscript conflict. | `paper/REVISION_TRACKING.md` row 14 records the decision of record as Reject and says the EIC reply is still awaited. `paper/SUBMISSION_PACKET.md`, `docs/ieee_submission_checklist.md`, and `paper/response_to_reviewers.md` all keep the gate explicit. | Received editorial confirmation, then update this register, `paper/SUBMISSION_PACKET.md`, `docs/ieee_submission_checklist.md`, `paper/cover_letter.md`, and `paper/response_to_reviewers.md` if the required path differs from a reopened major revision. |
+| P0 | TCC/EIC permission to resubmit or reopen TCC-2025-12-0666 as a major revision | Submitting through the wrong path could create a procedural rejection or duplicate/new-manuscript conflict. | `paper/REVISION_TRACKING.md` row 14 records the decision of record as Reject. Gmail was rechecked on 2026-05-31 12:17 MST with targeted `TCC-2025-12-0666`, Song Guo, TCC, resubmit, reopen, and major-revision queries; the current thread still contains only the 2026-05-30 rejection, Professor Madisetti's question asking whether a major revision can be resubmitted, and Brian's forward to George Jobi. No EIC/editorial approval reply was found. `paper/SUBMISSION_PACKET.md`, `docs/ieee_submission_checklist.md`, and `paper/response_to_reviewers.md` all keep the gate explicit. | Received editorial confirmation, then update this register, `paper/SUBMISSION_PACKET.md`, `docs/ieee_submission_checklist.md`, `paper/cover_letter.md`, and `paper/response_to_reviewers.md` if the required path differs from a reopened major revision. |
 | P1 | Final portal-bound packet review after any future edit | A stale PDF, cover letter, response letter, or hash inventory could be uploaded after local files change. | `paper/SUBMISSION_ARTIFACT_INVENTORY.md` records current hashes; `paper/RESPONSE_LETTER_CLAIM_CHECK.md` maps response-letter claims to artifacts; `paper/SUBMISSION_PACKET.md` says to rerun the checklist before upload. | Re-run build, link/metric checks, stale scan, hash check, and response-letter claim check against the exact files selected for upload. |
 | P1 | Named-agent head-to-head against Aardvark or KubeIntellect | Reviewers may still view the no-policy ablation as insufficient compared with a literal competing-agent experiment. | `paper/REVISION_TRACKING.md` rows 11-12 distinguish mitigated guardrail ablation from the still-open named-agent head-to-head. `paper/access.tex` and `paper/response_to_reviewers.md` explicitly defer the named-agent experiment to future work. | Author-approved experiment plan, runnable competing agent or access, funded API/compute budget, and a like-for-like protocol. Otherwise keep the manuscript scoped to the verified ablation. |
 | P2 | Novelty rebuttal remains a scientific/editorial judgment | Even with stronger positioning, the response may not satisfy the reviewer if they expect a different novelty standard. | `paper/REVISION_TRACKING.md` row 13 marks this open; `paper/access.tex` sharpens the contribution around the closed verification loop and risk-aware scheduling. | Final author review, especially from Professor Madisetti, to decide whether the current positioning is sufficient or needs a stronger conceptual framing. |
@@ -35,6 +35,25 @@ the editorial permission gate remains unresolved.
 - Automated packet hygiene checker exists: `scripts/check_submission_packet.py`.
 - Reviewer-response navigation note points to current packet files:
   `docs/REVIEW_RESPONSE.md`.
+
+## Editorial Follow-Up Draft
+
+Do not send without explicit author approval. Suggested follow-up text if the
+authors want to ask the editorial office again:
+
+Dear Professor Guo,
+
+I am following up on Professor Madisetti's question about manuscript
+TCC-2025-12-0666. Given that two of the three reviews recommended revision, may
+we submit the substantially revised manuscript as a major revision or reopen the
+existing manuscript record? If TCC requires a different path, such as a new
+submission, please let us know and we will follow that process.
+
+Thank you for your guidance.
+
+Sincerely,
+
+Brian Mendonca and Vijay K. Madisetti
 
 ## Do Not Upload
 
