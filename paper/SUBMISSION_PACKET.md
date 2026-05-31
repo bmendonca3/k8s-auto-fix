@@ -61,6 +61,12 @@ before upload.
 - Unreferenced author-photo leftovers such as `dheer_toprani_photo.png`.
 - Any Antigravity, Kiro, panel-review, or local scratch logs.
 
+## Public Repo Note
+
+The local packet-control and audit-summary files above are intentionally kept in the repository for traceability while the packet is being reviewed. They are
+accepted as public repository context, but they are not submission artifacts and
+must not be copied into a portal upload or Overleaf source package.
+
 ## Current Remaining Gaps
 
 - EIC/editorial permission is still the hard external gate.

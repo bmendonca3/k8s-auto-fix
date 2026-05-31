@@ -1,9 +1,5 @@
 # Cover Letter — TCC Resubmission Draft
 
-> Submission gate: use this only after IEEE Transactions on Cloud Computing confirms
-> that TCC-2025-12-0666 may be resubmitted or reopened as a major revision.
-
-```
 Dear Professor Guo,
 
 If the editorial office permits a major-revision resubmission of manuscript
@@ -41,4 +37,3 @@ Sincerely,
 
 Brian Mendonca and Vijay K. Madisetti
 Georgia Institute of Technology
-```

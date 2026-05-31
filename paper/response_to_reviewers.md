@@ -1,9 +1,5 @@
 # Response to Reviewers - TCC-2025-12-0666
 
-> Submission gate: use this response letter only if IEEE Transactions on Cloud
-> Computing confirms that TCC-2025-12-0666 may be resubmitted or reopened as a
-> major revision.
-
 Dear Professor Guo and Reviewers,
 
 Thank you for the detailed reviews of our manuscript, "Closed-Loop

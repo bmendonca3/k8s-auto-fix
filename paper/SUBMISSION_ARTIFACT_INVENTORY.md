@@ -15,10 +15,10 @@ major revision.
 
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
-| `paper/access.pdf` | Main manuscript PDF | `df1b3681c9022616aab2a4814180a2e03d3aa58f404a09b39da1f3bb3482e5b6` |
-| `paper/access.tex` | Authoritative standalone manuscript source | `ac6e816cf96e22a13700476e33dc1e93001ef9ff63471014eb134413856d1497` |
-| `paper/cover_letter.md` | Gated cover-letter draft | `936949f161669a940aa8564dd33e45ed11a722d12cd902dd45b3b071e587184d` |
-| `paper/response_to_reviewers.md` | Gated point-by-point response draft | `31750b20e687fcc7033989c6394049dd515bc8273c5dcfa21f17d18693e137d3` |
+| `paper/access.pdf` | Main manuscript PDF | `2db5e83248411e3a0dad3c5d4ebe27d84359152766fb34d7dd019744f17e9d61` |
+| `paper/access.tex` | Authoritative standalone manuscript source | `2c6bd41102cae98e6b8738a677ccdedec882c12a4708f1240c5a8cef8dbc6b2e` |
+| `paper/cover_letter.md` | Cover-letter draft | `995bdbfdb1888f64d6279e91de80089f82831a206f95dcfe0731d43d3d1f3dae` |
+| `paper/response_to_reviewers.md` | Point-by-point response draft | `13f68901137ccee87a88c95e7fbf238b541b5c53c3bb576175496e21a512c1f8` |
 | `paper/references.bib` | BibTeX mirror of the active inline bibliography | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
 
 ## Standalone Source Dependencies
@@ -42,7 +42,8 @@ build.
 
 Use `paper/overleaf/` as the source-package root if Overleaf upload is needed,
 but assemble a clean package from it instead of uploading the directory as-is.
-The current tree contains local build products that are excluded below. The
+Tracked LaTeX scratch files were removed from this tree; the dry-run command
+below still excludes regenerated scratch files and the local reference PDF. The
 minimal source path is `paper/overleaf/main.tex`, which inputs `paper/access.tex`
 inside the Overleaf package.
 
@@ -59,9 +60,9 @@ Current key Overleaf hashes:
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
 | `paper/overleaf/main.tex` | Overleaf entry point | `6df68ddd89f4e5716fd0e8c16d005e0a11ac4c481675e28cf861148b15f3c7a8` |
-| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `2d6c235d4b166e74806656b4d425a8b9056620c7f30df80ce17544253c211d64` |
+| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `a4439a0b38551d2c9c4bf1418af27c8978f225ed1a6cc4a5519e379d358bdf25` |
 | `paper/overleaf/paper/references.bib` | Overleaf BibTeX mirror | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
-| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `58c48f6218778c11eb7e11cbddf7ffa87931f57ab2f58afd0b2c837725810d37` |
+| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `7c50c9a30ea2951e3e97ac008c8732649a1b31e964bc16b7ca3140e79223717d` |
 | `paper/overleaf/paper/grok_failures_table.tex` | Included failure-taxonomy table | `93211d9fde64b27cc0d07376d30fd7dc83dd63882c597f6a1a1d235fdf30a7ef` |
 | `paper/overleaf/paper/reproducibility/baselines.tex` | Included baseline table | `6ca9d5f49d4d07a5b2980330ff0caad8d7219f2a15c34376367e4677ea804fcd` |
 
@@ -94,6 +95,9 @@ font map paths, table input paths, figure paths, and biography image paths.
 - Unreferenced image leftovers, including `paper/dheer_toprani_photo.png` and
   `paper/overleaf/paper/dheer_toprani_photo.png`.
 - Antigravity, Kiro, panel-review, or local scratch logs.
+
+The local packet-control and audit-summary files listed here are intentionally public in the repository for traceability, but they are not part of the
+submission packet or clean source package.
 
 ## Commands Used
 

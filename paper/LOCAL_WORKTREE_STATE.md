@@ -76,7 +76,8 @@ Current `git ls-files --others --exclude-standard` reports:
 - Upload-facing drafts: `paper/access.pdf`, `paper/access.tex`,
   `paper/cover_letter.md`, and `paper/response_to_reviewers.md`.
 - Source-package input: `paper/overleaf/`; assemble a clean source package from
-  this tree instead of uploading the directory as-is, and exclude
+  this tree instead of uploading the directory as-is. Tracked aux/log/out
+  byproducts have been removed, but still exclude regenerated scratch files and
   `paper/overleaf/main.pdf` unless the portal explicitly requests a compiled PDF
   inside the TeX source bundle.
 - Local-only packet controls: `paper/SUBMISSION_PACKET.md`,

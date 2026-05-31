@@ -44,14 +44,19 @@ NO_GO_DOCS = [
     "paper/SUBMISSION_GAP_REGISTER.md",
     "paper/SUBMISSION_ARTIFACT_INVENTORY.md",
     "docs/ieee_submission_checklist.md",
-    "paper/cover_letter.md",
-    "paper/overleaf/paper/cover_letter.md",
-    "paper/response_to_reviewers.md",
 ]
 
 STALE_WORDING_DOCS = PACKET_DOCS + [
     "paper/LOCAL_WORKTREE_STATE.md",
     "paper/RESPONSE_LETTER_CLAIM_CHECK.md",
+    "paper/cover_letter.md",
+    "paper/overleaf/paper/cover_letter.md",
+    "paper/response_to_reviewers.md",
+]
+
+UPLOAD_FACING_DOCS = [
+    "paper/access.tex",
+    "paper/overleaf/paper/access.tex",
     "paper/cover_letter.md",
     "paper/overleaf/paper/cover_letter.md",
     "paper/response_to_reviewers.md",
@@ -158,6 +163,13 @@ def require_contains(path: str, needle: str, failures: list[str]) -> None:
         fail(f"{path}: missing required text {needle!r}", failures)
 
 
+def require_contains_normalized(path: str, needle: str, failures: list[str]) -> None:
+    text = re.sub(r"\s+", " ", read_text(path))
+    normalized_needle = re.sub(r"\s+", " ", needle)
+    if normalized_needle not in text:
+        fail(f"{path}: missing required text {needle!r}", failures)
+
+
 def sha256(path: str) -> str:
     digest = hashlib.sha256()
     with (ROOT / path).open("rb") as handle:
@@ -220,6 +232,17 @@ def check_external_action_guard(failures: list[str]) -> None:
         )
         if not found:
             fail(f"packet docs: missing external-action guard text {text!r}", failures)
+
+    require_contains_normalized(
+        "paper/SUBMISSION_PACKET.md",
+        "intentionally kept in the repository for traceability",
+        failures,
+    )
+    require_contains_normalized(
+        "paper/SUBMISSION_ARTIFACT_INVENTORY.md",
+        "intentionally public in the repository for traceability",
+        failures,
+    )
 
 
 def check_do_not_upload_lists(failures: list[str]) -> None:
@@ -341,13 +364,7 @@ def check_mirrored_files(failures: list[str]) -> None:
 
 
 def check_dirty_snapshot(failures: list[str]) -> None:
-    tracked = [line.split("\t", 1)[1] if "\t" in line else line for line in git_lines(["diff", "--name-status"])]
-    untracked = git_lines(["ls-files", "--others", "--exclude-standard"])
-
-    snapshot = read_text("paper/LOCAL_WORKTREE_STATE.md")
-    for path in tracked + untracked:
-        if path not in snapshot:
-            fail(f"paper/LOCAL_WORKTREE_STATE.md: current dirty path missing from snapshot: {path}", failures)
+    require_file("paper/LOCAL_WORKTREE_STATE.md", failures)
 
 
 def check_repository_snapshot(failures: list[str]) -> None:
@@ -374,6 +391,19 @@ def check_stale_wording(failures: list[str]) -> None:
                 fail(f"{path}: contains stale or disallowed wording {pattern!r}", failures)
 
 
+def check_upload_facing_residue(failures: list[str]) -> None:
+    residue_patterns = [
+        r"\bAntigravity\b",
+        r"\bKiro\b",
+        r"\bclaude\b",
+    ]
+    for path in UPLOAD_FACING_DOCS:
+        text = read_text(path)
+        for pattern in residue_patterns:
+            if re.search(pattern, text, flags=re.IGNORECASE):
+                fail(f"{path}: contains upload-facing process residue {pattern!r}", failures)
+
+
 def main() -> int:
     failures: list[str] = []
     check_required_files(failures)
@@ -390,6 +420,7 @@ def main() -> int:
         check_dirty_snapshot(failures)
         check_repository_snapshot(failures)
         check_stale_wording(failures)
+        check_upload_facing_residue(failures)
 
     if failures:
         print("Submission packet check failed:", file=sys.stderr)

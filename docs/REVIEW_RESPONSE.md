@@ -11,10 +11,10 @@ The current TCC major-revision response draft lives in
 - `paper/access.tex` and `paper/access.pdf` are the manuscript source and PDF.
 - `paper/overleaf/` is the source-package root for a clean Overleaf package;
   do not upload the directory as-is.
-- `paper/cover_letter.md` is the gated cover-letter draft.
-- `paper/response_to_reviewers.md` is the gated point-by-point response draft.
+- `paper/cover_letter.md` is the cover-letter draft.
+- `paper/response_to_reviewers.md` is the point-by-point response draft.
 - `paper/LOCAL_WORKTREE_STATE.md` is the local preservation note for the current
-  dirty worktree.
+  worktree.
 - `paper/SUBMISSION_GAP_REGISTER.md` is the local risk-ranked register of
   remaining gaps and closeout evidence.
 - `paper/SUBMISSION_ARTIFACT_INVENTORY.md` is the local inventory of uploadable
