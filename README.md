@@ -91,7 +91,7 @@ Use `make pipeline-plan` to print the default lightweight detector -> proposer -
 - `data/samples/tiny_regression/` – small CI-safe manifests and expected outcomes for detector, proposer, verifier, scheduler, and queue behavior.
 - `docs/` – research notes, policy guidance, reproducibility appendices, future work plans.
 - `infra/fixtures/` – RBAC, NetworkPolicies, and manifest samples (CronJob scanner, Bitnami PostgreSQL) for reproducing edge cases.
-- `logs/` – proposer/verifier transcripts, Grok sweep summaries, and root-level logs (e.g. `logs/access.log`).
+- `logs/` – ignored local proposer/verifier transcripts and run logs; commit only sanitized summaries under `data/outputs/` or `docs/`.
 - `notes/` – working notes and backlog items formerly at the repository root.
 - `paper/` – manuscript sources; appendices live in `paper/appendices.tex` (no zip bundle checked in), and Overleaf-ready sources sit under `paper/overleaf/`.
 - `scripts/` – maintenance and evaluation helpers; see `scripts/README.md` for an index by pipeline stage.

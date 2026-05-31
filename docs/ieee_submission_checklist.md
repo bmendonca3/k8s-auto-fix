@@ -67,6 +67,8 @@
   `data/batch_runs/grok_5k/metrics_grok5k.json`, and cited taxonomy artifacts.
 - Local helper binaries and class copies such as `paper/tectonic`,
   `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
+- Local cloud helper scripts or failed build logs such as
+  `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 - Transient Overleaf build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
 - Unreferenced author-photo leftovers such as `dheer_toprani_photo.png`.

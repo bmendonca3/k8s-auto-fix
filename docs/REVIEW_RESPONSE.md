@@ -30,6 +30,7 @@ The current TCC major-revision response draft lives in
 - Do not submit until IEEE Transactions on Cloud Computing confirms that
   TCC-2025-12-0666 may be resubmitted or reopened as a major revision.
 - Do not upload local packet-control notes, local audit files, panel logs,
-  `.DS_Store`, or `notes/to-do list`.
+  `.DS_Store`, `notes/to-do list`, local cloud helper scripts, or failed build
+  logs.
 - Recheck the response-letter claims against the final PDF and artifacts before
   any portal upload.

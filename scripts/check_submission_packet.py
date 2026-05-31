@@ -89,6 +89,9 @@ RETIRED_PUBLIC_ARTIFACTS = [
     "paper/tectonic",
     "paper/ieeeaccess.cls",
     "paper/overleaf/ieeeaccess.cls",
+    "add_iam_policy_binding.sh",
+    "access.log",
+    "logs/access.log",
 ]
 
 def chars(*codes: int) -> str:
@@ -254,6 +257,9 @@ def check_do_not_upload_lists(failures: list[str]) -> None:
         "paper/tectonic",
         "paper/ieeeaccess.cls",
         "paper/overleaf/ieeeaccess.cls",
+        "add_iam_policy_binding.sh",
+        "access.log",
+        "logs/access.log",
         "main.aux",
         "main.log",
         "main.out",

@@ -40,7 +40,8 @@ the editorial permission gate remains unresolved.
 - Retired duplicate or stale public artifacts were removed from the tracked
   packet path: `appendix/appendices.tex`, `data/failures/taxonomy_summary.csv`,
   `data/batch_runs/grok_5k/metrics_history.json`, `paper/tectonic`,
-  `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
+  `paper/ieeeaccess.cls`, `paper/overleaf/ieeeaccess.cls`,
+  `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 
 ## Editorial Follow-Up Draft
 
@@ -74,4 +75,7 @@ Brian Mendonca and Vijay K. Madisetti
 - `paper/REVISION_CHANGES_2026-05-30.md`.
 - `paper/REVISION_TRACKING.md`.
 - `paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md`.
+- `add_iam_policy_binding.sh`.
+- `access.log`.
+- `logs/access.log`.
 - Any panel-review, Kiro, Antigravity, or local scratch logs.

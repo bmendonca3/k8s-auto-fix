@@ -101,6 +101,8 @@ font map paths, table input paths, figure paths, and biography image paths.
 - `notes/to-do list`.
 - Local helper binaries and class copies such as `paper/tectonic`,
   `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
+- Local cloud helper scripts or failed build logs such as
+  `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 - Transient build products from `paper/overleaf/`: `main.aux`, `main.log`,
   `main.out`, `missfont.log`, and nested `missfont.log` files.
 - `paper/overleaf/main.pdf` for source-only uploads; it is a local reference PDF,
