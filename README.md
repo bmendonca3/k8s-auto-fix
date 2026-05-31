@@ -93,7 +93,7 @@ Use `make pipeline-plan` to print the default lightweight detector -> proposer -
 - `infra/fixtures/` – RBAC, NetworkPolicies, and manifest samples (CronJob scanner, Bitnami PostgreSQL) for reproducing edge cases.
 - `logs/` – proposer/verifier transcripts, Grok sweep summaries, and root-level logs (e.g. `logs/access.log`).
 - `notes/` – working notes and backlog items formerly at the repository root.
-- `paper/` – IEEE Access manuscript sources; appendices live in `paper/appendices.tex` (no zip bundle checked in), and Overleaf-ready sources sit under `paper/overleaf/`.
+- `paper/` – manuscript sources; appendices live in `paper/appendices.tex` (no zip bundle checked in), and Overleaf-ready sources sit under `paper/overleaf/`.
 - `scripts/` – maintenance and evaluation helpers; see `scripts/README.md` for an index by pipeline stage.
 - `src/` – core packages (`common`, `detector`, `proposer`, `risk`, `scheduler`, `verifier`).
 - `tests/` – pytest suite validating detectors, proposer guardrails, verifier gates, scheduler scoring, CLI tooling.

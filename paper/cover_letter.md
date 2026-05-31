@@ -31,7 +31,7 @@ The current manuscript reports:
 
 The manuscript now includes an evidence-status table, corrected reference set,
 expanded limitations, explicit artifact links, and a reproducibility package.
-We do not claim a completed live operator study; the human-in-the-loop rotation
+We do not claim finished human-operator validation; the human-in-the-loop rotation
 is identified as planned future work.
 
 Thank you for considering whether this revision can proceed under the TCC review

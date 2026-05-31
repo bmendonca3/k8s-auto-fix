@@ -7,7 +7,7 @@ MODEL ?= gpt-4o-mini
 PYTHON ?= $(shell if [ -x .venv/bin/python ]; then printf '%s\n' .venv/bin/python; else command -v python3 || command -v python; fi)
 PIP ?= $(PYTHON) -m pip
 
-.PHONY: setup doctor validate-configs docs-link-check metrics-consistency secret-scan clean-generated kind-up fixtures reproducible-report detect propose verify schedule test artifact-test e2e pipeline-plan pipeline-manifest-smoke pipeline-status-smoke tiny-regression artifact-index-smoke artifact-traceability-smoke evidence-manifest-smoke evidence-manifest-pipeline-smoke evidence-manifest-claims-smoke evidence-manifest-claims-enforce gitops-plan-smoke patch-diff-smoke verifier-report scheduler-explain-smoke scheduler-batches-smoke queue-report-smoke review-packet-smoke review-packet-concise-smoke review-packet-rollout-smoke smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok43-50 benchmark-grok43-200 benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
+.PHONY: setup doctor validate-configs docs-link-check metrics-consistency submission-packet-check secret-scan clean-generated kind-up fixtures reproducible-report detect propose verify schedule test artifact-test e2e pipeline-plan pipeline-manifest-smoke pipeline-status-smoke tiny-regression artifact-index-smoke artifact-traceability-smoke evidence-manifest-smoke evidence-manifest-pipeline-smoke evidence-manifest-claims-smoke evidence-manifest-claims-enforce gitops-plan-smoke patch-diff-smoke verifier-report scheduler-explain-smoke scheduler-batches-smoke queue-report-smoke review-packet-smoke review-packet-concise-smoke review-packet-rollout-smoke smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok43-50 benchmark-grok43-200 benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
 
 JOBS ?= 4
 GROK_PROPOSER_CONFIG ?= configs/run_grok.yaml
@@ -37,6 +37,9 @@ docs-link-check:
 
 metrics-consistency:
 	$(PYTHON) scripts/check_metrics_consistency.py
+
+submission-packet-check:
+	$(PYTHON) scripts/check_submission_packet.py
 
 secret-scan:
 	$(PYTHON) scripts/scan_secrets.py
@@ -281,7 +284,7 @@ summarize-failures:
 		--verified-glob "data/batch_runs/grok_5k/verified_grok5k_batch_*.json" \
 		--detections-glob "data/batch_runs/grok_5k/detections_grok5k_batch_*.json"
 
-# Build the IEEE Access paper (outputs to paper/)
+# Build the paper PDF (outputs to paper/)
 paper:
 	cd paper && pdflatex -interaction=nonstopmode access.tex || true
 	cd paper && pdflatex -interaction=nonstopmode access.tex || true
