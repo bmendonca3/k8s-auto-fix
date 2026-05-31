@@ -86,6 +86,7 @@ RETIRED_PUBLIC_ARTIFACTS = [
     "data/failures/taxonomy_summary.csv",
     "data/batch_runs/grok_5k/metrics_history.json",
     "notes/to-do list",
+    "paper/archives/overleaf_upload.zip",
     "paper/missfont.log",
     "paper/ieeeaccess.cls.backup",
     "paper/tectonic",

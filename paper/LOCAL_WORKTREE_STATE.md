@@ -1,6 +1,6 @@
 # Local Worktree State
 
-Last checked: 2026-05-31 14:24 MST.
+Last checked: 2026-05-31 14:58 MST.
 
 This is a local preservation note for the `k8s-auto-fix` worktree around the
 2026-05-31 packet cleanup and follow-up panel review. It is not a submission
@@ -28,20 +28,20 @@ Do not clean, reset, checkout, or revert these local changes unless explicitly
 asked. Some files are local-only packet controls, and some tracked changes may be
 user-owned.
 
-The tracked/untracked file set below was rechecked at 2026-05-31 14:24 MST after
-the packet-cleanup and escape-narrative commits. After any later commit or push,
-use `git status --short --branch` as the current state and treat this section as
-a preservation record.
+The tracked/untracked file set below was rechecked at 2026-05-31 14:58 MST after
+the Kiro-swarm source-precision pass. After any later commit or push, use
+`git status --short --branch` as the current state and treat this section as a
+preservation record.
 
 ## Tracked Modified Files
 
-Current `git diff --name-status` reports no tracked modifications at the
-verified commit before this note refresh.
+Current `git diff --name-status` is expected to show the Kiro-swarm manuscript,
+response-letter, appendix, checker, and packet-ledger edits until they are
+committed.
 
 ## Untracked Files
 
-Current `git ls-files --others --exclude-standard` reports no untracked files at
-the verified commit before this note refresh.
+Current `git ls-files --others --exclude-standard` reports no untracked files.
 
 ## Packet Role Summary
 
@@ -67,17 +67,20 @@ the verified commit before this note refresh.
 
 ## Verification Snapshot
 
-- Fresh standalone compile to `/tmp/k8s_parent_escape_fix_standalone` passed and
+- Fresh standalone compile to `/tmp/k8s_swarm_final_standalone` passed and
   reported 17 pages.
-- Fresh Overleaf compile to `/tmp/k8s_parent_escape_fix_overleaf` passed and
+- Fresh Overleaf compile to `/tmp/k8s_swarm_final_overleaf` passed and
   reported 17 pages.
-- Hard-error scan over both fresh logs found no fatal errors, undefined
+- Fresh appendix compile to `/tmp/k8s_appendices_swarm` passed and reported 3
+  pages.
+- Hard-error scan over the fresh logs found no fatal errors, undefined
   references/citations, `??` markers, or overfull boxes.
 - `make submission-packet-check`, `make metrics-consistency`,
   `make docs-link-check`, `.venv/bin/python -m unittest discover -s tests -p
   'test_verifier.py'`, and `git diff --check` passed before this note refresh.
 - `/tmp/k8s_submission_harness_v4.py` reported `VERDICT: DONE` after commit
-  `651645d` was pushed and the packet tag was moved to that commit.
+  `651645d` was pushed and the packet tag was moved to that commit; rerun the
+  full harness after committing this Kiro-swarm pass.
 
 ## Commands Used
 
@@ -93,8 +96,9 @@ make metrics-consistency
 make docs-link-check
 .venv/bin/python -m unittest discover -s tests -p 'test_verifier.py'
 git diff --check
-tectonic -X compile access.tex --outdir /tmp/k8s_parent_escape_fix_standalone --keep-logs
-tectonic -X compile main.tex --outdir /tmp/k8s_parent_escape_fix_overleaf --keep-logs
-rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_parent_escape_fix_standalone/access.log /tmp/k8s_parent_escape_fix_overleaf/main.log
+tectonic -X compile access.tex --outdir /tmp/k8s_swarm_final_standalone --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_swarm_final_overleaf --keep-logs
+tectonic -X compile appendices.tex --outdir /tmp/k8s_appendices_swarm --keep-logs
+rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_swarm_final_standalone/access.log /tmp/k8s_swarm_final_overleaf/main.log /tmp/k8s_appendices_swarm/appendices.log
 python3 /tmp/k8s_submission_harness_v4.py
 ```

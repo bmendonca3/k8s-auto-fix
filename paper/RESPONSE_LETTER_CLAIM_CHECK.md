@@ -1,6 +1,6 @@
 # Response Letter Claim Check
 
-Last checked: 2026-05-31 14:16 MST.
+Last checked: 2026-05-31 14:58 MST.
 
 This is a local evidence checklist for `paper/response_to_reviewers.md`. It is
 not a submission artifact and should not be uploaded.
@@ -19,6 +19,8 @@ not a submission artifact and should not be uploaded.
 | Problematic references were replaced with Shamim et al., Xia et al., and Shu et al.; old placeholder keys are absent. | `paper/access.tex` cites `shamim2020`, `xia2023`, and `shu2017`; citation checks now report 38 cited keys, 38 bibitems, 0 missing, 0 uncited; targeted stale scan found no old fake-reference strings. | verified locally |
 | Contribution is framed as a closed verification loop, not a single scanner or LLM proposer. | Introduction and contribution bullets in `paper/access.tex` describe policy re-check, schema validation, server-side dry-run, universal safety gates, and risk-aware scheduling. | verified locally |
 | Related Work is organized into five classes and includes Polaris and LLMSecConfig. | `paper/access.tex` has five numbered related-work categories and cites `polaris` and `llmsecconfig`. | verified locally |
+| Reviewer 2's introduction-split and alternative-tool requests are represented without inventing a reviewer concern. | `paper/response_to_reviewers.md` now has explicit Reviewer 2 concerns for the introduction structure and alternative tools/technologies; the operator-study cleanup is labeled as an author-side clarification rather than attributed to Reviewer 2. | verified locally |
+| Reviewer 3's concern about Tables 1 and 2 comparing different systems is answered directly. | `paper/response_to_reviewers.md` explains that Table 1 is a lifecycle-role comparison and Table 2 has per-policy baselines with different denominators and evidence scopes. | verified locally |
 | Architecture/setup include concrete component versions. | Figure caption in `paper/access.tex` lists kube-linter 0.7.6, kubectl 1.34.1, kind 0.30.0, Kubernetes 1.34.0, and Grok/xAI `grok-4.3`; evidence table records the environment. | verified locally |
 | Limitations distinguish API-admission safety from full semantic equivalence. | `paper/access.tex` limitations state the verifier establishes policy, schema, and API-admission safety, not full workload semantic equivalence. | verified locally |
 | Operator-study language is scoped to replay/simulation, not a finished live study. | Evidence-status table marks scheduler comparison as replay-based and Operator A/B as simulated only; stale scan found no completed-live-operator wording. | verified locally |
@@ -27,7 +29,7 @@ not a submission artifact and should not be uploaded.
 | Grok/xAI metrics use token counts and current-pricing guidance instead of a stale fixed dollar estimate. | `data/batch_runs/grok_5k/metrics_grok5k.json` reports 4426/5000 accepted, auto-fix rate 0.8852, 4,376,199 prompt tokens, 689,779 visible completion tokens, and 11,399,926 total tokens including xAI-reported reasoning tokens; manuscript cites `xai_pricing` rather than a fixed dollar total. | verified locally |
 | Scheduler headline numbers are artifact-backed. | `data/metrics_schedule_compare.json` reports FIFO top-risk P95 102.3333 hours and bandit top-risk P95 13.0 hours; manuscript rounds these as 102.3 h and 13.0 h. | verified locally |
 | Full deterministic replay headline numbers are artifact-backed. | `data/metrics_rules_full.json` reports 15,718 detections, 13,373 patches/verified, 13,338 accepted, auto-fix rate 0.8486, and median patch ops 9. | verified locally |
-| Standalone and Overleaf sources are synchronized for content, with path-only packaging differences. | `diff -u paper/access.tex paper/overleaf/paper/access.tex` shows only map-file, input, figure, and biography image path differences; both TeX builds previously passed and produced 17 pages. | verified locally |
+| Standalone and Overleaf sources are synchronized for content, with path-only packaging differences. | `diff -u paper/access.tex paper/overleaf/paper/access.tex` shows only map-file, input, figure, and biography image path differences; both TeX builds passed and produced 17 pages. | verified locally |
 
 ## Commands Used
 

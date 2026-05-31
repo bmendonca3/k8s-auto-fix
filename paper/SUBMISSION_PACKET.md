@@ -1,6 +1,6 @@
 # TCC Submission Packet Index
 
-Last local organization pass: 2026-05-31 14:16 MST.
+Last local organization pass: 2026-05-31 14:58 MST.
 
 This file is the local front door for the TCC-2025-12-0666 major-revision
 packet. It is not an instruction to submit. Do not email, upload, open a pull
@@ -53,8 +53,8 @@ before upload.
 - `paper/REFERENCE_FIX_CHANGES.md`.
 - `paper/REVISION_CHANGES_2026-05-30.md`.
 - `paper/REVISION_TRACKING.md`.
-- `paper/archives/overleaf_upload.zip`; it is a stale archive, so use the
-  current `paper/overleaf/` tree as input when a source upload is needed.
+- `paper/archives/overleaf_upload.zip`; the stale tracked archive was removed,
+  and any regenerated archive should stay out of the portal/source upload path.
 - Retired duplicate appendix source `appendix/appendices.tex`; use
   `paper/appendices.tex` only if supplemental appendix source is requested.
 - Stale failure and run-history summaries such as
@@ -95,7 +95,9 @@ must not be copied into a portal upload or Overleaf source package.
 The most recent organization and packaging pass verified:
 
 - `paper/access.pdf` and `paper/overleaf/main.pdf` were rebuilt from the
-  2026-05-31 14:16 MST escape-narrative source-precision edits.
+  2026-05-31 14:58 MST Kiro-swarm source-precision edits.
+- `paper/appendices.pdf` was rebuilt from `paper/appendices.tex`; the appendix
+  build produced 3 pages with no hard LaTeX errors.
 - Standalone and Overleaf Tectonic builds both produced 17 pages with 0 fatal
   errors, 0 undefined references/citations, 0 `??` markers, and 0 overfull boxes.
 - `.venv/bin/python -m unittest discover -s tests -p 'test_verifier.py'` passed.
@@ -107,10 +109,12 @@ The most recent organization and packaging pass verified:
 - Targeted stale-wording scan was clean for old metric values, stale fixed
   pricing, bad salutations, old venue wording, and tool-specific branding.
 - `paper/cover_letter.md` and `paper/overleaf/paper/cover_letter.md` match.
-- `tectonic -X compile access.tex --outdir /tmp/k8s_source_precision_standalone
+- `tectonic -X compile access.tex --outdir /tmp/k8s_swarm_final_standalone
   --keep-logs` passed from `paper/`; log reports 17 pages.
-- `tectonic -X compile main.tex --outdir /tmp/k8s_source_precision_overleaf
+- `tectonic -X compile main.tex --outdir /tmp/k8s_swarm_final_overleaf
   --keep-logs` passed from `paper/overleaf/`; log reports 17 pages.
+- `tectonic -X compile appendices.tex --outdir /tmp/k8s_appendices_swarm
+  --keep-logs` passed from `paper/`; log reports 3 pages.
 
 Before any upload, rerun the checklist in `docs/ieee_submission_checklist.md` and
 confirm the final PDF, cover letter, and response letter still agree.

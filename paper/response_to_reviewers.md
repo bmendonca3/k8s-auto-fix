@@ -59,6 +59,26 @@ avoiding a stale fixed dollar estimate.
 
 ## Response to Reviewer 2
 
+**Concern: The introduction should better separate objective, motivation,
+justification, and problem framing.**
+
+We revised the introduction into labeled paragraphs for problem, approach,
+contributions, and organization while retaining a standard single Introduction
+section for the TCC manuscript format. This separates the motivation and
+research objective from the evaluation claims, and it keeps headline numeric
+results in the evaluation section where they are tied to the released artifacts.
+
+**Concern: The paper should provide more detail on decisions regarding
+alternative tools and technologies.**
+
+We expanded Related Work and the comparison tables so the design choices are
+grounded against detection-only tools, admission-time policy engines,
+LLM-based repair, SRE automation, and emerging security agents. The revised
+text explains that the paper does not treat detection or patch generation alone
+as the acceptance boundary; the differentiating mechanism is the closed loop
+that binds candidate patches to policy re-checking, schema validation,
+server-side dry-run, evidence capture, and risk-aware queueing.
+
 **Concern: The architecture figure and experimental setup needed more concrete
 implementation detail.**
 
@@ -76,7 +96,8 @@ equivalence. The revised text now explicitly calls out limitations for hostPath
 rewrites, read-only root filesystem changes, dropped capabilities, LLM latency,
 provider drift, and queue-replay evaluation.
 
-**Concern: The manuscript should avoid overclaiming operator-study results.**
+**Additional author-side clarification: The manuscript should avoid overclaiming
+operator-study results.**
 
 We removed language that could imply finished human-operator validation. The
 current manuscript labels the scheduler and operator A/B evidence as
@@ -99,6 +120,17 @@ We reorganized Related Work into five categories: detection-only tooling,
 admission-time policy engines, LLM-based repair, large-scale SRE automation, and
 emerging security agents. We added Polaris and LLMSecConfig to make the
 comparison surface more complete.
+
+**Concern: Tables 1 and 2 needed clearer explanation, especially because they
+compare different systems under different evidence regimes.**
+
+We revised the table captions and surrounding text to make the denominators
+visible. Table 1 is a lifecycle-role comparison, not a single quantitative
+leaderboard. Table 2 reports per-policy baselines only where a reusable artifact
+or scanner interface allowed a bounded replay, so its rows intentionally have
+different denominators and evidence scopes. The response and manuscript now
+avoid implying a like-for-like benchmark when the available artifacts do not
+support one.
 
 **Concern: Section 3 needed stronger formalization and clearer
 research-question rationale.**

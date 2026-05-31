@@ -1,6 +1,6 @@
 # Submission Gap Register
 
-Last checked: 2026-05-31 12:45 MST.
+Last checked: 2026-05-31 14:58 MST.
 
 This is the local risk-ranked gap register for the TCC-2025-12-0666
 major-revision packet. It is not a submission artifact and should not be
@@ -9,9 +9,10 @@ uploaded.
 ## Status Summary
 
 Local packet organization is in good shape: the manuscript sources build, the
-response letter exists, uploadable artifacts are inventoried, and response-letter
-claims have local evidence. The packet is still **not go for submission** because
-the editorial permission gate remains unresolved.
+supplemental appendix source now rebuilds its PDF, the response letter exists,
+uploadable artifacts are inventoried, and response-letter claims have local
+evidence. The packet is still **not go for submission** because the editorial
+permission gate remains unresolved.
 
 ## Open Gaps
 
@@ -42,8 +43,8 @@ the editorial permission gate remains unresolved.
   `data/batch_runs/grok_5k/metrics_history.json`, `paper/tectonic`,
   `paper/missfont.log`, `paper/ieeeaccess.cls`,
   `paper/ieeeaccess.cls.backup`, `paper/overleaf/ieeeaccess.cls`,
-  `paper/overleaf/paper/ieeeaccess.cls`, `add_iam_policy_binding.sh`,
-  `access.log`, and `logs/access.log`.
+  `paper/overleaf/paper/ieeeaccess.cls`, `paper/archives/overleaf_upload.zip`,
+  `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 
 ## Editorial Follow-Up Draft
 
@@ -77,6 +78,7 @@ Brian Mendonca and Vijay K. Madisetti
 - `paper/REVISION_CHANGES_2026-05-30.md`.
 - `paper/REVISION_TRACKING.md`.
 - `paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md`.
+- `paper/archives/overleaf_upload.zip`; the stale tracked copy was removed.
 - `paper/missfont.log`.
 - `paper/ieeeaccess.cls.backup`.
 - `paper/overleaf/paper/ieeeaccess.cls`.

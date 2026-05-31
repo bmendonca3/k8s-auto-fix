@@ -1,6 +1,6 @@
 # Submission Artifact Inventory
 
-Last checked: 2026-05-31 14:16 MST.
+Last checked: 2026-05-31 14:58 MST.
 
 This is a local inventory for the TCC-2025-12-0666 packet. It is not a
 submission artifact and should not be uploaded.
@@ -15,11 +15,22 @@ major revision.
 
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
-| `paper/access.pdf` | Main manuscript PDF | `8d439184dc2c6f5c9ea009bd2a86065332e6e6fc93ec28f7c1b63bc66065664b` |
-| `paper/access.tex` | Authoritative standalone manuscript source | `f4ec26c63c0273f6f0774e6d8f81d421b3e749ea64fcee68f7fc1d5fbcaf8f4d` |
+| `paper/access.pdf` | Main manuscript PDF | `308f1d7202540bc1a8d32a294b54282fe6d422b8f52dc9c852607d5ca0733d54` |
+| `paper/access.tex` | Authoritative standalone manuscript source | `63763e15c5865e9574b95045f698d924151b112d2f153afed8749310f32057b0` |
 | `paper/cover_letter.md` | Cover-letter draft | `995bdbfdb1888f64d6279e91de80089f82831a206f95dcfe0731d43d3d1f3dae` |
-| `paper/response_to_reviewers.md` | Point-by-point response draft | `13f68901137ccee87a88c95e7fbf238b541b5c53c3bb576175496e21a512c1f8` |
+| `paper/response_to_reviewers.md` | Point-by-point response draft | `38b15bfd99599baed33641774ca6fa742130e8764fb27175b13da7ca19f0a482` |
 | `paper/references.bib` | BibTeX mirror of the active inline bibliography | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
+
+## Supplemental Appendix Artifact
+
+The supplemental appendix is not part of the primary portal manuscript unless
+the portal or authors request it, but the tracked source and PDF now compile
+together:
+
+| Artifact | Purpose | Current SHA-256 |
+|---|---|---|
+| `paper/appendices.pdf` | Optional supplemental appendix PDF | `1c414d0ae6a7e7a67d9e88b5ea1e32646e867fa970e4301067a2100bcf8cdcca` |
+| `paper/appendices.tex` | Optional supplemental appendix source | `3a5fb8817bde9f8a5cc409bc5f7f1d9d5ca3881cf22036de9ef21dd79babfd53` |
 
 ## Standalone Source Dependencies
 
@@ -63,9 +74,9 @@ Current key Overleaf hashes:
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
 | `paper/overleaf/main.tex` | Overleaf entry point | `6df68ddd89f4e5716fd0e8c16d005e0a11ac4c481675e28cf861148b15f3c7a8` |
-| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `0b89c704e1c1da0ab049c2f3da23b8e003ae665bad6e6ca6ee8e85a823956e25` |
+| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `e7ab2173156bbb5924917510d7fb547ae76912f7af6c475f28489ac6f50c3c08` |
 | `paper/overleaf/paper/references.bib` | Overleaf BibTeX mirror | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
-| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `b1efc68567003955f5782a03f9e0fcc70a950060a5b866a3c354c32da01e2517` |
+| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `6553c51bfafd6ef8277d3c83ebb9e095332ff97158eb13513773104ac41c3343` |
 | `paper/overleaf/paper/grok_failures_table.tex` | Included failure-taxonomy table | `93211d9fde64b27cc0d07376d30fd7dc83dd63882c597f6a1a1d235fdf30a7ef` |
 | `paper/overleaf/paper/reproducibility/baselines.tex` | Included baseline table | `6ca9d5f49d4d07a5b2980330ff0caad8d7219f2a15c34376367e4677ea804fcd` |
 
@@ -88,7 +99,8 @@ font map paths, table input paths, figure paths, and biography image paths.
 - `paper/LOCAL_WORKTREE_STATE.md`.
 - `paper/REVISION_TRACKING.md`.
 - `paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md`.
-- `paper/archives/overleaf_upload.zip`; it is stale.
+- `paper/archives/overleaf_upload.zip`; the stale tracked copy was removed, and
+  any regenerated archive should stay out of the portal/source upload path.
 - Legacy standalone appendix source `appendix/appendices.tex`; use
   `paper/appendices.tex` only if supplemental appendix source is requested.
 - Stale failure and run-history summaries such as
@@ -122,12 +134,13 @@ submission packet or clean source package.
 ```sh
 rg -n -F '\input{' paper/access.tex paper/overleaf/paper/access.tex paper/overleaf/main.tex
 rg -n -F '\includegraphics' paper/access.tex paper/overleaf/paper/access.tex paper/overleaf/main.tex
-shasum -a 256 paper/access.pdf paper/access.tex paper/cover_letter.md paper/response_to_reviewers.md paper/overleaf/main.pdf paper/overleaf/main.tex paper/overleaf/paper/access.tex paper/references.bib paper/overleaf/paper/references.bib paper/grok_failures_table.tex docs/reproducibility/baselines.tex paper/overleaf/paper/grok_failures_table.tex paper/overleaf/paper/reproducibility/baselines.tex
+shasum -a 256 paper/access.pdf paper/access.tex paper/appendices.pdf paper/appendices.tex paper/cover_letter.md paper/response_to_reviewers.md paper/overleaf/main.pdf paper/overleaf/main.tex paper/overleaf/paper/access.tex paper/references.bib paper/overleaf/paper/references.bib paper/grok_failures_table.tex docs/reproducibility/baselines.tex paper/overleaf/paper/grok_failures_table.tex paper/overleaf/paper/reproducibility/baselines.tex scripts/check_submission_packet.py
 diff -u paper/references.bib paper/overleaf/paper/references.bib
 diff -u paper/grok_failures_table.tex paper/overleaf/paper/grok_failures_table.tex
 diff -u docs/reproducibility/baselines.tex paper/overleaf/paper/reproducibility/baselines.tex
-tectonic -X compile access.tex --outdir /tmp/k8s_goal_wholepaper_standalone --keep-logs
-tectonic -X compile main.tex --outdir /tmp/k8s_goal_wholepaper_overleaf --keep-logs
+tectonic -X compile access.tex --outdir /tmp/k8s_swarm_final_standalone --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_swarm_final_overleaf --keep-logs
+tectonic -X compile appendices.tex --outdir /tmp/k8s_appendices_swarm --keep-logs
 find paper/overleaf -maxdepth 3 -type f \( -name '*.aux' -o -name '*.log' -o -name '*.out' -o -name 'missfont.log' -o -name '.DS_Store' \) -print | sort
 rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
 ```
