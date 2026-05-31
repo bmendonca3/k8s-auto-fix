@@ -1,6 +1,6 @@
 # TCC Submission Packet Index
 
-Last local organization pass: 2026-05-31 12:05 MST.
+Last local organization pass: 2026-05-31 12:45 MST.
 
 This file is the local front door for the TCC-2025-12-0666 major-revision
 packet. It is not an instruction to submit. Do not email, upload, open a pull
@@ -55,6 +55,13 @@ before upload.
 - `paper/REVISION_TRACKING.md`.
 - `paper/archives/overleaf_upload.zip`; it is a stale archive, so use the
   current `paper/overleaf/` tree as input when a source upload is needed.
+- Retired duplicate appendix source `appendix/appendices.tex`; use
+  `paper/appendices.tex` only if supplemental appendix source is requested.
+- Stale failure and run-history summaries such as
+  `data/failures/taxonomy_summary.csv` and
+  `data/batch_runs/grok_5k/metrics_history.json`.
+- Local helper binaries and class copies such as `paper/tectonic`,
+  `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
 - Transient Overleaf build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
 - `paper/overleaf/main.pdf` for source-only uploads; use `paper/access.pdf` as
@@ -96,9 +103,9 @@ The most recent organization and packaging pass verified:
 - Targeted stale-wording scan was clean for old metric values, stale fixed
   pricing, bad salutations, old venue wording, and tool-specific branding.
 - `paper/cover_letter.md` and `paper/overleaf/paper/cover_letter.md` match.
-- `./tectonic -X compile access.tex --outdir /tmp/k8s_source_precision_standalone
+- `tectonic -X compile access.tex --outdir /tmp/k8s_source_precision_standalone
   --keep-logs` passed from `paper/`; log reports 17 pages.
-- `../tectonic -X compile main.tex --outdir /tmp/k8s_source_precision_overleaf
+- `tectonic -X compile main.tex --outdir /tmp/k8s_source_precision_overleaf
   --keep-logs` passed from `paper/overleaf/`; log reports 17 pages.
 
 Before any upload, rerun the checklist in `docs/ieee_submission_checklist.md` and

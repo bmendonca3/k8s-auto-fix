@@ -1,6 +1,6 @@
 # Submission Gap Register
 
-Last checked: 2026-05-31 12:17 MST.
+Last checked: 2026-05-31 12:45 MST.
 
 This is the local risk-ranked gap register for the TCC-2025-12-0666
 major-revision packet. It is not a submission artifact and should not be
@@ -35,6 +35,12 @@ the editorial permission gate remains unresolved.
 - Automated packet hygiene checker exists: `scripts/check_submission_packet.py`.
 - Reviewer-response navigation note points to current packet files:
   `docs/REVIEW_RESPONSE.md`.
+- Upload-facing GitHub links are pinned to the packet tag rather than mutable
+  `main` paths.
+- Retired duplicate or stale public artifacts were removed from the tracked
+  packet path: `appendix/appendices.tex`, `data/failures/taxonomy_summary.csv`,
+  `data/batch_runs/grok_5k/metrics_history.json`, `paper/tectonic`,
+  `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
 
 ## Editorial Follow-Up Draft
 

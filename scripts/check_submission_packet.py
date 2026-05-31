@@ -11,11 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 EXPECTED_REMOTE_URL = "https://github.com/bmendonca3/k8s-auto-fix.git"
-EXPECTED_BRANCH_STATUS = "## improvmenets...origin/improvmenets [ahead 2]"
-EXPECTED_LATEST_COMMITS = [
-    "6c82e58 2026-05-30T23:16:48-07:00 bmendonca3 <208517100+bmendonca3@users.noreply.github.com> Tighten K8S camera-ready claims and rank labels",
-    "12f255e 2026-05-30T22:51:41-07:00 bmendonca3 <208517100+bmendonca3@users.noreply.github.com> Cite scheduling evidence and update cost-reference prose",
-]
+PACKET_TAG = "tcc-2025-12-0666-packet-2026-05-31"
 
 LOCAL_ONLY_FILES = [
     "paper/SUBMISSION_PACKET.md",
@@ -85,44 +81,14 @@ MIRRORED_FILES = [
     ("docs/reproducibility/baselines.tex", "paper/overleaf/paper/reproducibility/baselines.tex"),
 ]
 
-EXPECTED_TRACKED_MODIFIED = [
-    ".DS_Store",
-    "ARTIFACTS.md",
-    "Makefile",
-    "README.md",
-    "data/baselines/mode_comparison.csv",
-    "data/eval/unified_eval_summary.json",
-    "docs/REVIEW_RESPONSE.md",
-    "docs/ieee_submission_checklist.md",
-    "figures/mode_comparison.png",
+RETIRED_PUBLIC_ARTIFACTS = [
+    "appendix/appendices.tex",
+    "data/failures/taxonomy_summary.csv",
+    "data/batch_runs/grok_5k/metrics_history.json",
     "notes/to-do list",
-    "paper/REFERENCE_FIX_CHANGES.md",
-    "paper/REVISION_CHANGES_2026-05-30.md",
-    "paper/REVISION_TRACKING.md",
-    "paper/access.pdf",
-    "paper/access.tex",
-    "paper/cover_letter.md",
-    "paper/overleaf/figures/mode_comparison.png",
-    "paper/overleaf/main.pdf",
-    "paper/overleaf/paper/access.tex",
-    "paper/overleaf/paper/cover_letter.md",
-    "paper/overleaf/paper/references.bib",
-    "paper/references.bib",
-    "scripts/README.md",
-    "scripts/build_repro_bundle.py",
-]
-
-EXPECTED_UNTRACKED = [
-    "paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md",
-    "paper/LOCAL_WORKTREE_STATE.md",
-    "paper/RESPONSE_LETTER_CLAIM_CHECK.md",
-    "paper/SOURCE_VERIFICATION_MCP_2026-05-31.md",
-    "paper/SUBMISSION_ARTIFACT_INVENTORY.md",
-    "paper/SUBMISSION_GAP_REGISTER.md",
-    "paper/SUBMISSION_PACKET.md",
-    "paper/response_to_reviewers.md",
-    "paper/source_verification_mcp_2026-05-31.json",
-    "scripts/check_submission_packet.py",
+    "paper/tectonic",
+    "paper/ieeeaccess.cls",
+    "paper/overleaf/ieeeaccess.cls",
 ]
 
 def chars(*codes: int) -> str:
@@ -202,6 +168,19 @@ def git_stdout(args: list[str]) -> str:
     return result.stdout.strip()
 
 
+def git_maybe_stdout(args: list[str]) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
 def check_required_files(failures: list[str]) -> None:
     mirrored_paths = [path for pair in MIRRORED_FILES for path in pair]
     for path in sorted(set(PACKET_DOCS + NO_GO_DOCS + HASHED_ARTIFACTS + mirrored_paths)):
@@ -269,6 +248,12 @@ def check_do_not_upload_lists(failures: list[str]) -> None:
         ".DS_Store",
         "notes/to-do list",
         "paper/archives/overleaf_upload.zip",
+        "appendix/appendices.tex",
+        "data/failures/taxonomy_summary.csv",
+        "data/batch_runs/grok_5k/metrics_history.json",
+        "paper/tectonic",
+        "paper/ieeeaccess.cls",
+        "paper/overleaf/ieeeaccess.cls",
         "main.aux",
         "main.log",
         "main.out",
@@ -309,6 +294,9 @@ def check_overleaf_clean_package_guidance(failures: list[str]) -> None:
     require_contains("paper/SUBMISSION_ARTIFACT_INVENTORY.md", "rsync -ain", failures)
     require_contains("docs/ieee_submission_checklist.md", "--exclude='main.pdf'", failures)
     require_contains("paper/SUBMISSION_ARTIFACT_INVENTORY.md", "--exclude='main.pdf'", failures)
+    for excluded in ["cover_letter.md", "ieeeaccess.cls", "tectonic"]:
+        require_contains("docs/ieee_submission_checklist.md", excluded, failures)
+        require_contains("paper/SUBMISSION_ARTIFACT_INVENTORY.md", excluded, failures)
     for path in [
         "paper/SUBMISSION_PACKET.md",
         "paper/SUBMISSION_GAP_REGISTER.md",
@@ -383,6 +371,42 @@ def check_repository_snapshot(failures: list[str]) -> None:
             fail(f"paper/LOCAL_WORKTREE_STATE.md: missing repository snapshot text {required_text!r}", failures)
 
 
+def check_packet_tag_alignment(failures: list[str]) -> None:
+    head = git_stdout(["rev-parse", "HEAD"])
+    tag_commit = git_maybe_stdout(["rev-parse", f"{PACKET_TAG}^{{}}"])
+    if not tag_commit:
+        fail(f"{PACKET_TAG}: missing packet tag", failures)
+    elif tag_commit != head:
+        fail(
+            f"{PACKET_TAG}: tag peels to {tag_commit[:12]}, but current HEAD is {head[:12]}",
+            failures,
+        )
+
+
+def check_no_mutable_github_links(failures: list[str]) -> None:
+    mutable_patterns = [
+        f"github.com/bmendonca3/k8s-auto-fix/blob/main/",
+        f"github.com/bmendonca3/k8s-auto-fix/tree/main/",
+    ]
+    scanned = UPLOAD_FACING_DOCS + [
+        "paper/appendices.tex",
+    ]
+    for path in scanned:
+        candidate = ROOT / path
+        if not candidate.exists():
+            continue
+        for line_no, line in enumerate(read_text(path).splitlines(), 1):
+            if any(pattern in line for pattern in mutable_patterns):
+                fail(f"{path}:{line_no}: mutable GitHub main link in packet-facing source", failures)
+
+
+def check_retired_public_artifacts_removed(failures: list[str]) -> None:
+    tracked = set(git_lines(["ls-files"]))
+    for path in RETIRED_PUBLIC_ARTIFACTS:
+        if path in tracked:
+            fail(f"{path}: retired or local-only artifact is still tracked", failures)
+
+
 def check_stale_wording(failures: list[str]) -> None:
     for path in STALE_WORDING_DOCS:
         text = read_text(path)
@@ -419,6 +443,9 @@ def main() -> int:
         check_mirrored_files(failures)
         check_dirty_snapshot(failures)
         check_repository_snapshot(failures)
+        check_packet_tag_alignment(failures)
+        check_no_mutable_github_links(failures)
+        check_retired_public_artifacts_removed(failures)
         check_stale_wording(failures)
         check_upload_facing_residue(failures)
 

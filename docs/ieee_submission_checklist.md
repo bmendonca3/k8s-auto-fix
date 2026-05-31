@@ -59,6 +59,14 @@
   prose.
 - `paper/archives/overleaf_upload.zip` — stale archive; rebuild a clean package
   from the current `paper/overleaf/` tree if the portal needs source files.
+- `appendix/appendices.tex` — retired duplicate appendix source; use
+  `paper/appendices.tex` only if supplemental appendix source is requested.
+- `data/failures/taxonomy_summary.csv` and
+  `data/batch_runs/grok_5k/metrics_history.json` — retired stale summaries; use
+  `data/metrics_rules_full.json`,
+  `data/batch_runs/grok_5k/metrics_grok5k.json`, and cited taxonomy artifacts.
+- Local helper binaries and class copies such as `paper/tectonic`,
+  `paper/ieeeaccess.cls`, and `paper/overleaf/ieeeaccess.cls`.
 - Transient Overleaf build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
 - Unreferenced author-photo leftovers such as `dheer_toprani_photo.png`.
@@ -67,10 +75,10 @@
 ## Rebuild Commands
 ```
 cd paper
-./tectonic -X compile access.tex --outdir /tmp/k8s_tcc_build --keep-logs
+tectonic -X compile access.tex --outdir /tmp/k8s_tcc_build --keep-logs
 cd ..
 cd paper/overleaf
-../tectonic -X compile main.tex --outdir /tmp/k8s_overleaf_build --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_overleaf_build --keep-logs
 cd ../..
 make submission-packet-check
 make docs-link-check metrics-consistency
@@ -94,7 +102,7 @@ the upload package.
 To preview a clean package without writing files or uploading anything, run:
 
 ```
-rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='paper/dheer_toprani_photo.png' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
+rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --exclude='missfont.log' --exclude='.DS_Store' --exclude='main.pdf' --exclude='cover_letter.md' --exclude='paper/dheer_toprani_photo.png' --exclude='ieeeaccess.cls' --exclude='tectonic' paper/overleaf/ /tmp/k8s_overleaf_clean_package_preview/
 ```
 
 Remove `-n` only after the submission gate is satisfied and the portal's source

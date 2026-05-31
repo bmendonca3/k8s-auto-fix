@@ -111,7 +111,7 @@ git diff --name-status
 git ls-files --others --exclude-standard
 git log -2 --pretty=format:'%h %cI %an <%ae> %s'
 .venv/bin/python scripts/check_submission_packet.py
-./tectonic -X compile access.tex --outdir /tmp/k8s_goal_wholepaper_standalone --keep-logs
-../tectonic -X compile main.tex --outdir /tmp/k8s_goal_wholepaper_overleaf --keep-logs
+tectonic -X compile access.tex --outdir /tmp/k8s_goal_wholepaper_standalone --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_goal_wholepaper_overleaf --keep-logs
 rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_goal_wholepaper_standalone/access.log /tmp/k8s_goal_wholepaper_overleaf/main.log
 ```
