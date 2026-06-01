@@ -1,6 +1,6 @@
 # TCC Submission Packet Index
 
-Last local organization pass: 2026-05-31 16:19 MST.
+Last local organization pass: 2026-05-31 19:32 MST.
 
 This file is the local front door for the TCC-2025-12-0666 major-revision
 packet. It is not an instruction to submit. Do not email, upload, open a pull
@@ -86,8 +86,8 @@ must not be copied into a portal upload or Overleaf source package.
 - The point-by-point response letter now has a local claim-check ledger, but it
   must still be rechecked against the exact final PDF and artifacts before any
   portal upload.
-- A named-agent head-to-head against Aardvark or KubeIntellect remains future
-  work unless the authors approve and fund a new experiment.
+- A named-agent head-to-head against Codex Security or KubeIntellect remains
+  future work unless the authors approve and fund a new experiment.
 - The novelty rebuttal remains an author/scientific judgment, not a local code
   or formatting task.
 
@@ -96,7 +96,7 @@ must not be copied into a portal upload or Overleaf source package.
 The most recent organization and packaging pass verified:
 
 - `paper/access.pdf` and `paper/overleaf/main.pdf` were rebuilt from the
-  2026-05-31 16:19 MST Kiro-nitpick source-package polish edits.
+  2026-05-31 19:32 MST Kiro credit-burn polish edits.
 - `paper/appendices.pdf` was rebuilt from `paper/appendices.tex`; the appendix
   build produced 3 pages with no hard LaTeX errors.
 - Standalone and Overleaf Tectonic builds both produced 17 pages with 0 fatal

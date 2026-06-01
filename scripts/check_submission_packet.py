@@ -119,7 +119,7 @@ TOOL_TAG = r"\[" + TOOL_NAME.lower() + r"\]"
 
 STALE_PATTERNS = [
     TOOL_TAG,
-    rf"\b{TOOL_NAME}\b",
+    rf"\b{TOOL_NAME}\b(?!\s+Security)",
     chars(86, 105, 98, 97, 121),
     chars(86, 105, 98, 104, 97, 121),
     chars(68, 101, 97, 114, 32) + chars(86, 105, 106, 97, 121),

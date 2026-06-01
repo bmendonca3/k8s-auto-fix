@@ -1,6 +1,6 @@
 # Local Worktree State
 
-Last checked: 2026-05-31 16:19 MST.
+Last checked: 2026-05-31 19:32 MST.
 
 This is a local preservation note for the `k8s-auto-fix` worktree around the
 2026-05-31 packet cleanup and follow-up panel review. It is not a submission
@@ -16,6 +16,7 @@ artifact and should not be uploaded.
 - Packet commits verified before this note refresh:
   - `651645d` by `bmendonca3`: Align verifier ablation escape narrative.
   - `3abfe0d` by `bmendonca3`: Remove stale submission package artifacts.
+  - `5ca8d11` by `bmendonca3`: Polish source package nitpicks.
 
 Because this file is tracked, a commit that updates this note necessarily
 changes `HEAD`. Treat the commit bullets above as a preservation record, not as
@@ -28,16 +29,16 @@ Do not clean, reset, checkout, or revert these local changes unless explicitly
 asked. Some files are local-only packet controls, and some tracked changes may be
 user-owned.
 
-The tracked/untracked file set below was rechecked at 2026-05-31 16:19 MST after
-the Kiro nitpick/source-package polish pass. After any later commit or push, use
+The tracked/untracked file set below was rechecked at 2026-05-31 19:32 MST after
+the Kiro credit-burn wording and packet-polish pass. After any later commit or push, use
 `git status --short --branch` as the current state and treat this section as a
 preservation record.
 
 ## Tracked Modified Files
 
-Current `git diff --name-status` is expected to show the Kiro-nitpick source,
-appendix, checker, packet-ledger, and source-package cleanup edits until they
-are committed.
+Current `git diff --name-status` is expected to show the Kiro credit-burn
+manuscript, response-letter, rebuilt-PDF, checker, packet-ledger, and
+source-package metadata edits until they are committed.
 
 ## Untracked Files
 
@@ -67,20 +68,23 @@ Current `git ls-files --others --exclude-standard` reports no untracked files.
 
 ## Verification Snapshot
 
-- Fresh standalone compile to `/tmp/k8s_nitpick_final_standalone` passed and
+- Fresh standalone compile to `/tmp/k8s_credit_final_standalone` passed and
   reported 17 pages.
-- Fresh Overleaf compile to `/tmp/k8s_nitpick_final_overleaf` passed and
+- Fresh Overleaf compile to `/tmp/k8s_credit_final_overleaf` passed and
   reported 17 pages.
-- Fresh appendix compile to `/tmp/k8s_nitpick_appendices` passed and reported 3
+- Fresh appendix compile to `/tmp/k8s_credit_final_appendices` passed and reported 3
   pages.
 - Hard-error scan over the fresh logs found no fatal errors, undefined
   references/citations, `??` markers, or overfull boxes.
 - `make submission-packet-check`, `make metrics-consistency`,
   `make docs-link-check`, `.venv/bin/python -m unittest discover -s tests -p
   'test_verifier.py'`, and `git diff --check` passed before this note refresh.
-- `/tmp/k8s_submission_harness_v4.py` reported `VERDICT: DONE` after commit
-  `651645d` was pushed and the packet tag was moved to that commit; rerun the
-  full harness after committing this Kiro-swarm pass.
+- Kiro wave A used 20 Opus requests with 7 completed outputs, 8 timeout/partial
+  outputs, and 5 late model-unavailable outputs; Kiro wave B attempted 12 more
+  requests on the strongest currently listed Kiro model and hit the monthly
+  request limit.
+- Rerun `/tmp/k8s_submission_harness_v4.py` after committing this Kiro
+  credit-burn pass and moving the packet tag.
 
 ## Commands Used
 
@@ -96,9 +100,9 @@ make metrics-consistency
 make docs-link-check
 .venv/bin/python -m unittest discover -s tests -p 'test_verifier.py'
 git diff --check
-tectonic -X compile access.tex --outdir /tmp/k8s_nitpick_final_standalone --keep-logs
-tectonic -X compile main.tex --outdir /tmp/k8s_nitpick_final_overleaf --keep-logs
-tectonic -X compile appendices.tex --outdir /tmp/k8s_nitpick_appendices --keep-logs
-rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_nitpick_final_standalone/access.log /tmp/k8s_nitpick_final_overleaf/main.log /tmp/k8s_nitpick_appendices/appendices.log
+tectonic -X compile access.tex --outdir /tmp/k8s_credit_final_standalone --keep-logs
+tectonic -X compile main.tex --outdir /tmp/k8s_credit_final_overleaf --keep-logs
+tectonic -X compile appendices.tex --outdir /tmp/k8s_credit_final_appendices --keep-logs
+rg -n "Undefined control sequence|Citation .*undefined|Reference .*undefined|Fatal|Emergency stop|LaTeX Error|Overfull|\?\?" /tmp/k8s_credit_final_standalone/access.log /tmp/k8s_credit_final_overleaf/main.log /tmp/k8s_credit_final_appendices/appendices.log
 python3 /tmp/k8s_submission_harness_v4.py
 ```

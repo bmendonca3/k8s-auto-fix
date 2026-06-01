@@ -25,9 +25,9 @@ Shamim et al. (IEEE SecDev 2020), Xia et al. (ICSE 2023), and Shu et al.
 a corresponding bibliography entry and every bibliography entry is cited.
 
 Evidence: `paper/access.tex` now cites `shamim2020`, `xia2023`, and `shu2017`;
-the removed placeholder keys are absent. The reference-fix audit is recorded in
-`paper/REFERENCE_FIX_CHANGES.md`, and the current build has 38 cited keys and 38
-defined bibliography entries.
+the removed placeholder keys are absent. The source-verification snapshot and
+revision ledger record the reference cleanup, and the current build has 38 cited
+keys and 38 defined bibliography entries.
 
 **Concern: The paper needed a clearer contribution beyond an assembly of
 existing tools.**
@@ -156,15 +156,16 @@ enforcement vs. an agent-style acceptance regime" analysis. Holding candidate
 patches fixed, removing the domain-specific policy re-check increases acceptance
 from 78.9% (15/19) to 100% (19/19), but four patches are accepted while still
 violating the property they were meant to fix. This isolates the mechanism the
-paper contributes: Kubernetes-specific invariant re-checking plus server-side
-dry-run as the acceptance boundary.
+ablation directly supports: Kubernetes-specific invariant re-checking inside a
+broader verifier boundary that also requires schema validation, server-side
+dry-run, and no-new-violation checks.
 
-We explicitly state the limitation. Aardvark is a closed beta without a public
-interface, and we could not execute a named third-party agent over the full
-corpus under the same verifier protocol during this revision. We therefore
-report the ablation as guardrail evidence and defer a like-for-like run against
-Aardvark or KubeIntellect to future work rather than inventing unsupported
-comparison numbers.
+We explicitly state the limitation. Codex Security is a research-preview system,
+and we could not execute a named third-party agent over the full corpus under the
+same verifier protocol during this revision. We therefore report the ablation as
+guardrail evidence and defer a like-for-like run against Codex Security or
+KubeIntellect to future work rather than inventing unsupported comparison
+numbers.
 
 **Concern: The novelty argument should be sharper than a tool-combination
 claim.**
@@ -201,9 +202,10 @@ of relying on broad claims.
 Several issues remain outside what can be honestly resolved without new external
 state or additional author-approved experiments:
 
-- A literal head-to-head experiment against Aardvark or KubeIntellect remains
-  future work because Aardvark is not publicly runnable and a KubeIntellect run
-  requires runnable code, budget, and an agreed protocol.
+- A literal head-to-head experiment against Codex Security or KubeIntellect
+  remains future work because no public batch-evaluation interface was available
+  for Codex Security during this revision, and a KubeIntellect run requires
+  runnable code, budget, and an agreed protocol.
 - The current verification guarantees policy, schema, and API-admission safety;
   it does not prove full workload semantic equivalence.
 - The operator A/B and scheduler results are deterministic or simulated replays
@@ -217,6 +219,6 @@ remains future work.
 
 Sincerely,
 
-Brian Mendonca and V. K. Madisetti
+Brian Mendonca and Vijay K. Madisetti
 
 Georgia Institute of Technology

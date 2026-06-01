@@ -41,6 +41,7 @@
 - `paper/SUBMISSION_GAP_REGISTER.md` — local gap register, not submission prose.
 - `paper/SUBMISSION_ARTIFACT_INVENTORY.md` — local artifact inventory, not
   submission prose.
+- `paper/SUBMISSION_PACKET.md` — local packet index itself, not submission prose.
 - `.DS_Store` files.
 - `notes/to-do list` — local planning notes, not submission material.
 - `paper/CLAIM_EVIDENCE_AUDIT_KIRO_OPUS_2026-05-31.md` — local audit artifact,
@@ -73,6 +74,8 @@
   `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 - Transient build products such as `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
+- `paper/overleaf/main.pdf` for source-only uploads; use `paper/access.pdf` as
+  the portal manuscript PDF.
 - Unreferenced image leftovers such as `dheer_toprani_photo.png`,
   `paper/overleaf/paper/overleaf_images/`, and unused IEEE template figures.
 - Antigravity, Kiro, or panel-review logs.
