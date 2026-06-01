@@ -38,7 +38,7 @@ path requires external credentials and budget.
 | Live replay applies `1000/1000` accepted manifests with zero rollback | `data/live_cluster/results_1k.json`, `data/live_cluster/summary_1k.csv` | `scripts/run_live_cluster_eval.py` |
 | Bandit top-risk P95 wait is `13.0 h` vs FIFO `102.3 h` | `data/metrics_schedule_compare.json` | `make metrics-consistency` |
 | Long replay high-risk starvation falls from `93.4%` to `19.1%` | `data/scheduler/fairness_metrics.json` | `make metrics-consistency` |
-| Acceptance-boundary matrix shows 312 rules-mode escapes and 551 Grok/xAI policy-only escapes under weaker boundaries | `data/ablation/acceptance_boundary_matrix.json`, `data/ablation/acceptance_boundary_matrix.csv` | `python3 scripts/build_acceptance_boundary_matrix.py --dataset rules_5k:data/verified_rules_5000.json --dataset grok_5k:data/batch_runs/grok_5k/verified_grok5k.json` |
+| Acceptance-boundary matrix shows 312 rules-mode snapshot rejects and 551 Grok/xAI policy-only snapshot rejects under weaker boundaries | `data/ablation/acceptance_boundary_matrix.json`, `data/ablation/acceptance_boundary_matrix.csv` | `python3 scripts/build_acceptance_boundary_matrix.py --dataset rules_5k:data/verified_rules_5000.json --dataset grok_5k:data/batch_runs/grok_5k/verified_grok5k.json` |
 | Verifier pilot ablation catches four policy escapes | `data/ablation/verifier_gate_metrics.json` | `make metrics-consistency` |
 
 ## Manuscript Evidence Map
@@ -54,7 +54,7 @@ path requires external credentials and budget.
 | Grok/xAI configuration (`tab:llm_config`) | `configs/run.yaml`, `configs/run_grok.yaml` |
 | Grok failure taxonomy (`tab:failure_taxonomy`) | `paper/grok_failures_table.tex`, `data/grok_failure_analysis.csv` |
 | Metric denominators (`tab:denominators`) | `data/eval/unified_eval_summary.json`, `data/metrics_rules_full.json` |
-| Verifier failure taxonomy (`tab:verifier_ablation`) | `data/failures/taxonomy_counts.csv`, `scripts/aggregate_failure_taxonomy.py` |
+| Verifier failure taxonomy (`tab:failure_taxonomy`) | `data/failures/taxonomy_counts.csv`, `scripts/aggregate_failure_taxonomy.py` |
 | Risk calibration (`tab:risk_calibration`) | `data/risk/risk_calibration.csv` |
 | Acceptance and latency summary (`tab:eval_summary`) | `data/eval/unified_eval_summary.json`, `docs/reproducibility/tables.tex` |
 | Artifact index (`tab:artifact_index`) | this file plus the concrete paths in `paper/access.tex` |

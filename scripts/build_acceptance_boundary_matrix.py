@@ -157,7 +157,7 @@ def write_tex(path: Path, summaries: Iterable[Mapping[str, Any]]) -> None:
         "\\begin{table}[t]",
         "\\centering",
         "\\scriptsize",
-        "\\caption{Acceptance-boundary matrix on shared 5k candidate-patch records. Escapes are patches accepted by a weaker boundary but rejected by the full verifier.}",
+        "\\caption{Acceptance-boundary matrix on checked-in 5k verifier-record snapshots. Escapes are records accepted by a weaker boundary but rejected by the corresponding full-verifier snapshot; the API-admission column uses the recorded \\texttt{ok\\_schema} server-side dry-run flag.}",
         "\\label{tab:verifier_ablation}",
         "\\begin{tabular}{@{}l l r r r@{}}",
         "\\toprule",

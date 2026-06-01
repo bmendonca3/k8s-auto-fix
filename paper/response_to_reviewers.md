@@ -8,7 +8,8 @@ We have substantially revised the paper to address the concerns about reference
 integrity, novelty, organization, experimental scope, reproducibility, and
 overclaiming. The revision keeps the contribution focused on the closed
 verification loop: a candidate JSON Patch is accepted only after policy
-re-check, schema validation, server-side dry-run, and no-new-violation checks.
+re-check, Kubernetes API admission through server-side dry-run, and
+no-new-violation checks.
 
 Below we summarize the changes made in response to each reviewer. Line numbers
 may shift in the final PDF, so we identify the affected sections, tables, and
@@ -81,8 +82,8 @@ grounded against detection-only tools, admission-time policy engines,
 LLM-based repair, SRE automation, and emerging security agents. The revised
 text explains that the paper does not treat detection or patch generation alone
 as the acceptance boundary; the differentiating mechanism is the closed loop
-that binds candidate patches to policy re-checking, schema validation,
-server-side dry-run, evidence capture, and risk-aware queueing.
+that binds candidate patches to policy re-checking, server-side dry-run/API
+admission, evidence capture, and risk-aware queueing.
 
 **Concern: The architecture figure and experimental setup needed more concrete
 implementation detail.**
@@ -157,17 +158,22 @@ remediation systems.**
 
 We partially addressed this with an acceptance-boundary matrix, but we do not
 overstate it as a named-agent head-to-head. The revised evaluation now compares
-weaker acceptance predicates on the same 5,000-record rules and Grok/xAI
-candidate-patch slices: ungated proposer output, scanner/policy-only acceptance,
-policy plus API-admission gates, and the full verifier boundary. Holding
-candidate patches fixed, the weaker boundaries accept more patches but also
-admit patches rejected by the full verifier: 312 rules-mode escapes under the
-policy/admission-style boundary and 551 Grok/xAI escapes under policy-only
-acceptance. This isolates the mechanism the matrix directly supports:
-Kubernetes-specific invariant re-checking inside a broader verifier boundary
-that also requires schema validation, server-side dry-run, and no-new-violation
-checks. The earlier 19-sample no-policy pilot remains in the artifact bundle as
-a concrete failure example, but it is no longer the main gate-ablation evidence.
+weaker acceptance predicates on the same checked-in 5,000-record rules and
+Grok/xAI verifier-record snapshots: ungated proposer output,
+scanner/policy-only acceptance, policy plus the recorded API-admission flag, and
+the corresponding full verifier boundary. Holding candidate-patch records fixed,
+the weaker boundaries accept more records but also admit records rejected by the
+full-verifier snapshot: 312 rules-mode snapshot rejects under the
+policy/admission-style boundary and 551 Grok/xAI snapshot rejects under
+policy-only acceptance. This isolates the mechanism the matrix directly
+supports: Kubernetes-specific invariant re-checking inside a broader verifier
+boundary that also requires server-side dry-run/API-admission evidence and
+no-new-violation checks. The paper now states that the API-admission column is
+the stored `ok_schema` flag from `kubectl apply --dry-run=server` when that gate
+is enabled, so the snapshot-derived ablation should be read with the verifier
+configuration that produced each checked-in record. The earlier 19-sample
+no-policy pilot remains in the artifact bundle as a concrete failure example,
+but it is no longer the main gate-ablation evidence.
 
 We explicitly state the limitation. Codex Security is a research-preview system,
 and we could not execute a named third-party agent over the full corpus under the
@@ -181,8 +187,8 @@ claim.**
 
 We strengthened the positioning throughout the manuscript: detection and patch
 generation are not the acceptance boundary; the contribution is the closed loop
-that binds generated patches to policy re-check, schema validation,
-server-side dry-run, evidence capture, and risk-aware queueing. We recognize
+that binds generated patches to policy re-check, server-side dry-run/API
+admission, evidence capture, and risk-aware queueing. We recognize
 that the final assessment of novelty is an editorial and scientific judgment, so
 the manuscript now presents the mechanism and its evidence more directly instead
 of relying on broad claims.
@@ -215,7 +221,7 @@ state or additional author-approved experiments:
   remains future work because no public batch-evaluation interface was available
   for Codex Security during this revision, and a KubeIntellect run requires
   runnable code, budget, and an agreed protocol.
-- The current verification checks policy, schema, and API-admission safety;
+- The current verification checks policy, API-admission, and universal safety;
   it does not prove full workload semantic equivalence.
 - The operator A/B and scheduler results are deterministic or simulated replays
   and will be paired with a future live human-in-the-loop rotation.
