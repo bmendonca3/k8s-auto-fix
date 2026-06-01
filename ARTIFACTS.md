@@ -38,7 +38,8 @@ path requires external credentials and budget.
 | Live replay applies `1000/1000` accepted manifests with zero rollback | `data/live_cluster/results_1k.json`, `data/live_cluster/summary_1k.csv` | `scripts/run_live_cluster_eval.py` |
 | Bandit top-risk P95 wait is `13.0 h` vs FIFO `102.3 h` | `data/metrics_schedule_compare.json` | `make metrics-consistency` |
 | Long replay high-risk starvation falls from `93.4%` to `19.1%` | `data/scheduler/fairness_metrics.json` | `make metrics-consistency` |
-| Verifier ablation catches four policy escapes | `data/ablation/verifier_gate_metrics.json` | `make metrics-consistency` |
+| Acceptance-boundary matrix shows 312 rules-mode escapes and 551 Grok/xAI policy-only escapes under weaker boundaries | `data/ablation/acceptance_boundary_matrix.json`, `data/ablation/acceptance_boundary_matrix.csv` | `python3 scripts/build_acceptance_boundary_matrix.py --dataset rules_5k:data/verified_rules_5000.json --dataset grok_5k:data/batch_runs/grok_5k/verified_grok5k.json` |
+| Verifier pilot ablation catches four policy escapes | `data/ablation/verifier_gate_metrics.json` | `make metrics-consistency` |
 
 ## Manuscript Evidence Map
 
@@ -59,7 +60,7 @@ path requires external credentials and budget.
 | Artifact index (`tab:artifact_index`) | this file plus the concrete paths in `paper/access.tex` |
 | Cilium patch example (`tab:cilium_patch`) | `docs/privileged_daemonsets.md` |
 | Cross-cluster replay (`tab:cross_cluster_replication`) | `data/cross_cluster/{eks,gke,aks}/summary.csv`, `data/cross_cluster/{eks,gke,aks}/results.json` |
-| Verifier gate ablation (`tab:verifier_ablation`) | `data/ablation/verifier_gate_metrics.json` |
+| Acceptance-boundary matrix (`tab:verifier_ablation`) | `paper/acceptance_boundary_matrix.tex`, `data/ablation/acceptance_boundary_matrix.{json,csv}`, `scripts/build_acceptance_boundary_matrix.py` |
 | Evidence status (`tab:evidence_status`) | `paper/access.tex`, `docs/operator_survey.md`, `data/operator_ab/summary_simulated.csv` |
 
 ## Manuscript Figures

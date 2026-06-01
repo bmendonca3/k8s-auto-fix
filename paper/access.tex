@@ -4,6 +4,8 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
+\IfFileExists{../figures/fairness_waits.png}{\newcommand{\figdir}{../figures/}}{\newcommand{\figdir}{figures/}}
+\IfFileExists{brian_mendonca_photo.png}{\newcommand{\photodir}{}}{\newcommand{\photodir}{paper/}}
 % \usepackage{caption} % Removed: conflicts with the current IEEEtran table layout
 % \usepackage{mathptmx} % Disabled to avoid RSFS font requirement on minimal TeX
 \usepackage[english]{babel}
@@ -267,7 +269,7 @@ This second case, from \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc
 \smallskip
 \noindent\textbf{Comparison with existing approaches.} Kyverno mutation focuses on admission-time defaults and depends on cluster fixtures and policy/controller context for complex hardening. GenKubeSec localizes and explains issues but leaves remediation and validation manual, and LLMSecConfig generates LLM repairs with scanner checks but lacks our triad's server-side dry-run and hard safety invariants.
 
-\noindent\textbf{Acceptance boundary and scheduling.} The policy re-check gate prevented four escapes in ablation (Table~\ref{tab:verifier_ablation}); live-cluster replay achieved 100\% dry-run/apply acceptance with zero rollbacks on the fixture-seeded subset. The scheduler prioritizes risk (P95 wait from 102.3\,h to 13.0\,h), closing the highest-impact items first under bounded budgets.
+\noindent\textbf{Acceptance boundary and scheduling.} The boundary matrix shows that weaker acceptance predicates admit 312--551 patches rejected by the full verifier on the shared 5k records (Table~\ref{tab:verifier_ablation}); live-cluster replay achieved 100\% dry-run/apply acceptance with zero rollbacks on the fixture-seeded subset. The replay-based scheduler prioritizes risk (P95 wait from 102.3\,h to 13.0\,h), closing the highest-impact items first under bounded budgets.
 
 Table~\ref{tab:glance} makes the lifecycle gap explicit: comparable systems can detect, mutate, or suggest repairs, but they differ sharply on the evidence an operator receives before trusting a patch. We use ``safety invariants'' below for universal no-new-violation gates beyond confirming that one scanner finding disappeared.
 \begin{table*}[t]
@@ -391,13 +393,13 @@ To ground deployability we instrumented Grok/xAI proposer and verifier traces fr
 
 The failure taxonomy (Table~\ref{tab:grok_failures}) shows that the largest Grok dry-run failure category (65 cases) comes from the Kubernetes API refusing to return an existing object, often for CRDs needing elevated RBAC; 20 cases come from stale core/v1 resource lookups, and the long tail is dominated by invalid StatefulSet/CronJob specs. These counts shaped the mitigations used uniformly in rules and Grok modes: seed CRD+RBAC fixtures, pre-flight StatefulSets for missing \texttt{volumeMounts}, and route immutable-field dry-run errors to human review. Figure~\ref{fig:admission_vs_posthoc} compares Kyverno admission-time mutation with post-hoc verified repair, while Figure~\ref{fig:operator_ab} summarizes the simulated scheduler variants.
 
-Live-cluster replay on a stratified 1,000-manifest subset in the fixture-seeded Kind/Kubernetes 1.34.0 evaluation environment achieves 100.0\% dry-run/apply acceptance (1,000/1,000) with full alignment between server-side dry-run and apply on this subset. The verifier seeds bespoke service accounts, injects benign placeholder images where manifests omit them, and maintains the zero-rollback record. Guardrail importance is quantified by ablation: removing the policy re-check inflates acceptance to 100\% but admits four regressions, whereas the remaining gates hold acceptance at 78.9\% with zero escapes (Table~\ref{tab:verifier_ablation}).
+Live-cluster replay on a stratified 1,000-manifest subset in the fixture-seeded Kind/Kubernetes 1.34.0 evaluation environment achieves 100.0\% dry-run/apply acceptance (1,000/1,000) with full alignment between server-side dry-run and apply on this subset. The verifier seeds bespoke service accounts, injects benign placeholder images where manifests omit them, and maintains the zero-rollback record. Guardrail importance is quantified by a 5k boundary matrix: weaker policy-only or admission-style boundaries admit 312 rules-mode escapes and 551 Grok/xAI policy-only escapes that the full verifier rejects (Table~\ref{tab:verifier_ablation}).
 
 Risk-aware scheduling reduces queue latency for high-risk items. Using empirical success probability $p_i$, latency $\mathbb{E}[t_i]$, and risk $R_i$, the bandit lowers top-risk P95 wait from 102.3~h (FIFO) to 13.0~h while keeping the median rank of the top 50 items at 25.5. Figure~\ref{fig:fairness} shows the same effect by tier: high-risk work waits less than an hour with bandit ordering yet idles for 26--50~h under FIFO. The longer replay preserves the result: high-risk median wait is 14.75~h for bandit versus 130.33~h for FIFO, and starvation drops from 93.4\% to 19.1\%. Risk calibration removes 55{,}935/56{,}990 units (98.15\%) on the supported set and 227{,}330/242{,}300 units (93.82\%) on the 5k sweep, with throughput near 4.5--4.9 risk units per expected-time interval (Table~\ref{tab:risk_calibration}). Operator A/B replays yield 1{,}259 assignments per arm and comparable mean risk closed for bandit and FIFO (42.97 vs.\ 43.40); the gain is which items are served first.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.90\columnwidth]{../figures/fairness_waits.png}
+\includegraphics[width=0.90\columnwidth]{\figdir fairness_waits.png}
 \caption{Median and P95 wait time by risk tier for bandit and FIFO queue replays.}
 \label{fig:fairness}
 \end{figure}
@@ -408,21 +410,21 @@ Comparisons against Kyverno baselines show complementary strengths. The live-clu
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.90\columnwidth]{../figures/admission_vs_posthoc.png}
+\includegraphics[width=0.90\columnwidth]{\figdir admission_vs_posthoc.png}
 \caption{Admission-time Kyverno mutation and post-hoc verified repair on overlapping policies (seed 1337).}
 \label{fig:admission_vs_posthoc}
 \end{figure}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.90\columnwidth]{../figures/mode_comparison.png}
+\includegraphics[width=0.90\columnwidth]{\figdir mode_comparison.png}
 \caption{Verifier acceptance across deterministic, LLM-backed, and hybrid proposer modes.}
 \label{fig:mode_comparison}
 \end{figure}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.90\columnwidth]{../figures/operator_ab.png}
+\includegraphics[width=0.90\columnwidth]{\figdir operator_ab.png}
 \caption{Simulated scheduler acceptance and mean wait over 247 queue assignments.}
 \label{fig:operator_ab}
 \end{figure}
@@ -478,7 +480,7 @@ Detailed per-manifest deltas between rules and Grok/xAI on the 1,313-manifest sl
 
 \section{Ablations and Failure Taxonomy}
 \label{sec:ablations}
-\input{grok_failures_table.tex}
+\IfFileExists{grok_failures_table.tex}{\input{grok_failures_table.tex}}{\input{paper/grok_failures_table.tex}}
 
 Table~\ref{tab:failure_taxonomy} shows how fixture seeding collapses the verifier failure categories across the supported corpus.
 \begin{table}[t]
@@ -522,40 +524,24 @@ Replay of the 830-item queue snapshot (\href{https://github.com/bmendonca3/k8s-a
 
 A finer-grained sweep over exploration and aging coefficients (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/metrics_schedule_sweep.json}{data/metrics\_schedule\_sweep.json}) shows the bandit sustaining high-risk median wait of 17.3~h (P95 32.8~h) even when exploration weight is set to 1.0, while low-risk items absorb most of the slack (median 120.9~h). The condensed simulation in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/operator_ab/summary_simulated.csv}{data/operator\_ab/summary\_simulated.csv} supports the same conclusion on a 247-assignment toy queue: the 152 bandit assignments close 78.9\% of tasks with mean wait 0.23~h and P95 0.91~h, while the companion risk-only and aging-baseline rows report the alternate scheduling modes used for the comparison.
 
-Table~\ref{tab:verifier_ablation} quantifies how each verifier gate contributes to safety. Removing the policy re-check inflates acceptance to 100\% but allows four previously blocked patches to escape. In the checked-in detail file, all four current escapes are capability-hardening failures: the patched manifest is syntactically valid and passes the non-policy gates, but the original policy still reports that \texttt{capabilities.drop} must include \texttt{ALL}. The policy re-check gate catches these regressions. The other gates leave acceptance unchanged at 78.9\%. Figure~\ref{fig:mode_comparison} summarizes acceptance across rules-only, LLM-only, and hybrid modes. The Kyverno CLI simulation baseline (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/scripts/run_kyverno_baseline.py}{\texttt{scripts/run\_kyverno\_baseline.py}}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/baselines/kyverno_baseline_simulated.csv}{\texttt{kyverno\_baseline\_simulated.csv}}) reports a 67.98\% unweighted mean across 17 simulated policy rows, whereas the 78.9\% verifier-ablation value in Table~\ref{tab:verifier_ablation} is a separate 19-sample gate study. We therefore treat the comparison as directional evidence about the cost of adding schema validation and dry-run checks, not as a like-for-like aggregate win. The gap between our offline Kyverno CLI simulation and the higher fixture-compatible webhook slices in Figure~\ref{fig:admission_vs_posthoc} reflects missing production context (service accounts, host configuration) unavailable to offline CLI evaluation.
+Table~\ref{tab:verifier_ablation} quantifies the acceptance boundary on the shared 5k rules and Grok/xAI candidate-patch records. The matrix holds candidate patches fixed and weakens the acceptance predicate: accepting every emitted patch, accepting only patches that clear the original scanner/policy assertion, accepting patches that clear the policy and API-admission gates, and finally applying the full verifier. The weaker boundaries accept more patches, but they also admit patches the full verifier rejects. On rules-5k, policy-only and admission-style boundaries would accept 312 safety-regressing patches; on Grok-5k, policy-only acceptance would admit 551 schema or safety rejects. These results replace the earlier 19-sample pilot as the main gate-ablation evidence. Figure~\ref{fig:mode_comparison} summarizes acceptance across rules-only, LLM-only, and hybrid modes.
 
 \noindent\textbf{Terminology.} An \emph{ablation} disables a safety check to measure its effect; an \emph{escape} is an unsafe patch that would have been accepted without that check.
 
-\begin{table}[t]
-\caption{Verifier gate ablation over 19 patched samples. Escapes count regressions blocked by the full verifier.}
-\label{tab:verifier_ablation}
-\centering
-\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\textbf{Scenario} & \textbf{Disabled Gate(s)} & \textbf{Acceptance (\%)} & \textbf{Escapes} \\
-\midrule
-Full & -- & 78.9 & 0 \\
-No-policy & policy & 100.0 & 4 \\
-No-safety & safety & 78.9 & 0 \\
-No-schema & kubectl & 78.9 & 0 \\
-No-rescan & rescan & 78.9 & 0 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\IfFileExists{acceptance_boundary_matrix.tex}{\input{acceptance_boundary_matrix.tex}}{\input{paper/acceptance_boundary_matrix.tex}}
 
 \smallskip
-\noindent\textbf{Domain-invariant enforcement vs. generic acceptance.} The \emph{no-policy} ablation row in Table~\ref{tab:verifier_ablation} holds candidate patches fixed and disables only the domain-specific policy re-check: acceptance rises from 78.9\% (15/19) to 100\% (19/19), but the no-new-violations rate stays at 78.9\%, so four patches (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/ablation/verifier_gate_metrics.json}{\texttt{ids 007, 012, 013, 016}}) are accepted while still violating the property they were meant to fix. The ablation detail file records the concrete failure mode for all four as an incomplete capability hardening: the patch remains syntactically valid, passes schema validation, server-side dry-run, and the universal safety gates, but the original policy still reports \texttt{capabilities.drop missing ALL}. Any acceptance regime that treats a plausible syntactic edit and generic gates as sufficient, without re-asserting the original Kubernetes policy invariant, would admit all four. We report this as a guardrail ablation rather than as a named-agent comparison: Codex Security is now a research preview rather than a public batch API for identical-manifest experiments, and we did not have access to execute a third-party agent over the full corpus during this revision, so assigning these counts to either system would overstate the evidence. The mechanism the comparison isolates is the domain-invariant policy re-check inside a broader acceptance boundary that also requires schema validation, server-side dry-run, and universal safety gates; a like-for-like run against a named agent on identical manifests remains the future-work item in Section~\ref{sec:discussion}.
+\noindent\textbf{Domain-invariant enforcement vs. generic acceptance.} The matrix is not a named-agent comparison and does not assign proxy results to Codex Security, KubeIntellect, or Kyverno. It asks a narrower acceptance-boundary question on existing candidate patches: what would be admitted if the verifier stopped at weaker evidence? For deterministic rules, the domain policy and API-admission checks both pass on 4,989/5,000 records, but the full verifier accepts 4,677 because the universal safety gate rejects capability, privilege, or image regressions. For Grok/xAI patches, policy-only acceptance would admit 4,977/5,000 records, while adding the API-admission gate drops acceptance to the full-verifier result of 4,426/5,000 because the malformed or schema-rejected patches overlap the remaining safety failures. The earlier 19-sample no-policy pilot still records four concrete capability-hardening escapes (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/ablation/verifier_gate_metrics.json}{\texttt{ids 007, 012, 013, 016}}), but the 5k matrix is the primary evidence that weaker acceptance boundaries trade higher apparent acceptance for unsafe or incomplete accepted patches. A like-for-like run against a named agent on identical manifests remains the future-work item in Section~\ref{sec:discussion}.
 \smallskip
 
 \subsection{Metrics and Measurement}
 We measure effectiveness with auto-fix rate, no-new-violations rate, patch minimality, time-to-patch, risk reduction, throughput, and fairness. Auto-fix rate is accepted patches divided by detected violations; no-new-violations rate is accepted patches with zero new policy/schema violations divided by accepted patches; patch minimality is median JSON Patch operations; and time-to-patch reports P50/P95 from enqueue to acceptance. Risk reduction uses $\Delta R_i=R_i^{\text{pre}}-R_i^{\text{post}}$ and reports both $\sum_i\Delta R_i$ and rate. Throughput is accepted patches per hour. Fairness reports P95 wait by risk tier plus starvation: the fraction of items waiting more than 24~h before scheduling. The supplemental appendix gives a worked risk example.
 
 % METRICS_EVAL_START
-\noindent\textbf{Full-run summary.} Running the full corpus of 15{,}718 detections in rules+guardrails mode yields 13{,}338 accepted out of 13{,}373 patched items (99.74\%; auto-fix rate 0.8486 over detections) with a median of 9 JSON Patch operations and 35 safety failures (all non-hostPath edge cases). Bandit scheduling preserves fairness: bandit top-risk items see P95 wait of 13.0\,h at roughly 6.0 patches/hour while FIFO defers the same cohort to 102.3\,h (+89.3\,h).
+\noindent\textbf{Full-run summary.} Running the full corpus of 15{,}718 detections in rules+guardrails mode yields 13{,}338 accepted out of 13{,}373 patched items (99.74\%; auto-fix rate 0.8486 over detections) with a median of 9 JSON Patch operations and 35 safety failures (all non-hostPath edge cases). In deterministic queue replay, bandit top-risk items see P95 wait of 13.0\,h at roughly 6.0 patches/hour while FIFO defers the same cohort to 102.3\,h (+89.3\,h).
 % METRICS_EVAL_END
 
-\noindent\textbf{Targets (Acceptance Criteria).} We require auto-fix rate $\ge 70\%$, no-new-violations rate $\ge 95\%$ under the full verifier, and median JSON Patch operations $\le 6$ on curated rules-mode smoke sweeps (median $5$, P95 $6$). Detector hold-out results are wrapper regression coverage only; ArtifactHub structural labels provide bounded agreement evidence. The full-corpus rules+guardrails replay reaches median patch ops 9 because multi-violation manifests receive several independent hardening edits, and the no-policy ablation intentionally violates the no-new-violations target (Table~\ref{tab:verifier_ablation}).
+\noindent\textbf{Targets (Acceptance Criteria).} We require auto-fix rate $\ge 70\%$, no-new-violations rate $\ge 95\%$ under the full verifier, and median JSON Patch operations $\le 6$ on curated rules-mode smoke sweeps (median $5$, P95 $6$). Detector hold-out results are wrapper regression coverage only; ArtifactHub structural labels provide bounded agreement evidence. The full-corpus rules+guardrails replay reaches median patch ops 9 because multi-violation manifests receive several independent hardening edits, and the weaker-boundary rows in Table~\ref{tab:verifier_ablation} intentionally violate the no-new-violations target.
 
 
 \section{Related Work}
@@ -600,7 +586,7 @@ We measure effectiveness with auto-fix rate, no-new-violations rate, patch minim
 \caption{Per-policy baseline acceptance on shared security-context slices. Denominators differ by tool and policy, so the table is coverage evidence rather than one aggregate leaderboard.}
 \label{tab:baselines}
 \setlength{\tabcolsep}{3pt}
-\input{../docs/reproducibility/baselines.tex}
+\IfFileExists{../docs/reproducibility/baselines.tex}{\input{../docs/reproducibility/baselines.tex}}{\input{paper/reproducibility/baselines.tex}}
 \end{table*}
 
 \smallskip
@@ -657,7 +643,7 @@ The system prioritizes verifier evidence over autonomous deployment, so several 
 
 \section{Conclusion and Future Work}
 \label{sec:discussion}
-The closed-loop verifier accepts 100.0\% dry-run/apply acceptance on a fixture-seeded live-cluster replay (1,000/1,000 stratified manifests, zero rollbacks; Tables~\ref{tab:baselines} and~\ref{tab:eval_summary}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/live_cluster/results_1k.json}{data/live\_cluster/results\_1k.json}). Offline, it delivers 93.54\% acceptance on the 5k supported corpus, 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest Grok/xAI run, and 88.52\% on Grok-5k overall; rules + guardrails accept 13{,}338 / 13{,}373 patched items (99.74\%; auto-fix 0.8486 over 15,718 detections) with median patch ops 9 (Table~\ref{tab:eval_summary}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/metrics_rules_full.json}{data/metrics\_rules\_full.json}). The risk-aware scheduler trims top-risk P95 wait from 102.3\,h (FIFO) to 13.0\,h (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/metrics_schedule_compare.json}{data/metrics\_schedule\_compare.json}).
+The closed-loop verifier accepts 100.0\% dry-run/apply acceptance on a fixture-seeded live-cluster replay (1,000/1,000 stratified manifests, zero rollbacks; Tables~\ref{tab:baselines} and~\ref{tab:eval_summary}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/live_cluster/results_1k.json}{data/live\_cluster/results\_1k.json}). Offline, it delivers 93.54\% acceptance on the 5k supported corpus, 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest Grok/xAI run, and 88.52\% on Grok-5k overall; rules + guardrails accept 13{,}338 / 13{,}373 patched items (99.74\%; auto-fix 0.8486 over 15,718 detections) with median patch ops 9 (Table~\ref{tab:eval_summary}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/metrics_rules_full.json}{data/metrics\_rules\_full.json}). In deterministic queue replay, the risk-aware scheduler trims top-risk P95 wait from 102.3\,h (FIFO) to 13.0\,h (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/tcc-2025-12-0666-packet-2026-05-31/data/metrics_schedule_compare.json}{data/metrics\_schedule\_compare.json}).
 
 The paper-facing summary tables regenerate from checked-in JSON/CSV artifacts by \texttt{make reproducible-report}; live replay, cross-cluster replay, LLM API reruns, and figures are mapped in \texttt{ARTIFACTS.md}. Scheduler comparisons stem from deterministic queue replays rather than live analyst rotations. The gains are anchored in deterministic guardrails, schema validation, and server-side dry-run enforcement, with matching xAI/Grok runs available when credentials and budget are supplied from the published token counts and current pricing \cite{xai_pricing}. Every accepted patch is surfaced through a GitOps helper that records verifier evidence, captures the JSON Patch diff, and requires human approval before merge \cite{k8s_security_context,k8s_seccomp}. Auto-apply should stay off for image substitutions, required \texttt{hostPath} paths, read-only-root-filesystem or dropped-capability changes with unknown runtime needs, and regulated namespaces; those cases route to review.
 
@@ -785,11 +771,11 @@ R. Shu, X. Gu, and W. Enck, "A Study of Security Vulnerabilities on Docker Hub,"
 %====================
 % Author biographies
 %====================
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{brian_mendonca_photo.png}}]{Brian Mendonca}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{\photodir brian_mendonca_photo.png}}]{Brian Mendonca}
 is an M.S.\ student at the Georgia Institute of Technology (2024--2026) focusing on secure DevOps, policy-driven remediation, and developer tooling. He received the B.E.\ in Mechanical Engineering (summa cum laude, GPA 3.99) from Arizona State University in 2021. His prior engineering roles at BAE Systems, Tube Specialties Inc., and BD span aerospace and biomedical quality, Lean/Six Sigma improvement, CAPA, and risk-based quality systems. His research interests include secure configuration management for cloud-native systems, infrastructure-as-code analysis, and data-informed quality engineering.
 \end{IEEEbiography}
 
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{vijay_madisetti_photo.png}}]{Vijay K. Madisetti}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{\photodir vijay_madisetti_photo.png}}]{Vijay K. Madisetti}
 is Professor of Cybersecurity and Privacy at the Georgia Institute of Technology. He earned his Ph.D.\ in Electrical Engineering and Computer Sciences from the University of California at Berkeley. Professor Madisetti is a Fellow of the IEEE and a recipient of the ASEE Terman Medal. He has authored widely referenced textbooks on cloud computing, data analytics, blockchain, and microservices, and has extensive experience in secure system architectures and privacy-preserving technologies.
 \end{IEEEbiography}
 

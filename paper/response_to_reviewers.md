@@ -155,15 +155,19 @@ artifact references needed for reproducibility.
 **Concern: The work should be compared experimentally against agent-based
 remediation systems.**
 
-We partially addressed this with an ablation, but we do not overstate it as a
-named-agent head-to-head. The revised evaluation adds a "Domain-invariant
-enforcement vs. an agent-style acceptance regime" analysis. Holding candidate
-patches fixed, removing the domain-specific policy re-check increases acceptance
-from 78.9% (15/19) to 100% (19/19), but four patches are accepted while still
-violating the property they were meant to fix. This isolates the mechanism the
-ablation directly supports: Kubernetes-specific invariant re-checking inside a
-broader verifier boundary that also requires schema validation, server-side
-dry-run, and no-new-violation checks.
+We partially addressed this with an acceptance-boundary matrix, but we do not
+overstate it as a named-agent head-to-head. The revised evaluation now compares
+weaker acceptance predicates on the same 5,000-record rules and Grok/xAI
+candidate-patch slices: ungated proposer output, scanner/policy-only acceptance,
+policy plus API-admission gates, and the full verifier boundary. Holding
+candidate patches fixed, the weaker boundaries accept more patches but also
+admit patches rejected by the full verifier: 312 rules-mode escapes under the
+policy/admission-style boundary and 551 Grok/xAI escapes under policy-only
+acceptance. This isolates the mechanism the matrix directly supports:
+Kubernetes-specific invariant re-checking inside a broader verifier boundary
+that also requires schema validation, server-side dry-run, and no-new-violation
+checks. The earlier 19-sample no-policy pilot remains in the artifact bundle as
+a concrete failure example, but it is no longer the main gate-ablation evidence.
 
 We explicitly state the limitation. Codex Security is a research-preview system,
 and we could not execute a named third-party agent over the full corpus under the
