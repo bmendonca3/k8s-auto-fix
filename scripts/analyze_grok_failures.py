@@ -1,6 +1,6 @@
 import json
 import os
-import pandas as pd
+import csv
 from collections import Counter
 
 def analyze_grok_failures(data_dir):
@@ -24,28 +24,39 @@ def analyze_grok_failures(data_dir):
                         all_failures.append(entry)
 
     failure_causes = []
+    failure_causes_full = []
     for failure in all_failures:
         if failure["errors"]:
-            # Sanitize and truncate the error messages
+            # Sanitize for CSV/LaTeX output; keep an untruncated CSV for audit.
             sanitized_errors = []
             for error in failure["errors"]:
                 error = error.replace('\n', ' ').replace('_', '\\_').replace('%', '\\%').replace('&', '\\&')
                 error = error.replace('#', '\\#').replace('$', '\\$').replace('{', '\\{').replace('}', '\\}')
+                failure_causes_full.append(error)
                 if len(error) > 100:
                     error = error[:100] + "..."
                 sanitized_errors.append(error)
             failure_causes.extend(sanitized_errors)
         else:
             failure_causes.append("Unknown error")
+            failure_causes_full.append("Unknown error")
 
     failure_counts = Counter(failure_causes)
 
-    # Create a DataFrame for the CSV
-    df = pd.DataFrame(failure_counts.items(), columns=["Failure Cause", "Count"])
-    df = df.sort_values(by="Count", ascending=False)
     csv_path = os.path.join("data", "grok_failure_analysis.csv")
-    df.to_csv(csv_path, index=False)
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["Failure Cause", "Count"])
+        writer.writerows(failure_counts.most_common())
     print(f"Generated failure analysis CSV at: {csv_path}")
+
+    full_counts = Counter(failure_causes_full)
+    full_csv_path = os.path.join("data", "grok_failure_analysis_full.csv")
+    with open(full_csv_path, "w", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["Failure Cause", "Count"])
+        writer.writerows(full_counts.most_common())
+    print(f"Generated full failure analysis CSV at: {full_csv_path}")
 
     # Create a LaTeX table using tabularx for wrapping text
     latex_table = "\\begin{table}[h!]\n"
@@ -62,10 +73,13 @@ def analyze_grok_failures(data_dir):
     latex_table += "\\end{tabularx}\n"
     latex_table += "\\end{table}\n"
 
-    latex_file_path = "paper/grok_failures_table.tex"
-    with open(latex_file_path, "w") as f:
-        f.write(latex_table)
-    print(f"Generated LaTeX table at: {latex_file_path}")
+    for latex_file_path in (
+        "paper/grok_failures_table.tex",
+        "paper/overleaf/paper/grok_failures_table.tex",
+    ):
+        with open(latex_file_path, "w") as f:
+            f.write(latex_table)
+        print(f"Generated LaTeX table at: {latex_file_path}")
 
 
 if __name__ == "__main__":

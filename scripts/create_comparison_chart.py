@@ -45,24 +45,59 @@ def create_comparison_chart():
     x = np.arange(len(labels))
     width = 0.35
 
-    fig, ax = plt.subplots(figsize=(12, 7))
-    rects1 = ax.bar(x - width/2, k8s_auto_fix_scores, width, label='k8s-auto-fix (Post-hoc)')
-    rects2 = ax.bar(x + width/2, kyverno_scores, width, label='Kyverno (Admission-time)')
+    plt.rcParams.update({
+        "font.size": 9,
+        "axes.titlesize": 10,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "legend.fontsize": 8,
+    })
+    fig, ax = plt.subplots(figsize=(3.5, 2.5))
+    rects1 = ax.bar(
+        x - width/2,
+        k8s_auto_fix_scores,
+        width,
+        label='k8s-auto-fix',
+        color="#0072B2",
+        edgecolor="black",
+        linewidth=0.4,
+    )
+    rects2 = ax.bar(
+        x + width/2,
+        kyverno_scores,
+        width,
+        label='Kyverno',
+        color="#D55E00",
+        edgecolor="black",
+        linewidth=0.4,
+        hatch="//",
+    )
 
-    ax.set_ylabel('Acceptance Rate (%)', fontsize=14)
-    ax.set_title('Admission-time vs. Post-hoc Policy Enforcement', fontsize=16)
+    ax.set_ylabel('Accepted (%)')
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=14)
-    ax.tick_params(axis='y', labelsize=14)
-    ax.legend(fontsize=12)
+    ax.set_xticklabels(labels, rotation=35, ha="right")
+    ax.legend(
+        frameon=True,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.20),
+        ncol=2,
+        facecolor="white",
+        edgecolor="0.4",
+        framealpha=1.0,
+    )
+    ax.grid(axis="y", color="0.85", linewidth=0.5)
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
-    ax.bar_label(rects1, padding=3, fontsize=12)
-    ax.bar_label(rects2, padding=3, fontsize=12)
+    ax.bar_label(rects1, padding=2, fontsize=7, fmt="%.0f")
+    ax.bar_label(rects2, padding=2, fontsize=7, fmt="%.0f")
     ax.set_ylim(0, 110)
 
 
-    fig.tight_layout()
-    plt.savefig('figures/admission_vs_posthoc.png')
+    fig.tight_layout(pad=0.4)
+    plt.savefig('figures/admission_vs_posthoc.png', dpi=450, bbox_inches="tight")
     print("Generated comparison chart at figures/admission_vs_posthoc.png")
 
 if __name__ == '__main__':

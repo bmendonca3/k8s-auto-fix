@@ -30,19 +30,33 @@ def main() -> None:
     df = pd.read_csv(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
-    plt.rcParams.update({"font.size": 10})
-    fig, ax = plt.subplots(figsize=(6, 4))
-    bars = ax.bar(df["mode"], df["acceptance_rate"], color=["#355C7D", "#F67280", "#6C5B7B"])
-    ax.set_ylabel("Acceptance rate")
+    plt.rcParams.update({
+        "font.size": 9,
+        "axes.titlesize": 10,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+    })
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    labels = ["Rules", "LLM", "Hybrid"]
+    colors = ["#0072B2", "#D55E00", "#009E73"]
+    hatches = ["", "//", ".."]
+    bars = ax.bar(labels, df["acceptance_rate"] * 100, color=colors, edgecolor="black", linewidth=0.4)
+    for bar, hatch in zip(bars, hatches):
+        bar.set_hatch(hatch)
+    ax.set_ylabel("Accepted patches (%)")
     ax.set_ylim(0, 1.05)
-    ax.set_title("Acceptance Comparison Across Remediation Modes")
-    ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.7)
+    ax.set_ylim(0, 105)
+    ax.grid(axis="y", linestyle="-", linewidth=0.5, color="0.85")
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     for bar, rate in zip(bars, df["acceptance_rate"]):
-        ax.text(bar.get_x() + bar.get_width() / 2, rate + 0.02, f"{rate:.2%}", ha="center")
+        ax.text(bar.get_x() + bar.get_width() / 2, rate * 100 + 1.5, f"{rate:.1%}", ha="center", fontsize=8)
 
-    plt.tight_layout()
-    fig.savefig(args.output, dpi=300)
+    fig.tight_layout(pad=0.4)
+    fig.savefig(args.output, dpi=450, bbox_inches="tight")
     plt.close(fig)
 
 

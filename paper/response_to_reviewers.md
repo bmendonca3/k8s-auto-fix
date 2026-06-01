@@ -57,6 +57,11 @@ input, visible completion, and total xAI token counts for Grok/xAI runs and
 directs readers to compute dollar cost against the then-current xAI pricing page,
 avoiding a stale fixed dollar estimate.
 
+We also reframed detector metrics as wrapper regression coverage and added a
+separately implemented structural-label ArtifactHub agreement check with residual-error
+summaries, so the manuscript no longer treats a nine-policy synthetic hold-out
+as broad detector accuracy.
+
 ## Response to Reviewer 2
 
 **Concern: The introduction should better separate objective, motivation,
@@ -206,7 +211,7 @@ state or additional author-approved experiments:
   remains future work because no public batch-evaluation interface was available
   for Codex Security during this revision, and a KubeIntellect run requires
   runnable code, budget, and an agreed protocol.
-- The current verification guarantees policy, schema, and API-admission safety;
+- The current verification checks policy, schema, and API-admission safety;
   it does not prove full workload semantic equivalence.
 - The operator A/B and scheduler results are deterministic or simulated replays
   and will be paired with a future live human-in-the-loop rotation.

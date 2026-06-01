@@ -39,8 +39,23 @@ def parse_args() -> argparse.Namespace:
 
 
 def create_figure(df: pd.DataFrame, output_path: Path, dpi: int) -> None:
-    """Create dual-axis bar chart for A/B study results."""
-    fig, ax1 = plt.subplots(figsize=(8, 5))
+    """Create a two-panel chart for scheduler acceptance and wait time."""
+    plt.rcParams.update({
+        "font.size": 9,
+        "axes.titlesize": 10,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "legend.fontsize": 8,
+    })
+    fig, (ax1, ax2) = plt.subplots(
+        2,
+        1,
+        figsize=(3.4, 3.5),
+        sharex=True,
+        constrained_layout=True,
+        gridspec_kw={"height_ratios": [1, 1], "hspace": 0.08},
+    )
     
     # Prepare data
     schedulers = df["scheduler"].tolist()
@@ -49,43 +64,32 @@ def create_figure(df: pd.DataFrame, output_path: Path, dpi: int) -> None:
     
     # X positions
     x = range(len(schedulers))
-    width = 0.35
-    
-    # Bar 1: Acceptance rate (primary y-axis)
+    width = 0.58
+
     bars1 = ax1.bar(
-        [i - width/2 for i in x],
+        x,
         acceptance,
         width,
-        label="Acceptance Rate",
-        color="#2E7D32",
-        alpha=0.8,
+        color="#009E73",
+        edgecolor="black",
+        linewidth=0.4,
     )
-    ax1.set_ylabel("Acceptance Rate (%)", fontsize=11)
+    ax1.set_ylabel("Accepted (%)")
     ax1.set_ylim([0, 100])
-    ax1.tick_params(axis='y')
     
-    # Secondary y-axis: Mean wait time
-    ax2 = ax1.twinx()
     bars2 = ax2.bar(
-        [i + width/2 for i in x],
+        x,
         wait_hours,
         width,
-        label="Mean Wait Time",
-        color="#1976D2",
-        alpha=0.8,
+        color="#0072B2",
+        edgecolor="black",
+        linewidth=0.4,
+        hatch="//",
     )
-    ax2.set_ylabel("Mean Wait Time (hours)", fontsize=11)
-    ax2.tick_params(axis='y')
+    ax2.set_ylabel("Mean wait (h)")
+    ax2.set_ylim([0, max(wait_hours) * 1.35])
     
-    # Labels
-    ax1.set_xlabel("Scheduler Mode", fontsize=11)
-    ax1.set_title(
-        "Operator A/B Study: Scheduler Comparison\n"
-        "Acceptance Rate and Mean Wait Time",
-        fontsize=12,
-        fontweight="bold",
-    )
-    ax1.set_xticks(x)
+    ax2.set_xticks(list(x))
     
     # Clean up scheduler labels
     labels = []
@@ -99,17 +103,15 @@ def create_figure(df: pd.DataFrame, output_path: Path, dpi: int) -> None:
         else:
             labels.append(s)
     
-    ax1.set_xticklabels(labels, fontsize=10)
+    ax2.set_xticklabels(labels)
     
-    # Add value labels on bars
-    for bars, values in [(bars1, acceptance), (bars2, wait_hours)]:
+    for bars, values, axis, suffix in [
+        (bars1, acceptance, ax1, "%"),
+        (bars2, wait_hours, ax2, "h"),
+    ]:
         for bar, value in zip(bars, values):
             height = bar.get_height()
-            axis = ax1 if bars == bars1 else ax2
-            if bars == bars1:
-                label = f"{value:.1f}%"
-            else:
-                label = f"{value:.2f}h"
+            label = f"{value:.1f}%" if suffix == "%" else f"{value:.2f}h"
             axis.text(
                 bar.get_x() + bar.get_width()/2.,
                 height,
@@ -119,15 +121,12 @@ def create_figure(df: pd.DataFrame, output_path: Path, dpi: int) -> None:
                 fontsize=9,
             )
     
-    # Combined legend
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=10)
+    for ax in (ax1, ax2):
+        ax.grid(axis="y", color="0.85", linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
     
-    # Grid
-    ax1.grid(axis='y', alpha=0.3, linestyle='--')
-    
-    plt.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
     print(f"Saved figure to {output_path}")
@@ -149,9 +148,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
 
 
 

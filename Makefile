@@ -286,8 +286,15 @@ summarize-failures:
 
 # Build the paper PDF (outputs to paper/)
 paper:
-	cd paper && pdflatex -interaction=nonstopmode access.tex || true
-	cd paper && pdflatex -interaction=nonstopmode access.tex || true
+	cd paper && if command -v pdflatex >/dev/null 2>&1; then \
+		pdflatex -interaction=nonstopmode access.tex && \
+		pdflatex -interaction=nonstopmode access.tex; \
+	elif command -v tectonic >/dev/null 2>&1; then \
+		tectonic -X compile access.tex --outdir . --keep-logs; \
+	else \
+		echo "No LaTeX compiler found: install pdflatex or tectonic" >&2; \
+		exit 1; \
+	fi
 
 # Baselines (simulation by default)
 baseline-kyverno:

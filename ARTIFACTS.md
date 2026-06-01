@@ -40,35 +40,35 @@ path requires external credentials and budget.
 | Long replay high-risk starvation falls from `93.4%` to `19.1%` | `data/scheduler/fairness_metrics.json` | `make metrics-consistency` |
 | Verifier ablation catches four policy escapes | `data/ablation/verifier_gate_metrics.json` | `make metrics-consistency` |
 
-## Manuscript Tables
+## Manuscript Evidence Map
 
 | Manuscript item | Backing artifact(s) |
 |---|---|
-| Table 1, comparison of remediation systems | `docs/literature_comparison.md`, `docs/related_work.md`, cited references |
-| Table 2, per-policy baseline slice | `docs/reproducibility/baselines.tex`, `data/baselines/baseline_summary.csv` |
-| Table 3, detector hold-out | `scripts/eval_detector.py`, `data/eval/detector_metrics.json` |
-| Table 4, pipeline evidence | source paths under `src/`, generated artifacts under `data/` |
-| Table 5, execution environment | `data/repro/environment.json` |
-| Table 6, Grok/xAI configuration | `configs/run.yaml`, `configs/run_grok.yaml` |
-| Table 7, Grok failure taxonomy | `paper/grok_failures_table.tex`, `data/grok_failure_analysis.csv` |
-| Table 8, metric denominators | `data/eval/unified_eval_summary.json`, `data/metrics_rules_full.json` |
-| Table 9, detector performance | `scripts/eval_detector.py`, `data/eval/artifacthub_sample_metrics.json` |
-| Table 10, verifier failure taxonomy | `data/failures/taxonomy_counts.csv`, `scripts/aggregate_failure_taxonomy.py` |
-| Table 11, risk calibration | `data/risk/risk_calibration.csv` |
-| Table 12, acceptance and latency summary | `data/eval/unified_eval_summary.json`, `docs/reproducibility/tables.tex` |
-| Table 13, artifact index | this file plus the concrete paths in `paper/access.tex` |
-| Table 14, Cilium patch example | `docs/privileged_daemonsets.md` |
-| Table 15, cross-cluster replay | `data/cross_cluster/{eks,gke,aks}/summary.csv`, `data/cross_cluster/{eks,gke,aks}/results.json` |
-| Table 16, verifier gate ablation | `data/ablation/verifier_gate_metrics.json` |
-| Table 17, evidence status | `paper/access.tex`, `docs/operator_survey.md`, `data/operator_ab/summary_simulated.csv` |
+| Comparison of remediation systems (`tab:comparison`) | `docs/literature_comparison.md`, `docs/related_work.md`, cited references |
+| Per-policy baseline slice (`tab:baselines`) | `docs/reproducibility/baselines.tex`, `data/baselines/baseline_summary.csv` |
+| Detector wrapper hold-out (`tab:detector_performance`) | `scripts/eval_detector.py`, `data/eval/holdout_labels.json`, `data/eval/holdout_detections.json`, `data/eval/detector_metrics.json` |
+| ArtifactHub structural-label agreement prose | `scripts/label_artifacthub_detector_structural.py`, `scripts/eval_detector.py`, `scripts/summarize_artifacthub_detector_errors.py`, `data/eval/artifacthub_sample_labels_structural.json`, `data/eval/artifacthub_sample_detections.json`, `data/eval/artifacthub_sample_metrics.json`, `data/eval/artifacthub_detector_error_summary.json`, `data/eval/artifacthub_sample_labeling_protocol.md` |
+| Pipeline evidence (`tab:evidence`) | source paths under `src/`, generated artifacts under `data/` |
+| Execution environment (`tab:environment`) | `data/repro/environment.json` |
+| Grok/xAI configuration (`tab:llm_config`) | `configs/run.yaml`, `configs/run_grok.yaml` |
+| Grok failure taxonomy (`tab:failure_taxonomy`) | `paper/grok_failures_table.tex`, `data/grok_failure_analysis.csv` |
+| Metric denominators (`tab:denominators`) | `data/eval/unified_eval_summary.json`, `data/metrics_rules_full.json` |
+| Verifier failure taxonomy (`tab:verifier_ablation`) | `data/failures/taxonomy_counts.csv`, `scripts/aggregate_failure_taxonomy.py` |
+| Risk calibration (`tab:risk_calibration`) | `data/risk/risk_calibration.csv` |
+| Acceptance and latency summary (`tab:eval_summary`) | `data/eval/unified_eval_summary.json`, `docs/reproducibility/tables.tex` |
+| Artifact index (`tab:artifact_index`) | this file plus the concrete paths in `paper/access.tex` |
+| Cilium patch example (`tab:cilium_patch`) | `docs/privileged_daemonsets.md` |
+| Cross-cluster replay (`tab:cross_cluster_replication`) | `data/cross_cluster/{eks,gke,aks}/summary.csv`, `data/cross_cluster/{eks,gke,aks}/results.json` |
+| Verifier gate ablation (`tab:verifier_ablation`) | `data/ablation/verifier_gate_metrics.json` |
+| Evidence status (`tab:evidence_status`) | `paper/access.tex`, `docs/operator_survey.md`, `data/operator_ab/summary_simulated.csv` |
 
 ## Manuscript Figures
 
 | Manuscript item | Backing artifact(s) |
 |---|---|
 | Figure 1, architecture | `paper/access.tex` picture environment |
-| Figure 2, fairness waits | `figures/fairness_waits.png`, `data/scheduler/metrics_schedule_sweep.json`, `data/scheduler/metrics_sweep_live.json` |
-| Figure 3, admission vs post-hoc | `figures/admission_vs_posthoc.png`, `data/baselines/baseline_summary.csv` |
+| Figure 2, fairness waits | `figures/fairness_waits.png`, `data/scheduler/metrics_schedule_sweep.json`, `data/scheduler/metrics_sweep_live.json`, `scripts/plot_fairness_quartiles.py` |
+| Figure 3, admission vs post-hoc | `figures/admission_vs_posthoc.png`, `data/baselines/kyverno_baseline.csv`, `scripts/create_comparison_chart.py` |
 | Figure 4, mode comparison | `figures/mode_comparison.png`, `paper/overleaf/figures/mode_comparison.png`, `data/baselines/mode_comparison.csv`; `scripts/plot_mode_comparison.py` when plotting dependencies are installed |
 | Figure 5, operator A/B simulation | `figures/operator_ab.png`, `data/operator_ab/summary_simulated.csv`, `scripts/plot_operator_ab.py` |
 | Figure 6, risk-bandit pseudocode | `paper/access.tex` algorithmic environment |

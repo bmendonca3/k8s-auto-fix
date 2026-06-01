@@ -77,36 +77,46 @@ def main() -> None:
     positions = np.arange(len(TIERS))
     width = 0.35
 
-    plt.figure(figsize=(6.5, 3.5))
-    plt.bar(
+    plt.rcParams.update({
+        "font.size": 9,
+        "axes.titlesize": 10,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 8,
+    })
+    fig, ax = plt.subplots(figsize=(3.4, 2.3))
+    ax.bar(
         positions - width / 2,
         bandit_med,
         width,
         yerr=bandit_err,
         capsize=4,
         label="Risk-bandit",
-        color="#4F81BD",
+        color="#0072B2",
     )
-    plt.bar(
+    ax.bar(
         positions + width / 2,
         fifo_med,
         width,
         yerr=fifo_err,
         capsize=4,
         label="FIFO",
-        color="#C0504D",
+        color="#D55E00",
         hatch="//",
     )
-    plt.ylabel("Wait time (hours)", fontsize=14)
-    plt.xticks(positions, TIERS, fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.title("Wait-time fairness by risk tier", fontsize=16)
-    plt.legend(fontsize=12)
-    plt.tight_layout()
+    ax.set_ylabel("Wait time (hours)")
+    ax.set_xticks(positions, TIERS)
+    ax.legend(frameon=False, loc="upper left")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.grid(axis="y", color="0.85", linewidth=0.5)
+    ax.set_axisbelow(True)
+    fig.tight_layout(pad=0.4)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(args.output, dpi=300)
-    plt.close()
+    fig.savefig(args.output, dpi=450, bbox_inches="tight")
+    plt.close(fig)
 
 
 if __name__ == "__main__":

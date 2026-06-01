@@ -115,8 +115,9 @@ def _compute_metrics(label_map: Dict[str, Set[str]], per_manifest_pred: Dict[str
 
 
 def _bootstrap_cis(label_map: Dict[str, Set[str]], per_manifest_pred: Dict[str, Set[str]],
-                   n: int, alpha: float) -> Dict[str, Dict[str, float]]:
+                   n: int, alpha: float, seed: int) -> Dict[str, Dict[str, float]]:
     import random
+    random.seed(seed)
     manifests = list(label_map.keys())
     if not manifests or n <= 0:
         return {}
@@ -154,6 +155,7 @@ def evaluate(
     ),
     bootstrap: int = typer.Option(0, "--bootstrap", help="Bootstrap samples for CIs (0 to disable)."),
     alpha: float = typer.Option(0.05, "--alpha", help="CI alpha (default 0.05 => 95% CI)."),
+    seed: int = typer.Option(1337, "--seed", help="Random seed for bootstrap CIs."),
 ) -> None:
     """Compare detector predictions with labelled ground truth. Optionally compute bootstrap CIs."""
 
@@ -165,7 +167,7 @@ def evaluate(
 
     metrics = _compute_metrics(label_map, per_manifest_pred)
     if bootstrap > 0:
-        cis = _bootstrap_cis(label_map, per_manifest_pred, bootstrap, alpha)
+        cis = _bootstrap_cis(label_map, per_manifest_pred, bootstrap, alpha, seed)
         metrics["ci"] = cis
 
     out.parent.mkdir(parents=True, exist_ok=True)
