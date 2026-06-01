@@ -6,21 +6,21 @@ Misconfigurations"). Every row is verified against the current source/compile, n
 against prior chat or changelog prose. Authorship/commit identity: `bmendonca3`;
 manuscript byline left unchanged.
 
-## Authoritative compile facts (reverified 2026-05-31 04:05 MST)
+## Authoritative compile facts (reverified 2026-06-01 10:49 MST)
 
-- Engine: installed `tectonic` 0.15.0, `-X compile access.tex --outdir /tmp/k8s_citation_harden_standalone4 --keep-logs`.
-- Result: **17 pages**, **0 fatal errors**, **0 undefined references/citations**, **0 double-question markers**, exit 0. Overleaf package compile also exits 0 via `tectonic -X compile main.tex --outdir /tmp/k8s_citation_harden_overleaf4 --keep-logs`.
-- Box warnings: **0 overfull**, 119 underfull hboxes, 3 underfull vboxes per build — all
-  cosmetic line-breaking; none affect correctness or references.
+- Engine: installed `tectonic` 0.15.0; latest standalone build used `make paper`
+  from the repository root, and latest Overleaf-package build used
+  `tectonic -X compile main.tex --outdir . --keep-logs` from `paper/overleaf/`.
+- Result: **14 pages** for both `paper/access.pdf` and `paper/overleaf/main.pdf`,
+  **0 fatal errors**, exit 0. Remaining LaTeX warnings are cosmetic line-breaking
+  and the known `algorithmic.sty` UTF-8 replacement warning.
 - Citation graph: 38 keys cited, 38 `\bibitem` defined, **0 cited-but-undefined**
   and **0 uncited bibitems**.
 - PDF freshness: `paper/access.pdf` and `paper/overleaf/main.pdf` were rebuilt
-  after the 2026-05-31 04:05 MST citation-hardening edits; both PDFs are newer than their
-  source `.tex` files. The PDF
-  byte hashes differ because they are produced from different wrapper paths.
-- Previous rendered-layout image review found no margin overflow, missing figures,
-  or incoherent overlaps; this pass rechecked compile/log gates but did not rerun
-  the PNG contact-sheet scan.
+  after the 2026-06-01 length-reduction and author-bio edits. Current page-count
+  verification reports 14 pages for both PDFs.
+- Rendered final-page review confirmed both author biographies fit cleanly on page
+  14 with comfortable whitespace below; no bio spillover remains.
 - Byline: `\author{Brian Mendonca and Vijay K. Madisetti, ...}` — byte-identical to
   HEAD (verified by content diff of the `\author` block).
 
@@ -97,9 +97,16 @@ manuscript byline left unchanged.
 | 67 | 2026-05-31 23:24 MST | Kiro Opus detector review | Detector-evaluation reframing and ArtifactHub structural-oracle check | done | Detector metrics are now framed as wrapper regression coverage rather than broad detector accuracy. Added `scripts/label_artifacthub_detector_structural.py`, `scripts/summarize_artifacthub_detector_errors.py`, `data/eval/artifacthub_sample_labels_structural.json`, `data/eval/artifacthub_detector_error_summary.json`, and `data/eval/artifacthub_sample_labeling_protocol.md`; `scripts/eval_detector.py` now accepts a bootstrap seed and reports macro/weighted metrics. The manuscript reports the structural-label agreement as 143 TP / 19 FP / 3 FN, precision 0.883, recall 0.979, F1 0.929, weighted F1 0.944, and residual error categories instead of treating the nine-policy hold-out as a benchmark. `paper/response_to_reviewers.md` records the same separately implemented structural-label framing | structural oracle is policy-semantics aligned, single-annotator, and not human ground truth; it cannot expose misconfigurations outside encoded policy semantics |
 | 68 | 2026-05-31 23:24-23:46 MST | Kiro Opus detector review + chat audit | Artifact traceability cleanup after detector/figure changes | done | `ARTIFACTS.md` now uses a manuscript evidence map with labels/prose descriptions instead of stale manual `Table N` numbering; the ArtifactHub structural-label agreement row lists the labeler, evaluator, residual-error summarizer, labels, detections, metrics, error summary, and protocol. Figure evidence rows now name both data/image artifacts and plotting scripts. `paper/SUBMISSION_ARTIFACT_INVENTORY.md` hashes were refreshed for the rebuilt manuscript/PDF/Overleaf artifacts and again for the response-letter wording cleanup at 2026-05-31 23:46 MST | refresh inventory hashes after any future manuscript, PDF, response-letter, or packet-artifact edit |
 | 69 | 2026-05-31 20:13-23:40 MST | Safari/Overleaf check + Codex chat audit | Local source updated, live Overleaf project still stale | **OPEN (external)** | Codex chat review recorded that the local standalone and Overleaf-package sources are updated (`paper/access.tex`, `paper/overleaf/paper/access.tex`, `paper/access.pdf`, `paper/overleaf/main.pdf`), while the Safari-open live Overleaf editor still showed old text such as `Detector accuracy`, `ArtifactHub slice`, the old 31/0/0 detector claim, and the old `Implementation and Metrics` outline | no upload/sync/edit/compile was performed in the live Overleaf service; updating Overleaf remains a separate external action after TCC/EIC and author upload gates |
+| 70 | 2026-06-01 08:57-09:29 MST | reduction pass 2A | Manuscript reduced from 15 pages to 14 pages while preserving protected evidence | done | `paper/reduction/2026-06-01_085731_pass_2A_15_to_14/` contains before/after standalone and Overleaf source snapshots; current `paper/access.tex`, `paper/overleaf/paper/access.tex`, `paper/access.pdf`, and `paper/overleaf/main.pdf` reflect the accepted 14-page reduction. Protected evidence retained: denominator/evaluation summary table, evidence-status table, verifier ablation table, baseline comparison table, ArtifactHub structural-label metrics, limitations, and RQ framing | any future wording edit should re-run page-count and protected-evidence checks |
+| 71 | 2026-06-01 09:30-10:32 MST | GitHub/Overleaf sync | Overleaf-ready repository and transfer package synchronized | done | Original repo pushed to `main` and `improvmenets` at `cf8c1c0` after reduction, then at `b8c56d7` after bio compression. GitHub sync repo `TCC-2025-12-0666-Major-Revision---k8s-auto-fix` was corrected from the initial standalone-path import and pushed to `b2691a8`; desktop zip `/Users/brianmendonca/Desktop/tcc-2025-12-0666-overleaf-current.zip` passed `unzip -t` with SHA-256 `13694fe9e239dbbef9a43b94c4329bfd0e999f94446aa0d92b00b378970f3ee7` | live Overleaf UI may still require an explicit pull/import from the corrected GitHub sync repo |
+| 72 | 2026-06-01 10:32-10:49 MST | layout polish | Author biographies compressed and final page checked | done | Brian and Vijay biographies were condensed in both standalone and Overleaf sources; standalone and Overleaf PDFs rebuilt to 14 pages; PyPDF page counts and rendered final-page image review confirmed both bios fit cleanly on page 14 without spillover | none for sharing PDF/zip; live Overleaf view should be checked after any manual pull/import |
 
 ## Notes / corrections to prior logs
 
+- 2026-06-01 final update: rows 70-72 supersede the stale 17-page compile facts
+  from the May 31 tracking state. Latest manuscript/PDF content commit is
+  `b8c56d7` (`Compress author biographies`), with only local untracked
+  backup/reduction folders remaining in the original worktree.
 - 2026-06-01 chat audit: reviewed the Codex session logs that mention `k8s-auto-fix`
   and cross-checked the post-row-65 worktree diff. Rows 66-69 were added because
   the latest local restructure, figure/readability work, detector structural-oracle
