@@ -326,7 +326,7 @@ def _write_markdown(results: List[Dict[str, Any]]) -> None:
     lines = [
         "# Reproducibility Report",
         "",
-        "Regenerated via `make reproducible-report`. Each row references the JSON artifacts that back the published metrics.",
+        "Regenerated via `make reproducible-report`. Each row references the JSON artifacts that back the published metrics; this target re-renders checked-in artifacts and does not rerun proposers or verifiers.",
         "",
         "## Dataset Summary",
         "",
@@ -341,6 +341,11 @@ def _write_markdown(results: List[Dict[str, Any]]) -> None:
             if path is not None
         ]
         artifact_cell = "<br/>".join(sources) if sources else "n/a"
+        if entry["dataset"] == "Supported 5k":
+            artifact_cell = (
+                artifact_cell
+                + "<br/>Historical checked-in verifier-record snapshot; not a fresh verifier rerun."
+            )
         lines.append(
             "| {dataset} | {mode} | {seed} | {acceptance} | {prop} | {verify} | {p95} | {tokens} | {artifacts} |".format(
                 dataset=entry["dataset"],
@@ -415,7 +420,7 @@ def _build_results() -> List[Dict[str, Any]]:
             dataset="Supported 5k",
             mode="rules",
             seed=1337,
-            note="Extended supported corpus (5,000 curated manifests).",
+            note="Extended supported corpus (5,000 curated manifests); checked-in verifier-record snapshot, not a fresh verifier rerun.",
             metrics_path=DATA_DIR / "metrics_rules_5000.json",
             patches_path=DATA_DIR / "patches_rules_5000.json",
             verified_path=DATA_DIR / "verified_rules_5000.json",

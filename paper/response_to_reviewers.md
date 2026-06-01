@@ -93,11 +93,11 @@ component versions, including kube-linter, Kyverno CLI, kubectl, kind,
 Kubernetes, and the optional Grok/xAI proposer configuration. We also clarified
 the role of server-side dry-run and the fixture-seeded live replay.
 
-**Concern: The limitations needed to distinguish API-admission safety from full
+**Concern: The limitations needed to distinguish API-admission checks from full
 semantic equivalence.**
 
 We expanded the limitations section to state that the verifier establishes
-policy, schema, and API-admission safety, not full workload semantic
+policy, API-admission, and universal-safety checks, not full workload semantic
 equivalence. The revised text now explicitly calls out limitations for hostPath
 rewrites, read-only root filesystem changes, dropped capabilities, LLM latency,
 provider drift, and queue-replay evaluation.
@@ -171,9 +171,9 @@ boundary that also requires server-side dry-run/API-admission evidence and
 no-new-violation checks. The paper now states that the API-admission column is
 the stored `ok_schema` flag from `kubectl apply --dry-run=server` when that gate
 is enabled, so the snapshot-derived ablation should be read with the verifier
-configuration that produced each checked-in record. The earlier 19-sample
-no-policy pilot remains in the artifact bundle as a concrete failure example,
-but it is no longer the main gate-ablation evidence.
+configuration that produced each checked-in record rather than as a fresh rerun
+of the current verifier. The earlier 19-sample no-policy pilot remains in the
+artifact bundle as concrete companion evidence.
 
 We explicitly state the limitation. Codex Security is a research-preview system,
 and we could not execute a named third-party agent over the full corpus under the

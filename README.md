@@ -191,7 +191,7 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 
 ## Metrics aligned to the paper (traceable in-repo)
 - **Full rules + guardrails replay** – 13,338 / 13,373 patched items accepted (99.74%; auto-fix rate 0.8486 over 15,718 detections; median patch ops 9) from `data/metrics_rules_full.json` (`patches_rules_full.json.gz`, `verified_rules_full.json.gz`).
-- **Rules on the 5k extended corpus** – 4,677 / 5,000 accepted (93.54%; median ops 6) from `data/metrics_rules_5000.json` (`patches_rules_5000.json`, `verified_rules_5000.json`).
+- **Rules on the 5k extended corpus** – historical checked-in verifier-record snapshot records 4,677 / 5,000 accepted (93.54%; median ops 6) from `data/metrics_rules_5000.json` (`patches_rules_5000.json`, `verified_rules_5000.json`); `make reproducible-report` re-renders these JSON artifacts and does not rerun the verifier.
 - **Grok/xAI 5k proposer** – 4,426 / 5,000 accepted (88.52%; median ops 9) from `data/outputs/batch_runs/grok_5k/metrics_grok5k.json`.
 - **Supported corpus (rules)** – 1,264 / 1,264 accepted (median ops 8) captured in `data/outputs/batch_runs/secondary_supported/summary.json` and `metrics_rules.json`.
 - **Live-cluster replay** – 1,000 / 1,000 dry-run and live-apply success on the stratified slice (`data/live_cluster/summary_1k.csv`).

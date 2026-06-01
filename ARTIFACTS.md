@@ -31,14 +31,14 @@ path requires external credentials and budget.
 | Claim | Primary artifact | Regeneration / check |
 |---|---|---|
 | Supported rules corpus accepts `1264/1264` manifests | `data/batch_runs/secondary_supported/metrics_rules.json` | `make reproducible-report` |
-| Supported 5k rules corpus accepts `4677/5000` manifests | `data/metrics_rules_5000.json` | `make reproducible-report` |
+| Supported 5k rules corpus historical verifier-record snapshot accepts `4677/5000` manifests | `data/metrics_rules_5000.json` | `make reproducible-report` regenerates tables from checked-in JSON only; it is not a fresh verifier rerun |
 | Full rules+guardrails run accepts `13338/13373` patched items; auto-fix `0.8486` over `15718` detections | `data/metrics_rules_full.json` | `make metrics-consistency` |
 | Grok/xAI 1.313k slice accepts `1313/1313` manifests | `data/batch_runs/grok_full/metrics_grok_full.json` | `make reproducible-report` |
 | Grok/xAI 5k sweep accepts `4426/5000` manifests | canonical: `data/batch_runs/grok_5k/metrics_grok5k.json`; mirrored output: `data/outputs/batch_runs/grok_5k/metrics_grok5k.json` | `make metrics-consistency` |
 | Live replay applies `1000/1000` accepted manifests with zero rollback | `data/live_cluster/results_1k.json`, `data/live_cluster/summary_1k.csv` | `scripts/run_live_cluster_eval.py` |
 | Bandit top-risk P95 wait is `13.0 h` vs FIFO `102.3 h` | `data/metrics_schedule_compare.json` | `make metrics-consistency` |
 | Long replay high-risk starvation falls from `93.4%` to `19.1%` | `data/scheduler/fairness_metrics.json` | `make metrics-consistency` |
-| Acceptance-boundary matrix shows 312 rules-mode snapshot rejects and 551 Grok/xAI policy-only snapshot rejects under weaker boundaries | `data/ablation/acceptance_boundary_matrix.json`, `data/ablation/acceptance_boundary_matrix.csv` | `python3 scripts/build_acceptance_boundary_matrix.py --dataset rules_5k:data/verified_rules_5000.json --dataset grok_5k:data/batch_runs/grok_5k/verified_grok5k.json` |
+| Acceptance-boundary matrix shows 312 rules-mode historical snapshot rejects and 551 Grok/xAI policy-only snapshot rejects under weaker boundaries | `data/ablation/acceptance_boundary_matrix.json`, `data/ablation/acceptance_boundary_matrix.csv` | `python3 scripts/build_acceptance_boundary_matrix.py --dataset rules_5k:data/verified_rules_5000.json --dataset grok_5k:data/batch_runs/grok_5k/verified_grok5k.json` |
 | Verifier pilot ablation catches four policy escapes | `data/ablation/verifier_gate_metrics.json` | `make metrics-consistency` |
 
 ## Manuscript Evidence Map
