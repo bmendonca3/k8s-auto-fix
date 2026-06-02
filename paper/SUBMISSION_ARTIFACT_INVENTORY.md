@@ -15,8 +15,8 @@ major revision.
 
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
-| `paper/access.pdf` | Main manuscript PDF | `f97fe0ead829969e77aa80cf1cc3aac504af5662d35949e57d98184384365f87` |
-| `paper/access.tex` | Authoritative standalone manuscript source | `f76dddcac91842b8d9818c273a860dda113093fdaa5ad859cb546f593000ef09` |
+| `paper/access.pdf` | Main manuscript PDF | `bae1369e09ac21892ce0fe5ad775d5ce88fe551e679d0a69fca111d8c849787f` |
+| `paper/access.tex` | Authoritative standalone manuscript source | `29c1f14b4a7b80223648ba5d6776a2b0e22afbe2276981af1c57811335071bae` |
 | `paper/cover_letter.md` | Cover-letter draft | `c399eb46d035e1eed47e20544cd3b4a72fbb3e0bf8185c705e946c4561d54c96` |
 | `paper/response_to_reviewers.md` | Point-by-point response draft | `d2b8b3b0bcfa69562c060cc75017450e3817e403dd86d7bbd084b3427390908d` |
 | `paper/references.bib` | BibTeX mirror of the active inline bibliography | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
@@ -74,9 +74,9 @@ Current key Overleaf hashes:
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
 | `paper/overleaf/main.tex` | Overleaf entry point | `6df68ddd89f4e5716fd0e8c16d005e0a11ac4c481675e28cf861148b15f3c7a8` |
-| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `f76dddcac91842b8d9818c273a860dda113093fdaa5ad859cb546f593000ef09` |
+| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `29c1f14b4a7b80223648ba5d6776a2b0e22afbe2276981af1c57811335071bae` |
 | `paper/overleaf/paper/references.bib` | Overleaf BibTeX mirror | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
-| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `36823f1a7d8a1cfeb2c5e0123987a917b70cae380654b625043b2c5ff86007a0` |
+| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `0d32363a2c8993959f4f1b501783833c06204d0da389548d34ab3062d006b44d` |
 | `paper/overleaf/paper/grok_failures_table.tex` | Included failure-taxonomy table | `27be2a86ba0748854371f9f588c6e98c052cac7c3ac54f26c17f6aaeb285ea42` |
 | `paper/overleaf/paper/reproducibility/baselines.tex` | Included baseline table | `6ca9d5f49d4d07a5b2980330ff0caad8d7219f2a15c34376367e4677ea804fcd` |
 
