@@ -145,7 +145,7 @@ This paper studies remediation as a cloud-systems problem: a patch is useful onl
 \midrule
 \textbf{Guardrails} & Policy re-check + schema + \texttt{kubectl apply --dry-run=server} + privileged/secret sanitization + CRD seeding & Manual review; no automated gates & Validation/mutation webhooks; assumes controllers & Health checks, automated rollback, throttling \\
 \midrule
-\textbf{Risk Prioritization} & Bandit ($R p / \mathbb{E}[t]$ + aging + KEV boost) & Not implemented & FIFO admission queue & Priority queues / toil budgets \\
+\textbf{Risk Prioritization} & Bandit ($R p / \mathbb{E}[t]$ + aging + configured KEV-style urgency boost) & Not implemented & FIFO admission queue & Priority queues / toil budgets \\
 \midrule
 \textbf{Evaluation Corpus} & 15{,}718 detections, 1{,}000 fixture-seeded live manifests, 5{,}000 optional-LLM manifests, and 1{,}264 supported rules-mode manifests; headline rates appear in Table~\ref{tab:eval_summary} & $\approx$277k labeled KCFs; precision 0.990, recall 0.999 vs.\ RB tools; 30-sample expert validation of explanations/remediation (Malul et al.) & No official acceptance \%; docs expose latency/allow/deny; our mutate baseline on this corpus yields 80--95\% (Table~\ref{tab:baselines}) & Millions of production workloads (no public acceptance \%) \\
 \midrule
@@ -191,10 +191,10 @@ We implement the closed loop \emph{Detector $\rightarrow$ Proposer $\rightarrow$
 
 \subsection{Notation}
 \label{sec:notation}
-We use the following notation throughout the paper: $R_i$ is the risk score for queue item $i$, $p_i$ is the empirical verifier success probability for that policy, $\mathbb{E}[t_i]$ is the observed proposer+verifier latency, $\text{wait}_i$ is the accumulated queue age, and $\text{kev}_i$ is the KEV-derived boost when the detection maps to a CISA advisory. Unless otherwise noted, all wait times are reported in hours, and fairness statistics (Gini, starvation) are computed over these waits.
+We use the following notation throughout the paper: $R_i$ is the risk score for queue item $i$, $p_i$ is the empirical verifier success probability for that policy, $\mathbb{E}[t_i]$ is the observed proposer+verifier latency, $\text{wait}_i$ is the accumulated queue age, and $\text{kev}_i$ is the configured KEV-style urgency boost for items marked urgent in the artifact telemetry. Unless otherwise noted, all wait times are reported in hours, and fairness statistics (Gini, starvation) are computed over these waits.
 
 \smallskip
-\noindent\textbf{Disagreement and Budgets.} When kube-linter and Kyverno/OPA disagree we take the \emph{union} of violations at detection time, and require patches to satisfy both engines during verification. Attempts are capped at three per manifest; per-attempt latency and success outcomes feed into \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{\texttt{data/policy\_metrics.json}}, which the scheduler consumes alongside KEV flags.
+\noindent\textbf{Disagreement and Budgets.} When kube-linter and Kyverno/OPA disagree we take the \emph{union} of violations at detection time, and require patches to satisfy both engines during verification. Attempts are capped at three per manifest; per-attempt latency and success outcomes feed into \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{\texttt{data/policy\_metrics.json}}, which the scheduler consumes alongside configured urgency flags.
 
 \subsection{End-to-End Walkthrough on Real Manifests}
 To make the closed-loop pipeline concrete, we trace two real-world manifests from the repository's test suite through each stage, from detection to scheduling. The goal is to demonstrate verifier-gated remediation with full reproducibility, explicit cloud-control-plane acceptance checks, and verifiable risk reduction.
@@ -291,13 +291,13 @@ Table~\ref{tab:glance} situates our pipeline against nearby systems at each step
 Detect & Union of \texttt{kube-linter}+policy engine findings & Admission-time validation & LLM-based detection/localization & SAT scanner + policy IDs \\
 Propose & Minimal JSON Patch (rules, optional LLM) & Mutate policies (when present) & Textual remediation guidance & LLM-generated YAML edits \\
 Verify & Triad: policy re-check + schema + \texttt{kubectl} server dry-run & Admission path only; no multi-gate triad & None (manual apply/validation) & Scanner checks; no server dry-run/no-new-violation invariants \\
-Prioritize & Bandit: $R\,p/\mathbb{E}[t]$ + aging + KEV boost & FIFO admission queue & None & None \\
+Prioritize & Bandit: $R\,p/\mathbb{E}[t]$ + aging + configured urgency boost & FIFO admission queue & None & None \\
 \bottomrule
 \end{tabularx}
 \end{table*}
 
 \subsection{Research Questions and Findings}
-RQ1 (Robustness): The closed loop delivers 88.52\% acceptance on the optional LLM-backed 5k sweep, 100.00\% on the supported 1,264-manifest corpus in rules mode, and 13{,}338/13{,}373 (99.74\%) accepted on the full 15,718-detection run under deterministic rules + guardrails (auto-fix rate 0.8486 over detections; median ops 9), with no hostPath-related verifier failures remaining in the checked artifacts. RQ2 (Scheduling Effectiveness): The bandit ($R p / \mathbb{E}[t]$ + aging + KEV boost) improves risk reduction per hour and reduces top-risk P95 wait from 102.3~hours (FIFO) to 13.0~hours ($7.9\times$ in deterministic queue replay). RQ3 (Fairness): Aging prevents starvation, keeping mean rank for the top-50 high-risk items at 25.5 while still progressing lower-risk items. RQ4 (Patch Quality): Generated JSON Patches remain compact (median 9 ops on the full corpus; median 8 ops on the supported rules slice) and idempotent (checked by \texttt{tests/test\_patch\_minimality.py}).
+RQ1 (Robustness): The closed loop delivers 88.52\% acceptance on the optional LLM-backed 5k sweep, 100.00\% on the supported 1,264-manifest corpus in rules mode, and 13{,}338/13{,}373 (99.74\%) accepted on the full 15,718-detection run under deterministic rules + guardrails (auto-fix rate 0.8486 over detections; median ops 9), with no hostPath-related verifier failures remaining in the checked artifacts. RQ2 (Scheduling Effectiveness): The bandit ($R p / \mathbb{E}[t]$ + aging + configured urgency boost) improves risk reduction per hour and reduces top-risk P95 wait from 102.3~hours (FIFO) to 13.0~hours ($7.9\times$ in deterministic queue replay). RQ3 (Fairness): Aging prevents starvation, keeping mean rank for the top-50 high-risk items at 25.5 while still progressing lower-risk items. RQ4 (Patch Quality): Generated JSON Patches remain compact (median 9 ops on the full corpus; median 8 ops on the supported rules slice) and idempotent (checked by \texttt{tests/test\_patch\_minimality.py}).
 
 \section{Cloud Remediation Pipeline and Metrics}\label{sec:impl-metrics}
 Our system is designed as a linear cloud remediation pipeline with strict verification gates to establish policy/schema/API admissibility and operational measurability for proposed patches.
@@ -335,7 +335,7 @@ To be accepted, a patched manifest must pass a multi-layered verification proces
     \put(0, 28){\framebox(32, 12){\shortstack{\textbf{Detector}\\\scriptsize kube-linter +\\\scriptsize Kyverno}}}
     \put(38, 28){\framebox(32, 12){\shortstack{\textbf{Proposer}\\\scriptsize LLM +\\\scriptsize JSON Patch}}}
     \put(76, 28){\framebox(32, 12){\shortstack{\textbf{Verifier}\\\scriptsize Policy + Schema\\\scriptsize + Dry-run}}}
-    \put(114, 28){\framebox(32, 12){\shortstack{\textbf{Scheduler}\\\scriptsize Risk-Bandit\\\scriptsize (aging + KEV)}}}
+    \put(114, 28){\framebox(32, 12){\shortstack{\textbf{Scheduler}\\\scriptsize Risk-Bandit\\\scriptsize (aging + urgency)}}}
     
     % Horizontal Arrows
     \put(32, 34){\vector(1, 0){6}}
@@ -346,17 +346,17 @@ To be accepted, a patched manifest must pass a multi-layered verification proces
     % Scheduler center x = 114 + 16 = 130
     % Risk box width 80. Left x = 130 - 40 = 90.
     % Right x = 170. Fits within 170mm.
-    \put(90, 0){\framebox(80, 14){\shortstack{\textbf{Risk Signals}\\\scriptsize PSS/CIS, Kubernetes docs,\\\scriptsize KEV boost, Exposure Telemetry}}}
+    \put(90, 0){\framebox(80, 14){\shortstack{\textbf{Risk Signals}\\\scriptsize PSS/CIS, Kubernetes docs,\\\scriptsize urgency boost, Exposure Telemetry}}}
     
     % Vertical Arrow (Risk -> Scheduler)
     \put(130, 14){\vector(0, 1){14}}
 \end{picture}
-\caption{Closed-loop architecture with detector, proposer, and verifier gates (policy re-check, schema validation, \texttt{kubectl apply --dry-run=server}) feeding the risk-aware scheduler. The scheduler consumes \texttt{policy\_metrics.json} entries \{${p}$, $\mathbb{E}[t]$, $R$, KEV\} to score work using the scheduling function.}
+\caption{Closed-loop architecture with detector, proposer, and verifier gates (policy re-check, schema validation, \texttt{kubectl apply --dry-run=server}) feeding the risk-aware scheduler. The scheduler consumes \texttt{policy\_metrics.json} entries \{${p}$, $\mathbb{E}[t]$, $R$, urgency\} to score work using the scheduling function.}
 \label{fig:architecture}
 \end{figure*}
 
 \smallskip
-\noindent\textbf{Fairness in Action.} To illustrate how the scheduler's aging mechanism prevents starvation, consider three items in a simplified queue: Item A is a high-risk privileged container with a KEV-listed vulnerability, Item B is a medium-risk container with a `:latest` image tag, and Item C is a low-risk container with missing resource limits. Initially, Item A has the highest score and is processed first, but as Items B and C wait their increasing `wait` time boosts their scores. This "aging" ensures that even low-risk items are eventually processed instead of being indefinitely starved by a constant stream of high-risk items, a fairness target shared with constrained bandit formulations~\cite{joseph2016}. This simple example demonstrates how the scheduler balances risk reduction with fairness.
+\noindent\textbf{Fairness in Action.} To illustrate how the scheduler's aging mechanism prevents starvation, consider three items in a simplified queue: Item A is a high-risk privileged container with a configured urgent-exposure flag, Item B is a medium-risk container with a `:latest` image tag, and Item C is a low-risk container with missing resource limits. Initially, Item A has the highest score and is processed first, but as Items B and C wait their increasing `wait` time boosts their scores. This "aging" ensures that even low-risk items are eventually processed instead of being indefinitely starved by a constant stream of high-risk items, a fairness target shared with constrained bandit formulations~\cite{joseph2016}. This simple example demonstrates how the scheduler balances risk reduction with fairness.
 
 \section{Implementation Evidence and Cloud-Cluster Evaluation}
 
@@ -692,33 +692,33 @@ AKS & 200 & 197/200 (98.5\%) & 197/197 (100\%) \\
 \subsection{Risk Scoring and Threat-Intelligence Hooks}
 \noindent\textbf{Overview.} The scheduler ranks candidate repairs by estimated risk reduction, empirical verifier success, and expected remediation time. Public vulnerability feeds can raise the priority of workloads that expose known exploited vulnerabilities.
 
-The current scheduler consumes \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{data/policy\_metrics.json}, which stores per-policy priors for success probability, expected latency, KEV flags, and baseline risk. The calibration pass (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/policy_risk_map.json}{data/risk/policy\_risk\_map.json}) augments those priors with observed detection/resolution counts, while \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/risk_calibration.csv}{data/risk/risk\_calibration.csv} captures corpus-level $\Delta R$ and residual risk (Table~\ref{tab:risk_calibration}). Future iterations will enrich each queue item with container-image vulnerability joins (via Trivy/Grype), exploit-prior feeds \cite{nvd,epss}, and CISA KEV catalog checks \cite{cisa_kev} so that $R$ reflects both exposure (Pod Security level, dangerous capabilities, host mounts) and exploit likelihood. The risk score $R$ then feeds the bandit scoring function, allowing us to report absolute risk and per-patch risk reduction $\Delta R$ as first-class metrics.
+The current scheduler consumes \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{data/policy\_metrics.json}, which stores per-policy priors for success probability, expected latency, configured urgency flags, and baseline risk. The calibration pass (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/policy_risk_map.json}{data/risk/policy\_risk\_map.json}) augments those priors with observed detection/resolution counts, while \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/risk_calibration.csv}{data/risk/risk\_calibration.csv} captures corpus-level $\Delta R$ and residual risk (Table~\ref{tab:risk_calibration}). Future iterations will enrich each queue item with container-image vulnerability joins (via Trivy/Grype), exploit-prior feeds \cite{nvd,epss}, and CISA KEV catalog checks \cite{cisa_kev} so that $R$ reflects both exposure (Pod Security level, dangerous capabilities, host mounts) and exploit likelihood. The risk score $R$ then feeds the bandit scoring function, allowing us to report absolute risk and per-patch risk reduction $\Delta R$ as first-class metrics.
 
 \subsection{Guidance Refresh Hooks}
 We curate policy guidance under \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/docs/policy_guidance/raw/}{docs/policy\_guidance/raw/}; \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/scripts/refresh_guidance.py}{scripts/refresh\_guidance.py} refreshes Pod Security, CIS, and Kyverno snippets (backed by \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/docs/policy_guidance/sources.yaml}{docs/policy\_guidance/sources.yaml}) to keep guardrails current. LLM-backed proposer modes can retrieve these snippets at prompt time; future work will add richer metadata, cached verifier failures, and targeted passage retrieval when retries occur. This keeps the prompt budget bounded while grounding fixes in up-to-date hardening language without making retrieval a core evaluated contribution.
 
-\subsection{Risk-Bandit Scheduler with Aging and KEV Preemption}
+\subsection{Risk-Bandit Scheduler with Aging and Urgency Preemption}
 \noindent\textbf{Overview.} The scheduler treats accepted remediation candidates as a cloud operations queue: high-risk items are served early, while aging prevents lower-risk work from remaining indefinitely unscheduled.
 \smallskip
 \noindent\fbox{%
 \begin{minipage}{0.95\columnwidth}
-\textbf{Notation.} $R_i$ denotes the risk units for item $i$; $p_i$ is its empirical verifier success probability; $\mathbb{E}[t_i]$ is the observed proposer+verifier latency; $\text{wait}_i$ tracks queue age; $\text{kev}_i$ equals the configured KEV boost when the item maps to a CISA KEV advisory (otherwise $0$); and $\varepsilon$ is a small positive floor preventing division by zero.
+\textbf{Notation.} $R_i$ denotes the risk units for item $i$; $p_i$ is its empirical verifier success probability; $\mathbb{E}[t_i]$ is the observed proposer+verifier latency; $\text{wait}_i$ tracks queue age; $\text{kev}_i$ equals the configured KEV-style urgency boost when the item is marked for urgent handling (otherwise $0$); and $\varepsilon$ is a small positive floor preventing division by zero.
 \end{minipage}}
 \begin{equation}
 \label{eq:scheduler_score}
 S_i \,=\, \frac{R_i \cdot p_i}{\max\!\big(\varepsilon,\, \mathbb{E}[t_i]\big)} \,+\, \text{explore}_i \,+\, \alpha\,\text{wait}_i \,+\, \text{kev}_i
 \end{equation}
 
-To make $\smash{R_i}$ auditable we now spell out its construction instead of burying it in the supplemental appendix. Each detection maps to a policy identifier; we pull the static weight $w_{\text{policy}}$ from \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/policy_risk_map.json}{\texttt{data/risk/policy\_risk\_map.json}}, add the configured KEV surcharge $\kappa$ when a violation is marked for urgent handling, and scale by the configured exploit-prior field $e_{\text{policy}}$ captured in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{\texttt{data/policy\_metrics.json}}. Formally,
+To make $\smash{R_i}$ auditable we now spell out its construction instead of burying it in the supplemental appendix. Each detection maps to a policy identifier; we pull the static weight $w_{\text{policy}}$ from \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/policy_risk_map.json}{\texttt{data/risk/policy\_risk\_map.json}}, add the configured KEV-style urgency surcharge $\kappa$ when a violation is marked for urgent handling, and scale by the configured exploit-prior field $e_{\text{policy}}$ captured in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{\texttt{data/policy\_metrics.json}}. Formally,
 \[
-R_i = (w_{\text{policy}} + \kappa \cdot \mathbf{1}_{\text{KEV}}) \cdot e_{\text{policy}},
+R_i = (w_{\text{policy}} + \kappa \cdot \mathbf{1}_{\text{urgent}}) \cdot e_{\text{policy}},
 \]
 with $\kappa = 25$ risk units in the current configuration. $\smash{p_i}$ is the on-line verifier pass rate for that policy (accepted / attempted counts in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/policy_metrics.json}{\texttt{data/policy\_metrics.json}}), and $\mathbb{E}[t_i]$ is the running average of proposer+verifier latency recorded in the same file. We also report $\Delta R_i = R_i - R_i^{\text{post}}$ for every accepted patch, summing per corpus to produce Table~\ref{tab:risk_calibration}. The supplemental appendix provides a numeric worked example using the same notation.
 
-This scheduling function defines the score used today, where $R_i$ is the risk score, $p_i$ the empirical success rate, $\mathbb{E}[t_i]$ the observed latency, $\text{wait}_i$ the queue age, and $\text{kev}_i$ the configured urgency boost, mirroring UCB-style bandit heuristics~\cite{auer2002}. $p_i$ and $\mathbb{E}[t_i]$ are refreshed from proposer/verifier telemetry; exploration uses an upper-confidence term and aging ensures fairness. The evaluation in Section~\ref{sec:evaluation} contrasts this bandit against FIFO, showing substantial reductions in top-risk wait time. Future work will incorporate additional risk signals and batch-aware policies, but the current heuristic already delivers measurable gains.
+This scheduling function defines the score used today, where $R_i$ is the risk score, $p_i$ the empirical success rate, $\mathbb{E}[t_i]$ the observed latency, $\text{wait}_i$ the queue age, and $\text{kev}_i$ the configured KEV-style urgency boost, mirroring UCB-style bandit heuristics~\cite{auer2002}. $p_i$ and $\mathbb{E}[t_i]$ are refreshed from proposer/verifier telemetry; exploration uses an upper-confidence term and aging ensures fairness. The evaluation in Section~\ref{sec:evaluation} contrasts this bandit against FIFO, showing substantial reductions in top-risk wait time. Future work will incorporate additional risk signals and batch-aware policies, but the current heuristic already delivers measurable gains.
 
 \subsection{Baselines and Ablations}
-Replay of the 830-item queue snapshot (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/metrics_schedule_compare.json}{data/metrics\_schedule\_compare.json}) quantifies how each scheduler treats critical detections. All heuristics clear roughly the same workload---$\Delta R/t = 247.2$ risk units per hour---because proposer/verifier throughput dominates. The difference is in who waits: FIFO pushes the top-50 high-risk items to median rank 422.5 (P95 620) and P95 wait 102.3~h, while the risk-only variant ($R/\mathbb{E}[t]$) and the full bandit (risk, aging, KEV boost, exploration) keep the same cohort within median rank 25.5 (P95 48) and cap top-risk P95 wait at 13.0~h. Adding the aging term ($R/\mathbb{E}[t]+\alpha\,\text{wait}$) slightly relaxes priority (mean rank 42.2, P95 124) but preserves the low top-risk wait (13.0~h) needed for fairness.
+Replay of the 830-item queue snapshot (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/metrics_schedule_compare.json}{data/metrics\_schedule\_compare.json}) quantifies how each scheduler treats critical detections. All heuristics clear roughly the same workload---$\Delta R/t = 247.2$ risk units per hour---because proposer/verifier throughput dominates. The difference is in who waits: FIFO pushes the top-50 high-risk items to median rank 422.5 (P95 620) and P95 wait 102.3~h, while the risk-only variant ($R/\mathbb{E}[t]$) and the full bandit (risk, aging, configured urgency boost, exploration) keep the same cohort within median rank 25.5 (P95 48) and cap top-risk P95 wait at 13.0~h. Adding the aging term ($R/\mathbb{E}[t]+\alpha\,\text{wait}$) slightly relaxes priority (mean rank 42.2, P95 124) but preserves the low top-risk wait (13.0~h) needed for fairness.
 
 A finer-grained sweep over exploration and aging coefficients (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/metrics_schedule_sweep.json}{data/metrics\_schedule\_sweep.json}) shows the bandit sustaining high-risk median wait of 17.3~h (P95 32.8~h) even when exploration weight is set to 1.0, while low-risk items absorb most of the slack (median 120.9~h). The condensed simulation in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/operator_ab/summary_simulated.csv}{data/operator\_ab/summary\_simulated.csv} reaches the same qualitative conclusion on a 152-task toy queue: the bandit closes 78.9\% of assignments with mean wait 0.23~h and P95 0.91~h, versus FIFO's 0.71~h mean and 1.69~h P95.
 
@@ -770,9 +770,9 @@ No-rescan & rescan & 78.9 & 0 \\
 \small
 \begin{minipage}{0.92\textwidth}
 \begin{algorithmic}[1]
-\STATE \textbf{Inputs:} queue $Q$, risk $R_i$, KEV flag, wait time $\text{wait}_i$, bandit priors $p_i,\,\mathbb{E}[t_i]$, aging $\alpha$, exploration coefficient $\beta$, KEV boost $\kappa$
+\STATE \textbf{Inputs:} queue $Q$, risk $R_i$, urgency flag, wait time $\text{wait}_i$, bandit priors $p_i,\,\mathbb{E}[t_i]$, aging $\alpha$, exploration coefficient $\beta$, urgency boost $\kappa$
 \WHILE{$Q$ not empty}
-  \STATE \textbf{Score all items:} For each $i\in Q$, compute base $= \dfrac{R_i\cdot p_i}{\max(\varepsilon,\,\mathbb{E}[t_i])}$; $\text{kev}=\kappa$ if KEV else $0$; $\text{explore}=\beta\sqrt{\dfrac{\ln(1+n)}{1+n_i}}$; $S_i=\text{base}+\text{explore}+\alpha\,\text{wait}_i+\text{kev}$
+  \STATE \textbf{Score all items:} For each $i\in Q$, compute base $= \dfrac{R_i\cdot p_i}{\max(\varepsilon,\,\mathbb{E}[t_i])}$; $\text{kev}=\kappa$ if urgency flag else $0$; $\text{explore}=\beta\sqrt{\dfrac{\ln(1+n)}{1+n_i}}$; $S_i=\text{base}+\text{explore}+\alpha\,\text{wait}_i+\text{kev}$
   \STATE Pick $j=\arg\max_i S_i$; generate a JSON Patch for $j$ using the selected proposer mode; run Verifier (policy, schema, server dry-run)
   \IF{Verifier success}
     \STATE Apply patch; update counts $(n_j, r_j)$ and online estimates $p_j,\,\mathbb{E}[t_j]$; remove $j$ from $Q$
@@ -783,7 +783,7 @@ No-rescan & rescan & 78.9 & 0 \\
 \ENDWHILE
 \end{algorithmic}
 \end{minipage}
-\caption{Risk-Bandit scheduling loop (aging + KEV preemption) maximizing expected risk reduction per unit time with exploration and fairness.}
+\caption{Risk-Bandit scheduling loop (aging + urgency preemption) maximizing expected risk reduction per unit time with exploration and fairness.}
 \label{fig:bandit-pseudocode}
 \end{figure*}
 
