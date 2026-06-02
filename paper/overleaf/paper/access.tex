@@ -60,7 +60,7 @@
 % Allow URL/path breaks at underscore, dot, and slash to prevent overfull lines
 \appto\UrlBreaks{\do\_\do\.\do\/}
 \makeatother
-\Urlmuskip=0mu plus 2mu
+\Urlmuskip=0mu plus 3mu
 
 % Fallback mapping for RSFS font to Computer Modern symbols (avoids rsfs10)
 \makeatletter
@@ -305,16 +305,11 @@ Our system is designed as a linear cloud remediation pipeline with strict verifi
 \smallskip
 \noindent\fbox{%
 \begin{minipage}{0.95\columnwidth}
-\textbf{Reproduction entry points.} The artifact bundle exposes the same pipeline stages used in the evaluation:
-\begin{alltt}
-\url{make detect}
-\url{make propose}
-\url{make verify}
-\end{alltt}
+\textbf{Reproduction entry points.} The artifact bundle exposes the same pipeline stages used in the evaluation: \texttt{make detect}, \texttt{make propose}, and \texttt{make verify}.
 The smoke corpus completes in minutes; full-corpus regenerations (15k+ detections) take approximately 20--30 minutes on the laptop environment reported in Table~\ref{tab:environment}.
 \end{minipage}%
 }
-\smallskip
+\vspace{0.55\baselineskip}
 \noindent\textbf{Scalability considerations.} The end-to-end pipeline sustains millisecond-scale proposer latency and sub-second verifier latency on the supported corpus (Table~\ref{tab:eval_summary}); the scheduler replays thousands of queue items using persisted telemetry (see \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/scheduler/}{data/scheduler/}) without recomputing detections. These measurements bound the cost of the post-hoc workflow for CI/CD and GitOps operation in addition to its functional correctness.
 
 \subsection{The Closed-Loop Pipeline}
@@ -580,7 +575,7 @@ member `metadata' not found in & 1 & 0 \\
 \begin{table*}[t]
 \centering
 \scriptsize
-\caption{Risk calibration summary derived from \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/risk_calibration.csv}{data/risk/risk\_calibration.csv}. $\Delta R$ uses policy risk weights; ``per time unit'' divides by summed expected-time priors.}
+\caption{Risk calibration and accepted-fix summary derived from \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/risk/risk_calibration.csv}{data/risk/risk\_calibration.csv}. $\Delta R$ uses policy risk weights; ``per time unit'' divides by summed expected-time priors.}
 \label{tab:risk_calibration}
 \begin{tabular}{@{}l r r r r r r@{}}
 \toprule
@@ -605,17 +600,17 @@ Rules (5k) & 5{,}000 & 4{,}677 & 227{,}330 & 14{,}970 & 93.82\% & 4.88 \\
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.2}
 \resizebox{\textwidth}{!}{%
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X c c c c c@{}}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X c >{\raggedright\arraybackslash}p{0.30\textwidth} c c c@{}}
 \toprule
 \textbf{Corpus (mode)} & \textbf{Seed} & \textbf{Acceptance} & \textbf{Median proposer (ms)} & \textbf{Median verifier (ms)} & \textbf{Verifier P95 (ms)} \\
 \midrule
-Supported (rules, 1{,}264) & 1337 & 1264/1264 (100.00\%) & 29.0 & 242.0 & 517.8 \\
+Supported (rules, 1{,}264) & 1337 & 1{,}264/1{,}264 (100.00\%) & 29.0 & 242.0 & 517.8 \\
 \midrule
-Full corpus (rules+guardrails, 15{,}718 detections) & 1337 & 13338/13373 (99.74\%; auto-fix 0.8486 over detections) & -- & -- & -- \\
+Full corpus (rules+guardrails) & 1337 & 13{,}338/13{,}373 (99.74\%; auto-fix 0.8486) & -- & -- & -- \\
 \midrule
-Manifest slice (API LLM, 1{,}313) & 1337 & 1313/1313 (100.00\%) & 5095.5 & 138.4 & 904.6 \\
+Manifest slice (API LLM, 1{,}313) & 1337 & 1{,}313/1{,}313 (100.00\%) & 5095.5 & 138.4 & 904.6 \\
 \midrule
-LLM-5k (API-backed; 200-trace latency sample) & 1337 & 4426/5000 (88.52\%) & 5095.5 & 138.4 & 904.6 \\
+LLM-5k (API-backed; 200-trace latency sample) & 1337 & 4{,}426/5{,}000 (88.52\%) & 5095.5 & 138.4 & 904.6 \\
 \bottomrule
 \end{tabularx}}
 \endgroup
@@ -851,7 +846,7 @@ Kubernetes has become the de facto operating substrate for cloud applications, y
 The prototype prioritizes shipping guardrails and evidence, but several constraints remain before production deployment. \textbf{External validity} is limited because the supported and optional-LLM corpora skew toward Helm-derived workloads and may miss bespoke production clusters; we refresh the ArtifactHub scrape monthly (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/scripts/collect_artifacthub.py}{\texttt{scripts/collect\_artifacthub.py}}), add partner manifests as they are shared, and run an 8--12 analyst rotation with the survey instrument in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/docs/operator_survey.md}{docs/operator\_survey.md} so live results supplement deterministic replays. \textbf{Fixture sensitivity} means verifier success depends on seeding CRDs, namespaces, and service accounts that mirror production; the fixture harness (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/infra/fixtures/}{infra/fixtures/}) now auto-installs required objects before replay, and the pending dynamic discovery prototype records missing fixtures at runtime so we can ship cluster-specific bundles with the artifact release. \textbf{LLM latency gaps} persist because API-backed calls add seconds relative to rules mode; we cache prompt templates, stream telemetry to \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/grok5k_telemetry.json}{data/grok5k\_telemetry.json}, fall back to deterministic rules when wall-clock thresholds are exceeded, and are validating smaller hosted models behind the same guardrails. \textbf{Deterministic scheduler replays} mean reported fairness metrics come from queue replays rather than live handoffs; we publish the replay traces (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/outputs/scheduler/}{data/outputs/scheduler/}) and will pair them with the logged human-in-the-loop rotation so reviewers can compare deterministic and live outcomes once the study completes.
 
 \section{Conclusion and Future Work}
-The current pipeline records 1,000/1,000 fixture-seeded live-cluster dry-run/live-apply acceptance with zero rollbacks (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/live_cluster/results_1k.json}{data/live\_cluster/results\_1k.json}). Across offline corpora, the system delivers 93.54\% acceptance on the extended 5k rules snapshot (Table~\ref{tab:risk_calibration}), 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest API-backed LLM run, and 88.52\% on the optional LLM 5k sweep overall, while deterministic rules + guardrails accept 13{,}338 / 13{,}373 patched items (99.74\%; auto-fix rate 0.8486 over 15,718 detections) with median patch ops 9 (Table~\ref{tab:eval_summary}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/metrics_latest.json}{data/metrics\_latest.json}). The risk-aware scheduler trims top-risk P95 wait times from 102.3\,h (FIFO) to 13.0\,h in deterministic queue replay (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/scheduler/metrics_sweep_live.json}{data/scheduler/metrics\_sweep\_live.json}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/outputs/scheduler/metrics_schedule_sweep.json}{data/outputs/scheduler/metrics\_schedule\_sweep.json}).
+The current pipeline records 1,000/1,000 fixture-seeded live-cluster dry-run/live-apply acceptance with zero rollbacks (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/live_cluster/results_1k.json}{data/live\_cluster/results\_1k.json}). Across offline corpora, the system delivers 4{,}677/5{,}000 accepted patches (93.54\%) on the extended 5k rules snapshot (Table~\ref{tab:risk_calibration}), 100.00\% on the 1,264-manifest supported slice, 100.00\% on the 1,313-manifest API-backed LLM run, and 88.52\% on the optional LLM 5k sweep overall, while deterministic rules + guardrails accept 13{,}338 / 13{,}373 patched items (99.74\%; auto-fix rate 0.8486 over 15,718 detections) with median patch ops 9 (Table~\ref{tab:eval_summary}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/metrics_latest.json}{data/metrics\_latest.json}). The risk-aware scheduler trims top-risk P95 wait times from 102.3\,h (FIFO) to 13.0\,h in deterministic queue replay (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/scheduler/metrics_sweep_live.json}{data/scheduler/metrics\_sweep\_live.json}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/outputs/scheduler/metrics_schedule_sweep.json}{data/outputs/scheduler/metrics\_schedule\_sweep.json}).
 
 The paper-facing summary tables are regenerated from the public artifact bundle (\texttt{make reproducible-report}, \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/ARTIFACTS.md}{ARTIFACTS.md}), and the scheduler comparisons we report stem from deterministic queue replays rather than live analyst rotations. These gains are anchored in deterministic guardrails, schema validation, and server-side dry-run enforcement, with matching API-backed LLM runs available to practitioners who can supply provider credentials and budget roughly \$1.22 per 5k sweep under the published pricing (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/data/grok5k_telemetry.json}{data/grok5k\_telemetry.json}, \cite{xai_pricing}). To prevent configuration drift, every accepted patch is surfaced as a pull request through our GitOps helper (\href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/scripts/gitops_writeback.py}{scripts/gitops\_writeback.py}), which records verifier evidence, captures the JSON Patch diff, and requires human approval before merge, mirroring the workflow detailed in \href{https://github.com/bmendonca3/k8s-auto-fix/blob/main/docs/GITOPS.md}{docs/GITOPS.md}.
 
