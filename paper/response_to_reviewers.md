@@ -179,8 +179,8 @@ We explicitly state the limitation. Codex Security is a research-preview system,
 and we could not execute a named third-party agent over the full corpus under the
 same verifier protocol during this revision. We therefore report the ablation as
 guardrail evidence and defer a like-for-like run against Codex Security or
-KubeIntellect to future work rather than inventing unsupported comparison
-numbers.
+KubeIntellect to future work rather than reporting comparisons we cannot
+substantiate under matched conditions.
 
 **Concern: The novelty argument should be sharper than a tool-combination
 claim.**

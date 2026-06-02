@@ -1,6 +1,6 @@
 # Submission Artifact Inventory
 
-Last checked: 2026-06-01 15:16 MST.
+Last checked: 2026-06-01 17:58 MST.
 
 This is a local inventory for the TCC-2025-12-0666 packet. It is not a
 submission artifact and should not be uploaded.
@@ -15,10 +15,10 @@ major revision.
 
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
-| `paper/access.pdf` | Main manuscript PDF | `24c3087bc62fb5b06e5be299631ce4b05f7b4375e9f7061fc21d1954b50bb6a3` |
-| `paper/access.tex` | Authoritative standalone manuscript source | `2ad228987cfceb9b9f86a38f93e79782cdbce058e91382478a99c9833d7768c3` |
-| `paper/cover_letter.md` | Cover-letter draft | `995bdbfdb1888f64d6279e91de80089f82831a206f95dcfe0731d43d3d1f3dae` |
-| `paper/response_to_reviewers.md` | Point-by-point response draft | `685a4c968da35b069ce56c37238d82cd0499023ca93ef549da53929625578140` |
+| `paper/access.pdf` | Main manuscript PDF | `f97fe0ead829969e77aa80cf1cc3aac504af5662d35949e57d98184384365f87` |
+| `paper/access.tex` | Authoritative standalone manuscript source | `f76dddcac91842b8d9818c273a860dda113093fdaa5ad859cb546f593000ef09` |
+| `paper/cover_letter.md` | Cover-letter draft | `c399eb46d035e1eed47e20544cd3b4a72fbb3e0bf8185c705e946c4561d54c96` |
+| `paper/response_to_reviewers.md` | Point-by-point response draft | `d2b8b3b0bcfa69562c060cc75017450e3817e403dd86d7bbd084b3427390908d` |
 | `paper/references.bib` | BibTeX mirror of the active inline bibliography | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
 
 ## Supplemental Appendix Artifact
@@ -74,9 +74,9 @@ Current key Overleaf hashes:
 | Artifact | Purpose | Current SHA-256 |
 |---|---|---|
 | `paper/overleaf/main.tex` | Overleaf entry point | `6df68ddd89f4e5716fd0e8c16d005e0a11ac4c481675e28cf861148b15f3c7a8` |
-| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `2ad228987cfceb9b9f86a38f93e79782cdbce058e91382478a99c9833d7768c3` |
+| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `f76dddcac91842b8d9818c273a860dda113093fdaa5ad859cb546f593000ef09` |
 | `paper/overleaf/paper/references.bib` | Overleaf BibTeX mirror | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
-| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `6635faaf7a06e43eaadf5338bb8b0a126d82cc80faaa247841e341d7cbe31033` |
+| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `36823f1a7d8a1cfeb2c5e0123987a917b70cae380654b625043b2c5ff86007a0` |
 | `paper/overleaf/paper/grok_failures_table.tex` | Included failure-taxonomy table | `27be2a86ba0748854371f9f588c6e98c052cac7c3ac54f26c17f6aaeb285ea42` |
 | `paper/overleaf/paper/reproducibility/baselines.tex` | Included baseline table | `6ca9d5f49d4d07a5b2980330ff0caad8d7219f2a15c34376367e4677ea804fcd` |
 
