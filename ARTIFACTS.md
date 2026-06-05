@@ -31,7 +31,7 @@ path requires external credentials and budget.
 | Claim | Primary artifact | Regeneration / check |
 |---|---|---|
 | Supported rules corpus accepts `1264/1264` manifests | `data/batch_runs/secondary_supported/metrics_rules.json` | `make reproducible-report` |
-| Supported 5k rules corpus historical verifier-record snapshot accepts `4677/5000` manifests | `data/metrics_rules_5000.json` | `make reproducible-report` regenerates tables from checked-in JSON only; it is not a fresh verifier rerun |
+| Archived rules-5k verifier-record snapshot accepts `4677/5000` manifests | `data/metrics_rules_5000.json` | Snapshot-only context for Figure 4 and ablation discussion; not used as a current acceptance result or fresh verifier rerun |
 | Full rules+guardrails run accepts `13338/13373` patched items; auto-fix `0.8486` over `15718` detections | `data/metrics_rules_full.json` | `make metrics-consistency` |
 | Grok/xAI 1.313k slice accepts `1313/1313` manifests | `data/batch_runs/grok_full/metrics_grok_full.json` | `make reproducible-report` |
 | Grok/xAI 5k sweep accepts `4426/5000` manifests | canonical: `data/batch_runs/grok_5k/metrics_grok5k.json`; mirrored output: `data/outputs/batch_runs/grok_5k/metrics_grok5k.json` | `make metrics-consistency` |
@@ -56,7 +56,7 @@ path requires external credentials and budget.
 | Metric denominators (`tab:denominators`) | `data/eval/unified_eval_summary.json`, `data/metrics_rules_full.json` |
 | Verifier failure taxonomy (`tab:failure_taxonomy`) | `data/failures/taxonomy_counts.csv`, `scripts/aggregate_failure_taxonomy.py` |
 | Risk calibration (`tab:risk_calibration`) | `data/risk/risk_calibration.csv` |
-| Acceptance and latency summary (`tab:eval_summary`) | `data/eval/unified_eval_summary.json`, `docs/reproducibility/tables.tex` |
+| Acceptance summary; latency reported only for regenerated rows (`tab:eval_summary`) | `data/eval/unified_eval_summary.json`, `docs/reproducibility/tables.tex` |
 | Artifact index (`tab:artifact_index`) | this file plus the concrete paths in `paper/access.tex` |
 | Cilium patch example (`tab:cilium_patch`) | `docs/privileged_daemonsets.md` |
 | Cross-cluster replay (`tab:cross_cluster_replication`) | `data/cross_cluster/{eks,gke,aks}/summary.csv`, `data/cross_cluster/{eks,gke,aks}/results.json` |
@@ -70,7 +70,7 @@ path requires external credentials and budget.
 | Figure 1, architecture | `paper/access.tex` picture environment |
 | Figure 2, fairness waits | `figures/fairness_waits.png`, `data/scheduler/metrics_schedule_sweep.json`, `data/scheduler/metrics_sweep_live.json`, `scripts/plot_fairness_quartiles.py` |
 | Figure 3, admission vs post-hoc | `figures/admission_vs_posthoc.png`, `data/baselines/kyverno_baseline.csv`, `scripts/create_comparison_chart.py` |
-| Figure 4, mode comparison | `figures/mode_comparison.png`, `paper/overleaf/figures/mode_comparison.png`, `data/baselines/mode_comparison.csv`; `scripts/plot_mode_comparison.py` when plotting dependencies are installed |
+| Figure 4, mode comparison | `figures/mode_comparison.png`, `paper/overleaf/figures/mode_comparison.png`, `data/baselines/mode_comparison.csv`; includes archived rules-only 5k verifier-record evidence, not a current verifier rerun; `scripts/plot_mode_comparison.py` when plotting dependencies are installed |
 | Figure 5, operator A/B simulation | `figures/operator_ab.png`, `data/operator_ab/summary_simulated.csv`, `scripts/plot_operator_ab.py` |
 | Figure 6, risk-bandit pseudocode | `paper/access.tex` algorithmic environment |
 

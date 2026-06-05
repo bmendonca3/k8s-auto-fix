@@ -122,7 +122,7 @@ Use `make pipeline-plan` to print the default lightweight detector -> proposer -
 - `scripts/queue_report.py` (`make queue-report-smoke`) reports scheduler queue health from SQLite in read-only mode.
 
 ## Paper and appendices
-- Main manuscript: `paper/access.tex` (title: “Closed-Loop Threat-Guided Auto-Fixing of Kubernetes Container Security Misconfigurations”).
+- Main manuscript: `paper/access.tex` (title: “Closed-Loop Threat-Informed Remediation of Cloud-Native Kubernetes Security Misconfigurations”).
 - Supplemental appendices: `paper/appendices.tex` (plain-English reading guide, risk worked example, glossary, artifact index). Legacy appendix zip bundles have been removed from the repo.
 - To push to Overleaf, use the contents of `paper/` (or the mirror under `paper/overleaf/`); no zip archives are tracked here.
 
