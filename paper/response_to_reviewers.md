@@ -162,10 +162,14 @@ weaker acceptance predicates on the same checked-in 5,000-record rules and
 Grok/xAI verifier-record snapshots: ungated proposer output,
 scanner/policy-only acceptance, policy plus the recorded API-admission flag, and
 the corresponding full verifier boundary. Holding candidate-patch records fixed,
-the weaker boundaries accept more records but also admit records rejected by the
-full-verifier snapshot: 312 rules-mode snapshot rejects under the
-policy/admission-style boundary and 551 Grok/xAI snapshot rejects under
-policy-only acceptance. This isolates the mechanism the matrix directly
+the weaker boundaries accept more records but also admit historical
+snapshot-derived escapes: 312 rules-mode records that a weaker
+policy/admission-style boundary would accept even though the corresponding
+full-verifier snapshot rejected them, and 551 Grok/xAI records that
+policy-only acceptance would admit even though the corresponding full-verifier
+snapshot rejected them. These counts are not presented as a current verifier
+rerun or as proxy results for Codex Security, KubeIntellect, Kyverno, or any
+other named agent. This isolates the mechanism the matrix directly
 supports: Kubernetes-specific invariant re-checking inside a broader verifier
 boundary that also requires server-side dry-run/API-admission evidence and
 no-new-violation checks. The paper now states that the API-admission column is

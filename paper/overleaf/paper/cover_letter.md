@@ -1,30 +1,39 @@
-# Cover Letter — IEEE Access Submission
+# Cover Letter — TCC Resubmission Draft
 
-```
-Dear IEEE Access Editors,
+Dear Professor Guo,
 
-Please consider our manuscript “Closed-Loop Threat-Guided Auto-Fixing of Kubernetes YAML Security Misconfigurations” for publication in IEEE Access.
+If the editorial office permits a major-revision resubmission of manuscript
+TCC-2025-12-0666, please consider our substantially revised manuscript,
+"Closed-Loop Threat-Guided Auto-Fixing of Kubernetes Container Security
+Misconfigurations," for IEEE Transactions on Cloud Computing.
 
-The work targets a pressing pain point in cloud-native security: production teams continue to surface Kubernetes misconfigurations without receiving actionable, validated fixes. We contribute k8s-auto-fix, a closed-loop system that detects violations, proposes JSON patches, verifies candidate fixes, and schedules remediation according to risk.
+The revision directly addresses the reviewers' concerns about novelty,
+overclaiming, reproducibility, and comparison scope. We reframed the contribution
+as a closed verification loop for Kubernetes remediation: each candidate JSON
+Patch is accepted only after policy re-check, schema validation, server-side
+dry-run, and universal no-new-violation gates. We also clarified that the live
+replay validates server-side dry-run and live apply acceptance on a
+fixture-seeded subset, not general workload semantic equivalence.
 
-Practical impact:
-- Comprehensive benchmarking on 5,000 manifests drawn from the Grok/xAI corpus with 4,426/5,000 (88.52%) verifier acceptance under `kubectl --dry-run=server`.
-- Deterministic rules plus guardrails automatically fixed 13,338 detections overall on the 15,718-detection full corpus (auto-fix rate 0.8486); among 13,373 attempted patches, 13,338 were accepted (99.74%).
-- Fixture-seeded live replay records 1,000/1,000 dry-run/live-apply acceptance with zero rollbacks, while the supported 1,264-manifest rules slice records 100.00% acceptance.
+The current manuscript reports:
+- 13,338 accepted patches out of 13,373 patched items in the full deterministic
+  rules+guardrails run (99.74%; auto-fix rate 0.8486 over 15,718 detections).
+- 1,000/1,000 server-side dry-run and live apply acceptance on the fixture-seeded
+  live-cluster replay.
+- 4,426/5,000 accepted patches in the optional Grok/xAI proposer run (88.52%).
+- A risk-aware scheduler replay that lowers top-risk P95 wait time from 102.3 h
+  under FIFO to 13.0 h while keeping all scheduler and operator results clearly
+  labeled as replay-based or simulated.
 
-Evaluation rigor and safety:
-- Detector smoke tests meet the F1 ≥ 0.85 target on a synthetic nine-policy hold-out set; the manuscript scopes this as wrapper regression coverage, not a broad detector benchmark.
-- Guardrails now preserve Service selectors, require explicit opt-in for service-account rewrites, and block unsafe LLM regressions that remove containers or volumes.
-- Scheduler claims are grounded in shipped telemetry: the risk-aware bandit cuts top-risk P95 wait time from 102.3 h (FIFO) to 13.0 h (7.9×).
+The manuscript now includes an evidence-status table, corrected reference set,
+expanded limitations, explicit artifact links, and a reproducibility package.
+We do not claim finished human-operator validation; the human-in-the-loop rotation
+is identified as planned future work.
 
-Reproducibility:
-- We ship complete artifacts (detections, patches, verifier evidence, queue scores) and scripts under `docs/` and `data/`, together with Grok telemetry files (`data/grok5k_telemetry.json`, `data/grok1k_telemetry.json`) to support cost analysis.
-- The repository’s Makefile and documentation provide end-to-end commands for researchers to replay both deterministic and LLM-backed evaluations.
-
-We believe the manuscript aligns with IEEE Access’s emphasis on practical innovation and transparency in evaluation. Thank you for your consideration.
+Thank you for considering whether this revision can proceed under the TCC review
+process.
 
 Sincerely,
 
 Brian Mendonca and Vijay K. Madisetti
 Georgia Institute of Technology
-```
