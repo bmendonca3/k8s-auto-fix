@@ -32,7 +32,7 @@ path requires external credentials and budget.
 |---|---|---|
 | Supported rules corpus accepts `1264/1264` manifests | `data/batch_runs/secondary_supported/metrics_rules.json` | `make reproducible-report` |
 | Archived rules-5k verifier-record snapshot accepts `4677/5000` manifests | `data/metrics_rules_5000.json` | Snapshot-only context for Figure 4 and ablation discussion; not used as a current acceptance result or fresh verifier rerun |
-| Full rules+guardrails run accepts `13338/13373` patched items; auto-fix `0.8486` over `15718` detections | `data/metrics_rules_full.json` | `make metrics-consistency` |
+| Full rules+guardrails run accepts `13589/13656` patched items (`99.51%`); auto-fix `0.8646` over `15718` detections; median patch size `8` | `data/metrics_rules_full.json`, `data/metrics_latest.json`, current raw `.json.gz` inputs | `make metrics-consistency` |
 | Grok/xAI 1.313k slice accepts `1313/1313` manifests | `data/batch_runs/grok_full/metrics_grok_full.json` | `make reproducible-report` |
 | Grok/xAI 5k sweep accepts `4426/5000` manifests | canonical: `data/batch_runs/grok_5k/metrics_grok5k.json`; mirrored output: `data/outputs/batch_runs/grok_5k/metrics_grok5k.json` | `make metrics-consistency` |
 | Live replay applies `1000/1000` accepted manifests with zero rollback | `data/live_cluster/results_1k.json`, `data/live_cluster/summary_1k.csv` | `scripts/run_live_cluster_eval.py` |
@@ -61,18 +61,16 @@ path requires external credentials and budget.
 | Cilium patch example (`tab:cilium_patch`) | `docs/privileged_daemonsets.md` |
 | Cross-cluster replay (`tab:cross_cluster_replication`) | `data/cross_cluster/{eks,gke,aks}/summary.csv`, `data/cross_cluster/{eks,gke,aks}/results.json` |
 | Acceptance-boundary matrix (`tab:verifier_ablation`) | `paper/acceptance_boundary_matrix.tex`, `data/ablation/acceptance_boundary_matrix.{json,csv}`, `scripts/build_acceptance_boundary_matrix.py` |
-| Evidence status (`tab:evidence_status`) | `paper/access.tex`, `docs/operator_survey.md`, `data/operator_ab/summary_simulated.csv` |
+| Evidence status (`tab:evidence_status`) | downstream manuscript mirror under `paper/overleaf/`, `docs/operator_survey.md` |
 
 ## Manuscript Figures
 
 | Manuscript item | Backing artifact(s) |
 |---|---|
 | Figure 1, architecture | `paper/access.tex` picture environment |
-| Figure 2, fairness waits | `figures/fairness_waits.png`, `data/scheduler/metrics_schedule_sweep.json`, `data/scheduler/metrics_sweep_live.json`, `scripts/plot_fairness_quartiles.py` |
+| Figure 2, top-50 queue waits | `figures/fairness_waits.png`, `data/metrics_schedule_compare.json`, `scripts/plot_scheduler_waits.py`; matched 1,259-item historical supported-queue replay with uniform 10-minute fallback service time and zero initial ages/exploration inputs |
 | Figure 3, admission vs post-hoc | `figures/admission_vs_posthoc.png`, `data/baselines/kyverno_baseline.csv`, `scripts/create_comparison_chart.py` |
-| Figure 4, mode comparison | `figures/mode_comparison.png`, `paper/overleaf/figures/mode_comparison.png`, `data/baselines/mode_comparison.csv`; includes archived rules-only 5k verifier-record evidence, not a current verifier rerun; `scripts/plot_mode_comparison.py` when plotting dependencies are installed |
-| Figure 5, operator A/B simulation | `figures/operator_ab.png`, `data/operator_ab/summary_simulated.csv`, `scripts/plot_operator_ab.py` |
-| Figure 6, risk-bandit pseudocode | `paper/access.tex` algorithmic environment |
+| Figure 4, matched mode comparison | `figures/mode_comparison.png`, downstream `paper/overleaf/figures/mode_comparison.png`, `data/baselines/mode_comparison.csv`, `data/metrics_rules_5000.json`, `data/batch_runs/grok_5k/metrics_grok5k.json`; byte-identical 5,000-record detection input, archival verifier snapshots rather than current reruns; `scripts/plot_mode_comparison.py` |
 
 ## Reproducibility Outputs
 

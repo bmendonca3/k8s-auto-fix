@@ -1,8 +1,9 @@
-# Verifier Triad and Patch Modes
+# Verifier Gates and Patch Modes
 
-This project enforces a triad of guardrails before accepting a patch:
+This project records four verifier gates before accepting a patch:
 
-- Policy re-check: targeted policy must be cleared (kube-linter/Kyverno re-scan)
+- Policy re-check: an explicit assertion for the targeted policy must be cleared; external detector re-scan is optional via `--enable-rescan`
+- Patch-application validation: the RFC 6902 operation and JSON Pointer paths must apply cleanly
 - Safety checks: prevent privileged containers, restrict hostPath, drop dangerous capabilities
 - Server-side dry-run: validate against the API server without persistence
 
@@ -18,4 +19,3 @@ Patch types and defaults
 References
 - Kubernetes apply and dry-run: `kubectl apply --dry-run=server` (Kubernetes documentation)
 - Server-side apply historical introduction (Kubernetes blog)
-

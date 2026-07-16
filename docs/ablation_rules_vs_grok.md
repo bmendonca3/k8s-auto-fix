@@ -4,7 +4,7 @@
 
 | Mode | Acceptance | Median verifier (ms) | Verifier P95 (ms) | Median proposer (ms) | Notes |
 | ---- | ---------- | -------------------- | ----------------- | -------------------- | ----- |
-| Rules (`configs/run_rules.yaml`) | 13338/13373 patched items (99.74%; auto-fix 0.8486 over 15,718 detections) | n/a | n/a | n/a | Deterministic full-corpus baseline; full-corpus latency was not archived in `data/eval/unified_eval_summary.json`. |
+| Rules (`configs/run_rules.yaml`) | 13589/13656 patched items (99.51%; auto-fix 0.8646 over 15,718 detections; median patch size 8) | n/a | n/a | n/a | Deterministic full-corpus baseline recomputed from the current raw verifier records; full-corpus latency was not archived. |
 | Grok/xAI (`configs/run_grok.yaml`) | 1313/1313 (100.00%) | n/a | n/a | n/a | Latest rerun succeeds across the slice; telemetry enumerating generated patches now lives in `data/grok1k_telemetry.json` (per-request latency remains unavailable). |
 
 Token/cost telemetry for the Grok run was not captured during the original sweep. The Grok-5k evaluation provides a proxy mean of ~2.27k tokens/patch (4.36M prompt + 0.69M completion tokens total), which would translate to roughly 3.0M tokens ($\approx\$0.90$) for the 1.313k slice if re-run under the same prompt template.

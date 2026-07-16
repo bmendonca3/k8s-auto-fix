@@ -40,7 +40,7 @@ def format_ratio(numerator: int, denominator: int, *, precision: int = 1) -> Tup
     if denominator <= 0:
         return "0/0", "0%"
     pct = (numerator / denominator) * 100.0
-    ratio = f"{numerator}/{denominator}"
+    ratio = f"{numerator:,}/{denominator:,}"
     percentage = f"{pct:.{precision}f}%"
     return ratio, percentage
 
@@ -127,7 +127,7 @@ def build_simple_acceptance_summary(
     detections = int(data.get("detections", 0))
     accepted = int(data.get("accepted", 0))
     median_ops = data.get("median_patch_ops")
-    ratio, percentage = format_ratio(accepted, detections)
+    ratio, percentage = format_ratio(accepted, detections, precision=2)
     median_text = format_metric_number(median_ops) if median_ops is not None else "n/a"
     return f"- **{label}** – {ratio} accepted ({percentage}; median ops {median_text}) from `{source}`."
 
@@ -160,17 +160,17 @@ def extract_rank_summary(schedule: Optional[Dict[str, object]]) -> Optional[str]
     if not isinstance(summary, dict):
         return None
     top_n = summary.get("top_n")
-    base = summary.get("baseline", {})
+    priority = summary.get("risk_priority", {})
     fifo = summary.get("fifo", {})
     risk_only = summary.get("risk_only", {})
-    risk_time = summary.get("risk_time", {})
-    if not all(isinstance(entry, dict) for entry in (base, fifo, risk_only, risk_time)):
+    risk_over_time = summary.get("risk_over_time", {})
+    if not all(isinstance(entry, dict) for entry in (priority, fifo, risk_only, risk_over_time)):
         return None
     return (
-        "- **Scheduler comparison** – `make benchmark-scheduler` ranks the top "
-        f"{top_n} high-risk items at mean rank {base.get('mean_rank_top_n')} (median {base.get('median_rank_top_n')}, "
-        f"P95 {base.get('p95_rank_top_n')}). Risk-only remaps preserve the same ordering, while the "
-        f"`risk/Et+aging` baseline averages {risk_time.get('mean_rank_top_n')} (P95 {risk_time.get('p95_rank_top_n')}). "
+        "- **Scheduler comparison** – the deterministic supported-queue replay ranks the top "
+        f"{top_n} high-risk items at mean rank {priority.get('mean_rank_top_n')} (median {priority.get('median_rank_top_n')}, "
+        f"P95 {priority.get('p95_rank_top_n')}). Risk-only ordering is also reported, while the "
+        f"`risk/Et` variant averages {risk_over_time.get('mean_rank_top_n')} (P95 {risk_over_time.get('p95_rank_top_n')}). "
         f"FIFO slips to mean {fifo.get('mean_rank_top_n')} (P95 {fifo.get('p95_rank_top_n')})."
     )
 
@@ -181,19 +181,22 @@ def extract_telemetry_summary(schedule: Optional[Dict[str, object]]) -> Optional
     telemetry = schedule.get("telemetry")
     if not isinstance(telemetry, dict):
         return None
-    baseline = telemetry.get("baseline", {})
+    priority = telemetry.get("risk_priority", {})
     fifo = telemetry.get("fifo", {})
-    if not isinstance(baseline, dict) or not isinstance(fifo, dict):
+    if not isinstance(priority, dict) or not isinstance(fifo, dict):
         return None
-    throughput = baseline.get("throughput_per_hour")
-    total_hours = baseline.get("total_runtime_hours")
-    baseline_wait = (baseline.get("top_risk_wait_hours") or {}).get("p95")
+    throughput = priority.get("throughput_per_hour")
+    total_hours = priority.get("total_runtime_hours")
+    priority_wait = (priority.get("top_risk_wait_hours") or {}).get("p95")
     fifo_wait = (fifo.get("top_risk_wait_hours") or {}).get("p95")
+    summary = schedule.get("summary") or {}
+    candidates = summary.get("total_candidates", "the same") if isinstance(summary, dict) else "the same"
     return (
-        "- **Scheduler telemetry** – the baseline bandit completes 1,313 patches in "
+        f"- **Scheduler telemetry** – the static risk-priority replay drains {candidates} accepted queue items in "
         f"{format_hours(total_hours)} at ~{format_float(throughput)} patches/hour with top-risk P95 wait "
-        f"{format_hours(baseline_wait)}; FIFO stretches the same P95 wait to {format_hours(fifo_wait)} "
-        "(`telemetry` in `data/metrics_schedule_compare.json`)."
+        f"{format_hours(priority_wait)}; FIFO stretches the same P95 wait to {format_hours(fifo_wait)}. "
+        "All initial ages and exploration inputs are zero in this snapshot (`configuration` and `telemetry` in "
+        "`data/metrics_schedule_compare.json`)."
     )
 
 
@@ -249,29 +252,29 @@ def build_paper_paragraph(metrics: MetricsBundle) -> str:
             f"Running the full corpus of {latex_int(detections)} detections in rules+guardrails mode yields "
             f"{latex_int(accepted)} accepted out of {latex_int(patches)} patched items ({acceptance_percentage}; "
             f"auto-fix rate {float(rules.get('auto_fix_rate', 0.0)):.4f} over detections) with a median "
-            f"of {median_text} JSON Patch operations and {safety_failures} safety failures "
-            "(all non-hostPath edge cases)."
+            f"of {median_text} JSON Patch operations and {safety_failures} safety-gate rejects."
         )
 
     telemetry = (schedule or {}).get("telemetry", {}) if schedule else {}
-    baseline = telemetry.get("baseline", {}) if isinstance(telemetry, dict) else {}
+    priority = telemetry.get("risk_priority", {}) if isinstance(telemetry, dict) else {}
     fifo = telemetry.get("fifo", {}) if isinstance(telemetry, dict) else {}
-    base_wait = (baseline.get("top_risk_wait_hours") or {}).get("p95")
+    priority_wait = (priority.get("top_risk_wait_hours") or {}).get("p95")
     fifo_wait = (fifo.get("top_risk_wait_hours") or {}).get("p95")
-    throughput = baseline.get("throughput_per_hour")
+    throughput = priority.get("throughput_per_hour")
 
-    if baseline:
+    if priority:
         wait_delta = None
-        if isinstance(base_wait, (int, float)) and isinstance(fifo_wait, (int, float)):
-            wait_delta = fifo_wait - base_wait
+        if isinstance(priority_wait, (int, float)) and isinstance(fifo_wait, (int, float)):
+            wait_delta = fifo_wait - priority_wait
         wait_part = ""
         if wait_delta is not None:
             wait_part = (
                 f"while FIFO defers the same cohort to {fifo_wait:.1f}\\,h (+{wait_delta:.1f}\\,h)."
             )
         parts.append(
-            f"Bandit scheduling preserves fairness: baseline top-risk items see P95 wait of {base_wait:.1f}\\,h "
-            f"at roughly {throughput:.1f} patches/hour {wait_part}"
+            f"In a matched static queue replay with zero initial ages and a uniform 10-minute service-time fallback, "
+            f"risk-priority ordering gives the top-50 risk cohort a P95 wait of {priority_wait:.1f}\\,h at roughly "
+            f"{throughput:.1f} items/hour {wait_part}"
         )
 
     paragraph = " ".join(parts).strip()
@@ -281,7 +284,7 @@ def build_paper_paragraph(metrics: MetricsBundle) -> str:
             "`python scripts/update_metrics_docs.py` to refresh this section."
         )
     return (
-        "\\noindent\\textbf{Latest Evaluation.} "
+        "\\noindent\\textbf{Full-run summary.} "
         + paragraph.replace("%", "\\%")
     )
 
@@ -315,7 +318,7 @@ def update_paper(paper_path: Path, paragraph: str) -> None:
     paper_path.write_text(updated, encoding="utf-8")
 
 
-def run(dry_run: bool = False, skip_readme: bool = False, skip_paper: bool = False) -> Tuple[str, str]:
+def run(dry_run: bool = False, skip_readme: bool = False, skip_paper: bool = True) -> Tuple[str, str]:
     metrics = MetricsBundle.load()
     readme_section = build_readme_section(metrics)
     paper_paragraph = build_paper_paragraph(metrics)
@@ -344,10 +347,14 @@ def run(dry_run: bool = False, skip_readme: bool = False, skip_paper: bool = Fal
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Refresh README and paper metrics from benchmark artifacts.")
+    parser = argparse.ArgumentParser(description="Refresh artifact-facing metrics from benchmark artifacts.")
     parser.add_argument("--dry-run", action="store_true", help="Print the generated sections without editing files.")
     parser.add_argument("--no-readme", action="store_true", help="Skip README updates.")
-    parser.add_argument("--no-paper", action="store_true", help="Skip paper updates.")
+    parser.add_argument(
+        "--paper",
+        action="store_true",
+        help="Also update downstream manuscript mirrors (off by default; Overleaf is canonical).",
+    )
     return parser.parse_args()
 
 
@@ -356,7 +363,7 @@ def main() -> None:
     readme_section, paper_paragraph = run(
         dry_run=args.dry_run,
         skip_readme=args.no_readme,
-        skip_paper=args.no_paper,
+        skip_paper=not args.paper,
     )
     if args.dry_run:
         print("README section:\n", readme_section)

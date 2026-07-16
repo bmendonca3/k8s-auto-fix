@@ -106,10 +106,11 @@ def _normalise_error(message: str) -> str:
     return msg
 
 
-def aggregate_failures(records: List[Dict]) -> Tuple[int, int, Counter, Counter]:
+def aggregate_failures(records: List[Dict]) -> Tuple[int, int, Counter, Counter, Counter]:
     total = len(records)
     accepted = 0
-    failure_counter: Counter = Counter()
+    rejected_records_by_category: Counter = Counter()
+    error_events_by_category: Counter = Counter()
     policy_counter: Counter = Counter()
     for record in records:
         if record.get("accepted"):
@@ -117,12 +118,13 @@ def aggregate_failures(records: List[Dict]) -> Tuple[int, int, Counter, Counter]
             continue
         errors = record.get("errors") or []
         if not errors:
-            failure_counter["<unspecified>"] += 1
+            categories = ["<unspecified>"]
         else:
-            for error in errors:
-                failure_counter[_normalise_error(str(error))] += 1
+            categories = [_normalise_error(str(error)) for error in errors]
+        error_events_by_category.update(categories)
+        rejected_records_by_category.update(set(categories))
         policy_counter[str(record.get("policy_id", "unknown"))] += 1
-    return total, accepted, failure_counter, policy_counter
+    return total, accepted, rejected_records_by_category, error_events_by_category, policy_counter
 
 
 def write_csv(path: Path, rows: Sequence[Sequence], headers: Sequence[str]) -> None:
@@ -138,33 +140,59 @@ def main() -> None:
     args = parse_args()
 
     summary_rows: List[Tuple[str, int, int, int]] = []
-    category_rows: List[Tuple[str, str, int]] = []
-    policy_rows: List[Tuple[str, str, int]] = []
+    category_rows: List[Tuple[str, str, int, int, str, int, int]] = []
+    policy_rows: List[Tuple[str, str, int, int, str, int]] = []
 
     for label, path in _iter_datasets(args.dataset):
         records = _load_verified(path)
-        total, accepted, failure_counts, policy_counts = aggregate_failures(records)
+        total, accepted, record_counts, event_counts, policy_counts = aggregate_failures(records)
         rejected = total - accepted
         summary_rows.append((label, total, accepted, rejected))
 
-        for failure, count in failure_counts.most_common():
-            if count < args.min_count:
+        for failure, record_count in record_counts.most_common():
+            if record_count < args.min_count:
                 continue
-            category_rows.append((label, failure.replace("\n", " "), count))
+            category_rows.append(
+                (
+                    label,
+                    str(path),
+                    total,
+                    rejected,
+                    failure.replace("\n", " "),
+                    record_count,
+                    event_counts[failure],
+                )
+            )
         for policy, count in policy_counts.most_common():
             if count < args.min_count:
                 continue
-            policy_rows.append((label, policy, count))
+            policy_rows.append((label, str(path), total, rejected, policy, count))
 
     if not category_rows:
         print("No failures discovered across datasets; nothing to write.", file=sys.stderr)
     else:
-        write_csv(args.output, category_rows, ("dataset", "failure_category", "count"))
+        write_csv(
+            args.output,
+            category_rows,
+            (
+                "dataset",
+                "source_artifact",
+                "total_records",
+                "rejected_records",
+                "failure_category",
+                "rejected_records_with_category",
+                "error_events",
+            ),
+        )
 
     if summary_rows:
         write_csv(args.summary, summary_rows, ("dataset", "total", "accepted", "rejected"))
     if policy_rows:
-        write_csv(args.policy_output, policy_rows, ("dataset", "policy_id", "count"))
+        write_csv(
+            args.policy_output,
+            policy_rows,
+            ("dataset", "source_artifact", "total_records", "rejected_records", "policy_id", "count"),
+        )
 
 
 if __name__ == "__main__":

@@ -38,7 +38,8 @@ class UpdateMetricsDocsTests(unittest.TestCase):
             schedule={
                 "summary": {
                     "top_n": 5,
-                    "baseline": {
+                    "total_candidates": 10,
+                    "risk_priority": {
                         "mean_rank_top_n": 2.5,
                         "median_rank_top_n": 2.5,
                         "p95_rank_top_n": 4.0,
@@ -53,9 +54,14 @@ class UpdateMetricsDocsTests(unittest.TestCase):
                         "median_rank_top_n": 2.5,
                         "p95_rank_top_n": 4.0,
                     },
+                    "risk_over_time": {
+                        "mean_rank_top_n": 3.0,
+                        "median_rank_top_n": 3.0,
+                        "p95_rank_top_n": 5.0,
+                    },
                 },
                 "telemetry": {
-                    "baseline": {
+                    "risk_priority": {
                         "items": 10,
                         "total_runtime_hours": 12.0,
                         "throughput_per_hour": 5.5,
@@ -86,7 +92,7 @@ class UpdateMetricsDocsTests(unittest.TestCase):
 
     def test_build_paper_paragraph(self) -> None:
         paragraph = updater.build_paper_paragraph(self.metrics)
-        self.assertTrue(paragraph.startswith("\\noindent"))
+        self.assertTrue(paragraph.startswith("\\noindent\\textbf{Full-run summary.}"))
         self.assertIn("10 accepted out of 10 patched items", paragraph)
         self.assertIn("100.00\\%", paragraph)
         self.assertIn("auto-fix rate 1.0000", paragraph)

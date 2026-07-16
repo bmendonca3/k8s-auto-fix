@@ -18,8 +18,9 @@ from src.scheduler.cli import (  # type: ignore
     _compute_metrics,
     _load_array,
     _load_detection_policies,
+    _load_policy_metrics,
     _load_risk_map,
-    )
+)
 from src.scheduler.schedule import PatchCandidate, schedule_patches, EPSILON
 
 
@@ -27,11 +28,13 @@ def _build_candidates(
     verified_path: Path,
     detections_path: Path,
     risk_path: Optional[Path],
+    policy_metrics_path: Optional[Path],
 ) -> Tuple[List[PatchCandidate], Dict[str, Dict[str, object]], Dict[str, int]]:
     verified_records = _load_array(verified_path, "verified")
     detection_records = _load_array(detections_path, "detections")
     detection_map = _load_detection_policies(detections_path)
     risk_map = _load_risk_map(risk_path) if risk_path else {}
+    policy_metrics_map = _load_policy_metrics(policy_metrics_path) if policy_metrics_path else {}
 
     detection_index: Dict[str, int] = {}
     for idx, record in enumerate(detection_records):
@@ -48,7 +51,7 @@ def _build_candidates(
             continue
         patch_id = str(record.get("id"))
         policy_id = detection_map.get(patch_id, {}).get("policy_id")
-        metrics = _compute_metrics(patch_id, policy_id, risk_map, {})
+        metrics = _compute_metrics(patch_id, policy_id, risk_map, policy_metrics_map)
         candidate = PatchCandidate(
             id=patch_id,
             risk=metrics["risk"],
@@ -66,6 +69,7 @@ def _build_candidates(
             "wait": metrics["wait"],
             "kev": metrics["kev"],
             "policy": policy_id,
+            "explore": metrics["explore"],
             "detection_index": detection_index.get(patch_id, len(detection_records)),
         }
     return candidates, metadata, detection_index
@@ -130,7 +134,11 @@ def _percentile_float(values: Sequence[float], pct: float) -> float:
     return float(sorted_vals[rank])
 
 
-def _compute_telemetry(order: Sequence[str], metadata: Dict[str, Dict[str, object]]) -> Dict[str, object]:
+def _compute_telemetry(
+    order: Sequence[str],
+    metadata: Dict[str, Dict[str, object]],
+    top_risk_ids: Optional[Sequence[str]] = None,
+) -> Dict[str, object]:
     if not order:
         return {
             "items": 0,
@@ -163,9 +171,8 @@ def _compute_telemetry(order: Sequence[str], metadata: Dict[str, Dict[str, objec
 
     wait_stats = _compute_wait_stats(waits_minutes)
 
-    top_n = max(1, len(order) // 10)
-    top_risk_ids = sorted(order, key=lambda pid: -float(metadata.get(pid, {}).get("risk", 0.0)))[:top_n]
-    top_waits = [wait_map[pid] for pid in top_risk_ids if pid in wait_map]
+    cohort_ids = top_risk_ids if top_risk_ids is not None else order
+    top_waits = [wait_map[pid] for pid in cohort_ids if pid in wait_map]
     top_wait_stats = _compute_wait_stats(top_waits) if top_waits else {"mean": 0.0, "median": 0.0, "p95": 0.0, "max": 0.0}
 
     return {
@@ -182,25 +189,30 @@ def compare_schedulers(
     verified_path: Path,
     detections_path: Path,
     risk_path: Optional[Path],
+    policy_metrics_path: Optional[Path],
     out_path: Optional[Path],
     *,
     alpha: float,
     epsilon: float,
-    explore_weight: float,
     top_n: int,
 ) -> Dict[str, object]:
-    candidates, metadata, detection_index = _build_candidates(verified_path, detections_path, risk_path)
+    candidates, metadata, detection_index = _build_candidates(
+        verified_path,
+        detections_path,
+        risk_path,
+        policy_metrics_path,
+    )
 
-    baseline_order = [
-        c.id for c in schedule_patches(candidates, alpha=alpha, epsilon=epsilon, explore_weight=explore_weight)
+    priority_order = [
+        c.id for c in schedule_patches(candidates, alpha=alpha, epsilon=epsilon, explore_weight=0.0)
     ]
     fifo_order = _order_by(
-        baseline_order,
+        priority_order,
         metadata,
         key_fn=lambda _id, meta: (meta["detection_index"], _id),
     )
     risk_only_order = _order_by(
-        baseline_order,
+        priority_order,
         metadata,
         key_fn=lambda _id, meta: (-meta["risk"], meta["detection_index"]),
     )
@@ -208,7 +220,7 @@ def compare_schedulers(
         denom = max(candidate.expected_time, epsilon)
         return candidate.risk / denom + alpha * candidate.wait
 
-    risk_time_candidates = sorted(
+    risk_over_time_candidates = sorted(
         candidates,
         key=lambda cand: (
             _score_risk_over_time(cand),
@@ -217,13 +229,13 @@ def compare_schedulers(
         ),
         reverse=True,
     )
-    risk_time_order = [c.id for c in risk_time_candidates]
+    risk_over_time_order = [c.id for c in risk_over_time_candidates]
 
     rank_maps = {
-        "baseline": {patch_id: idx + 1 for idx, patch_id in enumerate(baseline_order)},
+        "risk_priority": {patch_id: idx + 1 for idx, patch_id in enumerate(priority_order)},
         "fifo": {patch_id: idx + 1 for idx, patch_id in enumerate(fifo_order)},
         "risk_only": {patch_id: idx + 1 for idx, patch_id in enumerate(risk_only_order)},
-        "risk_time": {patch_id: idx + 1 for idx, patch_id in enumerate(risk_time_order)},
+        "risk_over_time": {patch_id: idx + 1 for idx, patch_id in enumerate(risk_over_time_order)},
     }
 
     top_candidates = sorted(
@@ -238,25 +250,25 @@ def compare_schedulers(
                 "id": patch_id,
                 "policy": meta["policy"],
                 "risk": meta["risk"],
-                "baseline_rank": rank_maps["baseline"][patch_id],
+                "risk_priority_rank": rank_maps["risk_priority"][patch_id],
                 "fifo_rank": rank_maps["fifo"][patch_id],
                 "risk_only_rank": rank_maps["risk_only"][patch_id],
-                "risk_time_rank": rank_maps["risk_time"][patch_id],
+                "risk_over_time_rank": rank_maps["risk_over_time"][patch_id],
             }
         )
 
-    baseline_scores = [rank_maps["baseline"][item["id"]] for item in top_rankings]
+    priority_scores = [rank_maps["risk_priority"][item["id"]] for item in top_rankings]
     fifo_scores = [rank_maps["fifo"][item["id"]] for item in top_rankings]
     risk_only_scores = [rank_maps["risk_only"][item["id"]] for item in top_rankings]
-    risk_time_scores = [rank_maps["risk_time"][item["id"]] for item in top_rankings]
+    risk_over_time_scores = [rank_maps["risk_over_time"][item["id"]] for item in top_rankings]
 
     summary = {
         "total_candidates": len(metadata),
         "top_n": len(top_rankings),
-        "baseline": {
-            "mean_rank_top_n": _mean(baseline_scores),
-            "median_rank_top_n": statistics.median(baseline_scores) if baseline_scores else 0,
-            "p95_rank_top_n": _percentile(baseline_scores, 95.0),
+        "risk_priority": {
+            "mean_rank_top_n": _mean(priority_scores),
+            "median_rank_top_n": statistics.median(priority_scores) if priority_scores else 0,
+            "p95_rank_top_n": _percentile(priority_scores, 95.0),
         },
         "fifo": {
             "mean_rank_top_n": _mean(fifo_scores),
@@ -268,29 +280,42 @@ def compare_schedulers(
             "median_rank_top_n": statistics.median(risk_only_scores) if risk_only_scores else 0,
             "p95_rank_top_n": _percentile(risk_only_scores, 95.0),
         },
-        "risk_time": {
-            "mean_rank_top_n": _mean(risk_time_scores),
-            "median_rank_top_n": statistics.median(risk_time_scores) if risk_time_scores else 0,
-            "p95_rank_top_n": _percentile(risk_time_scores, 95.0),
+        "risk_over_time": {
+            "mean_rank_top_n": _mean(risk_over_time_scores),
+            "median_rank_top_n": statistics.median(risk_over_time_scores) if risk_over_time_scores else 0,
+            "p95_rank_top_n": _percentile(risk_over_time_scores, 95.0),
         },
     }
 
     result = {
+        "configuration": {
+            "verified_source": str(verified_path),
+            "detections_source": str(detections_path),
+            "risk_source": str(risk_path) if risk_path else None,
+            "policy_metrics_source": str(policy_metrics_path) if policy_metrics_path else None,
+            "alpha": alpha,
+            "exploration_weight": 0.0,
+            "nonzero_wait_inputs": sum(candidate.wait != 0.0 for candidate in candidates),
+            "nonzero_exploration_inputs": sum(candidate.explore != 0.0 for candidate in candidates),
+            "top_risk_cohort_size": len(top_rankings),
+            "service_time_unit": "minutes",
+            "replay_kind": "deterministic static queue snapshot",
+        },
         "summary": summary,
         "orders": {
-            "baseline": baseline_order,
+            "risk_priority": priority_order,
             "fifo": fifo_order,
             "risk_only": risk_only_order,
-            "risk_time": risk_time_order,
+            "risk_over_time": risk_over_time_order,
         },
         "top_risk_positions": top_rankings,
     }
 
     result["telemetry"] = {
-        "baseline": _compute_telemetry(baseline_order, metadata),
-        "fifo": _compute_telemetry(fifo_order, metadata),
-        "risk_only": _compute_telemetry(risk_only_order, metadata),
-        "risk_time": _compute_telemetry(risk_time_order, metadata),
+        "risk_priority": _compute_telemetry(priority_order, metadata, [item["id"] for item in top_rankings]),
+        "fifo": _compute_telemetry(fifo_order, metadata, [item["id"] for item in top_rankings]),
+        "risk_only": _compute_telemetry(risk_only_order, metadata, [item["id"] for item in top_rankings]),
+        "risk_over_time": _compute_telemetry(risk_over_time_order, metadata, [item["id"] for item in top_rankings]),
     }
 
     if out_path:
@@ -304,14 +329,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--verified",
         type=Path,
-        default=Path("data/verified.json"),
-        help="Path to verified JSON (default: data/verified.json).",
+        default=Path("data/verified_rules_supported.json"),
+        help="Path to verified JSON (default: historical supported queue snapshot).",
     )
     parser.add_argument(
         "--detections",
         type=Path,
-        default=Path("data/detections.json"),
-        help="Path to detections JSON (default: data/detections.json).",
+        default=Path("data/detections_supported.json"),
+        help="Path to detections JSON aligned with the verified queue snapshot.",
+    )
+    parser.add_argument(
+        "--policy-metrics",
+        type=Path,
+        default=Path("data/policy_metrics.json"),
+        help="Optional policy-level success and service-time priors.",
     )
     parser.add_argument(
         "--risk",
@@ -343,12 +374,6 @@ def parse_args() -> argparse.Namespace:
         default=50,
         help="Top-N high risk items to analyse (default: 50).",
     )
-    parser.add_argument(
-        "--explore-weight",
-        type=float,
-        default=1.0,
-        help="Weight applied to exploration bonuses when computing the baseline score (default: 1.0).",
-    )
     return parser.parse_args()
 
 
@@ -358,10 +383,10 @@ def main() -> None:
         verified_path=args.verified,
         detections_path=args.detections,
         risk_path=args.risk,
+        policy_metrics_path=args.policy_metrics,
         out_path=args.out,
         alpha=args.alpha,
         epsilon=args.epsilon,
-        explore_weight=args.explore_weight,
         top_n=args.top_n,
     )
     if args.out is None:

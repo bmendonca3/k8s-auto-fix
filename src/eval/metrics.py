@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import statistics
 from pathlib import Path
@@ -101,10 +102,21 @@ def run(
 
 
 def _load_array(path: Path) -> List[Any]:
+    resolved = path
+    opener = None
+    if path.exists():
+        opener = path.open
+    else:
+        compressed = path.with_suffix(path.suffix + ".gz")
+        if compressed.exists():
+            resolved = compressed
+            opener = lambda mode, encoding: gzip.open(compressed, mode, encoding=encoding)
     try:
-        with path.open("r", encoding="utf-8") as f:
+        if opener is None:
+            return []
+        with opener("rt" if resolved.suffix == ".gz" else "r", encoding="utf-8") as f:
             data = json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, OSError, json.JSONDecodeError):
         return []
     if not isinstance(data, list):
         return []

@@ -1,3 +1,4 @@
+import gzip
 import json
 import tempfile
 import unittest
@@ -7,6 +8,32 @@ from src.eval.metrics import run as metrics_run
 
 
 class MetricsTests(unittest.TestCase):
+    def test_metrics_reads_gzip_fallback_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            detections_path = tmp_path / "detections.json"
+            patches_path = tmp_path / "patches.json"
+            verified_path = tmp_path / "verified.json"
+            out_path = tmp_path / "metrics.json"
+
+            detections_path.write_text(json.dumps([{"id": "001"}]), encoding="utf-8")
+            with gzip.open(patches_path.with_suffix(".json.gz"), "wt", encoding="utf-8") as handle:
+                json.dump([{"id": "001", "patch": [{"op": "add", "path": "/x", "value": 1}]}], handle)
+            with gzip.open(verified_path.with_suffix(".json.gz"), "wt", encoding="utf-8") as handle:
+                json.dump([{"id": "001", "accepted": True}], handle)
+
+            metrics_run(
+                detections=detections_path,
+                patches=patches_path,
+                verified=verified_path,
+                out=out_path,
+            )
+
+            metrics = json.loads(out_path.read_text(encoding="utf-8"))
+            self.assertEqual(metrics["patches"], 1)
+            self.assertEqual(metrics["verified"], 1)
+            self.assertEqual(metrics["accepted"], 1)
+
     def test_metrics_reports_failure_breakdown(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)

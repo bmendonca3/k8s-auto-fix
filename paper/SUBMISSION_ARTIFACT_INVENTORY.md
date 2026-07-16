@@ -1,6 +1,6 @@
 # Submission Artifact Inventory
 
-Last checked: 2026-06-04 23:09 MST.
+Last checked: 2026-07-16 MST.
 
 This is a local inventory for the TCC-2025-12-0666 packet. It is not a
 submission artifact and should not be uploaded.
@@ -11,15 +11,17 @@ Do not email, upload, or submit any artifact until IEEE Transactions on Cloud
 Computing confirms that TCC-2025-12-0666 may be resubmitted or reopened as a
 major revision.
 
-## Primary Portal Artifacts
+## Manuscript Authority
 
-| Artifact | Purpose | Current SHA-256 |
-|---|---|---|
-| `paper/access.pdf` | Main manuscript PDF | `67a285d26d99f27b616db7f3f7abf2761945ee526781c07ebf671f3609afdad7` |
-| `paper/access.tex` | Authoritative standalone manuscript source | `b9634ca3138a80614d75863aadc4920b897f97066d174ff102ba38e65d302c8e` |
-| `paper/cover_letter.md` | Cover-letter draft | `c399eb46d035e1eed47e20544cd3b4a72fbb3e0bf8185c705e946c4561d54c96` |
-| `paper/response_to_reviewers.md` | Point-by-point response draft | `594ed598057eb854289aecbdc4eada3efb51aaf59ffb5f5c7f47c7e686afc72e` |
-| `paper/references.bib` | BibTeX mirror of the active inline bibliography | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
+Overleaf is the canonical manuscript source and PDF. The files under
+`paper/overleaf/` are downstream mirrors imported from a verified paper-repo
+commit; `paper/access.tex` and `paper/access.pdf` are deprecated compatibility
+copies during migration. Do not use either artifact-repository copy to update
+Overleaf.
+
+Static manuscript hashes are intentionally not maintained in this prose file.
+The next verified Overleaf import records source-tree, canonical-PDF, artifact
+commit, and paper-repository commit hashes in generated sync locks.
 
 ## Supplemental Appendix Artifact
 
@@ -32,16 +34,15 @@ together:
 | `paper/appendices.pdf` | Optional supplemental appendix PDF | `af99af7a122ae071b198c1def25c2ac8346769d3b3670573eced7bc2f442ab7d` |
 | `paper/appendices.tex` | Optional supplemental appendix source | `901e3e581ac3aa7fd005ad7b22db56fa2f1cad39baa04ab0616952aa63d47580` |
 
-## Standalone Source Dependencies
+## Deprecated Standalone Source Dependencies
 
 `paper/access.tex` currently includes or references:
 
-- `docs/reproducibility/baselines.tex`
+- `paper/reproducibility/baselines.tex`
 - `paper/grok_failures_table.tex`
 - `figures/fairness_waits.png`
 - `figures/admission_vs_posthoc.png`
 - `figures/mode_comparison.png`
-- `figures/operator_ab.png`
 - `paper/brian_mendonca_photo.png`
 - `paper/vijay_madisetti_photo.png`
 
@@ -51,8 +52,9 @@ retained only as a historical artifact.
 
 ## Overleaf Source Package
 
-Use `paper/overleaf/` as the source-package root if Overleaf upload is needed,
-but assemble a clean package from it instead of uploading the directory as-is.
+Treat `paper/overleaf/` as a downstream source-package mirror only. Assemble a
+clean package from it for verification or archival purposes, never to overwrite
+the canonical Overleaf project.
 Tracked LaTeX scratch files were removed from this tree; the dry-run command
 below still excludes regenerated scratch files, local reference PDFs, local
 draft prose, and retired helper copies. The minimal source path is
@@ -69,21 +71,9 @@ rsync -ain --delete --exclude='*.aux' --exclude='*.log' --exclude='*.out' --excl
 
 This preview command does not write files because it keeps `-n`.
 
-Current key Overleaf hashes:
-
-| Artifact | Purpose | Current SHA-256 |
-|---|---|---|
-| `paper/overleaf/main.tex` | Overleaf entry point | `6df68ddd89f4e5716fd0e8c16d005e0a11ac4c481675e28cf861148b15f3c7a8` |
-| `paper/overleaf/paper/access.tex` | Overleaf manuscript source | `b9634ca3138a80614d75863aadc4920b897f97066d174ff102ba38e65d302c8e` |
-| `paper/overleaf/paper/references.bib` | Overleaf BibTeX mirror | `e65d4702ab1f6e11a3c642f872e6c2d39a67a6220738e90c49e3c3d868ff7895` |
-| `paper/overleaf/main.pdf` | Local reference PDF, not required for source upload | `d68f038fc912118aee4814334ec507fa6a4fca89b631a3a2d399bd79d76ea554` |
-| `paper/overleaf/paper/grok_failures_table.tex` | Included failure-taxonomy table | `6b941cf21c4115a078d5a5f8f9ef7de75941cd2cf9001c7207cb294a13f85318` |
-| `paper/overleaf/paper/reproducibility/baselines.tex` | Included baseline table | `6ca9d5f49d4d07a5b2980330ff0caad8d7219f2a15c34376367e4677ea804fcd` |
-
-The standalone and Overleaf manuscript sources match byte-for-byte.
-`paper/references.bib` matches the Overleaf copy byte-for-byte,
-`paper/grok_failures_table.tex` matches the Overleaf copy byte-for-byte, and
-`docs/reproducibility/baselines.tex` matches the Overleaf copy byte-for-byte.
+See `docs/OVERLEAF_SYNC.md` for the release order and verification gates. Hash
+equality claims are made only from generated lock files after import, not from
+this manually edited inventory.
 
 ## Do Not Upload
 
@@ -118,8 +108,8 @@ The standalone and Overleaf manuscript sources match byte-for-byte.
   `add_iam_policy_binding.sh`, `access.log`, and `logs/access.log`.
 - Transient build products: `main.aux`, `main.log`, `main.out`,
   `missfont.log`, and nested `missfont.log` files.
-- `paper/overleaf/main.pdf` for source-only uploads; it is a local reference PDF,
-  while `paper/access.pdf` is the manuscript PDF selected for portal upload.
+- Any PDF not exported from the current canonical Overleaf revision. The
+  imported Overleaf PDF is the only manuscript PDF eligible for portal use.
 - Unreferenced image leftovers, including stale copies of
   `paper/dheer_toprani_photo.png` or
   `paper/overleaf/paper/dheer_toprani_photo.png` if they reappear.

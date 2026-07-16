@@ -3,13 +3,13 @@
 **Date:** 2026-05-30
 **Context:** Internal scratchpad for aligning the manuscript's comparison language with the current artifacts.
 
-This file is not submission prose. Use `paper/access.tex` as the authoritative manuscript source and keep denominators separate when discussing baselines.
+This file is not submission prose. Overleaf is the authoritative manuscript source; keep denominators separate when discussing baselines.
 
 ## Current Framing
 
 | Topic | Current artifact-backed statement | Notes |
 |---|---:|---|
-| Deterministic full run | 13,338/13,373 patched items accepted (99.74%); auto-fix rate 0.8486 over 15,718 detections | `data/metrics_latest.json` |
+| Deterministic full run | 13,589/13,656 patched items accepted (99.51%); auto-fix rate 0.8646 over 15,718 detections; median patch size 8 | `data/metrics_latest.json`, current raw `.json.gz` inputs |
 | Supported rules corpus | 1,264/1,264 accepted (100.00%) | `data/eval/unified_eval_summary.json` |
 | Grok-5k | 4,426/5,000 accepted (88.52%) | `data/batch_runs/grok_5k/metrics_grok5k.json` |
 | Live replay | 1,000/1,000 dry-run/apply accepted in the fixture-seeded Kind/Kubernetes 1.34.0 evaluation environment | `data/live_cluster/summary_1k.csv` |

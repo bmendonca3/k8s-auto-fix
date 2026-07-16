@@ -111,18 +111,19 @@ def main() -> None:
     if df.empty:
         raise ValueError(f"{args.input} contains no failure data.")
 
-    if {"dataset", "failure_category", "count"} - set(df.columns):
-        missing = {"dataset", "failure_category", "count"} - set(df.columns)
+    value_column = "rejected_records_with_category"
+    if {"dataset", "failure_category", value_column} - set(df.columns):
+        missing = {"dataset", "failure_category", value_column} - set(df.columns)
         raise ValueError(f"Missing required columns in {args.input}: {missing}")
 
-    agg = df.groupby("failure_category", as_index=False)["count"].sum()
+    agg = df.groupby("failure_category", as_index=False)[value_column].sum()
     if args.top_n > 0:
         top_categories = (
-            agg.sort_values("count", ascending=False).head(args.top_n)["failure_category"].tolist()
+            agg.sort_values(value_column, ascending=False).head(args.top_n)["failure_category"].tolist()
         )
         df = df[df["failure_category"].isin(top_categories)]
     else:
-        top_categories = agg.sort_values("count", ascending=False)["failure_category"].tolist()
+        top_categories = agg.sort_values(value_column, ascending=False)["failure_category"].tolist()
 
     if df.empty:
         raise ValueError("After filtering, no failure categories remain to plot.")
@@ -131,7 +132,7 @@ def main() -> None:
         df.pivot_table(
             index="failure_category",
             columns="dataset",
-            values="count",
+            values=value_column,
             aggfunc="sum",
             fill_value=0,
         )
@@ -148,7 +149,7 @@ def main() -> None:
         pivot.plot(kind="barh", stacked=True, ax=ax)
     else:
         pivot.plot(kind="barh", stacked=False, ax=ax)
-    ax.set_xlabel("Failure count", fontsize=13)
+    ax.set_xlabel("Rejected records with category", fontsize=13)
     ax.set_ylabel("Failure category")
     ax.set_title(args.title)
     ax.tick_params(axis="x", labelsize=12)

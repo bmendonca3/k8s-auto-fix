@@ -7,7 +7,7 @@ MODEL ?= gpt-4o-mini
 PYTHON ?= $(shell if [ -x .venv/bin/python ]; then printf '%s\n' .venv/bin/python; else command -v python3 || command -v python; fi)
 PIP ?= $(PYTHON) -m pip
 
-.PHONY: setup doctor validate-configs docs-link-check metrics-consistency submission-packet-check secret-scan clean-generated kind-up fixtures reproducible-report detect propose verify schedule test artifact-test e2e pipeline-plan pipeline-manifest-smoke pipeline-status-smoke tiny-regression artifact-index-smoke artifact-traceability-smoke evidence-manifest-smoke evidence-manifest-pipeline-smoke evidence-manifest-claims-smoke evidence-manifest-claims-enforce gitops-plan-smoke patch-diff-smoke verifier-report scheduler-explain-smoke scheduler-batches-smoke queue-report-smoke review-packet-smoke review-packet-concise-smoke review-packet-rollout-smoke smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok43-50 benchmark-grok43-200 benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
+.PHONY: setup doctor validate-configs docs-link-check metrics-consistency submission-packet-check secret-scan clean-generated kind-up fixtures reproducible-report detect propose verify schedule test artifact-test e2e pipeline-plan pipeline-manifest-smoke pipeline-status-smoke tiny-regression artifact-index-smoke artifact-traceability-smoke evidence-manifest-smoke evidence-manifest-pipeline-smoke evidence-manifest-claims-smoke evidence-manifest-claims-enforce gitops-plan-smoke patch-diff-smoke verifier-report scheduler-explain-smoke scheduler-batches-smoke queue-report-smoke review-packet-smoke review-packet-concise-smoke review-packet-rollout-smoke smoke-proposer risk cti queue-init queue-enqueue queue-next metrics benchmark-grok43-50 benchmark-grok43-200 benchmark-grok200 benchmark-grok5k benchmark-full benchmark-scheduler benchmark-grok-full update-metrics-docs summarize-failures paper paper-build-check baselines baseline-kyverno baseline-polaris baseline-map baseline-llmsec reproduce-all live-eval
 
 JOBS ?= 4
 GROK_PROPOSER_CONFIG ?= configs/run_grok.yaml
@@ -273,7 +273,7 @@ benchmark-grok-full:
 	$(PYTHON) scripts/update_metrics_docs.py
 
 benchmark-scheduler:
-	$(PYTHON) scripts/compare_schedulers.py --verified data/verified_rules_full.json --detections data/detections.json --risk data/risk.json --out data/metrics_schedule_compare.json
+	$(PYTHON) scripts/compare_schedulers.py --verified data/verified_rules_supported.json --detections data/detections_supported.json --policy-metrics data/policy_metrics.json --out data/metrics_schedule_compare.json
 	$(PYTHON) scripts/update_metrics_docs.py
 
 update-metrics-docs:
@@ -284,13 +284,18 @@ summarize-failures:
 		--verified-glob "data/batch_runs/grok_5k/verified_grok5k_batch_*.json" \
 		--detections-glob "data/batch_runs/grok_5k/detections_grok5k_batch_*.json"
 
-# Build the paper PDF (outputs to paper/)
-paper:
-	cd paper && if command -v pdflatex >/dev/null 2>&1; then \
-		pdflatex -interaction=nonstopmode access.tex && \
-		pdflatex -interaction=nonstopmode access.tex; \
+# Build the downstream Overleaf mirror without overwriting its canonical PDF.
+PAPER_BUILD_DIR ?= /tmp/k8s-auto-fix-paper-build
+
+paper: paper-build-check
+
+paper-build-check:
+	mkdir -p $(PAPER_BUILD_DIR)
+	cd paper/overleaf && if command -v pdflatex >/dev/null 2>&1; then \
+		pdflatex -interaction=nonstopmode -halt-on-error -output-directory=$(PAPER_BUILD_DIR) main.tex && \
+		pdflatex -interaction=nonstopmode -halt-on-error -output-directory=$(PAPER_BUILD_DIR) main.tex; \
 	elif command -v tectonic >/dev/null 2>&1; then \
-		tectonic -X compile access.tex --outdir . --keep-logs; \
+		tectonic --keep-logs --outdir $(PAPER_BUILD_DIR) main.tex; \
 	else \
 		echo "No LaTeX compiler found: install pdflatex or tectonic" >&2; \
 		exit 1; \

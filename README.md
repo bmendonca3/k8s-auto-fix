@@ -93,7 +93,7 @@ Use `make pipeline-plan` to print the default lightweight detector -> proposer -
 - `infra/fixtures/` – RBAC, NetworkPolicies, and manifest samples (CronJob scanner, Bitnami PostgreSQL) for reproducing edge cases.
 - `logs/` – ignored local proposer/verifier transcripts and run logs; commit only sanitized summaries under `data/outputs/` or `docs/`.
 - `notes/` – working notes and backlog items formerly at the repository root.
-- `paper/` – manuscript sources; appendices live in `paper/appendices.tex` (no zip bundle checked in), and Overleaf-ready sources sit under `paper/overleaf/`.
+- `paper/` – downstream manuscript mirrors and appendices. Overleaf is the canonical manuscript edit surface; `paper/overleaf/` is refreshed from the verified paper repository and must not be pushed back as an independent source.
 - `scripts/` – maintenance and evaluation helpers; see `scripts/README.md` for an index by pipeline stage.
 - `src/` – core packages (`common`, `detector`, `proposer`, `risk`, `scheduler`, `verifier`).
 - `tests/` – pytest suite validating detectors, proposer guardrails, verifier gates, scheduler scoring, CLI tooling.
@@ -107,7 +107,7 @@ Use `make pipeline-plan` to print the default lightweight detector -> proposer -
 - `scripts/doctor.py` (`make doctor`) checks Python packages, optional Kubernetes tools, and key repository paths.
 - `scripts/validate_configs.py` (`make validate-configs`) validates checked-in YAML config structure.
 - `scripts/check_docs_links.py` (`make docs-link-check`) checks local Markdown links and heading anchors in the docs set.
-- `scripts/check_metrics_consistency.py` (`make metrics-consistency`) checks paper-facing metric text against canonical JSON artifacts without modifying files.
+- `scripts/check_metrics_consistency.py` (`make metrics-consistency`) checks artifact-facing metrics against canonical raw/derived data without modifying files; use `--include-manuscript` only after the downstream Overleaf mirror has been refreshed.
 - `scripts/clean_generated.py` (`make clean-generated`) lists ignored generated outputs that are safe to remove with the script's explicit `--delete` flag.
 - `scripts/run_pipeline.py` (`make pipeline-plan`, `make pipeline-manifest-smoke`, `make pipeline-status-smoke`) prints a rules-mode pipeline plan, optionally writing reproducibility and per-stage status JSON with declared input/output paths, file hashes, and remediation hints, or runs it when invoked directly with `--run` and optional `--resume`.
 - `scripts/run_tiny_regression.py` (`make tiny-regression`) validates the tiny fixture pack without kube-linter, Kyverno, kubectl, a cluster, or API keys.
@@ -122,9 +122,10 @@ Use `make pipeline-plan` to print the default lightweight detector -> proposer -
 - `scripts/queue_report.py` (`make queue-report-smoke`) reports scheduler queue health from SQLite in read-only mode.
 
 ## Paper and appendices
-- Main manuscript: `paper/access.tex` (title: “Closed-Loop Threat-Informed Remediation of Cloud-Native Kubernetes Security Misconfigurations”).
-- Supplemental appendices: `paper/appendices.tex` (plain-English reading guide, risk worked example, glossary, artifact index). Legacy appendix zip bundles have been removed from the repo.
-- To push to Overleaf, use the contents of `paper/` (or the mirror under `paper/overleaf/`); no zip archives are tracked here.
+- Canonical manuscript editing happens in Overleaf. This repository is the evidence source, not an alternate manuscript authority.
+- `paper/overleaf/` is a downstream, byte-for-byte mirror of a verified paper-repository commit; `make paper-build-check` builds that mirror into `/tmp` without overwriting the canonical Overleaf PDF.
+- `paper/access.tex` and `paper/access.pdf` are retained only as deprecated compatibility mirrors during migration and must not be used to update Overleaf.
+- Supplemental appendices remain under `paper/appendices.tex`. See `docs/OVERLEAF_SYNC.md` for the one-way release order and verification gates.
 
 ## Configuration
 `configs/run.yaml` centralises proposer configuration:
@@ -190,16 +191,13 @@ Export the appropriate API key (`XAI_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY
 - `scripts/parallel_runner.py` - parallelise proposer/verifier workloads; `scripts/probe_grok_rate.py` sizes safe LLM concurrency.
 
 ## Metrics aligned to the paper (traceable in-repo)
-- **Full rules + guardrails replay** – 13,338 / 13,373 patched items accepted (99.74%; auto-fix rate 0.8486 over 15,718 detections; median patch ops 9) from `data/metrics_rules_full.json` (`patches_rules_full.json.gz`, `verified_rules_full.json.gz`).
-- **Rules on the 5k extended corpus** – historical checked-in verifier-record snapshot records 4,677 / 5,000 accepted (93.54%; median ops 6) from `data/metrics_rules_5000.json` (`patches_rules_5000.json`, `verified_rules_5000.json`); `make reproducible-report` re-renders these JSON artifacts and does not rerun the verifier.
-- **Grok/xAI 5k proposer** – 4,426 / 5,000 accepted (88.52%; median ops 9) from `data/outputs/batch_runs/grok_5k/metrics_grok5k.json`.
-- **Supported corpus (rules)** – 1,264 / 1,264 accepted (median ops 8) captured in `data/outputs/batch_runs/secondary_supported/summary.json` and `metrics_rules.json`.
-- **Live-cluster replay** – 1,000 / 1,000 dry-run and live-apply success on the stratified slice (`data/live_cluster/summary_1k.csv`).
-- **Scheduler fairness** – `data/metrics_schedule_compare.json` shows top-50 high-risk items at median rank 25.5 (P95 48) for the bandit vs median 422.5 (P95 620) under FIFO; wait-time sweeps live in `data/metrics_schedule_sweep.json`.
 
-Policy-level success probabilities and runtimes regenerate via `scripts/compute_policy_metrics.py` into `data/policy_metrics.json`. Scheduler sweeps and fairness telemetry are viewable at `data/outputs/scheduler/metrics_schedule_sweep.json`.
-
-Large corpus artefacts now live under `data/outputs/` and are stored as compressed `.json.gz` files to keep the repository lean. Gunzip the patches/verified/metrics files there before using tooling that expects plain `.json` inputs.
+- **Full rules + guardrails replay** – 13,589 / 13,656 patched items accepted (99.51%; auto-fix rate 0.8646 over 15,718 detections; median patch ops 8) from `data/metrics_rules_full.json` (`patches_rules_full.json.gz`, `verified_rules_full.json.gz`).
+- **Rules on the 5k extended corpus** – 4,677/5,000 accepted (93.54%; median ops 6) from `data/metrics_rules_5000.json`.
+- **Grok/xAI 5k proposer** – 4,426/5,000 accepted (88.52%; median ops 9) from `data/outputs/batch_runs/grok_5k/metrics_grok5k.json`.
+- **Supported corpus (rules)** – 1,264/1,264 accepted (100.00%; median ops n/a) from `data/outputs/batch_runs/secondary_supported/summary.json`.
+- **Scheduler comparison** – the deterministic supported-queue replay ranks the top 50 high-risk items at mean rank 25.5 (median 25.5, P95 48.0). Risk-only ordering is also reported, while the `risk/Et` variant averages 76.04 (P95 181.0). FIFO slips to mean 351.52 (P95 884.0).
+- **Scheduler telemetry** – the static risk-priority replay drains 1259 accepted queue items in 209.8h at ~6.0 patches/hour with top-risk P95 wait 7.8h; FIFO stretches the same P95 wait to 147.2h. All initial ages and exploration inputs are zero in this snapshot (`configuration` and `telemetry` in `data/metrics_schedule_compare.json`).
 
 ## Related work
 | System | Scope in paper | Evidence / guardrails | Scheduling |
