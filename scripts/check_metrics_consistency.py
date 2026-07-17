@@ -352,7 +352,7 @@ def check(*, include_manuscript: bool = False) -> list[str]:
     rules_detections = int(rules["detections"])
     rules_rate = float(rules["auto_fix_rate"])
     rules_median = int(float(rules["median_patch_ops"]))
-    rules_safety_failures = int(rules.get("failed_safety", 0))
+    rules_rejected = rules_patches - rules_accepted
 
     grok_accepted = int(grok5k["accepted"])
     grok_total = int(grok5k["detections"])
@@ -368,7 +368,6 @@ def check(*, include_manuscript: bool = False) -> list[str]:
     if include_manuscript:
         paper_files.extend(
             [
-                "paper/access.tex",
                 "paper/cover_letter.md",
                 "paper/overleaf/paper/access.tex",
                 "paper/overleaf/paper/cover_letter.md",
@@ -417,30 +416,38 @@ def check(*, include_manuscript: bool = False) -> list[str]:
         failures,
     )
     if include_manuscript:
+        rules_accepted_text = f"{rules_accepted:,}".replace(",", r"(?:,|\{,\})")
+        rules_patches_text = f"{rules_patches:,}".replace(",", r"(?:,|\{,\})")
+        grok_accepted_text = f"{grok_accepted:,}".replace(",", r"(?:,|\{,\})")
+        grok_total_text = f"{grok_total:,}".replace(",", r"(?:,|\{,\})")
+        grok_pct_text = re.escape(grok_pct.rstrip("%")) + r"(?:\\)?%"
         for path, label in (
-            ("paper/access.tex", "paper"),
             ("paper/overleaf/paper/access.tex", "Overleaf paper"),
+            ("paper/cover_letter.md", "cover letter"),
+            ("paper/overleaf/paper/cover_letter.md", "Overleaf-package cover letter"),
         ):
             _require(
                 path,
-                rf"{rules_accepted:,}".replace(",", r"\{,\}")
-                + rf".*{rules_patches:,}".replace(",", r"\{,\}")
-                + rf".*{rules_rate:.4f}",
+                rules_accepted_text
+                + r"[\s\S]*?"
+                + rules_patches_text
+                + rf"[\s\S]*?{rules_rate:.4f}",
                 f"current {label} rules summary",
                 failures,
             )
             _require(
                 path,
-                rf"{rules_safety_failures}\s+safety(?:-gate)?\s+(?:failures|rejects)",
-                f"current {label} safety failure count",
+                rf"{rules_rejected}\s+rejected\s+(?:records|items)",
+                f"current {label} rejected-record count",
                 failures,
             )
             _require(
                 path,
-                rf"{grok_accepted:,}".replace(",", r"\{,\}")
-                + rf"\s*/\s*{grok_total:,}".replace(",", r"\{,\}")
-                + ".*"
-                + re.escape(grok_pct.replace("%", r"\%")),
+                grok_accepted_text
+                + r"\s*/\s*"
+                + grok_total_text
+                + r"[\s\S]*?"
+                + grok_pct_text,
                 f"current {label} Grok-5k summary",
                 failures,
             )
